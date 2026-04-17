@@ -143,7 +143,7 @@ export default function DashboardPage() {
       <PageHeader
         title="Visão geral"
         badge="Clínica"
-        backgroundImage="https://i.postimg.cc/xCmQcHnL/Chat-GPT-Image-17-de-abr-de-2026-12-16-43.png"
+        backgroundImage="https://i.postimg.cc/2ynCmp8g/banner.jpg"
         description={
           unitId
             ? `Performance consolidada · unitId: ${unitId}`
