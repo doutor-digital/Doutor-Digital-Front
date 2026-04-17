@@ -4,6 +4,7 @@ import type {
   ActiveLeadDto,
   ApiCountPayload,
   Lead,
+  LeadDetail,
   LeadsCountDto,
   OrigemAgrupada,
   StageCount,
@@ -69,6 +70,14 @@ export const webhooksService = {
     });
 
     return asArray<Lead>(data);
+  },
+
+  async getLeadById(id: number | string): Promise<LeadDetail> {
+    const numericId = toInt(id);
+    if (!numericId) throw new Error("id inválido para /webhooks/{id}");
+
+    const { data } = await api.get<LeadDetail>(`/webhooks/${numericId}`);
+    return data;
   },
 
   async consultas(clinicId?: number | string): Promise<number> {

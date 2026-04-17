@@ -177,3 +177,88 @@ export interface ApiCountPayload {
   total?: number;
   quantidade?: number;
 }
+
+export interface LeadStageHistoryDto {
+  id: number;
+  stageId: number;
+  stageLabel: string;
+  changedAt: string;
+}
+
+export interface LeadInteractionDto {
+  id: number;
+  type: string;
+  content?: string | null;
+  createdAt: string;
+}
+
+export interface LeadConversationDto {
+  id: number;
+  channel: string;
+  source?: string | null;
+  conversationState: string;
+  startedAt: string;
+  endedAt?: string | null;
+  attendantId?: number | null;
+  attendantName?: string | null;
+  interactions: LeadInteractionDto[];
+}
+
+export interface LeadAssignmentDto {
+  id: number;
+  attendantId: number;
+  attendantName?: string | null;
+  stage?: string | null;
+  assignedAt: string;
+}
+
+export interface LeadPaymentDto {
+  id: number;
+  amount: number;
+  paidAt: string;
+}
+
+export interface LeadDetail {
+  id: number;
+  externalId: number;
+  tenantId: number;
+
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  cpf?: string | null;
+  gender?: string | null;
+
+  source: string;
+  channel: string;
+  campaign: string;
+  ad?: string | null;
+  trackingConfidence: string;
+
+  currentStage: string;
+  currentStageId?: number | null;
+  status: string;
+  conversationState?: ConversationState | string | null;
+
+  hasAppointment: boolean;
+  hasPayment: boolean;
+  hasHealthInsurancePlan?: boolean | null;
+  observations?: string | null;
+  tags: string[];
+
+  unitId?: number | null;
+  unitName?: string | null;
+
+  attendantId?: number | null;
+  attendantName?: string | null;
+  attendantEmail?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+  convertedAt?: string | null;
+
+  stageHistory: LeadStageHistoryDto[];
+  conversations: LeadConversationDto[];
+  assignments: LeadAssignmentDto[];
+  payments: LeadPaymentDto[];
+}
