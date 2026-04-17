@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Download, Filter, Search, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -18,6 +18,7 @@ import { formatDate, formatNumber } from "@/lib/utils";
 const PAGE_SIZE = 25;
 
 export default function LeadsPage() {
+  const navigate = useNavigate();
   const { tenantId, unitId } = useClinic();
   const { values, setFilter, reset } = useFilters({
     search: "",
@@ -172,7 +173,14 @@ export default function LeadsPage() {
               </THead>
               <TBody>
                 {pageItems.map((l) => (
-                  <Tr key={l.id} clickable onClick={() => (window.location.href = `/leads/${l.id}`)}>
+                  <Tr
+                    key={l.id}
+                    clickable
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest("a")) return;
+                      navigate(`/leads/${l.id}`);
+                    }}
+                  >
                     <Td>
                       <Link
                         to={`/leads/${l.id}`}
