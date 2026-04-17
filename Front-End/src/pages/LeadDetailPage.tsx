@@ -4,12 +4,12 @@ import {
   AlertTriangle, ArrowLeft, Building2, Calendar, CheckCircle2,
   Clock, CreditCard, Hash, History, Mail, MessageSquare, Phone,
   Tag, Target, Timer, User2, UserCog, XCircle, Sparkles, Activity,
-  TrendingUp, Zap,
+  TrendingUp, Zap, FileText, Settings, StickyNote, ChevronRight,
 } from "lucide-react";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge, StageBadge, StateBadge } from "@/components/ui/Badge";
+import { StageBadge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { analyticsService } from "@/services/analytics";
 import { assignmentsService, type AssignmentLeadHistoryItem } from "@/services/assignments";
@@ -23,10 +23,11 @@ import { cn } from "@/lib/utils";
 ═══════════════════════════════════════════════════════════ */
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [activeTab, setActiveTab] = useState<"geral" | "historico" | "pagamentos" | "conversas">("geral");
 
-  const lead    = useQuery({ queryKey: ["lead-detail", id],  queryFn: () => webhooksService.getLeadById(id!),        enabled: !!id, retry: false });
-  const metrics = useQuery({ queryKey: ["lead-metrics", id], queryFn: () => analyticsService.leadMetrics(id!),       enabled: !!id, retry: false });
-  const history = useQuery({ queryKey: ["lead-history", id], queryFn: () => assignmentsService.leadHistory(id!),    enabled: !!id, retry: false });
+  const lead    = useQuery({ queryKey: ["lead-detail", id],  queryFn: () => webhooksService.getLeadById(id!),     enabled: !!id, retry: false });
+  const metrics = useQuery({ queryKey: ["lead-metrics", id], queryFn: () => analyticsService.leadMetrics(id!),    enabled: !!id, retry: false });
+  const history = useQuery({ queryKey: ["lead-history", id], queryFn: () => assignmentsService.leadHistory(id!), enabled: !!id, retry: false });
 
   const l = lead.data;
   const m = metrics.data;
@@ -36,10 +37,9 @@ export default function LeadDetailPage() {
     return (
       <>
         <PageHeader title="Carregando lead..." description={`ID: ${id}`} />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="skeleton h-[480px] w-full rounded-2xl lg:col-span-1" />
-          <div className="skeleton h-[480px] w-full rounded-2xl lg:col-span-2" />
-          {[0,1,2,3].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="skeleton h-[600px] rounded-2xl lg:col-span-1" />
+          <div className="skeleton h-[600px] rounded-2xl lg:col-span-2" />
         </div>
       </>
     );
@@ -49,16 +49,10 @@ export default function LeadDetailPage() {
   if (lead.isError || !l) {
     return (
       <>
-        <PageHeader
-          title="Lead não encontrado"
-          description={`ID: ${id}`}
-          actions={<BackButton />}
-        />
-        <Card>
-          <CardBody>
-            <EmptyState title="Não conseguimos carregar este lead" description="Verifique o ID ou se o backend está online." />
-          </CardBody>
-        </Card>
+        <PageHeader title="Lead não encontrado" description={`ID: ${id}`} actions={<BackButton />} />
+        <div className="rounded-2xl border border-white/8 bg-slate-900/60 p-8">
+          <EmptyState title="Não conseguimos carregar este lead" description="Verifique o ID ou se o backend está online." />
+        </div>
       </>
     );
   }
@@ -79,348 +73,360 @@ export default function LeadDetailPage() {
           stage: undefined,
         }));
 
+  const TABS = [
+    { key: "geral",      label: "Geral",      icon: <User2     className="h-3.5 w-3.5" /> },
+    { key: "historico",  label: "Histórico",  icon: <TrendingUp className="h-3.5 w-3.5" /> },
+    { key: "pagamentos", label: "Pagamentos", icon: <CreditCard className="h-3.5 w-3.5" /> },
+    { key: "conversas",  label: "Conversas",  icon: <MessageSquare className="h-3.5 w-3.5" /> },
+  ] as const;
+
   /* ── Render ── */
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-500">
 
-      {/* ━━━ HEADER ━━━ */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <PageHeader
-            title={l.name ?? "Lead sem nome"}
-            description={`ID ${l.id}${l.externalId ? ` · External ${l.externalId}` : ""}`}
-          />
-        </div>
+      {/* ━━━ TOP BAR ━━━ */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <PageHeader
+          title={l.name ?? "Lead sem nome"}
+          description={`ID ${l.id}${l.externalId ? ` · External ${l.externalId}` : ""}`}
+        />
         <BackButton />
       </div>
 
-      {/* ━━━ ROW 1 · PERFIL + ATRIBUIÇÃO ━━━ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ━━━ LAYOUT: sidebar + conteúdo ━━━ */}
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5 items-start">
 
-        {/* ── Perfil ── */}
-        <div className="lg:col-span-1 flex flex-col rounded-2xl border border-white/8 bg-slate-900/60 backdrop-blur-sm overflow-hidden shadow-xl">
+        {/* ══════════════════════════════════
+            SIDEBAR — estilo "Dados do contato"
+        ══════════════════════════════════ */}
+        <aside className="rounded-2xl border border-white/8 bg-slate-900/70 backdrop-blur-sm shadow-2xl overflow-hidden">
 
-          {/* Hero banner */}
-          <div className="relative h-32 bg-gradient-to-br from-brand-700/50 via-violet-700/40 to-slate-900/0 shrink-0">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_-20%_-20%,rgba(99,102,241,0.35),transparent)]" />
-            {/* Decorative dots */}
-            <div className="absolute inset-0 opacity-20"
-              style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
-            />
-            {/* Avatar */}
-            <div className="absolute -bottom-9 left-5">
-              <div className="h-[72px] w-[72px] rounded-2xl ring-[3px] ring-slate-900 bg-gradient-to-br from-brand-400 via-violet-500 to-purple-700 grid place-items-center text-2xl font-extrabold text-white shadow-2xl shadow-violet-900/60">
+          {/* Header da sidebar */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/6">
+            <span className="text-sm font-semibold text-slate-100">Dados do contato</span>
+            <button className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 border border-white/8 grid place-items-center transition-colors">
+              <Settings className="h-3.5 w-3.5 text-slate-400" />
+            </button>
+          </div>
+
+          {/* Avatar + nome */}
+          <div className="flex flex-col items-center py-6 px-4 border-b border-white/6">
+            {/* Avatar circular com anel */}
+            <div className="relative mb-3">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-brand-500 to-violet-700 grid place-items-center text-2xl font-extrabold text-white ring-4 ring-brand-500/20 shadow-xl shadow-violet-900/40">
                 {initials}
               </div>
+              {/* Dot de estado online */}
+              <span className={cn(
+                "absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-slate-900",
+                l.conversationState === "SERVICE" ? "bg-emerald-400" :
+                l.conversationState === "QUEUE"   ? "bg-amber-400"   : "bg-slate-600"
+              )} />
+            </div>
+
+            <h2 className="text-base font-bold text-slate-50 text-center leading-snug">{l.name ?? "Sem nome"}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{formatDate(l.createdAt)}</p>
+            {l.phone && (
+              <p className="text-xs font-mono text-brand-400 mt-1">{l.phone}</p>
+            )}
+
+            {/* Badges de estado */}
+            <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
+              <StateBadge state={(l.conversationState as ConversationState) ?? undefined} />
+              <StageBadge stage={l.currentStage} />
             </div>
           </div>
 
-          {/* Body */}
-          <div className="flex-1 px-5 pt-14 pb-5 space-y-4">
-
-            {/* Name + badges */}
-            <div>
-              <h2 className="text-lg font-bold text-slate-50 leading-snug">{l.name ?? "—"}</h2>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <StateBadge state={(l.conversationState as ConversationState) ?? undefined} />
-                <StageBadge stage={l.currentStage} />
-              </div>
-            </div>
-
-            {/* Divider */}
-            <hr className="border-white/6" />
-
-            {/* Contact rows */}
-            <div className="space-y-2.5">
-              <ContactRow icon={<Phone className="h-3.5 w-3.5" />} value={l.phone} placeholder="Sem telefone" />
-              <ContactRow icon={<Mail  className="h-3.5 w-3.5" />} value={l.email} placeholder="Sem e-mail" />
-              <ContactRow icon={<Hash  className="h-3.5 w-3.5" />} value={l.cpf}   placeholder="Sem CPF" />
-              <ContactRow icon={<User2 className="h-3.5 w-3.5" />} value={l.gender} placeholder="Gênero não informado" />
-            </div>
-
-            {/* Divider */}
-            <hr className="border-white/6" />
-
-            {/* Bool pills */}
-            <div>
-              <SectionLabel>Status</SectionLabel>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <BoolPill label="Consulta"    value={l.hasAppointment} />
-                <BoolPill label="Pagamento"   value={l.hasPayment} />
-                <BoolPill label="Plano"       value={l.hasHealthInsurancePlan} />
-              </div>
-            </div>
-
-            {/* Observations */}
-            {l.observations && (
-              <div className="rounded-xl bg-white/[0.03] border border-white/6 p-3.5">
-                <SectionLabel>Observações</SectionLabel>
-                <p className="text-sm text-slate-300 mt-2 whitespace-pre-wrap leading-relaxed">
-                  {l.observations}
-                </p>
-              </div>
-            )}
-
-            {/* Tags */}
-            {l.tags.length > 0 && (
-              <div>
-                <SectionLabel>Tags</SectionLabel>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {l.tags.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-slate-800 border border-white/8 text-slate-300 hover:border-brand-500/40 transition-colors">
-                      <Tag className="h-2.5 w-2.5" /> {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Atribuição & Contexto ── */}
-        <div className="lg:col-span-2 rounded-2xl border border-white/8 bg-slate-900/60 backdrop-blur-sm overflow-hidden shadow-xl flex flex-col">
-
-          {/* Card header strip */}
-          <div className="px-5 pt-5 pb-4 border-b border-white/6">
-            <p className="text-base font-semibold text-slate-100">Atribuição & Contexto</p>
-            <p className="text-xs text-slate-500 mt-0.5">Origem, canal e rastreamento deste lead</p>
+          {/* Campos de contato — estilo "label: valor" */}
+          <div className="divide-y divide-white/4">
+            <SidebarField icon={<Phone className="h-3.5 w-3.5" />}    label="Telefone"  value={l.phone} />
+            <SidebarField icon={<Mail  className="h-3.5 w-3.5" />}    label="E-mail"    value={l.email} />
+            <SidebarField icon={<Hash  className="h-3.5 w-3.5" />}    label="CPF"       value={l.cpf} />
+            <SidebarField icon={<User2 className="h-3.5 w-3.5" />}    label="Gênero"    value={l.gender} />
+            <SidebarField icon={<Building2 className="h-3.5 w-3.5" />} label="Unidade"  value={l.unitName ?? (l.unitId ? `Unit #${l.unitId}` : undefined)} />
+            <SidebarField icon={<UserCog className="h-3.5 w-3.5" />}  label="Atendente" value={l.attendantName} />
+            <SidebarField icon={<Target className="h-3.5 w-3.5" />}   label="Origem"    value={l.source} />
+            <SidebarField icon={<MessageSquare className="h-3.5 w-3.5" />} label="Canal" value={l.channel} />
           </div>
 
-          <div className="flex-1 px-5 py-5 space-y-6">
-
-            {/* Tracking blocks */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <InfoBlock icon={<Target        className="h-4 w-4" />} label="Origem"    value={l.source}             tone="violet" />
-              <InfoBlock icon={<MessageSquare className="h-4 w-4" />} label="Canal"     value={l.channel}            tone="blue" />
-              <InfoBlock icon={<Tag           className="h-4 w-4" />} label="Campanha"  value={l.campaign}           tone="amber" />
-              <InfoBlock
-                icon={<Sparkles className="h-4 w-4" />}
-                label="Confiança"
-                value={l.trackingConfidence}
-                tone={l.trackingConfidence === "ALTA" ? "emerald" : l.trackingConfidence === "MEDIA" ? "amber" : "slate"}
-              />
+          {/* Bool status pills */}
+          <div className="px-4 py-4 border-t border-white/6 space-y-3">
+            <SectionLabel>Status</SectionLabel>
+            <div className="grid grid-cols-3 gap-2">
+              <BoolPill label="Consulta"   value={l.hasAppointment} />
+              <BoolPill label="Pagamento"  value={l.hasPayment} />
+              <BoolPill label="Plano"      value={l.hasHealthInsurancePlan} />
             </div>
+          </div>
 
-            {/* Detail rows */}
-            <div>
-              <SectionLabel>Detalhes</SectionLabel>
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-8">
-                <Row icon={<Tag       className="h-3.5 w-3.5" />} label="Anúncio"         value={l.ad} />
-                <Row icon={<Building2 className="h-3.5 w-3.5" />} label="Unidade"         value={l.unitName ?? (l.unitId ? `Unit #${l.unitId}` : undefined)} />
-                <Row icon={<UserCog   className="h-3.5 w-3.5" />} label="Atendente"       value={l.attendantName} />
-                <Row icon={<Mail      className="h-3.5 w-3.5" />} label="Email atendente" value={l.attendantEmail} />
-                <Row icon={<Calendar  className="h-3.5 w-3.5" />} label="Criado em"       value={formatDate(l.createdAt)} />
-                <Row icon={<Clock     className="h-3.5 w-3.5" />} label="Atualizado em"   value={formatDate(l.updatedAt)} />
-                {l.convertedAt && (
-                  <Row icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} label="Convertido em" value={formatDate(l.convertedAt)} />
-                )}
-              </div>
-            </div>
-
-            {/* Time metrics */}
-            {m && (
-              <div>
-                <SectionLabel>Tempo no funil</SectionLabel>
-                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <TimeBlock label="No bot"         value={m.timeInBot}     tone="violet" icon={<Zap      className="h-4 w-4" />} />
-                  <TimeBlock label="Na fila"        value={m.timeInQueue}   tone="amber"  icon={<Timer    className="h-4 w-4" />} />
-                  <TimeBlock label="Em atendimento" value={m.timeInService} tone="blue"   icon={<Timer    className="h-4 w-4" />} />
-                  <TimeBlock label="Total"          value={m.totalTime}     tone="emerald" icon={<Activity className="h-4 w-4" />} />
-                </div>
-              </div>
-            )}
-
-            {/* Alerts */}
-            {m?.alerts && m.alerts.length > 0 && (
-              <div className="rounded-xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 to-amber-900/5 p-4">
-                <div className="flex items-center gap-2 text-amber-300 font-semibold text-sm mb-3">
-                  <div className="h-6 w-6 rounded-lg bg-amber-500/15 grid place-items-center">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                  </div>
-                  Alertas ativos
-                  <span className="ml-auto text-[11px] font-normal bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">
-                    {m.alerts.length}
+          {/* Tags */}
+          {l.tags.length > 0 && (
+            <div className="px-4 pb-4 border-t border-white/6 pt-4 space-y-2">
+              <SectionLabel>Tags do Contato</SectionLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {l.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/20 transition-colors cursor-default"
+                  >
+                    {t}
+                    <XCircle className="h-3 w-3 opacity-50" />
                   </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Observações */}
+          {l.observations && (
+            <div className="px-4 pb-5 border-t border-white/6 pt-4 space-y-2">
+              <SectionLabel>Observações</SectionLabel>
+              <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
+                {l.observations}
+              </p>
+            </div>
+          )}
+        </aside>
+
+        {/* ══════════════════════════════════
+            CONTEÚDO PRINCIPAL com abas
+        ══════════════════════════════════ */}
+        <div className="space-y-5 min-w-0">
+
+          {/* Abas */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/60 border border-white/8 backdrop-blur-sm w-fit">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all",
+                  activeTab === tab.key
+                    ? "bg-brand-600 text-white shadow-lg shadow-brand-900/40"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                )}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── ABA: GERAL ── */}
+          {activeTab === "geral" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+
+              {/* Atribuição & rastreamento */}
+              <GlassCard title="Atribuição & Rastreamento" subtitle="Origem, canal e confiança do lead" icon={<Target className="h-4 w-4 text-violet-400" />}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                  <InfoBlock icon={<Target        className="h-4 w-4" />} label="Origem"   value={l.source}            tone="violet" />
+                  <InfoBlock icon={<MessageSquare className="h-4 w-4" />} label="Canal"    value={l.channel}           tone="blue" />
+                  <InfoBlock icon={<Tag           className="h-4 w-4" />} label="Campanha" value={l.campaign}          tone="amber" />
+                  <InfoBlock
+                    icon={<Sparkles className="h-4 w-4" />}
+                    label="Confiança"
+                    value={l.trackingConfidence}
+                    tone={l.trackingConfidence === "ALTA" ? "emerald" : l.trackingConfidence === "MEDIA" ? "amber" : "slate"}
+                  />
                 </div>
-                <ul className="space-y-2">
-                  {m.alerts.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-xs text-amber-200/80">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400/70 shrink-0" />
-                      {a}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-10">
+                  <Row icon={<Tag      className="h-3.5 w-3.5" />} label="Anúncio"         value={l.ad} />
+                  <Row icon={<Calendar className="h-3.5 w-3.5" />} label="Criado em"        value={formatDate(l.createdAt)} />
+                  <Row icon={<Clock    className="h-3.5 w-3.5" />} label="Atualizado em"    value={formatDate(l.updatedAt)} />
+                  {l.convertedAt && (
+                    <Row icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} label="Convertido em" value={formatDate(l.convertedAt)} />
+                  )}
+                  <Row icon={<Mail className="h-3.5 w-3.5" />} label="Email atendente" value={l.attendantEmail} />
+                </div>
+              </GlassCard>
+
+              {/* Métricas de tempo */}
+              {m && (
+                <GlassCard title="Tempo no Funil" subtitle="Duração em cada etapa do atendimento" icon={<Activity className="h-4 w-4 text-emerald-400" />}>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <TimeBlock label="No bot"         value={m.timeInBot}     tone="violet"  icon={<Zap      className="h-4 w-4" />} />
+                    <TimeBlock label="Na fila"        value={m.timeInQueue}   tone="amber"   icon={<Timer    className="h-4 w-4" />} />
+                    <TimeBlock label="Em atendimento" value={m.timeInService} tone="blue"    icon={<Timer    className="h-4 w-4" />} />
+                    <TimeBlock label="Total"          value={m.totalTime}     tone="emerald" icon={<Activity className="h-4 w-4" />} />
+                  </div>
+                </GlassCard>
+              )}
+
+              {/* Alertas */}
+              {m?.alerts && m.alerts.length > 0 && (
+                <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-amber-900/5 to-transparent p-5">
+                  <div className="flex items-center gap-2.5 text-amber-300 font-semibold text-sm mb-3">
+                    <div className="h-7 w-7 rounded-lg bg-amber-500/15 grid place-items-center shrink-0">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    Alertas ativos
+                    <span className="ml-auto text-[11px] font-bold bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                      {m.alerts.length}
+                    </span>
+                  </div>
+                  <ul className="space-y-2">
+                    {m.alerts.map((a, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-xs text-amber-200/80">
+                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400/80 shrink-0" />
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Log de interações */}
+              <GlassCard title="Log de Interações" subtitle={`${allInteractions.length} evento(s)`} icon={<History className="h-4 w-4 text-slate-400" />}>
+                {allInteractions.length === 0 ? (
+                  <EmptyState title="Nenhuma interação registrada" />
+                ) : (
+                  <ul className="space-y-2">
+                    {allInteractions.map((it) => (
+                      <li key={it.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-brand-500/20 transition-all group">
+                        <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/6 grid place-items-center shrink-0 mt-0.5 group-hover:bg-brand-500/10 group-hover:border-brand-500/30 transition-all">
+                          <History className="h-3.5 w-3.5 text-slate-500 group-hover:text-brand-400 transition-colors" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 border border-white/8 text-slate-300">
+                              {it.type}
+                            </span>
+                            <span className="text-[11px] text-slate-600">{formatDate(it.createdAt)}</span>
+                          </div>
+                          {it.content && (
+                            <p className="text-sm text-slate-300 mt-1.5 break-words leading-relaxed">{it.content}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </GlassCard>
+            </div>
+          )}
+
+          {/* ── ABA: HISTÓRICO ── */}
+          {activeTab === "historico" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+
+              <GlassCard title="Etapas" subtitle={`${l.stageHistory.length} mudança(s)`} icon={<TrendingUp className="h-4 w-4 text-brand-400" />}>
+                {l.stageHistory.length > 0 ? (
+                  <ol className="relative ml-1 space-y-0">
+                    {l.stageHistory.map((h, idx) => (
+                      <li key={h.id} className="relative flex gap-4 pb-6 last:pb-0">
+                        {idx < l.stageHistory.length - 1 && (
+                          <span className="absolute left-[9px] top-5 bottom-0 w-px bg-gradient-to-b from-brand-500/40 to-transparent" />
+                        )}
+                        <span className={cn(
+                          "mt-0.5 h-5 w-5 rounded-full ring-4 ring-slate-900 grid place-items-center shrink-0 z-10",
+                          idx === 0 ? "bg-brand-500 shadow-[0_0_12px_3px_rgba(99,102,241,0.45)]" : "bg-slate-700"
+                        )}>
+                          <span className={cn("h-1.5 w-1.5 rounded-full", idx === 0 ? "bg-white" : "bg-slate-500")} />
+                        </span>
+                        <div className="pt-0.5">
+                          <p className="text-[11px] text-slate-500 mb-1.5">{formatDate(h.changedAt)}</p>
+                          <StageBadge stage={h.stageLabel} />
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <EmptyState title="Sem histórico de etapas" />
+                )}
+              </GlassCard>
+
+              <GlassCard title="Atendentes" subtitle={`${attendantItems.length} atribuição(ões)`} icon={<UserCog className="h-4 w-4 text-violet-400" />}>
+                {attendantItems.length > 0 ? (
+                  <ul className="space-y-2.5">
+                    {attendantItems.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 grid place-items-center text-xs font-extrabold shrink-0 shadow-lg">
+                          {item.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-100">{item.name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{formatDate(item.date)}</p>
+                          {item.stage && <div className="mt-1.5"><StageBadge stage={item.stage} /></div>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <EmptyState title="Sem histórico de atendentes" />
+                )}
+              </GlassCard>
+            </div>
+          )}
+
+          {/* ── ABA: PAGAMENTOS ── */}
+          {activeTab === "pagamentos" && (
+            <GlassCard title="Pagamentos" subtitle={`${l.payments.length} pagamento(s) registrado(s)`} icon={<CreditCard className="h-4 w-4 text-emerald-400" />}>
+              {l.payments.length > 0 ? (
+                <ul className="space-y-2.5">
+                  {l.payments.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15 hover:bg-emerald-500/[0.08] hover:border-emerald-500/25 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center">
+                          <CreditCard className="h-5 w-5 text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold text-slate-100">{formatCurrency(p.amount)}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{formatDate(p.paidAt)}</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+                        ✓ Pago
+                      </span>
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
-          </div>
+              ) : (
+                <EmptyState title="Nenhum pagamento registrado" />
+              )}
+            </GlassCard>
+          )}
+
+          {/* ── ABA: CONVERSAS ── */}
+          {activeTab === "conversas" && (
+            <GlassCard title="Conversas" subtitle={`${l.conversations.length} conversa(s)`} icon={<MessageSquare className="h-4 w-4 text-brand-400" />}>
+              {l.conversations.length > 0 ? (
+                <ul className="space-y-3">
+                  {l.conversations.map((c) => (
+                    <li key={c.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all">
+                      <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <StateBadge state={c.conversationState as ConversationState} />
+                          <span className="text-[11px] font-medium text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/6">
+                            {c.channel}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500">
+                          {formatDate(c.startedAt)}
+                          {c.endedAt
+                            ? <> → {formatDate(c.endedAt)}</>
+                            : <span className="ml-1 text-emerald-400 font-semibold">· ao vivo</span>
+                          }
+                        </span>
+                      </div>
+                      {c.attendantName && (
+                        <p className="text-xs text-slate-500">
+                          Atendente: <span className="text-slate-300 font-semibold">{c.attendantName}</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] text-slate-600 mt-1.5">
+                        {c.interactions.length} interação(ões)
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyState title="Nenhuma conversa registrada" />
+              )}
+            </GlassCard>
+          )}
         </div>
       </div>
-
-      {/* ━━━ SECTION DIVIDER ━━━ */}
-      <SectionDivider label="Histórico & Atividade" />
-
-      {/* ━━━ ROW 2 · STAGE + ATTENDANT ━━━ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {/* Histórico de etapas */}
-        <GlassCard title="Histórico de etapas" subtitle={`${l.stageHistory.length} mudança(s)`} icon={<TrendingUp className="h-4 w-4 text-brand-400" />}>
-          {l.stageHistory.length > 0 ? (
-            <ol className="relative ml-1 space-y-0">
-              {l.stageHistory.map((h, idx) => (
-                <li key={h.id} className="relative flex gap-4 pb-6 last:pb-0">
-                  {/* Vertical line */}
-                  {idx < l.stageHistory.length - 1 && (
-                    <span className="absolute left-[9px] top-5 bottom-0 w-px bg-gradient-to-b from-brand-500/40 to-transparent" />
-                  )}
-                  {/* Dot */}
-                  <span className={cn(
-                    "mt-0.5 h-5 w-5 rounded-full ring-4 ring-slate-900 grid place-items-center shrink-0 z-10",
-                    idx === 0 ? "bg-brand-500 shadow-[0_0_12px_3px_rgba(99,102,241,0.45)]" : "bg-slate-700"
-                  )}>
-                    <span className={cn("h-1.5 w-1.5 rounded-full", idx === 0 ? "bg-white" : "bg-slate-500")} />
-                  </span>
-                  {/* Content */}
-                  <div className="pt-0.5">
-                    <p className="text-[11px] text-slate-500 mb-1.5">{formatDate(h.changedAt)}</p>
-                    <StageBadge stage={h.stageLabel} />
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <EmptyState title="Sem histórico de etapas" />
-          )}
-        </GlassCard>
-
-        {/* Histórico de atendentes */}
-        <GlassCard title="Histórico de atendentes" subtitle={`${attendantItems.length} atribuição(ões)`} icon={<UserCog className="h-4 w-4 text-violet-400" />}>
-          {attendantItems.length > 0 ? (
-            <ul className="space-y-3">
-              {attendantItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 grid place-items-center text-xs font-extrabold shrink-0 shadow-lg">
-                    {item.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-100">{item.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(item.date)}</p>
-                    {item.stage && <div className="mt-1.5"><StageBadge stage={item.stage} /></div>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Sem histórico de atendentes" />
-          )}
-        </GlassCard>
-      </div>
-
-      {/* ━━━ ROW 3 · PAGAMENTOS + CONVERSAS ━━━ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {/* Pagamentos */}
-        <GlassCard title="Pagamentos" subtitle={`${l.payments.length} pagamento(s)`} icon={<CreditCard className="h-4 w-4 text-emerald-400" />}>
-          {l.payments.length > 0 ? (
-            <ul className="space-y-2">
-              {l.payments.map((p) => (
-                <li key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15 hover:bg-emerald-500/[0.08] hover:border-emerald-500/25 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center">
-                      <CreditCard className="h-4 w-4 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-100">{formatCurrency(p.amount)}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{formatDate(p.paidAt)}</p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
-                    ✓ Pago
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Nenhum pagamento registrado" />
-          )}
-        </GlassCard>
-
-        {/* Conversas */}
-        <GlassCard title="Conversas" subtitle={`${l.conversations.length} conversa(s)`} icon={<MessageSquare className="h-4 w-4 text-brand-400" />}>
-          {l.conversations.length > 0 ? (
-            <ul className="space-y-2.5">
-              {l.conversations.map((c) => (
-                <li key={c.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all">
-                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <StateBadge state={c.conversationState as ConversationState} />
-                      <span className="text-[11px] font-medium text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/6">
-                        {c.channel}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">
-                      {formatDate(c.startedAt)}
-                      {c.endedAt
-                        ? <> → {formatDate(c.endedAt)}</>
-                        : <span className="ml-1 text-emerald-400 font-medium">· ao vivo</span>
-                      }
-                    </span>
-                  </div>
-                  {c.attendantName && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Atendente: <span className="text-slate-300 font-medium">{c.attendantName}</span>
-                    </p>
-                  )}
-                  <p className="text-[11px] text-slate-600 mt-1.5">
-                    {c.interactions.length} interação(ões)
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Nenhuma conversa registrada" />
-          )}
-        </GlassCard>
-      </div>
-
-      {/* ━━━ SECTION DIVIDER ━━━ */}
-      <SectionDivider label="Log de Interações" />
-
-      {/* ━━━ ROW 4 · INTERAÇÕES ━━━ */}
-      <GlassCard
-        title="Interações"
-        subtitle={`${allInteractions.length} evento(s) registrado(s)`}
-        icon={<History className="h-4 w-4 text-slate-400" />}
-      >
-        {allInteractions.length === 0 ? (
-          <EmptyState title="Nenhuma interação registrada" />
-        ) : (
-          <ul className="space-y-2">
-            {allInteractions.map((it) => (
-              <li
-                key={it.id}
-                className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-brand-500/20 transition-all group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/6 grid place-items-center shrink-0 mt-0.5 group-hover:bg-brand-500/10 group-hover:border-brand-500/30 transition-all">
-                  <History className="h-3.5 w-3.5 text-slate-500 group-hover:text-brand-400 transition-colors" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 border border-white/8 text-slate-300">
-                      {it.type}
-                    </span>
-                    <span className="text-[11px] text-slate-600">{formatDate(it.createdAt)}</span>
-                  </div>
-                  {it.content && (
-                    <p className="text-sm text-slate-300 mt-1.5 break-words leading-relaxed">
-                      {it.content}
-                    </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </GlassCard>
     </div>
   );
 }
@@ -441,29 +447,30 @@ function BackButton() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-      {children}
-    </p>
+    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{children}</p>
   );
 }
 
-function SectionDivider({ label }: { label: string }) {
+/** Sidebar field — label esquerda + valor direita, separado por divisor */
+function SidebarField({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">
-        {label}
+    <div className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group">
+      <span className="flex items-center gap-2 text-xs text-slate-500 shrink-0">
+        <span className="text-slate-600 group-hover:text-brand-400 transition-colors">{icon}</span>
+        {label}:
       </span>
-      <span className="flex-1 h-px bg-gradient-to-r from-white/8 to-transparent" />
+      <span className={cn(
+        "text-xs font-medium truncate max-w-[55%] text-right",
+        value ? "text-slate-200" : "text-slate-700 italic"
+      )}>
+        {value ?? "Não informado"}
+      </span>
     </div>
   );
 }
 
-/** Glassmorphism card with header strip */
 function GlassCard({
-  title,
-  subtitle,
-  icon,
-  children,
+  title, subtitle, icon, children,
 }: {
   title: string;
   subtitle?: string;
@@ -478,7 +485,7 @@ function GlassCard({
           {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
         </div>
         {icon && (
-          <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/8 grid place-items-center">
+          <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/8 grid place-items-center shrink-0">
             {icon}
           </div>
         )}
@@ -506,24 +513,13 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
   );
 }
 
-function ContactRow({ icon, value, placeholder }: { icon: React.ReactNode; value?: string | null; placeholder: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="text-slate-600 shrink-0">{icon}</span>
-      <span className={cn("text-sm truncate", value ? "text-slate-200 font-medium" : "text-slate-700 italic")}>
-        {value ?? placeholder}
-      </span>
-    </div>
-  );
-}
-
 function BoolPill({ label, value }: { label: string; value?: boolean | null }) {
   const isTrue = value === true;
   return (
     <div className={cn(
       "rounded-xl border p-2.5 text-center transition-all",
       isTrue
-        ? "border-emerald-500/30 bg-emerald-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+        ? "border-emerald-500/30 bg-emerald-500/10"
         : "border-white/6 bg-white/[0.02]"
     )}>
       <div className={cn("flex justify-center mb-1", isTrue ? "text-emerald-400" : "text-slate-600")}>
@@ -536,27 +532,22 @@ function BoolPill({ label, value }: { label: string; value?: boolean | null }) {
   );
 }
 
-function InfoBlock({
-  icon, label, value, tone,
-}: {
+function InfoBlock({ icon, label, value, tone }: {
   icon: React.ReactNode;
   label: string;
   value?: string | null;
   tone: "violet" | "amber" | "blue" | "emerald" | "slate";
 }) {
   const p = {
-    violet:  { from: "from-violet-500/10",  border: "hover:border-violet-500/30", text: "text-violet-200",  iconCls: "text-violet-400" },
-    amber:   { from: "from-amber-500/10",   border: "hover:border-amber-500/30",  text: "text-amber-200",   iconCls: "text-amber-400"  },
-    blue:    { from: "from-brand-500/10",   border: "hover:border-brand-500/30",  text: "text-brand-200",   iconCls: "text-brand-400"  },
-    emerald: { from: "from-emerald-500/10", border: "hover:border-emerald-500/30",text: "text-emerald-200", iconCls: "text-emerald-400"},
-    slate:   { from: "from-slate-500/10",   border: "hover:border-slate-500/30",  text: "text-slate-200",   iconCls: "text-slate-400"  },
+    violet:  { from: "from-violet-500/10",  border: "hover:border-violet-500/30", text: "text-violet-200",  iconCls: "text-violet-400"  },
+    amber:   { from: "from-amber-500/10",   border: "hover:border-amber-500/30",  text: "text-amber-200",   iconCls: "text-amber-400"   },
+    blue:    { from: "from-brand-500/10",   border: "hover:border-brand-500/30",  text: "text-brand-200",   iconCls: "text-brand-400"   },
+    emerald: { from: "from-emerald-500/10", border: "hover:border-emerald-500/30",text: "text-emerald-200", iconCls: "text-emerald-400" },
+    slate:   { from: "from-slate-500/10",   border: "hover:border-slate-500/30",  text: "text-slate-200",   iconCls: "text-slate-400"   },
   }[tone];
 
   return (
-    <div className={cn(
-      "rounded-xl border border-white/8 bg-gradient-to-br to-transparent p-3.5 transition-all",
-      p.from, p.border
-    )}>
+    <div className={cn("rounded-xl border border-white/8 bg-gradient-to-br to-transparent p-3.5 transition-all", p.from, p.border)}>
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
         <span className={p.iconCls}>{icon}</span>
@@ -568,9 +559,7 @@ function InfoBlock({
   );
 }
 
-function TimeBlock({
-  label, value, tone, icon,
-}: {
+function TimeBlock({ label, value, tone, icon }: {
   label: string;
   value?: number;
   tone: "violet" | "amber" | "blue" | "emerald";
@@ -584,10 +573,7 @@ function TimeBlock({
   }[tone];
 
   return (
-    <div className={cn(
-      "rounded-xl border border-white/8 bg-gradient-to-br to-transparent p-3.5 transition-all",
-      p.from, p.border
-    )}>
+    <div className={cn("rounded-xl border border-white/8 bg-gradient-to-br to-transparent p-3.5 transition-all", p.from, p.border)}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
         <span className={p.iconCls}>{icon}</span>
