@@ -193,11 +193,13 @@ function BasicMode({
           label="Total de leads"
           value={loading ? null : formatNumber(stats.total)}
           hint="no período selecionado"
+          info="Soma de todos os leads recebidos dentro do período que você selecionou nos filtros acima."
         />
         <Kpi
           label="Média mensal"
           value={loading ? null : formatNumber(Math.round(stats.avg))}
           hint={data.length ? `${data.length} meses` : "—"}
+          info="Total de leads dividido pela quantidade de meses do período. Dá uma noção do volume típico mês a mês."
         />
         <Kpi
           label="Melhor mês"
@@ -209,6 +211,8 @@ function BasicMode({
               : "—"
           }
           hint={stats.bestMonth?.periodo}
+          info="Mês com o maior número de leads no período. Útil para identificar picos e entender o que funcionou."
+          tooltipAlign="end"
         />
       </div>
 
@@ -337,27 +341,33 @@ function AdvancedMode({
           label="Total"
           value={formatNumber(data.totalLeads)}
           hint={`${monthly.length} meses`}
+          info="Soma de todos os leads recebidos no período selecionado."
         />
         <Kpi
           label="Média mensal"
           value={formatNumber(Math.round(data.averageMonthly))}
           hint={`mediana ${formatNumber(Math.round(data.medianMonthly))}`}
+          info="Valor médio de leads por mês. A mediana (no rodapé) é o valor do meio: menos afetada por picos extremos, costuma refletir melhor o mês 'típico'."
         />
         <Kpi
           label="Crescimento"
           value={formatPercent(data.growthPercentFirstToLast)}
           hint="1º vs último mês"
           delta={data.growthPercentFirstToLast}
+          info="Variação percentual entre o primeiro e o último mês do período. Positivo significa que você terminou acima de onde começou."
         />
         <Kpi
           label="Melhor mês"
           value={formatNumber(data.bestMonthTotal)}
           hint={data.bestMonthLabel}
+          info="Mês com o maior número de leads no período."
         />
         <Kpi
           label="Desvio padrão"
           value={formatNumber(Math.round(data.stdDevMonthly))}
           hint="volatilidade"
+          info="Mede o quanto os meses variam em relação à média. Quanto maior o número, mais imprevisíveis são os resultados — meses bons e ruins estão mais distantes entre si."
+          tooltipAlign="end"
         />
         <Kpi
           label="Projeção 1m"
@@ -365,6 +375,8 @@ function AdvancedMode({
             forecast[0] ? formatNumber(Math.round(forecast[0].value)) : "—"
           }
           hint="tendência linear"
+          info="Estimativa de leads para o próximo mês, calculada a partir da tendência dos meses anteriores. É uma previsão simples: não considera sazonalidade, campanhas ou eventos pontuais."
+          tooltipAlign="end"
         />
       </div>
 
@@ -829,22 +841,30 @@ function DateField({
  * KPI unificado. Sem ícones coloridos, sem barras decorativas, sem
  * gradientes. Hierarquia clara: label → número grande → hint.
  * Delta (se houver) usa cor semântica sóbria, não como decoração.
+ * Info (se houver) mostra um (?) com tooltip explicativo.
  */
 function Kpi({
   label,
   value,
   hint,
   delta,
+  info,
+  tooltipAlign = "start",
 }: {
   label: string;
   value: string | null;
   hint?: string;
   delta?: number;
+  info?: string;
+  tooltipAlign?: "start" | "end";
 }) {
   return (
     <div className="rounded-xl border border-slate-800/60 bg-slate-900/30 px-5 py-4">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-        {label}
+      <div className="flex items-center gap-1.5">
+        <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          {label}
+        </div>
+        {info && <InfoTooltip align={tooltipAlign}>{info}</InfoTooltip>}
       </div>
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-[1.65rem] font-semibold leading-none tabular-nums text-slate-50">
@@ -871,6 +891,67 @@ function DeltaBadge({ value }: { value: number }) {
   return (
     <span className={cn("flex items-center text-xs font-medium", tone)}>
       <Icon className="h-3 w-3" />
+    </span>
+  );
+}
+
+/**
+ * Tooltip acessível para explicar métricas.
+ * - Mouse: abre no hover, fecha ao sair
+ * - Teclado: abre no focus (tab), fecha no blur
+ * - Toque: alterna ao tocar (mobile friendly)
+ * - Esc: fecha o tooltip
+ *
+ * `align="start"` → tooltip extende para a direita (ideal para 1ª col)
+ * `align="end"`   → tooltip extende para a esquerda (ideal para última col)
+ */
+function InfoTooltip({
+  children,
+  align = "start",
+}: {
+  children: React.ReactNode;
+  align?: "start" | "end";
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        aria-label="Mais informações"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(e) => {
+          e.preventDefault();
+          setOpen((o) => !o);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+        className={cn(
+          "inline-flex h-3.5 w-3.5 items-center justify-center rounded-full",
+          "border border-slate-600 text-[9px] font-semibold leading-none text-slate-400",
+          "transition-colors hover:border-slate-400 hover:text-slate-200",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+        )}
+      >
+        ?
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className={cn(
+            "absolute top-full z-50 mt-2 w-60",
+            "rounded-md border border-slate-800 bg-slate-950 px-3 py-2",
+            "text-[11px] font-normal leading-relaxed text-slate-300 shadow-xl",
+            align === "start" ? "left-0" : "right-0"
+          )}
+        >
+          {children}
+        </span>
+      )}
     </span>
   );
 }
