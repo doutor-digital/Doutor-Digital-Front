@@ -122,7 +122,7 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
   const contatosCounts = useQuery({
-    queryKey: ["contacts-counts", tenantId],
+    queryKey: ["contacts", "counts", tenantId],
     queryFn:  () =>
       contactsService.list({
         clinicId: tenantId ?? undefined,
@@ -130,7 +130,6 @@ export default function DashboardPage() {
         origem: "all",
       }),
     enabled:  tenantId !== null,
-    refetchInterval: 60_000,
   });
 
   // ── Derivados ─────────────────────────────────────────────────────────────────
