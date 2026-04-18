@@ -4,7 +4,7 @@ import {
   AlertTriangle, ArrowLeft, Building2, Calendar, CheckCircle2,
   Clock, CreditCard, Hash, History, Mail, MessageSquare, Phone,
   Tag, Target, Timer, User2, UserCog, XCircle, Sparkles, Activity,
-  TrendingUp, Zap, Pencil, Check, X, Copy,
+  TrendingUp, Zap, Pencil, Check, X, Copy, Plus,
   BarChart2, Shield, Globe, Layers,
 } from "lucide-react";
 import { useState, useRef } from "react";
@@ -105,6 +105,8 @@ export default function LeadDetailPage() {
   const { id }   = useParams<{ id: string }>();
   const qc       = useQueryClient();
   const [tab, setTab] = useState<"overview" | "history" | "payments" | "conversations">("overview");
+  const [addingTag, setAddingTag] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
 
   const lead    = useQuery({ queryKey: ["lead-detail",  id], queryFn: () => webhooksService.getLeadById(id!),     enabled: !!id, retry: false });
   const metrics = useQuery({ queryKey: ["lead-metrics", id], queryFn: () => analyticsService.leadMetrics(id!),    enabled: !!id, retry: false });
@@ -321,17 +323,75 @@ export default function LeadDetailPage() {
           )}
 
           {/* ── Observações ── */}
-          <SidebarSection label="Observações">
-            <div className="px-4 pb-3">
-              <EditableField
-                value={l.observations}
-                placeholder="Clique para adicionar observações..."
-                multiline
-                onSave={(v) => patch.mutate({ observations: v })}
-                className="w-full text-xs text-slate-400 leading-relaxed"
-              />
-            </div>
-          </SidebarSection>
+<SidebarSection label="">
+  {/* Header "Tags do Contato" + botão + */}
+  <div className="flex items-center justify-between px-4 pb-2">
+    <span className="text-[11px] font-semibold text-slate-300">Tags do Contato</span>
+    <button
+      onClick={() => setAddingTag(true)}
+      className="flex items-center gap-1 text-[11px] text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 px-2 py-0.5 rounded-md transition-colors font-semibold"
+    >
+      <Plus className="h-3 w-3" /> +
+    </button>
+  </div>
+
+  <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+    {l.tags.map((t) => (
+      <span
+        key={t}
+        className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1 rounded-full bg-violet-600 text-white hover:bg-violet-500 transition-colors cursor-default group/tag"
+      >
+        {t}
+        <button
+          onClick={() => patch.mutate({ tags: l.tags.filter((x) => x !== t) })}
+          className="opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </span>
+    ))}
+
+    {/* Input inline para nova tag */}
+    {addingTag && (
+      <span className="inline-flex items-center gap-1">
+        <input
+          autoFocus
+          value={tagDraft}
+          onChange={(e) => setTagDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && tagDraft.trim()) {
+              patch.mutate({ tags: [...l.tags, tagDraft.trim()] });
+              setTagDraft("");
+              setAddingTag(false);
+            }
+            if (e.key === "Escape") {
+              setTagDraft("");
+              setAddingTag(false);
+            }
+          }}
+          placeholder="nova tag..."
+          className="text-[12px] bg-slate-800 text-slate-100 px-2.5 py-1 rounded-full outline-none ring-1 ring-violet-500/50 focus:ring-violet-400 w-24 placeholder:text-slate-600 transition-all"
+        />
+        <button
+          onClick={() => {
+            if (tagDraft.trim()) {
+              patch.mutate({ tags: [...l.tags, tagDraft.trim()] });
+              setTagDraft("");
+            }
+            setAddingTag(false);
+          }}
+          className="p-1 rounded-full bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+        >
+          <Check className="h-3 w-3" />
+        </button>
+      </span>
+    )}
+
+    {l.tags.length === 0 && !addingTag && (
+      <span className="text-xs text-slate-600 italic">Nenhuma tag</span>
+    )}
+  </div>
+</SidebarSection>
         </aside>
 
         {/* ══════════════════════════════════════════
