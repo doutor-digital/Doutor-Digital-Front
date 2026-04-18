@@ -4,52 +4,54 @@
 
 /* ─────────────────────────────────────────────────────────────
    TEMA — CSS variables
-   A mesma classe (ex.: `bg-ink-950`, `text-slate-300`) se adapta
-   automaticamente ao tema, pois a paleta é dirigida por vars.
+   As mesmas classes (ex.: `bg-ink-950`, `text-slate-300`) se
+   adaptam ao tema automaticamente.
+   Paleta inspirada na logo: branco + #0086f7 / #008eff (azul)
+   e #ffb500 / #ffbf00 (amarelo).
    ───────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light;
 
-  /* Ink (superfícies) — no tema claro, 950 é branco e 50 é quase preto */
-  --ink-50:  11 16 32;
-  --ink-100: 18 25 50;
-  --ink-200: 31 40 64;
-  --ink-300: 47 60 88;
-  --ink-400: 63 79 111;
-  --ink-500: 86 104 137;
-  --ink-600: 118 135 166;
-  --ink-700: 180 192 213;
-  --ink-800: 219 226 238;
-  --ink-900: 241 245 251;
-  --ink-950: 255 255 255;
+  /* Ink (superfícies) — claro: 950 é branco; gradiente suave até bordas */
+  --ink-50:  15 23 42;    /* quase preto */
+  --ink-100: 30 41 59;
+  --ink-200: 51 65 85;
+  --ink-300: 100 116 139;
+  --ink-400: 148 163 184;
+  --ink-500: 186 200 219;
+  --ink-600: 214 225 238;
+  --ink-700: 230 238 247;
+  --ink-800: 241 246 252;
+  --ink-900: 248 251 254;
+  --ink-950: 255 255 255;  /* branco puro */
 
-  /* Slate (texto) — invertido no tema claro */
-  --slate-50:  11 16 32;
+  /* Slate (texto) — escala calibrada p/ contraste em superfícies claras */
+  --slate-50:  15 23 42;    /* headings — super escuro */
   --slate-100: 15 23 42;
-  --slate-200: 30 41 59;
-  --slate-300: 51 65 85;
-  --slate-400: 71 85 105;
-  --slate-500: 100 116 139;
-  --slate-600: 148 163 184;
-  --slate-700: 203 213 225;
-  --slate-800: 226 232 240;
-  --slate-900: 241 245 249;
-  --slate-950: 248 250 252;
+  --slate-200: 15 23 42;    /* texto principal */
+  --slate-300: 30 41 59;    /* texto forte */
+  --slate-400: 51 65 85;    /* texto padrão */
+  --slate-500: 71 85 105;   /* secundário — ainda bem legível */
+  --slate-600: 100 116 139; /* label / muted */
+  --slate-700: 128 141 166; /* muito muted, mas visível */
+  --slate-800: 176 190 212;
+  --slate-900: 203 213 225;
+  --slate-950: 226 232 240;
 
   /* Semânticos */
-  --surface:   255 255 255;
-  --surface-2: 246 249 253;
-  --hairline:  226 232 240;
+  --surface:   255 255 255;   /* cartões e superfícies elevadas */
+  --surface-2: 246 249 253;   /* fundo da página — branco tintado */
+  --hairline:  226 232 240;   /* borda sutil no claro */
 
-  /* Overlays/borders “white/X” ficam escuras no claro */
-  --overlay-rgb: 2 6 23;
+  /* Overlays “white/X” viram escuros no claro */
+  --overlay-rgb: 15 23 42;
 }
 
 html.dark {
   color-scheme: dark;
 
-  /* Valores originais (tema escuro) */
+  /* Ink original (tema escuro) */
   --ink-50:  245 247 251;
   --ink-100: 231 236 245;
   --ink-200: 204 213 228;
@@ -75,9 +77,10 @@ html.dark {
   --slate-900: 15 23 42;
   --slate-950: 2 6 23;
 
-  --surface:   18 25 50;
-  --surface-2: 11 16 32;
-  --hairline:  255 255 255;
+  /* Superfícies do escuro */
+  --surface:   18 25 50;      /* ink-900 */
+  --surface-2: 11 16 32;      /* ink-950 */
+  --hairline:  47 60 88;      /* slate-700 — borda sutil, sem branco agressivo */
 
   --overlay-rgb: 255 255 255;
 }
@@ -93,32 +96,39 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(148,163,184,.25); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.45); }
+::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.55); }
 
-/* No tema claro, bordas/overlays baseados em "white/X" ficam escuros.
-   Isso converte utilitários como `border-white/10`, `bg-white/5` automaticamente. */
-html:not(.dark) [class*="border-white/"] { border-color: rgb(var(--overlay-rgb) / 0.08); }
-html:not(.dark) .border-white\/\[0\.06\] { border-color: rgb(var(--overlay-rgb) / 0.06); }
-html:not(.dark) .border-white\/\[0\.07\] { border-color: rgb(var(--overlay-rgb) / 0.07); }
-html:not(.dark) .border-white\/\[0\.08\] { border-color: rgb(var(--overlay-rgb) / 0.08); }
-html:not(.dark) .border-white\/\[0\.10\] { border-color: rgb(var(--overlay-rgb) / 0.10); }
-html:not(.dark) .border-white\/\[0\.12\] { border-color: rgb(var(--overlay-rgb) / 0.12); }
+/* Modo claro: converte utilitários "white/X" em overlays escuros */
+html:not(.dark) [class*="border-white/"] { border-color: rgb(var(--overlay-rgb) / 0.10); }
+html:not(.dark) .border-white\/\[0\.06\] { border-color: rgb(var(--overlay-rgb) / 0.08); }
+html:not(.dark) .border-white\/\[0\.07\] { border-color: rgb(var(--overlay-rgb) / 0.09); }
+html:not(.dark) .border-white\/\[0\.08\] { border-color: rgb(var(--overlay-rgb) / 0.10); }
+html:not(.dark) .border-white\/\[0\.10\] { border-color: rgb(var(--overlay-rgb) / 0.12); }
+html:not(.dark) .border-white\/\[0\.12\] { border-color: rgb(var(--overlay-rgb) / 0.14); }
 
 html:not(.dark) .bg-white\/\[0\.03\] { background-color: rgb(var(--overlay-rgb) / 0.03); }
 html:not(.dark) .bg-white\/\[0\.04\] { background-color: rgb(var(--overlay-rgb) / 0.04); }
-html:not(.dark) .bg-white\/\[0\.05\] { background-color: rgb(var(--overlay-rgb) / 0.05); }
-html:not(.dark) .bg-white\/\[0\.06\] { background-color: rgb(var(--overlay-rgb) / 0.06); }
-html:not(.dark) .bg-white\/\[0\.07\] { background-color: rgb(var(--overlay-rgb) / 0.07); }
-html:not(.dark) .bg-white\/5  { background-color: rgb(var(--overlay-rgb) / 0.05); }
+html:not(.dark) .bg-white\/\[0\.05\] { background-color: rgb(var(--overlay-rgb) / 0.04); }
+html:not(.dark) .bg-white\/\[0\.06\] { background-color: rgb(var(--overlay-rgb) / 0.05); }
+html:not(.dark) .bg-white\/\[0\.07\] { background-color: rgb(var(--overlay-rgb) / 0.06); }
+html:not(.dark) .bg-white\/5  { background-color: rgb(var(--overlay-rgb) / 0.04); }
 html:not(.dark) .bg-white\/10 { background-color: rgb(var(--overlay-rgb) / 0.08); }
 
-html:not(.dark) .hover\:bg-white\/5:hover   { background-color: rgb(var(--overlay-rgb) / 0.05); }
-html:not(.dark) .hover\:bg-white\/\[0\.05\]:hover { background-color: rgb(var(--overlay-rgb) / 0.05); }
-html:not(.dark) .hover\:bg-white\/\[0\.06\]:hover { background-color: rgb(var(--overlay-rgb) / 0.06); }
-html:not(.dark) .hover\:bg-white\/\[0\.07\]:hover { background-color: rgb(var(--overlay-rgb) / 0.07); }
-html:not(.dark) .hover\:border-white\/\[0\.10\]:hover { border-color: rgb(var(--overlay-rgb) / 0.12); }
-html:not(.dark) .hover\:border-white\/\[0\.12\]:hover { border-color: rgb(var(--overlay-rgb) / 0.16); }
+html:not(.dark) .hover\:bg-white\/5:hover              { background-color: rgb(var(--overlay-rgb) / 0.06); }
+html:not(.dark) .hover\:bg-white\/\[0\.05\]:hover      { background-color: rgb(var(--overlay-rgb) / 0.06); }
+html:not(.dark) .hover\:bg-white\/\[0\.06\]:hover      { background-color: rgb(var(--overlay-rgb) / 0.07); }
+html:not(.dark) .hover\:bg-white\/\[0\.07\]:hover      { background-color: rgb(var(--overlay-rgb) / 0.08); }
+html:not(.dark) .hover\:border-white\/\[0\.10\]:hover  { border-color: rgb(var(--overlay-rgb) / 0.14); }
+html:not(.dark) .hover\:border-white\/\[0\.12\]:hover  { border-color: rgb(var(--overlay-rgb) / 0.18); }
+
+/* Modo escuro: suaviza as bordas "white/X" para não brilharem */
+html.dark [class*="border-white/"]     { border-color: rgb(255 255 255 / 0.06); }
+html.dark .border-white\/\[0\.06\]     { border-color: rgb(255 255 255 / 0.05); }
+html.dark .border-white\/\[0\.07\]     { border-color: rgb(255 255 255 / 0.06); }
+html.dark .border-white\/\[0\.08\]     { border-color: rgb(255 255 255 / 0.07); }
+html.dark .border-white\/\[0\.10\]     { border-color: rgb(255 255 255 / 0.08); }
+html.dark .border-white\/\[0\.12\]     { border-color: rgb(255 255 255 / 0.09); }
 
 @layer components {
   .card {
@@ -153,10 +163,20 @@ html:not(.dark) .hover\:border-white\/\[0\.12\]:hover { border-color: rgb(var(--
   }
 }
 
+/* Modo claro: cartões ganham sombra e borda reais (separação visual clara) */
+html:not(.dark) .card,
+html:not(.dark) .card-solid {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.05),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
 /* Tooltip do Recharts respeita o tema */
 .recharts-default-tooltip {
-  background: rgb(var(--surface) / 0.96) !important;
-  border: 1px solid rgb(var(--hairline) / 0.6) !important;
+  background: rgb(var(--surface) / 0.98) !important;
+  border: 1px solid rgb(var(--hairline)) !important;
   border-radius: 10px !important;
   color: rgb(var(--slate-200)) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
 }
