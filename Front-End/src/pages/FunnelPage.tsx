@@ -9,8 +9,8 @@ import { webhooksService } from "@/services/webhooks";
 import { formatPercent } from "@/lib/utils";
 
 export default function FunnelPage() {
-  const { tenantId } = useClinic();
-  const clinicId = tenantId;
+  const { unitId } = useClinic();
+  const clinicId = unitId ?? undefined;
 
   const states = useQuery({
     queryKey: ["funnel-states", clinicId],
