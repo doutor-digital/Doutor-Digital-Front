@@ -7,38 +7,62 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatNumber } from "@/lib/utils";
 
-export function EvolutionLine({
-  data,
-}: {
-  data: Array<{ periodo: string; total: number }>;
-}) {
+type Point = { periodo: string; total: number };
+
+export function EvolutionLine({ data }: { data: Point[] }) {
   return (
-    <div className="h-72 w-full">
+    <div className="h-80 w-full">
       <ResponsiveContainer>
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="gradient-brand" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b63f5" stopOpacity={0.6} />
-              <stop offset="95%" stopColor="#3b63f5" stopOpacity={0} />
+            <linearGradient id="evolution-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#008eff" stopOpacity={0.55} />
+              <stop offset="55%"  stopColor="#008eff" stopOpacity={0.18} />
+              <stop offset="100%" stopColor="#008eff" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,.1)" />
-          <XAxis dataKey="periodo" tick={{ fill: "#94a3b8", fontSize: 11 }} />
-          <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
-          <Tooltip
-            contentStyle={{
-              background: "rgba(11,16,32,.95)",
-              border: "1px solid rgba(148,163,184,.2)",
-              borderRadius: 10,
-            }}
+
+          <CartesianGrid strokeDasharray="3 3" stroke="rgb(148 163 184 / 0.18)" vertical={false} />
+
+          <XAxis
+            dataKey="periodo"
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: "rgb(100 116 139)", fontSize: 11 }}
+            padding={{ left: 8, right: 8 }}
           />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            width={40}
+            tick={{ fill: "rgb(100 116 139)", fontSize: 11 }}
+            tickFormatter={(v) => formatNumber(Number(v))}
+          />
+
+          <Tooltip
+            cursor={{ stroke: "rgb(0 134 247 / 0.35)", strokeWidth: 1.5 }}
+            contentStyle={{
+              background: "rgb(var(--surface) / 0.98)",
+              border: "1px solid rgb(var(--hairline))",
+              borderRadius: 10,
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+              color: "rgb(var(--slate-200))",
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "rgb(var(--slate-400))", fontSize: 11, marginBottom: 4 }}
+            formatter={(v: number) => [formatNumber(v), "Leads"]}
+          />
+
           <Area
             type="monotone"
             dataKey="total"
-            stroke="#5e85ff"
+            stroke="#0086f7"
             strokeWidth={2.5}
-            fill="url(#gradient-brand)"
+            fill="url(#evolution-fill)"
+            dot={{ r: 3, fill: "#0086f7", stroke: "#ffffff", strokeWidth: 1.5 }}
+            activeDot={{ r: 5, fill: "#ffb500", stroke: "#0086f7", strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -54,11 +54,37 @@ function normalizeStageGroup(data: unknown): StageCount[] {
   }));
 }
 
+const MONTH_SHORT_PT = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+function buildPeriodLabel(item: Record<string, unknown>): string {
+  const ano = Number(item.ano ?? item.year);
+  const mes = Number(item.mes ?? item.month);
+  if (Number.isFinite(ano) && Number.isFinite(mes) && mes >= 1 && mes <= 12) {
+    const mm = MONTH_SHORT_PT[mes - 1];
+    const yy = String(ano).slice(-2);
+    return `${mm}/${yy}`;
+  }
+  if (item.periodo) return String(item.periodo);
+  if (item.data) return String(item.data);
+  if (item.label) return String(item.label);
+  if (Number.isFinite(mes)) return String(mes);
+  return "—";
+}
+
 function normalizeSeries(data: unknown): TimeSeriesPoint[] {
-  return asArray<Record<string, unknown>>(data).map((item) => ({
-    periodo: String(item.periodo ?? item.mes ?? item.data ?? item.label ?? "—"),
-    total: Number(item.total ?? item.count ?? item.quantidade ?? 0),
-  }));
+  return asArray<Record<string, unknown>>(data).map((item) => {
+    const ano = Number(item.ano ?? item.year);
+    const mes = Number(item.mes ?? item.month);
+    return {
+      periodo: buildPeriodLabel(item),
+      total: Number(item.total ?? item.count ?? item.quantidade ?? 0),
+      ano: Number.isFinite(ano) ? ano : undefined,
+      mes: Number.isFinite(mes) ? mes : undefined,
+    };
+  });
 }
 
 export const webhooksService = {

@@ -86,6 +86,8 @@ export interface StateCount extends LeadsCountDto {}
 export interface TimeSeriesPoint {
   periodo: string;
   total: number;
+  ano?: number;
+  mes?: number;
 }
 
 export interface LeadMetrics {
