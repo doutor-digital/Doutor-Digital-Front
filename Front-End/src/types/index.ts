@@ -142,8 +142,18 @@ export interface Attendant {
 export interface AttendantRanking {
   attendantId: number;
   name: string;
+  email?: string | null;
   total: number;
-  conversions?: number;
+  agendado: number;
+  pago: number;
+  tratamento: number;
+  conversions: number;
+  active: number;
+  agendadoRate: number;
+  pagoRate: number;
+  conversionRate: number;
+  firstAssignedAt?: string | null;
+  lastAssignedAt?: string | null;
 }
 
 export interface Unit {
