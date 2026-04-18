@@ -282,7 +282,7 @@ export default function DashboardPage() {
       →
     </span>
   </div>
-</Link>0
+</Link>
 
       {/* ══ Filtros ══════════════════════════════════════════════ */}
       <div className="mb-6">
