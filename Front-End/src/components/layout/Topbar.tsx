@@ -5,6 +5,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -33,9 +34,9 @@ export function Topbar() {
       className={cn(
         "sticky top-0 z-20",
         "flex h-14 items-center gap-2 px-4 lg:px-6",
-        "border-b border-white/[0.06]",
-        "bg-[rgba(8,8,16,0.88)] backdrop-blur-xl",
-        "shadow-[inset_0_-1px_0_rgba(255,255,255,0.04),inset_0_1px_0_rgba(255,255,255,0.04)]"
+        "border-b border-hairline",
+        "bg-surface/90 backdrop-blur-xl",
+        "shadow-[inset_0_-1px_0_rgba(148,163,184,0.10)]"
       )}
     >
 
@@ -117,11 +118,14 @@ export function Topbar() {
             className={cn(
               "h-3.5 w-3.5",
               refreshing
-                ? "animate-spin text-brand-400"
+                ? "animate-spin text-brand-500"
                 : "transition-transform duration-300"
             )}
           />
         </button>
+
+        {/* Tema claro/escuro */}
+        <ThemeToggle />
 
         {/* Divisor */}
         <div className="mx-1 h-5 w-px bg-white/[0.07]" />
@@ -144,12 +148,12 @@ export function Topbar() {
             className={cn(
               "relative h-8 w-8 shrink-0 select-none",
               "rounded-full cursor-default",
-              "bg-gradient-to-br from-brand-400 to-violet-600",
+              "bg-gradient-to-br from-brand-500 to-accent-500",
               "grid place-items-center",
               "text-[11px] font-black tracking-wide text-white",
-              "ring-[1.5px] ring-white/10 ring-offset-[1.5px] ring-offset-[rgba(8,8,16,0.88)]",
-              "transition-[ring-color] duration-200 hover:ring-white/25",
-              "shadow-[0_0_0_0] hover:shadow-[0_0_12px_rgba(139,92,246,0.35)]"
+              "ring-[1.5px] ring-hairline/60 ring-offset-[1.5px] ring-offset-surface",
+              "transition-[ring-color] duration-200 hover:ring-brand-500/50",
+              "shadow-[0_0_0_0] hover:shadow-[0_0_12px_rgba(0,134,247,0.35)]"
             )}
           >
             {initials}

@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import App from "./App";
 import "./index.css";
+import { initThemeEarly } from "./hooks/useTheme";
+
+initThemeEarly();
 
 const queryClient = new QueryClient({
   defaultOptions: {

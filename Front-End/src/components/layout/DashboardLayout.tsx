@@ -4,7 +4,7 @@ import { Topbar } from "./Topbar";
 
 export default function DashboardLayout() {
   return (
-    <div className="min-h-screen flex bg-ink-950">
+    <div className="min-h-screen flex bg-surface-2">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar />

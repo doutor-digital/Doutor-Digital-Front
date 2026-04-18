@@ -48,14 +48,14 @@ export function Sidebar() {
       className={cn(
         "hidden lg:flex lg:flex-col",
         "w-72 shrink-0",
-        "border-r border-white/[0.06]",
-        "bg-[rgba(8,8,16,0.75)] backdrop-blur-xl",
-        "shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]"
+        "border-r border-hairline",
+        "bg-surface/80 backdrop-blur-xl",
+        "shadow-[inset_-1px_0_0_rgba(148,163,184,0.10)]"
       )}
     >
 
       {/* ── Logo ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-hairline">
         <div
           className={cn(
             "h-10 w-10 shrink-0 overflow-hidden rounded-xl",
@@ -98,8 +98,8 @@ export function Sidebar() {
                       "transition-[background-color,color,box-shadow] duration-150",
                       isActive
                         ? [
-                            "bg-brand-500/12 text-brand-200",
-                            "ring-1 ring-inset ring-brand-500/25",
+                            "bg-brand-500/12 text-brand-700 dark:text-brand-200",
+                            "ring-1 ring-inset ring-brand-500/30",
                             "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                           ]
                         : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
@@ -113,7 +113,7 @@ export function Sidebar() {
                           "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
                           "transition-colors duration-150",
                           isActive
-                            ? "bg-brand-500/20 text-brand-300"
+                            ? "bg-brand-500/20 text-brand-600 dark:text-brand-300"
                             : "bg-white/[0.04] text-slate-500 group-hover:bg-white/[0.07] group-hover:text-slate-300"
                         )}
                       >
@@ -130,11 +130,11 @@ export function Sidebar() {
       </nav>
 
       {/* ── Rodapé ────────────────────────────────────────────── */}
-      <div className="p-3 border-t border-white/[0.06]">
+      <div className="p-3 border-t border-hairline">
         <div
           className={cn(
-            "rounded-xl border border-white/[0.07] p-3.5",
-            "bg-gradient-to-br from-brand-500/8 via-transparent to-violet-500/8"
+            "rounded-xl border border-hairline p-3.5",
+            "bg-gradient-to-br from-brand-500/10 via-transparent to-accent-500/10"
           )}
         >
           <p className="text-[11px] font-semibold text-slate-300">💡 Dica pro</p>
