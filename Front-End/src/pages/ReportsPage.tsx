@@ -181,6 +181,19 @@ export default function ReportsPage() {
 
 type ReportStyle = "whatsapp" | "markdown" | "plain";
 
+type EmojiKey =
+  | "header"
+  | "date"
+  | "time"
+  | "overnight"
+  | "morning"
+  | "loading"
+  | "hourly"
+  | "source"
+  | "leads";
+
+type EmojiMap = Record<EmojiKey, string>;
+
 interface FormatOptions {
   includeHeader: boolean;
   includeOvernight: boolean;
@@ -195,7 +208,32 @@ interface FormatOptions {
   morningEnd: number;
   style: ReportStyle;
   signature: string;
+  emojis: EmojiMap;
 }
+
+const DEFAULT_EMOJIS: EmojiMap = {
+  header: "📊",
+  date: "📅",
+  time: "🕐",
+  overnight: "🌙",
+  morning: "☀️",
+  loading: "⏳",
+  hourly: "⏱",
+  source: "📣",
+  leads: "👥",
+};
+
+const EMOJI_LABELS: Record<EmojiKey, string> = {
+  header: "Cabeçalho",
+  date: "Data",
+  time: "Horário",
+  overnight: "Madrugada",
+  morning: "Manhã",
+  loading: "Carregando",
+  hourly: "Por hora",
+  source: "Top origens",
+  leads: "Lista de leads",
+};
 
 const DEFAULT_OPTIONS: FormatOptions = {
   includeHeader: true,
@@ -211,6 +249,7 @@ const DEFAULT_OPTIONS: FormatOptions = {
   morningEnd: 12,
   style: "whatsapp",
   signature: "Doutor Digital · Relatório automático",
+  emojis: DEFAULT_EMOJIS,
 };
 
 function WhatsAppReportCard() {
@@ -515,6 +554,12 @@ function WhatsAppReportCard() {
                 value={opts.useEmojis}
                 onChange={(v) => patch({ useEmojis: v })}
               />
+              <EmojiPicker
+                emojis={opts.emojis}
+                disabled={!opts.useEmojis}
+                onChange={(next) => patch({ emojis: next })}
+                onReset={() => patch({ emojis: DEFAULT_EMOJIS })}
+              />
               <div>
                 <label className="label">Assinatura</label>
                 <Input
@@ -603,6 +648,60 @@ function Toggle({
   );
 }
 
+/* ─── Emoji picker por seção ─────────────────────────────────── */
+
+function EmojiPicker({
+  emojis,
+  disabled,
+  onChange,
+  onReset,
+}: {
+  emojis: EmojiMap;
+  disabled?: boolean;
+  onChange: (next: EmojiMap) => void;
+  onReset: () => void;
+}) {
+  const keys = Object.keys(EMOJI_LABELS) as EmojiKey[];
+  return (
+    <div className={cn("space-y-2", disabled && "opacity-50")}>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          Emojis por seção
+        </p>
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={disabled}
+          className="text-[10px] text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline disabled:cursor-not-allowed"
+        >
+          Restaurar padrão
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {keys.map((k) => (
+          <label
+            key={k}
+            className="flex items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1.5"
+          >
+            <input
+              type="text"
+              value={emojis[k] ?? ""}
+              onChange={(e) => onChange({ ...emojis, [k]: e.target.value })}
+              disabled={disabled}
+              maxLength={8}
+              placeholder={DEFAULT_EMOJIS[k]}
+              className="w-8 bg-transparent text-center text-[15px] outline-none disabled:cursor-not-allowed"
+            />
+            <span className="truncate text-[11px] text-slate-400">
+              {EMOJI_LABELS[k]}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════
  *  Construção do texto do relatório
  * ═══════════════════════════════════════════════════════════════ */
@@ -617,21 +716,26 @@ function buildReport(args: {
 }): string {
   const { opts, referenceDate, unitName, overnight, morningLeads, morningWindow } = args;
   const S = styleFns(opts.style);
-  const em = (e: string) => (opts.useEmojis ? e + " " : "");
+  const emojis = { ...DEFAULT_EMOJIS, ...(opts.emojis ?? {}) };
+  const em = (key: EmojiKey) => {
+    if (!opts.useEmojis) return "";
+    const glyph = emojis[key];
+    return glyph ? glyph + " " : "";
+  };
   const lines: string[] = [];
 
   if (opts.includeHeader) {
-    lines.push(em("📊") + S.bold(`Relatório diário — ${unitName}`));
-    lines.push(em("📅") + "Data: " + formatBrDate(referenceDate));
-    lines.push(em("🕐") + "Gerado em: " + formatNowBr());
+    lines.push(em("header") + S.bold(`Relatório diário — ${unitName}`));
+    lines.push(em("date") + "Data: " + formatBrDate(referenceDate));
+    lines.push(em("time") + "Gerado em: " + formatNowBr());
     lines.push("");
   }
 
   if (opts.includeOvernight) {
-    const header = em("🌙") + S.bold("Madrugada — 20h → 07h");
+    const header = em("overnight") + S.bold("Madrugada — 20h → 07h");
     lines.push(header);
     if (!overnight) {
-      lines.push(em("⏳") + "carregando dados da madrugada…");
+      lines.push(em("loading") + "carregando dados da madrugada…");
     } else {
       lines.push(
         `• Total: ${S.bold(String(overnight.total))} lead${overnight.total === 1 ? "" : "s"}`,
@@ -644,7 +748,7 @@ function buildReport(args: {
         )}`,
       );
       if (opts.includeHourBreakdown && overnight.hourBreakdown.length > 0) {
-        lines.push(em("⏱") + S.italic("por hora:"));
+        lines.push(em("hourly") + S.italic("por hora:"));
         const nonZero = overnight.hourBreakdown.filter((b) => b.count > 0);
         if (nonZero.length === 0) lines.push("  · sem leads");
         else
@@ -653,13 +757,13 @@ function buildReport(args: {
           );
       }
       if (opts.includeTopOrigens && overnight.sourceBreakdown.length > 0) {
-        lines.push(em("📣") + S.italic("top origens:"));
+        lines.push(em("source") + S.italic("top origens:"));
         overnight.sourceBreakdown.slice(0, 5).forEach((s) =>
           lines.push(`  · ${s.source || "—"}: ${s.count}`),
         );
       }
       if (opts.includeLeadList && overnight.leads.length > 0) {
-        lines.push(em("👥") + S.italic("leads:"));
+        lines.push(em("leads") + S.italic("leads:"));
         overnight.leads.slice(0, opts.leadListLimit).forEach((l) => {
           const time = formatBrTime(l.createdAtLocal ?? l.createdAt);
           lines.push(
@@ -674,7 +778,7 @@ function buildReport(args: {
   if (opts.includeMorning) {
     const ws = String(morningWindow.start).padStart(2, "0");
     const we = String(morningWindow.end).padStart(2, "0");
-    lines.push(em("☀️") + S.bold(`Manhã — ${ws}h → ${we}h`));
+    lines.push(em("morning") + S.bold(`Manhã — ${ws}h → ${we}h`));
     lines.push(
       `• Total: ${S.bold(String(morningLeads.length))} lead${morningLeads.length === 1 ? "" : "s"}`,
     );
@@ -686,7 +790,7 @@ function buildReport(args: {
         const h = new Date(l.created_at).getHours();
         byHour.set(h, (byHour.get(h) ?? 0) + 1);
       });
-      lines.push(em("⏱") + S.italic("por hora:"));
+      lines.push(em("hourly") + S.italic("por hora:"));
       Array.from(byHour.entries())
         .sort((a, b) => a[0] - b[0])
         .forEach(([h, c]) => lines.push(`  · ${String(h).padStart(2, "0")}h: ${c}`));
@@ -700,13 +804,13 @@ function buildReport(args: {
       });
       const top = Array.from(bySrc.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
       if (top.length > 0) {
-        lines.push(em("📣") + S.italic("top origens:"));
+        lines.push(em("source") + S.italic("top origens:"));
         top.forEach(([src, c]) => lines.push(`  · ${src}: ${c}`));
       }
     }
 
     if (opts.includeLeadList && morningLeads.length > 0) {
-      lines.push(em("👥") + S.italic("leads:"));
+      lines.push(em("leads") + S.italic("leads:"));
       morningLeads.slice(0, opts.leadListLimit).forEach((l) => {
         const time = formatBrTime(l.created_at);
         lines.push(
