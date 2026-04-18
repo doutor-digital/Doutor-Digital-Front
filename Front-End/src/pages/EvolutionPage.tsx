@@ -11,7 +11,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { formatNumber } from "@/lib/utils";
 
 export default function EvolutionPage() {
-  const { clinicId } = useClinic();
+  const { unitId } = useClinic();
   const defaultRange = useMemo(() => {
     const end = new Date();
     const start = new Date();
@@ -26,10 +26,10 @@ export default function EvolutionPage() {
   const [range, setRange] = useState(defaultRange);
 
   const serie = useQuery({
-    queryKey: ["evolution", clinicId, range],
+    queryKey: ["evolution", unitId, range],
     queryFn: () =>
       webhooksService.buscarInicioFim({
-        clinicId: clinicId || undefined,
+        clinicId: unitId || undefined,
         dataInicio: range.start,
         dataFim: range.end,
       }),
