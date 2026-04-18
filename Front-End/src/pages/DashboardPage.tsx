@@ -122,13 +122,15 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
   const contatosCounts = useQuery({
-    queryKey: ["contacts-counts", unitId],
+    queryKey: ["contacts-counts", tenantId],
     queryFn:  () =>
       contactsService.list({
-        clinicId: unitId || undefined,
+        clinicId: tenantId ?? undefined,
         pageSize: 1,
         origem: "all",
       }),
+    enabled:  tenantId !== null,
+    refetchInterval: 60_000,
   });
 
   // ── Derivados ─────────────────────────────────────────────────────────────────
@@ -235,6 +237,18 @@ export default function DashboardPage() {
               <TrendingUp className="h-3.5 w-3.5 shrink-0" />
               {totalLeadQuery.isLoading ? "…" : `${total} leads no total`}
             </div>
+            <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-300">
+              <Webhook className="h-3.5 w-3.5 shrink-0" />
+              {contatosCounts.isLoading
+                ? "…"
+                : `${formatNumber(contatosCounts.data?.counts.webhook_cloudia ?? 0)} webhook`}
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-300">
+              <FileUp className="h-3.5 w-3.5 shrink-0" />
+              {contatosCounts.isLoading
+                ? "…"
+                : `${formatNumber(contatosCounts.data?.counts.import_csv ?? 0)} importados`}
+            </div>
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-400">
               <Bell className="h-3.5 w-3.5 shrink-0" />
               {states.isLoading ? "…" : `${states.data?.queue ?? 0} na fila`}
@@ -302,6 +316,13 @@ export default function DashboardPage() {
           onSearch={handleSearch}
         />
       </div>
+
+      {/* ══ Contatos na base — em destaque ═══════════════════════ */}
+      <ContactsBanner
+        loading={contatosCounts.isLoading}
+        counts={contatosCounts.data?.counts}
+        error={contatosCounts.isError}
+      />
 
       {/* ══ KPIs ════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -382,50 +403,6 @@ export default function DashboardPage() {
         subtitle="Taxa sem pagamento"
       />
      </div>
-
-      {/* ══ Contatos na base ═════════════════════════════════════ */}
-      <div className="mt-6">
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <h2 className="text-[13px] font-semibold uppercase tracking-[0.13em] text-slate-300">
-              Contatos na base
-            </h2>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              Volume total — separado por origem do cadastro. Não confunde com "Total de leads" (acima), que mede só entradas do webhook com etapa.
-            </p>
-          </div>
-          <Link to="/contacts">
-            <Button variant="ghost" size="sm">Ver contatos</Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <KpiCard
-            label="Total de contatos"
-            value={contatosCounts.data?.counts.all ?? 0}
-            icon={<Users />}
-            tone="blue"
-            loading={contatosCounts.isLoading}
-            subtitle="Soma de webhook + importados"
-          />
-          <KpiCard
-            label="Novos (webhook)"
-            value={contatosCounts.data?.counts.webhook_cloudia ?? 0}
-            icon={<Webhook />}
-            tone="violet"
-            loading={contatosCounts.isLoading}
-            subtitle="Vindos da Cloudia em tempo real"
-          />
-          <KpiCard
-            label="Importados (CSV)"
-            value={contatosCounts.data?.counts.import_csv ?? 0}
-            icon={<FileUp />}
-            tone="green"
-            loading={contatosCounts.isLoading}
-            subtitle="Base antiga carregada por upload"
-          />
-        </div>
-      </div>
 
       {/* ══ Funil + Origens ══════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
@@ -614,6 +591,141 @@ function MiniStat({ label, value }: { label: string; value: string | number }) {
       <div className="label">{label}</div>
       <div className="text-xl font-semibold text-slate-50 mt-1">
         {typeof value === "number" ? formatNumber(value) : value}
+      </div>
+    </div>
+  );
+}
+
+// ─── ContactsBanner ───────────────────────────────────────────────────────────
+
+function ContactsBanner({
+  loading,
+  counts,
+  error,
+}: {
+  loading: boolean;
+  counts?: { all: number; webhook_cloudia: number; import_csv: number };
+  error?: boolean;
+}) {
+  const all = counts?.all ?? 0;
+  const webhook = counts?.webhook_cloudia ?? 0;
+  const imported = counts?.import_csv ?? 0;
+  const pctWebhook = all > 0 ? (webhook / all) * 100 : 0;
+  const pctImported = all > 0 ? (imported / all) * 100 : 0;
+
+  return (
+    <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_1px_3px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.04)]">
+      {/* Cabeçalho */}
+      <div className="flex items-end justify-between gap-3 px-5 pt-5">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            Contatos na base
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            Total cadastrado — webhook + importados via CSV
+          </p>
+        </div>
+        <Link to="/contacts">
+          <Button variant="ghost" size="sm">Ver todos →</Button>
+        </Link>
+      </div>
+
+      {/* Corpo */}
+      <div className="grid grid-cols-1 gap-4 px-5 py-4 md:grid-cols-[auto_1fr]">
+        {/* Número total gigante */}
+        <div className="flex items-baseline gap-3 md:border-r md:border-white/[0.06] md:pr-6">
+          {loading ? (
+            <div className="skeleton h-10 w-32 rounded-lg" />
+          ) : error ? (
+            <span className="text-sm text-rose-300">Erro ao carregar</span>
+          ) : (
+            <>
+              <span className="text-[2.5rem] font-extrabold leading-none tabular-nums text-slate-50">
+                {formatNumber(all)}
+              </span>
+              <span className="text-[12px] text-slate-500">
+                contato{all === 1 ? "" : "s"}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Duas origens */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <OrigemStat
+            icon={<Webhook className="h-4 w-4" />}
+            label="Pelo webhook"
+            sublabel="Cloudia · em tempo real"
+            value={webhook}
+            pct={pctWebhook}
+            barClass="bg-violet-400"
+            loading={loading}
+          />
+          <OrigemStat
+            icon={<FileUp className="h-4 w-4" />}
+            label="Importados (CSV)"
+            sublabel="Base antiga · upload manual"
+            value={imported}
+            pct={pctImported}
+            barClass="bg-amber-400"
+            loading={loading}
+          />
+        </div>
+      </div>
+
+      {/* Barra de proporção (estilo "stacked bar") */}
+      {!loading && all > 0 && (
+        <div className="flex h-1.5 w-full overflow-hidden">
+          <div className="h-full bg-violet-500/80" style={{ width: `${pctWebhook}%` }} />
+          <div className="h-full bg-amber-500/80" style={{ width: `${pctImported}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrigemStat({
+  icon,
+  label,
+  sublabel,
+  value,
+  pct,
+  barClass,
+  loading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel: string;
+  value: number;
+  pct: number;
+  barClass: string;
+  loading: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-slate-300">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        {loading ? (
+          <div className="skeleton mt-1 h-6 w-20 rounded" />
+        ) : (
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <span className="text-[1.25rem] font-bold leading-none tabular-nums text-slate-50">
+              {formatNumber(value)}
+            </span>
+            <span className="text-[11px] tabular-nums text-slate-500">
+              {pct.toFixed(0)}%
+            </span>
+          </div>
+        )}
+        <p className="mt-1 truncate text-[10.5px] text-slate-500">{sublabel}</p>
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.05]">
+          <div className={cn("h-full rounded-full", barClass)} style={{ width: `${pct}%` }} />
+        </div>
       </div>
     </div>
   );
