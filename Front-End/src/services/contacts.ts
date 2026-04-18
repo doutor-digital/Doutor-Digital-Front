@@ -1,26 +1,68 @@
 import { api } from "@/lib/api";
 import { cleanParams, toInt } from "@/lib/http";
 import type {
+  AttendanceStatus,
   Contact,
   ContactDetail,
   ContactImportResult,
   ContactsListResponse,
+  FilterCriterion,
+  FilterOptionsResponse,
 } from "@/types";
 
 export interface ListContactsParams {
   clinicId?: number | string;
-  origem?: "all" | "webhook_cloudia" | "import_csv";
+  origem?: "all" | "webhook_cloudia" | "import_csv" | "manual";
   search?: string;
   page?: number;
   pageSize?: number;
-  orderBy?: "name" | "last_message_at" | "created_at";
+  orderBy?: "name" | "last_message_at" | "created_at" | "attendance_status_at";
   orderDir?: "asc" | "desc";
+  status?: AttendanceStatus | "none" | null;
+  etapa?: string | null;
+  tag?: string | null;
+  blocked?: boolean | null;
+  hasConsultation?: boolean | null;
+  dateFrom?: string | null;
+  dateTo?: string | null;
 }
 
 export interface ImportCsvParams {
   clinicId?: number | string;
   file: File;
   onDuplicate?: "skip" | "update" | "fail";
+}
+
+export interface CreateContactParams {
+  clinicId?: number | string;
+  name: string;
+  phone: string;
+  conexao?: string;
+  observacoes?: string;
+  etapa?: string;
+  tags?: string[];
+  consultationAt?: string;
+  birthday?: string;
+  attendanceStatus?: AttendanceStatus;
+}
+
+export interface SetActionParams {
+  clinicId?: number | string;
+  id: string;
+  action: AttendanceStatus;
+  consultationAt?: string;
+  observacoes?: string;
+}
+
+export interface SearchContactsParams {
+  clinicId?: number | string;
+  filters: FilterCriterion[];
+  origem?: "all" | "webhook_cloudia" | "import_csv" | "manual";
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  orderBy?: string;
+  orderDir?: "asc" | "desc";
 }
 
 export const contactsService = {
@@ -34,6 +76,13 @@ export const contactsService = {
         pageSize: params.pageSize ?? 50,
         orderBy: params.orderBy,
         orderDir: params.orderDir,
+        status: params.status,
+        etapa: params.etapa,
+        tag: params.tag,
+        blocked: params.blocked,
+        hasConsultation: params.hasConsultation,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
       }),
     });
 
@@ -46,11 +95,80 @@ export const contactsService = {
     );
   },
 
+  async search(params: SearchContactsParams): Promise<ContactsListResponse> {
+    const { data } = await api.post<ContactsListResponse>(
+      "/contacts/search",
+      {
+        filters: params.filters,
+        origem: params.origem ?? "all",
+        search: params.search,
+        page: params.page ?? 1,
+        page_size: params.pageSize ?? 50,
+        order_by: params.orderBy ?? "last_message_at",
+        order_dir: params.orderDir ?? "desc",
+      },
+      {
+        params: cleanParams({ clinicId: toInt(params.clinicId) }),
+      }
+    );
+    return data;
+  },
+
   async getById(id: string | number, clinicId?: number | string): Promise<ContactDetail> {
     const { data } = await api.get<ContactDetail>(`/contacts/${encodeURIComponent(String(id))}`, {
       params: cleanParams({ clinicId: toInt(clinicId) }),
     });
     return data;
+  },
+
+  async create(params: CreateContactParams): Promise<ContactDetail> {
+    const { data } = await api.post<ContactDetail>("/contacts", {
+      clinic_id: toInt(params.clinicId),
+      name: params.name,
+      phone: params.phone,
+      conexao: params.conexao,
+      observacoes: params.observacoes,
+      etapa: params.etapa,
+      tags: params.tags,
+      consultation_at: params.consultationAt,
+      birthday: params.birthday,
+      attendance_status: params.attendanceStatus,
+    });
+    return data;
+  },
+
+  async setAction(params: SetActionParams): Promise<ContactDetail> {
+    const { data } = await api.patch<ContactDetail>(
+      `/contacts/${encodeURIComponent(params.id)}/action`,
+      {
+        action: params.action,
+        consultation_at: params.consultationAt,
+        observacoes: params.observacoes,
+      },
+      {
+        params: cleanParams({ clinicId: toInt(params.clinicId) }),
+      }
+    );
+    return data;
+  },
+
+  async filterOptions(
+    key: string,
+    clinicId?: number | string,
+    search?: string,
+    limit = 50
+  ): Promise<FilterOptionsResponse> {
+    const { data } = await api.get<FilterOptionsResponse>(
+      `/contacts/filter-options/${encodeURIComponent(key)}`,
+      {
+        params: cleanParams({
+          clinicId: toInt(clinicId),
+          search,
+          limit,
+        }),
+      }
+    );
+    return data ?? { key, options: [] };
   },
 
   async importCsv(params: ImportCsvParams): Promise<ContactImportResult> {

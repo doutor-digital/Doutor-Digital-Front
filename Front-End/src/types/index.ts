@@ -332,6 +332,8 @@ export interface EvolutionAdvancedDto {
   conversionOverTime: EvolutionConversionPointDto[];
 }
 
+export type AttendanceStatus = "compareceu" | "faltou" | "aguardando";
+
 export interface Contact {
   id: string;
   name: string;
@@ -342,6 +344,8 @@ export interface Contact {
   last_message_at?: string | null;
   blocked?: boolean;
   imported_at?: string | null;
+  attendance_status?: AttendanceStatus | null;
+  attendance_status_at?: string | null;
 }
 
 export interface ContactDetail extends Contact {
@@ -368,12 +372,44 @@ export interface ContactCounts {
   all: number;
   webhook_cloudia: number;
   import_csv: number;
+  manual?: number;
+  compareceu?: number;
+  faltou?: number;
+  aguardando?: number;
+  filtered?: number;
 }
 
 export interface ContactsListResponse {
   data: Contact[];
   pagination: ContactPagination;
   counts: ContactCounts;
+}
+
+/* ─── DSL de filtros avançados (POST /contacts/search) ─── */
+
+export type FilterOperator =
+  | "contains" | "not_contains" | "equals" | "starts_with"
+  | "is_empty" | "is_not_empty"
+  | "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "between"
+  | "is_true" | "is_false"
+  | "is" | "is_not"
+  | "in" | "not_in"
+  | "on" | "before" | "after" | "last_n_days" | "next_n_days";
+
+export interface FilterCriterion {
+  field: string;
+  op: FilterOperator;
+  value: unknown;
+}
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+export interface FilterOptionsResponse {
+  key: string;
+  options: FilterOption[];
 }
 
 export interface ContactImportError {
