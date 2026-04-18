@@ -429,6 +429,54 @@ export interface ContactImportResult {
   error_samples?: ContactImportError[];
 }
 
+/* ─── Recent leads (notificação + página /recent-leads) ─── */
+
+export interface RecentLead {
+  id: number;
+  external_id: number;
+  name: string;
+  phone?: string | null;
+  source?: string | null;
+  channel?: string | null;
+  current_stage?: string | null;
+  conversation_state?: string | null;
+  unit_id?: number | null;
+  unit_name?: string | null;
+  created_at: string;
+}
+
+export interface RecentLeadsResponse {
+  hours: number;
+  total: number;
+  since: string;
+  items: RecentLead[];
+}
+
+/* ─── Dashboard evolução com group_by + compare ─── */
+
+export type GroupByGranularity = "day" | "week" | "month" | "quarter";
+export type CompareMode = "none" | "previous_period" | "previous_year";
+
+export interface EvolutionPoint {
+  bucket: string;
+  label: string;
+  count: number;
+}
+
+export interface DashboardEvolutionResponse {
+  date_from: string;
+  date_to: string;
+  group_by: GroupByGranularity;
+  compare: CompareMode;
+  total_current: number;
+  total_compare: number;
+  change_percent: number | null;
+  current: EvolutionPoint[];
+  comparison: EvolutionPoint[] | null;
+  comparison_date_from: string | null;
+  comparison_date_to: string | null;
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;

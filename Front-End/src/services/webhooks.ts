@@ -3,12 +3,16 @@ import { asArray, cleanParams, toInt } from "@/lib/http";
 import type {
   ActiveLeadDto,
   ApiCountPayload,
+  CompareMode,
+  DashboardEvolutionResponse,
+  GroupByGranularity,
   Lead,
   LeadDetail,
   LeadsCountDto,
   EvolutionAdvancedDto,
   OrigemAgrupada,
   OvernightLeadsDto,
+  RecentLeadsResponse,
   StageCount,
   TimeSeriesPoint,
 } from "@/types";
@@ -241,6 +245,42 @@ export const webhooksService = {
       }),
     });
 
+    return data;
+  },
+
+  async recentLeads(params: {
+    clinicId?: number | string;
+    hours?: number;
+    limit?: number;
+    unitId?: number | string;
+  }): Promise<RecentLeadsResponse> {
+    const { data } = await api.get<RecentLeadsResponse>("/webhooks/recent", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        hours: params.hours ?? 24,
+        limit: params.limit ?? 50,
+        unitId: toInt(params.unitId),
+      }),
+    });
+    return data ?? { hours: params.hours ?? 24, total: 0, since: new Date().toISOString(), items: [] };
+  },
+
+  async evolutionRange(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    groupBy?: GroupByGranularity;
+    compare?: CompareMode;
+  }): Promise<DashboardEvolutionResponse> {
+    const { data } = await api.get<DashboardEvolutionResponse>("/webhooks/evolution-range", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        groupBy: params.groupBy ?? "day",
+        compare: params.compare ?? "none",
+      }),
+    });
     return data;
   },
 

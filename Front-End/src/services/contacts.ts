@@ -46,6 +46,21 @@ export interface CreateContactParams {
   attendanceStatus?: AttendanceStatus;
 }
 
+export interface UpdateContactParams {
+  clinicId?: number | string;
+  id: string;
+  name?: string;
+  phone?: string;
+  conexao?: string | null;
+  observacoes?: string | null;
+  etapa?: string | null;
+  tags?: string[];
+  consultationAt?: string;
+  birthday?: string;
+  blocked?: boolean;
+  attendanceStatus?: AttendanceStatus | "none";
+}
+
 export interface SetActionParams {
   clinicId?: number | string;
   id: string;
@@ -135,6 +150,34 @@ export const contactsService = {
       attendance_status: params.attendanceStatus,
     });
     return data;
+  },
+
+  async update(params: UpdateContactParams): Promise<ContactDetail> {
+    const { data } = await api.put<ContactDetail>(
+      `/contacts/${encodeURIComponent(params.id)}`,
+      {
+        name: params.name,
+        phone: params.phone,
+        conexao: params.conexao,
+        observacoes: params.observacoes,
+        etapa: params.etapa,
+        tags: params.tags,
+        consultation_at: params.consultationAt,
+        birthday: params.birthday,
+        blocked: params.blocked,
+        attendance_status: params.attendanceStatus,
+      },
+      {
+        params: cleanParams({ clinicId: toInt(params.clinicId) }),
+      }
+    );
+    return data;
+  },
+
+  async remove(id: string, clinicId?: number | string): Promise<void> {
+    await api.delete(`/contacts/${encodeURIComponent(id)}`, {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
   },
 
   async setAction(params: SetActionParams): Promise<ContactDetail> {

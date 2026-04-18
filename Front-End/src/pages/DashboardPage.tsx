@@ -19,6 +19,7 @@ import { webhooksService } from "@/services/webhooks";
 import { contactsService } from "@/services/contacts";
 import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DashboardFilters,
   DashboardFiltersState,
@@ -37,23 +38,7 @@ const SourceDonut = lazy(() =>
   import("@/components/charts/SourceDonut").then((m) => ({ default: m.SourceDonut }))
 );
 
-// ─── Mock temporário de usuário ───────────────────────────────────────────────
-// Substitua por useAuth() quando o backend estiver pronto
-
-const MOCK_USER = { name: "João Of", avatar: null as string | null };
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function last6MonthsRange() {
-  const end   = new Date();
-  const start = new Date();
-  start.setMonth(start.getMonth() - 5);
-  start.setDate(1);
-  return {
-    dataInicio: start.toISOString().slice(0, 10),
-    dataFim:    end.toISOString().slice(0, 10),
-  };
-}
 
 function greeting() {
   const h = new Date().getHours();
@@ -62,12 +47,42 @@ function greeting() {
   return "Boa noite";
 }
 
+const GROUP_LABEL: Record<string, string> = {
+  day: "dia",
+  week: "semana",
+  month: "mês",
+  quarter: "trimestre",
+};
+const COMPARE_LABEL: Record<string, string> = {
+  none: "sem comparação",
+  previous_period: "vs período anterior",
+  previous_year: "vs mesmo período/ano",
+};
+
+function evolutionSubtitle(
+  filters: DashboardFiltersState,
+  total?: number,
+  change?: number | null,
+  compare?: string
+): string {
+  const parts: string[] = [];
+  parts.push(`${filters.startDate} → ${filters.endDate}`);
+  parts.push(`por ${GROUP_LABEL[filters.granularity] ?? filters.granularity}`);
+  if (typeof total === "number") parts.push(`${total} leads`);
+  if (compare && compare !== "none" && change !== null && change !== undefined) {
+    const sign = change >= 0 ? "+" : "";
+    parts.push(`${sign}${change.toFixed(1)}% ${COMPARE_LABEL[compare] ?? ""}`);
+  }
+  return parts.join(" · ");
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
-  const range      = last6MonthsRange();
-  const firstName  = MOCK_USER.name.split(" ")[0];
+  const { user } = useAuth();
+  const fullName = user?.name?.trim() || user?.email?.split("@")[0] || "Convidado";
+  const firstName = fullName.split(" ")[0];
 
   const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
 
@@ -97,10 +112,26 @@ export default function DashboardPage() {
     queryKey: ["origem-cloudia", unitId],
     queryFn:  () => webhooksService.origemCloudia(unitId || undefined),
   });
+  // Evolução temporal controlada pelos filtros do dashboard
+  const evolucaoClinicId = unitId ?? tenantId ?? undefined;
   const evolucao = useQuery({
-    queryKey: ["evolucao", unitId, range.dataInicio, range.dataFim],
-    queryFn:  () =>
-      webhooksService.buscarInicioFim({ clinicId: unitId || undefined, ...range }),
+    queryKey: [
+      "evolution-range",
+      evolucaoClinicId,
+      filters.startDate,
+      filters.endDate,
+      filters.granularity,
+      filters.compare,
+    ],
+    queryFn: () =>
+      webhooksService.evolutionRange({
+        clinicId: evolucaoClinicId,
+        dateFrom: filters.startDate,
+        dateTo: filters.endDate,
+        groupBy: filters.granularity,
+        compare: filters.compare,
+      }),
+    enabled: !!evolucaoClinicId,
   });
   const resumoLive = useQuery({
     queryKey:       ["live-resumo", unitId],
@@ -147,6 +178,8 @@ export default function DashboardPage() {
     consultas.refetch();
     comPag.refetch();
     semPag.refetch();
+    etapa.refetch();
+    origem.refetch();
     evolucao.refetch();
   }
 
@@ -204,17 +237,9 @@ export default function DashboardPage() {
 
           {/* Avatar + saudação */}
           <div className="flex items-center gap-3">
-            {MOCK_USER.avatar ? (
-              <img
-                src={MOCK_USER.avatar}
-                alt={firstName}
-                className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-[0_0_14px_rgba(139,92,246,0.35)]"
-              />
-            ) : (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 text-[15px] font-black text-white shadow-[0_0_14px_rgba(139,92,246,0.35)]">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 text-[15px] font-black text-white shadow-[0_0_14px_rgba(139,92,246,0.35)]">
+              {firstName.charAt(0).toUpperCase()}
+            </div>
             <div>
               <p className="text-[12px] text-slate-500">{greeting()},</p>
               <p className="text-[18px] font-bold leading-tight text-slate-100">
@@ -446,15 +471,20 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader
             title="Evolução temporal"
-            subtitle="Leads captados nos últimos 6 meses"
+            subtitle={evolutionSubtitle(filters, evolucao.data?.total_current, evolucao.data?.change_percent, evolucao.data?.compare)}
             action={<Link to="/evolution"><Button variant="ghost" size="sm">Ver detalhes</Button></Link>}
           />
           <CardBody>
             {evolucao.isLoading ? (
               <div className="skeleton h-60 w-full rounded-lg" />
-            ) : (evolucao.data?.length ?? 0) > 0 ? (
+            ) : (evolucao.data?.current?.length ?? 0) > 0 ? (
               <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
-                <EvolutionLine data={evolucao.data!} />
+                <EvolutionLine
+                  data={(evolucao.data?.current ?? []).map((p) => ({
+                    periodo: p.label,
+                    total: p.count,
+                  }))}
+                />
               </Suspense>
             ) : (
               <EmptyState title="Sem dados no período" />

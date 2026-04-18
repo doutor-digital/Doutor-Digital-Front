@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Ban, CalendarCheck, CalendarX, ChevronRight, Clock3, FileText, FileUp,
-  MessageSquare, Phone, Plus, Search, Upload, UserPlus, X,
+  MessageSquare, Pencil, Phone, Search, Trash2, Upload, UserPlus, X,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -48,6 +48,7 @@ const STATUS_META: Record<AttendanceStatus, {
 export default function ContactsPage() {
   const { tenantId } = useClinic();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [origem, setOrigem] = useState<Origem>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -56,8 +57,6 @@ export default function ContactsPage() {
   const [onlyBlocked, setOnlyBlocked] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
-
-  const [createOpen, setCreateOpen] = useState(false);
 
   const debouncedSearch = useDebounce(searchInput, 300);
   const debouncedEtapa = useDebounce(etapa, 300);
@@ -116,6 +115,23 @@ export default function ContactsPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => contactsService.remove(id, tenantId ?? undefined),
+    onSuccess: () => {
+      toast.success("Contato removido");
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { error?: string } }; message?: string };
+      toast.error(e?.response?.data?.error ?? e?.message ?? "Falha ao remover contato");
+    },
+  });
+
+  const handleDelete = (id: string, name: string) => {
+    if (!window.confirm(`Remover "${name}" permanentemente?`)) return;
+    deleteMutation.mutate(id);
+  };
+
   const handleFilePick = () => fileInputRef.current?.click();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -153,7 +169,7 @@ export default function ContactsPage() {
             />
             <Button
               variant="outline"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => navigate("/contacts/new")}
               disabled={!tenantId}
             >
               <UserPlus className="mr-2 h-4 w-4" />
@@ -321,7 +337,9 @@ export default function ContactsPage() {
                   onAction={(action) =>
                     actionMutation.mutate({ id: c.id, action })
                   }
+                  onDelete={() => handleDelete(c.id, c.name)}
                   pending={actionMutation.isPending && actionMutation.variables?.id === c.id}
+                  deleting={deleteMutation.isPending && deleteMutation.variables === c.id}
                 />
               ))}
             </ul>
@@ -331,17 +349,6 @@ export default function ContactsPage() {
 
       {totalPages > 1 && (
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-      )}
-
-      {createOpen && (
-        <CreateContactModal
-          tenantId={tenantId!}
-          onClose={() => setCreateOpen(false)}
-          onCreated={() => {
-            setCreateOpen(false);
-            queryClient.invalidateQueries({ queryKey: ["contacts"] });
-          }}
-        />
       )}
     </>
   );
@@ -395,15 +402,22 @@ function StatusChip({
 function ContactRow({
   contact,
   onAction,
+  onDelete,
   pending,
+  deleting,
 }: {
   contact: Contact;
   onAction: (action: AttendanceStatus) => void;
+  onDelete: () => void;
   pending: boolean;
+  deleting: boolean;
 }) {
   const isImported = contact.origem === "import_csv";
   const isManual = contact.origem === "manual";
+  const isLead = contact.origem === "webhook_cloudia";
   const status = contact.attendance_status ?? null;
+  // Editar / Excluir só fazem sentido para contatos com prefixo c_ (manuais/importados).
+  const canEditDelete = !isLead && contact.id.startsWith("c_");
 
   return (
     <li className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.04]">
@@ -474,6 +488,27 @@ function ContactRow({
           onClick={() => onAction("aguardando")}
         />
       </div>
+
+      {canEditDelete && (
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            to={`/contacts/${encodeURIComponent(String(contact.id))}/edit`}
+            title="Editar contato"
+            className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-500 ring-1 ring-white/5 transition hover:text-slate-200 hover:ring-white/15"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Link>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }}
+            disabled={deleting}
+            title="Excluir contato"
+            className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-500 ring-1 ring-white/5 transition hover:text-rose-300 hover:ring-rose-500/30 disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <Link
         to={`/contacts/${encodeURIComponent(String(contact.id))}`}
@@ -709,202 +744,6 @@ function ContactListSkeleton() {
         </li>
       ))}
     </ul>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
- *  MODAL: Novo contato
- * ═══════════════════════════════════════════════════════════════ */
-
-function CreateContactModal({
-  tenantId,
-  onClose,
-  onCreated,
-}: {
-  tenantId: number;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [etapa, setEtapa] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | "">("");
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      contactsService.create({
-        clinicId: tenantId,
-        name: name.trim(),
-        phone: phone.trim(),
-        etapa: etapa.trim() || undefined,
-        tags: tagsInput
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        observacoes: observacoes.trim() || undefined,
-        attendanceStatus: attendanceStatus || undefined,
-      }),
-    onSuccess: () => {
-      toast.success("Contato criado com sucesso");
-      onCreated();
-    },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { error?: string } }; message?: string };
-      toast.error(e?.response?.data?.error ?? e?.message ?? "Falha ao criar contato");
-    },
-  });
-
-  const canSubmit = name.trim().length > 0 && phone.trim().length > 0 && !createMutation.isPending;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-5 shadow-2xl"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-100">Novo contato</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-500 hover:text-slate-200"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          <Field label="Nome *">
-            <Input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome completo"
-            />
-          </Field>
-          <Field label="Telefone *">
-            <Input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+55 11 91234-5678"
-            />
-          </Field>
-          <Field label="Etapa">
-            <Input
-              value={etapa}
-              onChange={(e) => setEtapa(e.target.value)}
-              placeholder="Ex: 01_ENTRADA_LEAD_SEQUENCIA_24H"
-            />
-          </Field>
-          <Field label="Tags (separadas por vírgula)">
-            <Input
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="vip, indicacao"
-            />
-          </Field>
-          <Field label="Status de comparecimento">
-            <div className="flex gap-2">
-              <StatusToggle
-                label="Nenhum"
-                active={attendanceStatus === ""}
-                onClick={() => setAttendanceStatus("")}
-              />
-              <StatusToggle
-                label="Aguardando"
-                color="amber"
-                active={attendanceStatus === "aguardando"}
-                onClick={() => setAttendanceStatus("aguardando")}
-              />
-              <StatusToggle
-                label="Compareceu"
-                color="emerald"
-                active={attendanceStatus === "compareceu"}
-                onClick={() => setAttendanceStatus("compareceu")}
-              />
-              <StatusToggle
-                label="Faltou"
-                color="rose"
-                active={attendanceStatus === "faltou"}
-                onClick={() => setAttendanceStatus("faltou")}
-              />
-            </div>
-          </Field>
-          <Field label="Observações">
-            <textarea
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/60"
-              placeholder="Contexto adicional sobre o contato"
-            />
-          </Field>
-        </div>
-
-        <div className="mt-5 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            loading={createMutation.isPending}
-            disabled={!canSubmit}
-            onClick={() => createMutation.mutate()}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Criar contato
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function StatusToggle({
-  label,
-  active,
-  color,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  color?: "emerald" | "rose" | "amber";
-  onClick: () => void;
-}) {
-  const palette = {
-    emerald: "bg-emerald-500/15 text-emerald-200 ring-emerald-500/40",
-    rose: "bg-rose-500/15 text-rose-200 ring-rose-500/40",
-    amber: "bg-amber-500/15 text-amber-200 ring-amber-500/40",
-    default: "bg-brand-500/15 text-brand-100 ring-brand-500/40",
-  }[color ?? "default"];
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex-1 rounded-md px-2 py-1.5 text-xs ring-1 transition",
-        active ? palette : "bg-white/[0.02] text-slate-400 ring-white/10 hover:bg-white/[0.05]"
-      )}
-    >
-      {label}
-    </button>
   );
 }
 

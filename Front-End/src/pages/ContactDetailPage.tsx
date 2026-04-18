@@ -1,9 +1,10 @@
 import { useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft, Ban, FileText, MessageSquare, Phone, User, Webhook,
+  ArrowLeft, Ban, FileText, MessageSquare, Pencil, Phone, Trash2, User, Webhook,
 } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +27,8 @@ const KNOWN_KEYS = new Set([
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { tenantId } = useClinic();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ["contact", id, tenantId],
@@ -40,6 +43,28 @@ export default function ContactDetailPage() {
     return extractSpreadsheetFields(contact);
   }, [contact]);
 
+  const source = (contact as { source?: string } | undefined)?.source;
+  const canEditDelete = !!contact && source !== "lead" && String(contact.id).startsWith("c_");
+
+  const deleteMutation = useMutation({
+    mutationFn: () => contactsService.remove(id!, tenantId ?? undefined),
+    onSuccess: () => {
+      toast.success("Contato removido");
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      navigate("/contacts");
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { error?: string } }; message?: string };
+      toast.error(e?.response?.data?.error ?? e?.message ?? "Falha ao remover contato");
+    },
+  });
+
+  const handleDelete = () => {
+    if (!contact) return;
+    if (!window.confirm(`Remover "${contact.name}" permanentemente?`)) return;
+    deleteMutation.mutate();
+  };
+
   return (
     <>
       <PageHeader
@@ -51,12 +76,33 @@ export default function ContactDetailPage() {
             : "Detalhes do contato"
         }
         actions={
-          <Link to="/contacts">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link to="/contacts">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+            {canEditDelete && (
+              <>
+                <Link to={`/contacts/${encodeURIComponent(String(contact!.id))}/edit`}>
+                  <Button variant="outline" size="sm">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                </Link>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleDelete}
+                  loading={deleteMutation.isPending}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </Button>
+              </>
+            )}
+          </div>
         }
       />
 

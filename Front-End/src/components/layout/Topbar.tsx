@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { NotificationsBell } from "@/components/layout/NotificationsBell";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -123,6 +124,9 @@ export function Topbar() {
             )}
           />
         </button>
+
+        {/* Notificações de leads recentes */}
+        <NotificationsBell />
 
         {/* Tema claro/escuro */}
         <ThemeToggle />
