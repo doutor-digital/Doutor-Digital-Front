@@ -3,10 +3,9 @@
 import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle, Bell, CalendarCheck, CalendarX,
-  CheckCircle2, CreditCard, DollarSign,
-  HeartHandshake, Percent, Sparkles,
-  Stethoscope, TrendingUp, UserPlus, Users,
+  AlertTriangle, Bell, CalendarCheck,
+  CheckCircle2, Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn, formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
