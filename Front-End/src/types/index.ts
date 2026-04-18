@@ -452,6 +452,23 @@ export interface RecentLeadsResponse {
   items: RecentLead[];
 }
 
+/* ─── Dashboard overview consolidado (KPIs + etapas + origens) ─── */
+
+export interface DashboardOverview {
+  date_from: string;
+  date_to: string;
+  total_leads: number;
+  consultas: number;
+  com_pagamento: number;
+  sem_pagamento: number;
+  conversao_rate: number;
+  pagamento_rate: number;
+  sem_pagamento_rate: number;
+  states: LeadsCountDto;
+  etapas: Array<{ etapa: string; quantidade: number }>;
+  origens: OrigemAgrupada[];
+}
+
 /* ─── Dashboard evolução com group_by + compare ─── */
 
 export type GroupByGranularity = "day" | "week" | "month" | "quarter";

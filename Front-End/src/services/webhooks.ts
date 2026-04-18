@@ -5,6 +5,7 @@ import type {
   ApiCountPayload,
   CompareMode,
   DashboardEvolutionResponse,
+  DashboardOverview,
   GroupByGranularity,
   Lead,
   LeadDetail,
@@ -245,6 +246,23 @@ export const webhooksService = {
       }),
     });
 
+    return data;
+  },
+
+  async dashboardOverview(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    unitId?: number | string;
+  }): Promise<DashboardOverview> {
+    const { data } = await api.get<DashboardOverview>("/webhooks/dashboard-overview", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        unitId: toInt(params.unitId),
+      }),
+    });
     return data;
   },
 

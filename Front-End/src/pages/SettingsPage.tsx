@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { KeyRound, ShieldCheck, Trash2, Link as LinkIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  AlertTriangle, Bot, Gauge, KeyRound, Link as LinkIcon, MessageSquare,
+  Phone, Save, ShieldCheck, Sparkles, Thermometer, Trash2, Webhook,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -142,6 +145,10 @@ export default function SettingsPage() {
           </CardBody>
         </Card>
 
+        <AiSettingsCard />
+
+        <WhatsAppSettingsCard />
+
         <Card className="lg:col-span-2">
           <CardHeader
             title="API Cloudia"
@@ -198,5 +205,346 @@ export default function SettingsPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  IA + WhatsApp — MOCKADOS (UI apenas, back-end ainda em desenvolvimento)
+ *  Os valores são persistidos em localStorage só pra preservar a digitação
+ *  entre reloads. Nada é enviado pro servidor.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+function MockBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.08] px-3 py-2 text-[11.5px] text-amber-200">
+      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function useMockForm<T extends Record<string, string | number>>(
+  storageKey: string,
+  initial: T,
+): [T, (patch: Partial<T>) => void, () => void] {
+  const [state, setState] = useState<T>(() => {
+    if (typeof window === "undefined") return initial;
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return initial;
+    try {
+      return { ...initial, ...(JSON.parse(raw) as Partial<T>) };
+    } catch {
+      return initial;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
+  }, [state, storageKey]);
+
+  const patch = (p: Partial<T>) => setState((prev) => ({ ...prev, ...p }));
+  const reset = () => setState(initial);
+  return [state, patch, reset];
+}
+
+/* ─── IA ─────────────────────────────────────────────────────────── */
+
+type AiProvider = "openai" | "anthropic" | "gemini" | "cloudia";
+
+const AI_DEFAULTS = {
+  provider: "openai" as AiProvider,
+  model: "gpt-4o-mini",
+  apiKey: "",
+  temperature: "0.7",
+  maxTokens: "1024",
+  systemPrompt:
+    "Você é a assistente virtual da clínica. Responda de forma breve, acolhedora e sempre ofereça agendamento quando o paciente demonstrar interesse.",
+};
+
+function AiSettingsCard() {
+  const [form, patch, reset] = useMockForm("mock.ai.settings", AI_DEFAULTS);
+
+  const handleSave = () => {
+    toast.success("Configuração da IA salva localmente (mock)");
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <Bot className="h-4 w-4 text-violet-300" />
+            Configuração da IA
+          </span>
+        }
+        subtitle="Modelo, chave, temperatura e prompt do sistema"
+        action={<Badge tone="yellow">Em desenvolvimento</Badge>}
+      />
+      <CardBody className="space-y-4">
+        <MockBanner>
+          Esses campos são <strong>mockados</strong>. Salvam só no navegador por enquanto —
+          a integração com o backend ainda está em desenvolvimento.
+        </MockBanner>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Provedor
+            </label>
+            <select
+              value={form.provider}
+              onChange={(e) => patch({ provider: e.target.value as AiProvider })}
+              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30 [color-scheme:dark]"
+            >
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="cloudia">Cloudia nativa</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Modelo
+            </label>
+            <Input
+              icon={<Sparkles className="h-4 w-4" />}
+              value={form.model}
+              onChange={(e) => patch({ model: e.target.value })}
+              placeholder="ex: gpt-4o-mini, claude-sonnet-4, gemini-2.5-pro"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Chave de API
+            </label>
+            <Input
+              type="password"
+              icon={<KeyRound className="h-4 w-4" />}
+              value={form.apiKey}
+              onChange={(e) => patch({ apiKey: e.target.value })}
+              placeholder="sk-..."
+            />
+            <p className="mt-1 text-[10.5px] text-slate-500">
+              Quando o backend estiver pronto, a chave vai pro cofre do servidor. Por enquanto fica só aqui.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <Thermometer className="h-3 w-3" /> Temperatura · {form.temperature}
+              </span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={form.temperature}
+              onChange={(e) => patch({ temperature: e.target.value })}
+              className="w-full accent-brand-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Máx. tokens
+            </label>
+            <Input
+              type="number"
+              min={64}
+              max={8192}
+              icon={<Gauge className="h-4 w-4" />}
+              value={form.maxTokens}
+              onChange={(e) => patch({ maxTokens: e.target.value })}
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Prompt do sistema
+            </label>
+            <textarea
+              value={form.systemPrompt}
+              onChange={(e) => patch({ systemPrompt: e.target.value })}
+              rows={4}
+              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              placeholder="Você é a assistente da clínica..."
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={reset}>
+            Resetar
+          </Button>
+          <Button onClick={handleSave}>
+            <Save className="mr-2 h-4 w-4" />
+            Salvar (mock)
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+/* ─── WhatsApp ──────────────────────────────────────────────────── */
+
+type WaProvider = "meta_cloud" | "twilio" | "zapi" | "evolution";
+
+const WA_DEFAULTS = {
+  provider: "meta_cloud" as WaProvider,
+  phoneNumber: "",
+  displayName: "",
+  accessToken: "",
+  phoneNumberId: "",
+  webhookUrl: "",
+  verifyToken: "",
+  autoReply: "1",
+};
+
+function WhatsAppSettingsCard() {
+  const [form, patch, reset] = useMockForm("mock.whatsapp.settings", WA_DEFAULTS);
+  const autoReplyOn = form.autoReply === "1";
+
+  const handleSave = () => {
+    toast.success("Configuração do WhatsApp salva localmente (mock)");
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-emerald-300" />
+            Configuração do WhatsApp
+          </span>
+        }
+        subtitle="Provedor, número de envio e webhook"
+        action={<Badge tone="yellow">Em desenvolvimento</Badge>}
+      />
+      <CardBody className="space-y-4">
+        <MockBanner>
+          Esses campos são <strong>mockados</strong>. A integração real com Meta Cloud / Twilio /
+          Z-API ainda está sendo desenvolvida — nada é enviado pro servidor ainda.
+        </MockBanner>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Provedor
+            </label>
+            <select
+              value={form.provider}
+              onChange={(e) => patch({ provider: e.target.value as WaProvider })}
+              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30 [color-scheme:dark]"
+            >
+              <option value="meta_cloud">Meta Cloud API (oficial)</option>
+              <option value="twilio">Twilio</option>
+              <option value="zapi">Z-API</option>
+              <option value="evolution">Evolution API</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Nome de exibição
+            </label>
+            <Input
+              value={form.displayName}
+              onChange={(e) => patch({ displayName: e.target.value })}
+              placeholder="Clínica Doutor Digital"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Número do WhatsApp
+            </label>
+            <Input
+              icon={<Phone className="h-4 w-4" />}
+              value={form.phoneNumber}
+              onChange={(e) => patch({ phoneNumber: e.target.value })}
+              placeholder="+55 11 91234-5678"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Phone Number ID
+            </label>
+            <Input
+              value={form.phoneNumberId}
+              onChange={(e) => patch({ phoneNumberId: e.target.value })}
+              placeholder="somente Meta Cloud / Twilio"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Access token
+            </label>
+            <Input
+              type="password"
+              icon={<KeyRound className="h-4 w-4" />}
+              value={form.accessToken}
+              onChange={(e) => patch({ accessToken: e.target.value })}
+              placeholder="token do provedor"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Webhook URL
+            </label>
+            <Input
+              icon={<Webhook className="h-4 w-4" />}
+              type="url"
+              value={form.webhookUrl}
+              onChange={(e) => patch({ webhookUrl: e.target.value })}
+              placeholder="https://api.seudominio.com/webhooks/whatsapp"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Verify token
+            </label>
+            <Input
+              icon={<LinkIcon className="h-4 w-4" />}
+              value={form.verifyToken}
+              onChange={(e) => patch({ verifyToken: e.target.value })}
+              placeholder="usado pela Meta no handshake"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={autoReplyOn}
+                onChange={(e) => patch({ autoReply: e.target.checked ? "1" : "0" })}
+                className="accent-emerald-500"
+              />
+              Habilitar resposta automática da IA nas mensagens recebidas
+              <span className="text-[10.5px] text-amber-400">(mock)</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={reset}>
+            Resetar
+          </Button>
+          <Button onClick={handleSave}>
+            <Save className="mr-2 h-4 w-4" />
+            Salvar (mock)
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 }

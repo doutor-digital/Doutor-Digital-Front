@@ -88,31 +88,28 @@ export default function DashboardPage() {
 
   // ── Queries ──────────────────────────────────────────────────────────────────
 
-  const states = useQuery({
-    queryKey: ["count-by-state", unitId],
-    queryFn:  () => webhooksService.countByState(unitId || undefined),
+  // Overview consolidado — TODOS os KPIs reagem aos filtros de período + unidade
+  const overviewClinicId = tenantId ?? unitId ?? undefined;
+  const overview = useQuery({
+    queryKey: [
+      "dashboard-overview",
+      overviewClinicId,
+      unitId,
+      filters.startDate,
+      filters.endDate,
+    ],
+    queryFn: () =>
+      webhooksService.dashboardOverview({
+        clinicId: overviewClinicId,
+        dateFrom: filters.startDate,
+        dateTo: filters.endDate,
+        unitId: unitId || undefined,
+      }),
+    enabled: !!overviewClinicId,
+    placeholderData: (prev) => prev,
   });
-  const consultas = useQuery({
-    queryKey: ["consultas", unitId],
-    queryFn:  () => webhooksService.consultas(unitId || undefined),
-  });
-  const comPag = useQuery({
-    queryKey: ["com-pagamento", unitId],
-    queryFn:  () => webhooksService.comPagamento(unitId || undefined),
-  });
-  const semPag = useQuery({
-    queryKey: ["sem-pagamento", unitId],
-    queryFn:  () => webhooksService.semPagamento(unitId || undefined),
-  });
-  const etapa = useQuery({
-    queryKey: ["etapa-agrupada", unitId],
-    queryFn:  () => webhooksService.etapaAgrupada(unitId || undefined),
-  });
-  const origem = useQuery({
-    queryKey: ["origem-cloudia", unitId],
-    queryFn:  () => webhooksService.origemCloudia(unitId || undefined),
-  });
-  // Evolução temporal controlada pelos filtros do dashboard
+
+  // Evolução temporal (série do gráfico) — mesmos filtros + granularidade/compare
   const evolucaoClinicId = unitId ?? tenantId ?? undefined;
   const evolucao = useQuery({
     queryKey: [
@@ -142,11 +139,6 @@ export default function DashboardPage() {
     queryKey: ["active", unitId],
     queryFn:  () => webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
   });
-  const totalLeadQuery = useQuery({
-    queryKey: ["/webhooks/total-leads", tenantId],
-    queryFn:  () => webhooksService.getTotalLeads(tenantId ?? 0),
-    enabled:  tenantId !== null,
-  });
   const amanheceuQuery = useQuery({
     queryKey: ["amanheceu", 8020],
     queryFn:  () => webhooksService.amanheceu({ clinicId: 8020 }),
@@ -163,23 +155,30 @@ export default function DashboardPage() {
     enabled:  tenantId !== null,
   });
 
-  // ── Derivados ─────────────────────────────────────────────────────────────────
+  // ── Derivados (todos saem do overview → reagem aos filtros) ───────────────────
 
-  const total         = totalLeadQuery.data ?? 0;
-  const conversao     = total > 0 ? ((consultas.data ?? 0) / total) * 100 : 0;
-  const pagamentoRate = total > 0 ? ((comPag.data ?? 0) / total) * 100 : 0;
-  const donutData     = (origem.data ?? []).slice(0, 8).map((o) => ({
+  const ov            = overview.data;
+  const overviewLoading = overview.isLoading;
+  const total         = ov?.total_leads ?? 0;
+  const consultasNum  = ov?.consultas ?? 0;
+  const comPagNum     = ov?.com_pagamento ?? 0;
+  const semPagNum     = ov?.sem_pagamento ?? 0;
+  const statesData    = ov?.states;
+  const conversao     = ov?.conversao_rate ?? 0;
+  const pagamentoRate = ov?.pagamento_rate ?? 0;
+  const semPagRate    = ov?.sem_pagamento_rate ?? 0;
+  const donutData     = (ov?.origens ?? []).slice(0, 8).map((o) => ({
     name:  o.origem   ?? "—",
     value: o.quantidade ?? 0,
   }));
+  // Normaliza pro shape esperado pelo card de distribuição (stage, count)
+  const etapaData     = (ov?.etapas ?? []).map((e) => ({
+    stage: e.etapa ?? "SEM_ETAPA",
+    count: e.quantidade ?? 0,
+  }));
 
   function handleSearch() {
-    states.refetch();
-    consultas.refetch();
-    comPag.refetch();
-    semPag.refetch();
-    etapa.refetch();
-    origem.refetch();
+    overview.refetch();
     evolucao.refetch();
   }
 
@@ -259,7 +258,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-[11px] font-semibold text-emerald-400">
               <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-              {totalLeadQuery.isLoading ? "…" : `${total} leads no total`}
+              {overviewLoading ? "…" : `${total} leads no total`}
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-300">
               <Webhook className="h-3.5 w-3.5 shrink-0" />
@@ -275,15 +274,15 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-400">
               <Bell className="h-3.5 w-3.5 shrink-0" />
-              {states.isLoading ? "…" : `${states.data?.queue ?? 0} na fila`}
+              {overviewLoading ? "…" : `${statesData?.queue ?? 0} na fila`}
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-400">
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              {states.isLoading ? "…" : `${states.data?.service ?? 0} em atendimento`}
+              {overviewLoading ? "…" : `${statesData?.service ?? 0} em atendimento`}
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/8 px-3 py-2 text-[11px] font-semibold text-brand-400">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              {consultas.isLoading || totalLeadQuery.isLoading
+              {overviewLoading || overviewLoading
                 ? "…"
                 : `${formatPercent(conversao)} de conversão`}
             </div>
@@ -355,28 +354,28 @@ export default function DashboardPage() {
         value={total}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/7376/7376481.png" alt="leads" className="h-16 w-16 object-contain" />}
         tone="blue"
-        loading={totalLeadQuery.isLoading}
+        loading={overviewLoading}
       />
       <KpiCard
         label="Em atendimento"
-        value={states.data?.service ?? 0}
+        value={statesData?.service ?? 0}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/2706/2706962.png" alt="atendimento" className="h-16 w-16 object-contain" />}
         tone="violet"
-        loading={states.isLoading}
+        loading={overviewLoading}
       />
       <KpiCard
         label="Na fila"
-        value={states.data?.queue ?? 0}
+        value={statesData?.queue ?? 0}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/5772/5772632.png" alt="fila" className="h-16 w-16 object-contain" />}
         tone="amber"
-        loading={states.isLoading}
+        loading={overviewLoading}
       />
       <KpiCard
         label="Taxa de conversão"
         value={formatPercent(conversao)}
         icon={<img src="https://cdn-icons-png.freepik.com/512/5915/5915116.png" alt="conversão" className="h-16 w-16 object-contain" />}
         tone="blue"
-        loading={consultas.isLoading || totalLeadQuery.isLoading}
+        loading={overviewLoading || overviewLoading}
         subtitle={`${formatPercent(pagamentoRate)} pagam na hora`}
       />
       <KpiCard
@@ -388,42 +387,42 @@ export default function DashboardPage() {
       />
       <KpiCard
         label="Agend. c/ pagamento"
-        value={comPag.data ?? 0}
+        value={comPagNum}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/10251/10251304.png" alt="agendado com pagamento" className="h-16 w-16 object-contain" />}
         tone="green"
-        loading={comPag.isLoading}
+        loading={overviewLoading}
         subtitle="Agendados e pagos"
       />
       <KpiCard
         label="Agend. s/ pagamento"
-        value={semPag.data ?? 0}
+        value={semPagNum}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/9955/9955052.png" alt="agendado sem pagamento" className="h-16 w-16 object-contain" />}
         tone="red"
-        loading={semPag.isLoading}
+        loading={overviewLoading}
         subtitle="Agendados sem pagar"
       />
       <KpiCard
         label="Em tratamento"
-        value={consultas.data ?? 0}
+        value={consultasNum}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/5945/5945068.png" alt="em tratamento" className="h-16 w-16 object-contain" />}
         tone="green"
-        loading={consultas.isLoading}
+        loading={overviewLoading}
         subtitle="Fechou / tratando"
       />
       <KpiCard
         label="Fecharam"
-        value={consultas.data ?? 0}
+        value={consultasNum}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/5015/5015811.png" alt="fecharam" className="h-16 w-16 object-contain" />}
         tone="violet"
-        loading={consultas.isLoading}
+        loading={overviewLoading}
         subtitle="Convertidos total"
       />
       <KpiCard
         label="S/ pagamento %"
-        value={total > 0 ? formatPercent(((semPag.data ?? 0) / total) * 100) : "—"}
+        value={total > 0 ? formatPercent(semPagRate) : "—"}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/4441/4441817.png" alt="sem pagamento %" className="h-16 w-16 object-contain" />}
         tone="amber"
-        loading={semPag.isLoading || totalLeadQuery.isLoading}
+        loading={overviewLoading || overviewLoading}
         subtitle="Taxa sem pagamento"
       />
      </div>
@@ -437,9 +436,9 @@ export default function DashboardPage() {
               <FunnelChart
                 stages={[
                   { label: "Total de leads",           count: total,               tone: "blue"    },
-                  { label: "Agendados sem pagamento",   count: semPag.data ?? 0,    tone: "amber"   },
-                  { label: "Agendados com pagamento",   count: comPag.data ?? 0,    tone: "violet"  },
-                  { label: "Fechou / em tratamento",    count: consultas.data ?? 0, tone: "emerald" },
+                  { label: "Agendados sem pagamento",   count: semPagNum,    tone: "amber"   },
+                  { label: "Agendados com pagamento",   count: comPagNum,    tone: "violet"  },
+                  { label: "Fechou / em tratamento",    count: consultasNum, tone: "emerald" },
                 ]}
               />
             </Suspense>
@@ -453,7 +452,7 @@ export default function DashboardPage() {
             action={<Link to="/sources"><Button variant="ghost" size="sm">Ver tudo</Button></Link>}
           />
           <CardBody>
-            {origem.isLoading ? (
+            {overviewLoading ? (
               <div className="skeleton h-60 w-full rounded-lg" />
             ) : donutData.length ? (
               <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
@@ -568,16 +567,16 @@ export default function DashboardPage() {
             action={<Link to="/funnel"><Button variant="ghost" size="sm">Analisar</Button></Link>}
           />
           <CardBody>
-            {etapa.isLoading ? (
+            {overviewLoading ? (
               <div className="skeleton h-60 w-full rounded-lg" />
-            ) : (etapa.data?.length ?? 0) > 0 ? (
+            ) : etapaData.length > 0 ? (
               <div className="space-y-2">
-                {etapa.data!
+                {etapaData
                   .slice()
                   .sort((a, b) => b.count - a.count)
                   .slice(0, 8)
                   .map((e) => {
-                    const max = Math.max(1, ...etapa.data!.map((x) => x.count));
+                    const max = Math.max(1, ...etapaData.map((x) => x.count));
                     const pct = (e.count / max) * 100;
                     return (
                       <div key={e.stage}>
