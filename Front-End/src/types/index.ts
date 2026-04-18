@@ -332,6 +332,54 @@ export interface EvolutionAdvancedDto {
   conversionOverTime: EvolutionConversionPointDto[];
 }
 
+export interface Contact {
+  id: string;
+  name: string;
+  phone_normalized: string;
+  origem: "webhook_cloudia" | "import_csv" | "manual";
+  etapa?: string | null;
+  tags?: string[];
+  last_message_at?: string | null;
+  blocked?: boolean;
+  imported_at?: string | null;
+}
+
+export interface ContactPagination {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+export interface ContactCounts {
+  all: number;
+  webhook_cloudia: number;
+  import_csv: number;
+}
+
+export interface ContactsListResponse {
+  data: Contact[];
+  pagination: ContactPagination;
+  counts: ContactCounts;
+}
+
+export interface ContactImportError {
+  row: number;
+  reason: string;
+  value?: string | null;
+}
+
+export interface ContactImportResult {
+  batch_id: number | string;
+  filename: string;
+  total_rows: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  error_samples?: ContactImportError[];
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;

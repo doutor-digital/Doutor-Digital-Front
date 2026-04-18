@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
-  BarChart3, Bell, Building2, Cog, FileBarChart,
+  BarChart3, Bell, Building2, Cog, Contact as ContactIcon, FileBarChart,
   Filter, LayoutDashboard, LineChart,
   ListChecks, Moon, Radio, Users2, Workflow,
 } from "lucide-react";
@@ -20,6 +20,7 @@ const navGroups = [
     label: "Gestão",
     items: [
       { to: "/leads",      label: "Leads",      icon: ListChecks },
+      { to: "/contacts",   label: "Contatos",   icon: ContactIcon },
       { to: "/funnel",     label: "Funil",      icon: Workflow },
       { to: "/sources",    label: "Origens",    icon: Filter },
       { to: "/evolution",  label: "Evolução",   icon: LineChart },
