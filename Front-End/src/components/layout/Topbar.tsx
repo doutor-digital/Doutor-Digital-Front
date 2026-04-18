@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationsBell } from "@/components/layout/NotificationsBell";
+import { AlertsIndicator } from "@/components/layout/AlertsIndicator";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -127,6 +128,9 @@ export function Topbar() {
 
         {/* Notificações de leads recentes */}
         <NotificationsBell />
+
+        {/* Indicador de alertas (leads fora do SLA) */}
+        <AlertsIndicator />
 
         {/* Tema claro/escuro */}
         <ThemeToggle />

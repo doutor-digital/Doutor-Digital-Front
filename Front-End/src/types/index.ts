@@ -429,6 +429,39 @@ export interface ContactImportResult {
   error_samples?: ContactImportError[];
 }
 
+/* ─── Alertas de SLA (unidade) ─── */
+
+export interface UnitAlert {
+  leadId: number;
+  externalId?: number;
+  name: string;
+  phone?: string | null;
+  currentState: string;
+  createdAt: string;
+  lastUpdatedAt: string;
+  timeInBotMinutes?: number | null;
+  timeInQueueMinutes?: number | null;
+  timeInServiceMinutes?: number | null;
+  timeInConcluidoMinutes?: number | null;
+  timeToFirstResponseMinutes?: number | null;
+  timeToResolutionMinutes?: number | null;
+  isDelayed: boolean;
+  delayReason?: string | null;
+  currentAttendantId?: number | null;
+  currentAttendantName?: string | null;
+}
+
+export interface UnitAlertsResponse {
+  unitId: number;
+  totalDelayed: number;
+  limits: {
+    bot?: string;
+    queue?: string;
+    service?: string;
+  };
+  alerts: UnitAlert[];
+}
+
 /* ─── Recent leads (notificação + página /recent-leads) ─── */
 
 export interface RecentLead {

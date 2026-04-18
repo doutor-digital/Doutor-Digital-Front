@@ -1,6 +1,14 @@
 import { api } from "@/lib/api";
 import { cleanParams, toInt, asArray } from "@/lib/http";
-import type { LeadMetrics, UnitSummary } from "@/types";
+import type { LeadMetrics, UnitAlert, UnitAlertsResponse, UnitSummary } from "@/types";
+
+/** Envelope cru que o back devolve em /api/analytics/units/{id}/alerts */
+interface RawUnitAlertsEnvelope {
+  unitId: number;
+  totalDelayed: number;
+  limits?: { bot?: string; queue?: string; service?: string };
+  leads: UnitAlert[];
+}
 
 export interface UnitLeadsMetricsFilters {
   startDate?: string;
@@ -56,12 +64,20 @@ export const analyticsService = {
     return data;
   },
 
-  async unitAlerts(unitId: number | string): Promise<LeadMetrics[]> {
+  async unitAlerts(unitId: number | string): Promise<UnitAlertsResponse> {
     const id = toInt(unitId);
     if (!id) throw new Error("unitId inválido para /api/analytics/units/{unitId}/alerts");
 
-    const { data } = await api.get<LeadMetrics[]>(`/api/analytics/units/${id}/alerts`);
-    return asArray<LeadMetrics>(data);
+    const { data } = await api.get<RawUnitAlertsEnvelope>(`/api/analytics/units/${id}/alerts`);
+
+    // O back envelopa em { unitId, totalDelayed, limits, leads }.
+    // Desembrulhamos pra uma forma mais idiomática ({ ..., alerts }).
+    return {
+      unitId: data?.unitId ?? id,
+      totalDelayed: data?.totalDelayed ?? 0,
+      limits: data?.limits ?? {},
+      alerts: asArray<UnitAlert>(data?.leads),
+    };
   },
 
   async unitDashboardToday(unitId: number | string): Promise<UnitTodayDashboard> {
