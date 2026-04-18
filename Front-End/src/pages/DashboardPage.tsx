@@ -4,8 +4,8 @@ import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle, Bell, CalendarCheck,
-  CheckCircle2, Moon, Sparkles, Sunrise,
-  TrendingUp,
+  CheckCircle2, FileUp, Moon, Sparkles, Sunrise,
+  TrendingUp, Users, Webhook,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn, formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { webhooksService } from "@/services/webhooks";
+import { contactsService } from "@/services/contacts";
 import { metricsService } from "@/services/metrics";
 import { useClinic } from "@/hooks/useClinic";
 import {
@@ -119,6 +120,15 @@ export default function DashboardPage() {
     queryKey: ["amanheceu", 8020],
     queryFn:  () => webhooksService.amanheceu({ clinicId: 8020 }),
     refetchInterval: 60_000,
+  });
+  const contatosCounts = useQuery({
+    queryKey: ["contacts-counts", unitId],
+    queryFn:  () =>
+      contactsService.list({
+        clinicId: unitId || undefined,
+        pageSize: 1,
+        origem: "all",
+      }),
   });
 
   // ── Derivados ─────────────────────────────────────────────────────────────────
@@ -372,6 +382,50 @@ export default function DashboardPage() {
         subtitle="Taxa sem pagamento"
       />
      </div>
+
+      {/* ══ Contatos na base ═════════════════════════════════════ */}
+      <div className="mt-6">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.13em] text-slate-300">
+              Contatos na base
+            </h2>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Volume total — separado por origem do cadastro. Não confunde com "Total de leads" (acima), que mede só entradas do webhook com etapa.
+            </p>
+          </div>
+          <Link to="/contacts">
+            <Button variant="ghost" size="sm">Ver contatos</Button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <KpiCard
+            label="Total de contatos"
+            value={contatosCounts.data?.counts.all ?? 0}
+            icon={<Users />}
+            tone="blue"
+            loading={contatosCounts.isLoading}
+            subtitle="Soma de webhook + importados"
+          />
+          <KpiCard
+            label="Novos (webhook)"
+            value={contatosCounts.data?.counts.webhook_cloudia ?? 0}
+            icon={<Webhook />}
+            tone="violet"
+            loading={contatosCounts.isLoading}
+            subtitle="Vindos da Cloudia em tempo real"
+          />
+          <KpiCard
+            label="Importados (CSV)"
+            value={contatosCounts.data?.counts.import_csv ?? 0}
+            icon={<FileUp />}
+            tone="green"
+            loading={contatosCounts.isLoading}
+            subtitle="Base antiga carregada por upload"
+          />
+        </div>
+      </div>
 
       {/* ══ Funil + Origens ══════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
