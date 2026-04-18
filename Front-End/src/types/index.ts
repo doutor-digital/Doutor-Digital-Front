@@ -218,6 +218,42 @@ export interface LeadPaymentDto {
   paidAt: string;
 }
 
+export interface OvernightLeadItemDto {
+  id: number;
+  name: string;
+  phone?: string | null;
+  source: string;
+  channel: string;
+  currentStage: string;
+  conversationState?: string | null;
+  createdAt: string;
+  createdAtLocal: string;
+}
+
+export interface OvernightHourBucketDto {
+  hour: number;
+  count: number;
+}
+
+export interface OvernightSourceBucketDto {
+  source: string;
+  count: number;
+}
+
+export interface OvernightLeadsDto {
+  total: number;
+  unitId?: number | null;
+  clinicId?: number | null;
+  unitName: string;
+  periodStartLocal: string;
+  periodEndLocal: string;
+  startHour: number;
+  endHour: number;
+  leads: OvernightLeadItemDto[];
+  hourBreakdown: OvernightHourBucketDto[];
+  sourceBreakdown: OvernightSourceBucketDto[];
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;

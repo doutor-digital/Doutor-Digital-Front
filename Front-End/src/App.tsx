@@ -22,6 +22,7 @@ const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
+const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ export default function App() {
           <Route path="/units"             element={<UnitsPage />}        />
           <Route path="/reports"           element={<ReportsPage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />
+          <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="*"                  element={<NotFoundPage />}     />
         </Route>
 

@@ -7,6 +7,7 @@ import type {
   LeadDetail,
   LeadsCountDto,
   OrigemAgrupada,
+  OvernightLeadsDto,
   StageCount,
   TimeSeriesPoint,
 } from "@/types";
@@ -183,6 +184,22 @@ export const webhooksService = {
     });
 
     return data ?? { bot: 0, queue: 0, service: 0, concluido: 0, total: 0 };
+  },
+
+  async amanheceu(params: {
+    clinicId?: number | string;
+    startHour?: number;
+    endHour?: number;
+  } = {}): Promise<OvernightLeadsDto> {
+    const { data } = await api.get<OvernightLeadsDto>("/webhooks/amanheceu", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        startHour: params.startHour,
+        endHour: params.endHour,
+      }),
+    });
+
+    return data;
   },
 
   async syncHealth(): Promise<unknown> {

@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   BarChart3, Bell, Building2, Cog, FileBarChart,
   Filter, LayoutDashboard, LineChart,
-  ListChecks, Radio, Users2, Workflow,
+  ListChecks, Moon, Radio, Users2, Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ const navGroups = [
     items: [
       { to: "/",          label: "Dashboard",  icon: LayoutDashboard, end: true },
       { to: "/live",      label: "Ao vivo",    icon: Radio },
+      { to: "/amanheceu", label: "Amanheceu",  icon: Moon },
       { to: "/analytics", label: "Analytics",  icon: BarChart3 },
     ],
   },

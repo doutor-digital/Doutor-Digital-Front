@@ -4,7 +4,7 @@ import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle, Bell, CalendarCheck,
-  CheckCircle2, Sparkles,
+  CheckCircle2, Moon, Sparkles, Sunrise,
   TrendingUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -114,6 +114,11 @@ export default function DashboardPage() {
     queryKey: ["/webhooks/total-leads", tenantId],
     queryFn:  () => webhooksService.getTotalLeads(tenantId ?? 0),
     enabled:  tenantId !== null,
+  });
+  const amanheceuQuery = useQuery({
+    queryKey: ["amanheceu", 8020],
+    queryFn:  () => webhooksService.amanheceu({ clinicId: 8020 }),
+    refetchInterval: 60_000,
   });
 
   // ── Derivados ─────────────────────────────────────────────────────────────────
@@ -237,6 +242,56 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ══ Amanheceu — banner Araguaína ═════════════════════════ */}
+      <Link
+        to="/amanheceu"
+        className={cn(
+          "group relative mb-4 block overflow-hidden rounded-2xl",
+          "border border-indigo-400/20",
+          "bg-gradient-to-r from-[#0d0b2a] via-[#1a0b2a] to-[#220b1f]",
+          "shadow-[0_6px_24px_rgba(79,70,229,0.18),inset_0_1px_0_rgba(255,255,255,0.04)]",
+          "transition-all duration-300 hover:border-indigo-400/40",
+          "hover:shadow-[0_10px_36px_rgba(79,70,229,0.28),inset_0_1px_0_rgba(255,255,255,0.06)]"
+        )}
+      >
+        <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-amber-400/15 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-indigo-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-4 px-5 py-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 ring-1 ring-indigo-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <Moon className="h-5 w-5 text-indigo-200" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300/80">
+                Madrugada · 20h → 07h
+              </span>
+              <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">
+                Ao vivo
+              </span>
+            </div>
+            <p className="mt-0.5 truncate text-[14px] font-bold text-white">
+              Araguaína amanheceu com{" "}
+              <span className="bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">
+                {amanheceuQuery.isLoading ? "…" : formatNumber(amanheceuQuery.data?.total ?? 0)}
+              </span>{" "}
+              lead{(amanheceuQuery.data?.total ?? 0) === 1 ? "" : "s"}
+            </p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">
+              {amanheceuQuery.data?.unitName ?? "Unidade de Araguaína"} · clique para ver o detalhamento
+            </p>
+          </div>
+
+          <div className="hidden shrink-0 items-center gap-2 text-amber-300 md:flex">
+            <Sunrise className="h-5 w-5" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider">
+              Ver agora →
+            </span>
+          </div>
+        </div>
+      </Link>
 
       {/* ══ Filtros ══════════════════════════════════════════════ */}
       <div className="mb-6">
