@@ -344,6 +344,19 @@ export interface Contact {
   imported_at?: string | null;
 }
 
+export interface ContactDetail extends Contact {
+  email?: string | null;
+  phone_raw?: string | null;
+  source_file?: string | null;
+  batch_id?: number | string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  notes?: string | null;
+  custom_fields?: Record<string, unknown> | null;
+  raw?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
 export interface ContactPagination {
   page: number;
   page_size: number;

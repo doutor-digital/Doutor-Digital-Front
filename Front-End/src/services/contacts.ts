@@ -1,6 +1,11 @@
 import { api } from "@/lib/api";
 import { cleanParams, toInt } from "@/lib/http";
-import type { Contact, ContactImportResult, ContactsListResponse } from "@/types";
+import type {
+  Contact,
+  ContactDetail,
+  ContactImportResult,
+  ContactsListResponse,
+} from "@/types";
 
 export interface ListContactsParams {
   clinicId?: number | string;
@@ -39,6 +44,13 @@ export const contactsService = {
         counts: { all: 0, webhook_cloudia: 0, import_csv: 0 },
       }
     );
+  },
+
+  async getById(id: string | number, clinicId?: number | string): Promise<ContactDetail> {
+    const { data } = await api.get<ContactDetail>(`/contacts/${encodeURIComponent(String(id))}`, {
+      params: cleanParams({ clinicId: toInt(clinicId) }),
+    });
+    return data;
   },
 
   async importCsv(params: ImportCsvParams): Promise<ContactImportResult> {

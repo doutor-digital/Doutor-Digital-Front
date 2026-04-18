@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Ban, FileText, FileUp, MessageSquare, Phone, Search, Upload,
+  Ban, ChevronRight, FileText, FileUp, MessageSquare, Phone, Search, Upload,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -185,39 +186,46 @@ function ContactRow({ contact }: { contact: Contact }) {
   const isImported = contact.origem === "import_csv";
 
   return (
-    <li className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]">
-      <Avatar name={contact.name} />
+    <li>
+      <Link
+        to={`/contacts/${encodeURIComponent(String(contact.id))}`}
+        className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.04] focus-visible:bg-white/[0.04] focus-visible:outline-none"
+      >
+        <Avatar name={contact.name} />
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-slate-100">
-            {contact.name}
-          </span>
-          {isImported && <OrigemBadge />}
-          {contact.blocked && <BlockedBadge />}
-        </div>
-        <div className="mt-0.5 flex items-center gap-3 text-[11px] text-slate-500">
-          <span className="flex items-center gap-1 tabular-nums">
-            <Phone className="h-3 w-3" />
-            {formatPhone(contact.phone_normalized)}
-          </span>
-          {contact.etapa && (
-            <span className="truncate">{humanizeEtapa(contact.etapa)}</span>
-          )}
-        </div>
-      </div>
-
-      {contact.last_message_at && (
-        <div className="hidden shrink-0 text-right text-[11px] text-slate-500 md:block">
-          <div className="flex items-center justify-end gap-1">
-            <MessageSquare className="h-3 w-3" />
-            última msg
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-slate-100 group-hover:text-white">
+              {contact.name}
+            </span>
+            {isImported && <OrigemBadge />}
+            {contact.blocked && <BlockedBadge />}
           </div>
-          <div className="mt-0.5 tabular-nums text-slate-400">
-            {formatDateShort(contact.last_message_at)}
+          <div className="mt-0.5 flex items-center gap-3 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 tabular-nums">
+              <Phone className="h-3 w-3" />
+              {formatPhone(contact.phone_normalized)}
+            </span>
+            {contact.etapa && (
+              <span className="truncate">{humanizeEtapa(contact.etapa)}</span>
+            )}
           </div>
         </div>
-      )}
+
+        {contact.last_message_at && (
+          <div className="hidden shrink-0 text-right text-[11px] text-slate-500 md:block">
+            <div className="flex items-center justify-end gap-1">
+              <MessageSquare className="h-3 w-3" />
+              última msg
+            </div>
+            <div className="mt-0.5 tabular-nums text-slate-400">
+              {formatDateShort(contact.last_message_at)}
+            </div>
+          </div>
+        )}
+
+        <ChevronRight className="h-4 w-4 shrink-0 text-slate-600 transition-colors group-hover:text-slate-300" />
+      </Link>
     </li>
   );
 }
