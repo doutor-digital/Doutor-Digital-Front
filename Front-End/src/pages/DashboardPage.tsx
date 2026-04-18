@@ -244,54 +244,45 @@ export default function DashboardPage() {
       </div>
 
       {/* ══ Amanheceu — banner Araguaína ═════════════════════════ */}
-      <Link
-        to="/amanheceu"
-        className={cn(
-          "group relative mb-4 block overflow-hidden rounded-2xl",
-          "border border-indigo-400/20",
-          "bg-gradient-to-r from-[#0d0b2a] via-[#1a0b2a] to-[#220b1f]",
-          "shadow-[0_6px_24px_rgba(79,70,229,0.18),inset_0_1px_0_rgba(255,255,255,0.04)]",
-          "transition-all duration-300 hover:border-indigo-400/40",
-          "hover:shadow-[0_10px_36px_rgba(79,70,229,0.28),inset_0_1px_0_rgba(255,255,255,0.06)]"
-        )}
-      >
-        <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-amber-400/15 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-indigo-500/15 blur-3xl" />
+    <Link
+  to="/amanheceu"
+  className={cn(
+    "group mb-4 flex items-center gap-4 rounded-xl border border-white/8",
+    "bg-white/[0.03] px-4 py-3.5",
+    "transition-colors hover:bg-white/[0.05] hover:border-white/12"
+  )}
+>
+  {/* Ícone simples, sem glow */}
+  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/6 ring-1 ring-white/10">
+    <Moon className="h-4.5 w-4.5 text-slate-300" />
+  </div>
 
-        <div className="relative flex items-center gap-4 px-5 py-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 ring-1 ring-indigo-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-            <Moon className="h-5 w-5 text-indigo-200" />
-          </div>
+  {/* Conteúdo */}
+  <div className="min-w-0 flex-1">
+    <p className="truncate text-[13px] font-semibold text-slate-100">
+      Araguaína ·{" "}
+      <span className="text-white">
+        {amanheceuQuery.isLoading
+          ? "…"
+          : `${formatNumber(amanheceuQuery.data?.total ?? 0)} lead${(amanheceuQuery.data?.total ?? 0) === 1 ? "" : "s"} essa madrugada`}
+      </span>
+    </p>
+    <p className="mt-0.5 text-[11px] text-slate-500">
+      20h → 07h · {amanheceuQuery.data?.unitName ?? "Araguaína"} · clique para ver o detalhamento
+    </p>
+  </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300/80">
-                Madrugada · 20h → 07h
-              </span>
-              <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">
-                Ao vivo
-              </span>
-            </div>
-            <p className="mt-0.5 truncate text-[14px] font-bold text-white">
-              Araguaína amanheceu com{" "}
-              <span className="bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">
-                {amanheceuQuery.isLoading ? "…" : formatNumber(amanheceuQuery.data?.total ?? 0)}
-              </span>{" "}
-              lead{(amanheceuQuery.data?.total ?? 0) === 1 ? "" : "s"}
-            </p>
-            <p className="mt-0.5 truncate text-[11px] text-slate-400">
-              {amanheceuQuery.data?.unitName ?? "Unidade de Araguaína"} · clique para ver o detalhamento
-            </p>
-          </div>
-
-          <div className="hidden shrink-0 items-center gap-2 text-amber-300 md:flex">
-            <Sunrise className="h-5 w-5" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider">
-              Ver agora →
-            </span>
-          </div>
-        </div>
-      </Link>
+  {/* Indicador ao vivo + seta */}
+  <div className="flex shrink-0 items-center gap-3">
+    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      ao vivo
+    </span>
+    <span className="text-slate-600 transition-colors group-hover:text-slate-300">
+      →
+    </span>
+  </div>
+</Link>0
 
       {/* ══ Filtros ══════════════════════════════════════════════ */}
       <div className="mb-6">

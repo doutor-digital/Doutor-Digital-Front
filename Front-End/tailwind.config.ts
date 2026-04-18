@@ -1,41 +1,76 @@
 import type { Config } from "tailwindcss";
 
+const v = (name: string) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
+        // Azul principal — baseado na logo (#0086f7 / #008eff)
         brand: {
-          50: "#eef4ff",
-          100: "#d9e5ff",
-          200: "#b8ccff",
-          300: "#89a9ff",
-          400: "#5e85ff",
-          500: "#3b63f5",
-          600: "#2947dc",
-          700: "#2238b3",
-          800: "#1f338e",
-          900: "#1c2c6f",
-          950: "#0f1a49",
+          50:  "#e6f3ff",
+          100: "#cce8ff",
+          200: "#99d0ff",
+          300: "#66b9ff",
+          400: "#33a1ff",
+          500: "#008eff",
+          600: "#0086f7",
+          700: "#006ac4",
+          800: "#004f91",
+          900: "#00355e",
+          950: "#001a30",
         },
+        // Amarelo secundário — baseado na logo (#ffb500 / #ffbf00)
+        accent: {
+          50:  "#fff8e6",
+          100: "#fff1cc",
+          200: "#ffe499",
+          300: "#ffd666",
+          400: "#ffc933",
+          500: "#ffbf00",
+          600: "#ffb500",
+          700: "#cc9100",
+          800: "#996d00",
+          900: "#664800",
+          950: "#332400",
+        },
+        // Paletas de superfície e texto dirigidas por CSS vars — trocam com o tema
         ink: {
-          50: "#f5f7fb",
-          100: "#e7ecf5",
-          200: "#ccd5e4",
-          300: "#a4b2ca",
-          400: "#7687a6",
-          500: "#566889",
-          600: "#3f4f6f",
-          700: "#2f3c58",
-          800: "#1f2840",
-          900: "#121932",
-          950: "#0b1020",
+          50:  v("--ink-50"),
+          100: v("--ink-100"),
+          200: v("--ink-200"),
+          300: v("--ink-300"),
+          400: v("--ink-400"),
+          500: v("--ink-500"),
+          600: v("--ink-600"),
+          700: v("--ink-700"),
+          800: v("--ink-800"),
+          900: v("--ink-900"),
+          950: v("--ink-950"),
         },
+        slate: {
+          50:  v("--slate-50"),
+          100: v("--slate-100"),
+          200: v("--slate-200"),
+          300: v("--slate-300"),
+          400: v("--slate-400"),
+          500: v("--slate-500"),
+          600: v("--slate-600"),
+          700: v("--slate-700"),
+          800: v("--slate-800"),
+          900: v("--slate-900"),
+          950: v("--slate-950"),
+        },
+        // Tokens semânticos
+        surface: v("--surface"),
+        "surface-2": v("--surface-2"),
+        hairline: v("--hairline"),
       },
       boxShadow: {
         card: "0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.08)",
-        glow: "0 0 0 1px rgba(59, 99, 245, .35), 0 10px 30px rgba(59, 99, 245, .25)",
+        glow: "0 0 0 1px rgba(0, 134, 247, .35), 0 10px 30px rgba(0, 134, 247, .25)",
       },
       fontFamily: {
         sans: [
