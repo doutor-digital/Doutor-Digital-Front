@@ -196,5 +196,13 @@ export const webhooksService = {
   });
 
   return data.total;
-  }
+  },
+
+  async patchLead(id: number | string, patch: Record<string, unknown>): Promise<LeadDetail> {
+    const numericId = toInt(id);
+    if (!numericId) throw new Error("id inválido para PATCH /webhooks/{id}");
+
+    const { data } = await api.patch<LeadDetail>(`/webhooks/${numericId}`, patch);
+    return data;
+  },
 };
