@@ -6,6 +6,7 @@ import type {
   Lead,
   LeadDetail,
   LeadsCountDto,
+  EvolutionAdvancedDto,
   OrigemAgrupada,
   OvernightLeadsDto,
   StageCount,
@@ -210,6 +211,21 @@ export const webhooksService = {
     });
 
     return data ?? { bot: 0, queue: 0, service: 0, concluido: 0, total: 0 };
+  },
+
+  async evolutionAdvanced(params: {
+    clinicId?: number | string;
+    dataInicio: string;
+    dataFim: string;
+  }): Promise<EvolutionAdvancedDto> {
+    const { data } = await api.get<EvolutionAdvancedDto>("/webhooks/evolution/advanced", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        dataInicio: params.dataInicio,
+        dataFim: params.dataFim,
+      }),
+    });
+    return data;
   },
 
   async amanheceu(params: {

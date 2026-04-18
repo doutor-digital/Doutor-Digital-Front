@@ -256,6 +256,72 @@ export interface OvernightLeadsDto {
   sourceBreakdown: OvernightSourceBucketDto[];
 }
 
+export interface EvolutionMonthPointDto {
+  year: number;
+  month: number;
+  label: string;
+  total: number;
+  cumulative: number;
+  momGrowthPercent: number | null;
+  movingAverage3: number | null;
+}
+
+export interface EvolutionWeekdayDto {
+  weekday: number;
+  label: string;
+  total: number;
+}
+
+export interface EvolutionHourDto {
+  hour: number;
+  total: number;
+}
+
+export interface EvolutionSourceMonthDto {
+  year: number;
+  month: number;
+  label: string;
+  count: number;
+}
+
+export interface EvolutionSourceSerieDto {
+  source: string;
+  total: number;
+  points: EvolutionSourceMonthDto[];
+}
+
+export interface EvolutionConversionPointDto {
+  year: number;
+  month: number;
+  label: string;
+  total: number;
+  agendado: number;
+  pago: number;
+  tratamento: number;
+  agendadoRate: number;
+  pagoRate: number;
+}
+
+export interface EvolutionAdvancedDto {
+  startDateLocal: string;
+  endDateLocal: string;
+  clinicId?: number | null;
+  totalLeads: number;
+  averageMonthly: number;
+  medianMonthly: number;
+  stdDevMonthly: number;
+  bestMonthTotal: number;
+  bestMonthLabel: string;
+  worstMonthTotal: number;
+  worstMonthLabel: string;
+  growthPercentFirstToLast: number;
+  monthly: EvolutionMonthPointDto[];
+  weekday: EvolutionWeekdayDto[];
+  hour: EvolutionHourDto[];
+  sourcesOverTime: EvolutionSourceSerieDto[];
+  conversionOverTime: EvolutionConversionPointDto[];
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;
