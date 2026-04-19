@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
-  BarChart3, Bell, Building2, Cog, Contact as ContactIcon, FileBarChart,
-  Filter, LayoutDashboard, LineChart,
+  BarChart3, Bell, Building2, Cog, Contact as ContactIcon, DollarSign,
+  FileBarChart, Filter, LayoutDashboard, LineChart,
   ListChecks, Moon, Radio, Users2, Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,12 @@ const navGroups = [
       { to: "/evolution",  label: "Evolução",   icon: LineChart },
       { to: "/attendants", label: "Atendentes", icon: Users2 },
       { to: "/units",      label: "Unidades",   icon: Building2 },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { to: "/finance", label: "Financeiro", icon: DollarSign },
     ],
   },
   {

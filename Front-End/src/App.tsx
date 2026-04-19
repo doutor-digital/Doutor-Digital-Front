@@ -27,6 +27,7 @@ const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
+const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="/attendants"        element={<AttendantsPage />}   />
           <Route path="/units"             element={<UnitsPage />}        />
           <Route path="/reports"           element={<ReportsPage />}      />
+          <Route path="/finance"           element={<FinancePage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
