@@ -29,7 +29,7 @@ export interface TreatmentOption {
 
 export interface PaymentCreateInput {
   leadId: number;
-  clinicId?: number | string;
+  TenantId?: number | string;
   treatment: string;
   treatmentDurationMonths: number;
   treatmentValue?: number;
@@ -107,7 +107,7 @@ export const paymentsService = {
   async create(input: PaymentCreateInput): Promise<Payment> {
     const { data } = await api.post<Payment>("/payments", {
       leadId: input.leadId,
-      clinicId: toInt(input.clinicId),
+      TenantId: toInt(input.TenantId),
       treatment: input.treatment,
       treatmentDurationMonths: input.treatmentDurationMonths,
       treatmentValue: input.treatmentValue,

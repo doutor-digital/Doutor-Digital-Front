@@ -16,11 +16,11 @@ const DEFAULT_TREATMENT_VALUE = 3800;
 interface Props {
   open: boolean;
   onClose: () => void;
-  clinicId?: number;
+  TenantId?: number;
   defaultLeadId?: number;
 }
 
-export function PaymentModal({ open, onClose, clinicId, defaultLeadId }: Props) {
+export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) {
   const { data: treatments = [], isLoading: loadingTreatments } = useTreatments();
   const createMutation = useCreatePayment();
 
@@ -69,12 +69,12 @@ export function PaymentModal({ open, onClose, clinicId, defaultLeadId }: Props) 
   async function onSubmit() {
     const leadIdNum = Number(leadId);
     if (!leadIdNum) return;
-    if (!clinicId) return;
+    if (!TenantId) return;
     if (!treatmentKey) return;
 
     await createMutation.mutateAsync({
       leadId: leadIdNum,
-      clinicId,
+      TenantId,
       treatment: currentTreatment?.name ?? treatmentKey,
       treatmentDurationMonths: durationMonths,
       treatmentValue,
@@ -327,7 +327,7 @@ export function PaymentModal({ open, onClose, clinicId, defaultLeadId }: Props) 
           <Button
             onClick={onSubmit}
             disabled={
-              !leadId || !treatmentKey || !clinicId || createMutation.isPending
+              !leadId || !treatmentKey || !TenantId || createMutation.isPending
             }
           >
             {createMutation.isPending ? (
