@@ -3,6 +3,7 @@ import { X, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { LeadSelect } from "@/components/finance/LeadSelect";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   PAYMENT_METHOD_LABEL,
@@ -24,7 +25,7 @@ export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) 
   const { data: treatments = [], isLoading: loadingTreatments } = useTreatments();
   const createMutation = useCreatePayment();
 
-  const [leadId, setLeadId] = useState<string>(defaultLeadId ? String(defaultLeadId) : "");
+  const [leadId, setLeadId] = useState<number | null>(defaultLeadId ?? null);
   const [treatmentKey, setTreatmentKey] = useState<string>("");
   const [treatmentValue, setTreatmentValue] = useState<number>(DEFAULT_TREATMENT_VALUE);
   const [durationMonths, setDurationMonths] = useState<number>(1);
@@ -37,7 +38,7 @@ export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) 
   const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
-    if (open && defaultLeadId) setLeadId(String(defaultLeadId));
+    if (open && defaultLeadId) setLeadId(defaultLeadId);
   }, [open, defaultLeadId]);
 
   useEffect(() => {
@@ -67,13 +68,12 @@ export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) 
   }
 
   async function onSubmit() {
-    const leadIdNum = Number(leadId);
-    if (!leadIdNum) return;
+    if (!leadId) return;
     if (!TenantId) return;
     if (!treatmentKey) return;
 
     await createMutation.mutateAsync({
-      leadId: leadIdNum,
+      leadId,
       TenantId,
       treatment: currentTreatment?.name ?? treatmentKey,
       treatmentDurationMonths: durationMonths,
@@ -85,7 +85,7 @@ export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) 
       notes: notes || undefined,
     });
 
-    setLeadId("");
+    setLeadId(null);
     setNotes("");
     setDownPayment(0);
     setInstallments(1);
@@ -131,18 +131,13 @@ export function PaymentModal({ open, onClose, TenantId, defaultLeadId }: Props) 
           {/* Lead */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-              ID do lead
+              Lead
             </label>
-            <Input
-              type="number"
-              min={1}
-              placeholder="Ex.: 1024"
-              value={leadId}
-              onChange={(e) => setLeadId(e.target.value)}
-              className="mt-1.5"
-            />
+            <div className="mt-1.5">
+              <LeadSelect value={leadId} onChange={(id) => setLeadId(id)} />
+            </div>
             <p className="mt-1 text-[11px] text-slate-500">
-              Você pode copiar o ID da listagem de leads.
+              Comece a digitar o nome, telefone ou ID para filtrar.
             </p>
           </div>
 
