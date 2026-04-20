@@ -19,28 +19,28 @@ import type { OvernightLeadsDto, RecentLead } from "@/types";
 
 export default function ReportsPage() {
   const { tenantId, unitId } = useClinic();
-  const activeClinicId = tenantId ?? unitId ?? "";
+  const activeClinicId = unitId ?? tenantId ?? null;
+  const hasClinic = !!activeClinicId;
 
   const today = new Date();
 
-  const [monthlyParams, setMonthlyParams] = useState({
-    clinicId: String(activeClinicId),
-    mes: today.getMonth() + 1,
-    ano: today.getFullYear(),
-  });
-  const [dailyParams, setDailyParams] = useState({
-    tenantId: String(activeClinicId),
-    date: today.toISOString().slice(0, 10),
-  });
+  const [mes, setMes] = useState(today.getMonth() + 1);
+  const [ano, setAno] = useState(today.getFullYear());
+  const [dailyDate, setDailyDate] = useState(today.toISOString().slice(0, 10));
+
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
   const [dailyData, setDailyData] = useState<unknown>(null);
 
   async function gerarMensal() {
-    if (!monthlyParams.clinicId) return toast.error("Informe o Clinic ID");
+    if (!activeClinicId) return toast.error("Selecione uma unidade primeiro");
     setMonthlyLoading(true);
     try {
-      await reportsService.monthly(monthlyParams);
+      await reportsService.monthly({
+        clinicId: String(activeClinicId),
+        mes,
+        ano,
+      });
       toast.success("PDF gerado");
     } catch {
       // erro tratado pelo interceptor
@@ -50,10 +50,13 @@ export default function ReportsPage() {
   }
 
   async function gerarDiario() {
-    if (!dailyParams.tenantId) return toast.error("Informe o Tenant ID");
+    if (!activeClinicId) return toast.error("Selecione uma unidade primeiro");
     setDailyLoading(true);
     try {
-      const data = await reportsService.daily(dailyParams);
+      const data = await reportsService.daily({
+        tenantId: String(activeClinicId),
+        date: dailyDate,
+      });
       setDailyData(data);
       toast.success("Relatório carregado");
     } catch {
@@ -75,27 +78,28 @@ export default function ReportsPage() {
           <CardHeader
             title="Relatório mensal (PDF)"
             subtitle="Taxa de conversão, origens, etapas, unidades"
+            action={
+              hasClinic ? (
+                <Badge tone="green">Unidade #{activeClinicId}</Badge>
+              ) : (
+                <Badge tone="yellow">Sem unidade</Badge>
+              )
+            }
           />
           <CardBody className="space-y-3">
-            <div>
-              <label className="label">Clinic ID</label>
-              <Input
-                className="mt-1"
-                value={monthlyParams.clinicId}
-                onChange={(e) =>
-                  setMonthlyParams((p) => ({ ...p, clinicId: e.target.value }))
-                }
-              />
-            </div>
+            {!hasClinic && (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[11px] text-amber-200">
+                Selecione uma unidade para gerar o relatório.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Mês</label>
                 <Select
                   className="mt-1"
-                  value={monthlyParams.mes}
-                  onChange={(e) =>
-                    setMonthlyParams((p) => ({ ...p, mes: +e.target.value }))
-                  }
+                  value={mes}
+                  onChange={(e) => setMes(+e.target.value)}
+                  disabled={!hasClinic}
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                     <option key={m} value={m}>
@@ -111,14 +115,18 @@ export default function ReportsPage() {
                 <Input
                   type="number"
                   className="mt-1"
-                  value={monthlyParams.ano}
-                  onChange={(e) =>
-                    setMonthlyParams((p) => ({ ...p, ano: +e.target.value }))
-                  }
+                  value={ano}
+                  onChange={(e) => setAno(+e.target.value)}
+                  disabled={!hasClinic}
                 />
               </div>
             </div>
-            <Button onClick={gerarMensal} loading={monthlyLoading} className="w-full justify-center mt-4">
+            <Button
+              onClick={gerarMensal}
+              loading={monthlyLoading}
+              disabled={!hasClinic}
+              className="w-full justify-center mt-4"
+            >
               <FileDown className="h-4 w-4" /> Baixar PDF
             </Button>
           </CardBody>
@@ -128,33 +136,39 @@ export default function ReportsPage() {
           <CardHeader
             title="Relatório diário"
             subtitle="Agendamentos, resgates, motivos"
+            action={
+              hasClinic ? (
+                <Badge tone="green">Unidade #{activeClinicId}</Badge>
+              ) : (
+                <Badge tone="yellow">Sem unidade</Badge>
+              )
+            }
           />
           <CardBody className="space-y-3">
-            <div>
-              <label className="label">Tenant ID</label>
-              <Input
-                className="mt-1"
-                value={dailyParams.tenantId}
-                onChange={(e) =>
-                  setDailyParams((p) => ({ ...p, tenantId: e.target.value }))
-                }
-              />
-            </div>
+            {!hasClinic && (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[11px] text-amber-200">
+                Selecione uma unidade para carregar o relatório diário.
+              </div>
+            )}
             <div>
               <label className="label">Data</label>
               <Input
                 type="date"
                 className="mt-1"
-                value={dailyParams.date}
-                onChange={(e) =>
-                  setDailyParams((p) => ({ ...p, date: e.target.value }))
-                }
+                value={dailyDate}
+                onChange={(e) => setDailyDate(e.target.value)}
+                disabled={!hasClinic}
               />
             </div>
             <div className="mt-4">
-            <Button onClick={gerarDiario} loading={dailyLoading} className="w-full justify-center">
-              <FileText className="h-4 w-4" /> Visualizar relatório
-            </Button>
+              <Button
+                onClick={gerarDiario}
+                loading={dailyLoading}
+                disabled={!hasClinic}
+                className="w-full justify-center"
+              >
+                <FileText className="h-4 w-4" /> Visualizar relatório
+              </Button>
             </div>
 
             {dailyData !== null && (
@@ -257,19 +271,17 @@ const DEFAULT_OPTIONS: FormatOptions = {
 function WhatsAppReportCard() {
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
+  const { unitId: activeUnitId, tenantId: activeTenantId } = useClinic();
 
   const unitsQuery = useQuery({
     queryKey: ["units", "list"],
     queryFn: () => unitsService.list(),
   });
   const units = unitsQuery.data ?? [];
-  const araguainaPreferred = units.find((u) =>
-    (u.name ?? "").toLowerCase().includes("araguaína") ||
-    (u.name ?? "").toLowerCase().includes("araguaina"),
-  );
 
+  const activeClinicFallback = String(activeUnitId ?? activeTenantId ?? "");
   const [unitValue, setUnitValue] = useState<string>("");
-  const resolvedUnitId = unitValue || String(araguainaPreferred?.clinicId ?? araguainaPreferred?.id ?? "");
+  const resolvedUnitId = unitValue || activeClinicFallback;
   const resolvedUnit = units.find(
     (u) => String(u.clinicId) === resolvedUnitId || String(u.id) === resolvedUnitId,
   );
@@ -402,10 +414,9 @@ function WhatsAppReportCard() {
                 </option>
               ))}
             </Select>
-            {araguainaPreferred && !unitValue && (
+            {resolvedUnit && !unitValue && (
               <p className="mt-1 text-[10.5px] text-slate-500">
-                Padrão: <strong>{araguainaPreferred.name}</strong> (clinicId{" "}
-                {araguainaPreferred.clinicId ?? araguainaPreferred.id})
+                Unidade ativa: <strong>{resolvedUnit.name}</strong>
               </p>
             )}
           </div>

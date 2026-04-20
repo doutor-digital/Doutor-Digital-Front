@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Badge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,13 +18,8 @@ import { cn } from "@/lib/utils";
 const POLL_INTERVAL_MS = 15_000;
 
 export default function AlertsPage() {
-  const { unitId: clinicUnitId } = useClinic();
-
-  // Começa com a unidade ativa; permite sobrescrever manualmente.
-  const [unitId, setUnitId] = useState(() => {
-    const stored = localStorage.getItem("lf.alerts.unitId");
-    return stored ?? (clinicUnitId ? String(clinicUnitId) : "");
-  });
+  const { unitId: clinicUnitId, tenantId } = useClinic();
+  const unitId = String(clinicUnitId ?? tenantId ?? "");
   const [livePolling, setLivePolling] = useState(true);
 
   const alerts = useQuery({
@@ -90,19 +84,11 @@ export default function AlertsPage() {
         description="Leads fora do SLA · atualização em tempo real via polling"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Input
-              className="w-40"
-              placeholder="Unit ID"
-              value={unitId}
-              onChange={(e) => {
-                setUnitId(e.target.value);
-                localStorage.setItem("lf.alerts.unitId", e.target.value);
-              }}
-            />
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLivePolling((v) => !v)}
+              disabled={!unitId}
               title={livePolling ? "Pausar atualização automática" : "Retomar atualização automática"}
             >
               {livePolling ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
@@ -162,12 +148,8 @@ export default function AlertsPage() {
         <Card className="p-8">
           <EmptyState
             icon={<Bell className="h-5 w-5 text-amber-400" />}
-            title="Informe um Unit ID"
-            description={
-              clinicUnitId
-                ? "Usaremos a unidade ativa, mas você pode sobrescrever no campo acima."
-                : "Os alertas são escaneados por unidade. Selecione uma unidade na topbar ou digite um Unit ID."
-            }
+            title="Selecione uma unidade"
+            description="Os alertas são escaneados por unidade. Use o seletor de unidade para escolher a clínica que deseja acompanhar."
           />
         </Card>
       ) : alerts.isError ? (
