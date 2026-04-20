@@ -22,6 +22,7 @@ const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
+const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
@@ -77,6 +78,9 @@ export default function App() {
 
         {/* Pública */}
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
+        <Route path="/logs" element={<LogsPage />} />
 
         {/* Seleção de unidade — requer login, mas não clínica */}
         <Route

@@ -702,6 +702,22 @@ function ProfileCard() {
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando perfil…
           </div>
+        ) : profile.isError || !user ? (
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.06] px-3 py-3 text-[12px] text-rose-200">
+            <p className="font-semibold">Falha ao carregar seu perfil.</p>
+            <p className="mt-0.5 text-[11px] text-rose-300/80">
+              {(profile.error as { response?: { data?: { message?: string } }; message?: string })
+                ?.response?.data?.message
+                ?? (profile.error as { message?: string })?.message
+                ?? "Verifique se a API está rodando e se seu token ainda é válido (refaça o login se necessário)."}
+            </p>
+            <button
+              onClick={() => profile.refetch()}
+              className="mt-2 inline-flex items-center gap-1.5 text-[11px] underline underline-offset-2 text-rose-200 hover:text-rose-100"
+            >
+              Tentar novamente
+            </button>
+          </div>
         ) : (
           <>
             <div className="flex items-start gap-5">
@@ -791,6 +807,8 @@ function ProfileCard() {
                 <Input
                   className="mt-1"
                   icon={<UserIcon className="h-4 w-4" />}
+                  name="profile-name"
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => { setName(e.target.value); setDirty(true); }}
                 />
@@ -801,6 +819,8 @@ function ProfileCard() {
                   className="mt-1"
                   type="email"
                   icon={<Mail className="h-4 w-4" />}
+                  name="profile-email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setDirty(true); }}
                 />
@@ -811,6 +831,9 @@ function ProfileCard() {
                   className="mt-1"
                   type="tel"
                   icon={<Phone className="h-4 w-4" />}
+                  name="profile-phone"
+                  autoComplete="tel-national"
+                  inputMode="tel"
                   placeholder="(00) 00000-0000"
                   value={phone}
                   onChange={(e) => { setPhone(e.target.value); setDirty(true); }}
@@ -857,6 +880,8 @@ function ProfileCard() {
                   <Input
                     className="mt-1"
                     type={showPwd ? "text" : "password"}
+                    name="current-password"
+                    autoComplete="current-password"
                     value={currentPwd}
                     onChange={(e) => setCurrentPwd(e.target.value)}
                     icon={<KeyRound className="h-4 w-4" />}
@@ -868,6 +893,8 @@ function ProfileCard() {
                   <Input
                     className="mt-1"
                     type={showPwd ? "text" : "password"}
+                    name="new-password"
+                    autoComplete="new-password"
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     icon={<Lock className="h-4 w-4" />}
@@ -879,6 +906,8 @@ function ProfileCard() {
                   <Input
                     className="mt-1"
                     type={showPwd ? "text" : "password"}
+                    name="confirm-password"
+                    autoComplete="new-password"
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     icon={<Lock className="h-4 w-4" />}

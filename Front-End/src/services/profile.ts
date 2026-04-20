@@ -39,8 +39,12 @@ export const profileService = {
   async uploadPhoto(file: File): Promise<UserProfile> {
     const form = new FormData();
     form.append("file", file);
+
+    const token = localStorage.getItem("auth_token");
     const { data } = await api.post<UserProfile>("/users/me/photo", form, {
-      headers: { "Content-Type": "multipart/form-data" },
+      // Deixa o axios/browser definir o Content-Type (com boundary) automaticamente.
+      // Passamos o Authorization explicitamente como garantia.
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
     return data;
   },
