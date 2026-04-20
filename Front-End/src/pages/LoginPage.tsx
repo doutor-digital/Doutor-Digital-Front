@@ -195,10 +195,6 @@ return (
         >
           Entrar no painel
         </Button>
-
-        <p className="text-center text-[11px] text-slate-600">
-          Sessão local enquanto a autenticação JWT não está no backend.
-        </p>
       </form>
     </div>
   </div>
