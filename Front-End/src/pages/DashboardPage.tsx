@@ -1,17 +1,21 @@
-// src/pages/DashboardPage.tsx
-
 import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle, Bell, CalendarCheck,
-  CheckCircle2, FileUp, Moon, Sparkles, Sunrise,
-  TrendingUp, Users, Webhook,
+  AlertTriangle,
+  Bell,
+  CalendarCheck,
+  CheckCircle2,
+  FileUp,
+  Moon,
+  Sparkles,
+  TrendingUp,
+  Webhook,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn, formatNumber, formatPercent, truncate, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { KpiCard } from "@/components/kpi/KpiCard";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { Kpi, type KpiTone } from "@/components/ui/Kpi";
 import { Button } from "@/components/ui/Button";
 import { StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -26,19 +30,15 @@ import {
   defaultFilters,
 } from "@/components/filters/DashboardFilters";
 
-// ─── Lazy charts ──────────────────────────────────────────────────────────────
-
 const FunnelChart = lazy(() =>
-  import("@/components/charts/FunnelChart").then((m) => ({ default: m.FunnelChart }))
+  import("@/components/charts/FunnelChart").then((m) => ({ default: m.FunnelChart })),
 );
 const EvolutionLine = lazy(() =>
-  import("@/components/charts/EvolutionLine").then((m) => ({ default: m.EvolutionLine }))
+  import("@/components/charts/EvolutionLine").then((m) => ({ default: m.EvolutionLine })),
 );
 const SourceDonut = lazy(() =>
-  import("@/components/charts/SourceDonut").then((m) => ({ default: m.SourceDonut }))
+  import("@/components/charts/SourceDonut").then((m) => ({ default: m.SourceDonut })),
 );
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function greeting() {
   const h = new Date().getHours();
@@ -63,7 +63,7 @@ function evolutionSubtitle(
   filters: DashboardFiltersState,
   total?: number,
   change?: number | null,
-  compare?: string
+  compare?: string,
 ): string {
   const parts: string[] = [];
   parts.push(`${filters.startDate} → ${filters.endDate}`);
@@ -76,7 +76,9 @@ function evolutionSubtitle(
   return parts.join(" · ");
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+function KpiImg({ src, alt }: { src: string; alt: string }) {
+  return <img src={src} alt={alt} className="h-4 w-4 object-contain" />;
+}
 
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
@@ -86,9 +88,6 @@ export default function DashboardPage() {
 
   const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
 
-  // ── Queries ──────────────────────────────────────────────────────────────────
-
-  // Overview consolidado — TODOS os KPIs reagem aos filtros de período + unidade
   const overviewClinicId = tenantId ?? unitId ?? undefined;
   const overview = useQuery({
     queryKey: [
@@ -109,7 +108,6 @@ export default function DashboardPage() {
     placeholderData: (prev) => prev,
   });
 
-  // Evolução temporal (série do gráfico) — mesmos filtros + granularidade/compare
   const evolucaoClinicId = unitId ?? tenantId ?? undefined;
   const evolucao = useQuery({
     queryKey: [
@@ -131,48 +129,46 @@ export default function DashboardPage() {
     enabled: !!evolucaoClinicId,
   });
   const resumoLive = useQuery({
-    queryKey:       ["live-resumo", unitId],
-    queryFn:        () => metricsService.resumo(unitId || undefined),
+    queryKey: ["live-resumo", unitId],
+    queryFn: () => metricsService.resumo(unitId || undefined),
     refetchInterval: 30_000,
   });
   const ativos = useQuery({
     queryKey: ["active", unitId],
-    queryFn:  () => webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
+    queryFn: () =>
+      webhooksService.activeLeads({ limit: 10, unitId: unitId || undefined }),
   });
   const amanheceuQuery = useQuery({
     queryKey: ["amanheceu", 8020],
-    queryFn:  () => webhooksService.amanheceu({ clinicId: 8020 }),
+    queryFn: () => webhooksService.amanheceu({ clinicId: 8020 }),
     refetchInterval: 60_000,
   });
   const contatosCounts = useQuery({
     queryKey: ["contacts", "counts", tenantId],
-    queryFn:  () =>
+    queryFn: () =>
       contactsService.list({
         clinicId: tenantId ?? undefined,
         pageSize: 1,
         origem: "all",
       }),
-    enabled:  tenantId !== null,
+    enabled: tenantId !== null,
   });
 
-  // ── Derivados (todos saem do overview → reagem aos filtros) ───────────────────
-
-  const ov            = overview.data;
+  const ov = overview.data;
   const overviewLoading = overview.isLoading;
-  const total         = ov?.total_leads ?? 0;
-  const consultasNum  = ov?.consultas ?? 0;
-  const comPagNum     = ov?.com_pagamento ?? 0;
-  const semPagNum     = ov?.sem_pagamento ?? 0;
-  const statesData    = ov?.states;
-  const conversao     = ov?.conversao_rate ?? 0;
+  const total = ov?.total_leads ?? 0;
+  const consultasNum = ov?.consultas ?? 0;
+  const comPagNum = ov?.com_pagamento ?? 0;
+  const semPagNum = ov?.sem_pagamento ?? 0;
+  const statesData = ov?.states;
+  const conversao = ov?.conversao_rate ?? 0;
   const pagamentoRate = ov?.pagamento_rate ?? 0;
-  const semPagRate    = ov?.sem_pagamento_rate ?? 0;
-  const donutData     = (ov?.origens ?? []).slice(0, 8).map((o) => ({
-    name:  o.origem   ?? "—",
+  const semPagRate = ov?.sem_pagamento_rate ?? 0;
+  const donutData = (ov?.origens ?? []).slice(0, 8).map((o) => ({
+    name: o.origem ?? "—",
     value: o.quantidade ?? 0,
   }));
-  // Normaliza pro shape esperado pelo card de distribuição (stage, count)
-  const etapaData     = (ov?.etapas ?? []).map((e) => ({
+  const etapaData = (ov?.etapas ?? []).map((e) => ({
     stage: e.etapa ?? "SEM_ETAPA",
     count: e.quantidade ?? 0,
   }));
@@ -182,15 +178,11 @@ export default function DashboardPage() {
     evolucao.refetch();
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
-
   return (
-    <>
-      {/* ══ Header ══════════════════════════════════════════════ */}
+    <div className="space-y-5">
       <PageHeader
         title="Visão geral"
-        badge="Clínica"
-        backgroundImage="https://i.postimg.cc/2ynCmp8g/banner.jpg"
+        badge="Dashboard"
         description={
           unitId
             ? `Performance consolidada · unitId: ${unitId}`
@@ -199,20 +191,16 @@ export default function DashboardPage() {
         actions={
           <>
             <Link to="/live">
-              <Button
-                variant="outline"
-                size="sm"
-                className="relative border-red-500/60 bg-red-500/10 text-red-400 hover:border-red-400 hover:bg-red-500/20 hover:text-red-300"
-              >
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+              <Button variant="outline" size="sm" className="gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
                 </span>
                 Ao vivo
               </Button>
             </Link>
             <Link to="/reports">
-              <Button size="sm">
+              <Button size="sm" className="gap-2">
                 <CalendarCheck className="h-4 w-4" /> Gerar relatório
               </Button>
             </Link>
@@ -220,264 +208,365 @@ export default function DashboardPage() {
         }
       />
 
-      {/* ══ Boas-vindas ══════════════════════════════════════════ */}
-      <div
-        className={cn(
-          "relative mb-4 overflow-hidden rounded-2xl",
-          "border border-white/[0.07] bg-[rgba(255,255,255,0.02)]",
-          "shadow-[0_1px_3px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.04)]",
-          "px-6 py-5"
-        )}
-      >
-        {/* Orb decorativo */}
-        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-brand-500/8 blur-3xl" />
-
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
-          {/* Avatar + saudação */}
+      {/* Boas-vindas */}
+      <Panel>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-600 text-[15px] font-black text-white shadow-[0_0_14px_rgba(139,92,246,0.35)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] text-[13px] font-semibold text-slate-100">
               {firstName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-[12px] text-slate-500">{greeting()},</p>
-              <p className="text-[18px] font-bold leading-tight text-slate-100">
-                {firstName} 👋
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
+                {greeting()}
               </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-0.5 text-[16px] font-semibold tracking-tight text-slate-50 leading-tight">
+                {firstName}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500 tabular-nums">
                 {new Date().toLocaleDateString("pt-BR", {
                   weekday: "long",
-                  day:     "2-digit",
-                  month:   "long",
+                  day: "2-digit",
+                  month: "long",
                 })}
               </p>
             </div>
           </div>
 
-          {/* Badges de atualização */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-[11px] font-semibold text-emerald-400">
-              <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-              {overviewLoading ? "…" : `${total} leads no total`}
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-300">
-              <Webhook className="h-3.5 w-3.5 shrink-0" />
-              {contatosCounts.isLoading
-                ? "…"
-                : `${formatNumber(contatosCounts.data?.counts.webhook_cloudia ?? 0)} webhook`}
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-300">
-              <FileUp className="h-3.5 w-3.5 shrink-0" />
-              {contatosCounts.isLoading
-                ? "…"
-                : `${formatNumber(contatosCounts.data?.counts.import_csv ?? 0)} importados`}
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-400">
-              <Bell className="h-3.5 w-3.5 shrink-0" />
-              {overviewLoading ? "…" : `${statesData?.queue ?? 0} na fila`}
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-[11px] font-semibold text-violet-400">
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              {overviewLoading ? "…" : `${statesData?.service ?? 0} em atendimento`}
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/8 px-3 py-2 text-[11px] font-semibold text-brand-400">
-              <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              {overviewLoading || overviewLoading
-                ? "…"
-                : `${formatPercent(conversao)} de conversão`}
-            </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <SummaryChip
+              tone="emerald"
+              icon={<TrendingUp className="h-3 w-3" />}
+              label={overviewLoading ? "…" : `${formatNumber(total)} leads no total`}
+            />
+            <SummaryChip
+              tone="sky"
+              icon={<Webhook className="h-3 w-3" />}
+              label={
+                contatosCounts.isLoading
+                  ? "…"
+                  : `${formatNumber(
+                      contatosCounts.data?.counts.webhook_cloudia ?? 0,
+                    )} webhook`
+              }
+            />
+            <SummaryChip
+              tone="amber"
+              icon={<FileUp className="h-3 w-3" />}
+              label={
+                contatosCounts.isLoading
+                  ? "…"
+                  : `${formatNumber(
+                      contatosCounts.data?.counts.import_csv ?? 0,
+                    )} importados`
+              }
+            />
+            <SummaryChip
+              tone="amber"
+              icon={<Bell className="h-3 w-3" />}
+              label={overviewLoading ? "…" : `${statesData?.queue ?? 0} na fila`}
+            />
+            <SummaryChip
+              tone="indigo"
+              icon={<CheckCircle2 className="h-3 w-3" />}
+              label={
+                overviewLoading ? "…" : `${statesData?.service ?? 0} em atendimento`
+              }
+            />
+            <SummaryChip
+              tone="emerald"
+              icon={<Sparkles className="h-3 w-3" />}
+              label={
+                overviewLoading
+                  ? "…"
+                  : `${formatPercent(conversao)} de conversão`
+              }
+            />
           </div>
         </div>
-      </div>
+      </Panel>
 
-      {/* ══ Amanheceu — banner Araguaína ═════════════════════════ */}
-    <Link
-  to="/amanheceu"
-  className={cn(
-    "group mb-4 flex items-center gap-4 rounded-xl border border-white/8",
-    "bg-white/[0.03] px-4 py-3.5",
-    "transition-colors hover:bg-white/[0.05] hover:border-white/12"
-  )}
->
-  {/* Ícone simples, sem glow */}
-  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/6 ring-1 ring-white/10">
-    <Moon className="h-4.5 w-4.5 text-slate-300" />
-  </div>
+      {/* Amanheceu banner */}
+      <Link
+        to="/amanheceu"
+        className="group flex items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.015] px-4 py-3.5 transition hover:bg-white/[0.025] hover:border-white/[0.12]"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/[0.03] ring-1 ring-inset ring-white/[0.06]">
+          <Moon className="h-4 w-4 text-slate-400" />
+        </div>
 
-  {/* Conteúdo */}
-  <div className="min-w-0 flex-1">
-    <p className="truncate text-[13px] font-semibold text-slate-100">
-      Araguaína ·{" "}
-      <span className="text-white">
-        {amanheceuQuery.isLoading
-          ? "…"
-          : `${formatNumber(amanheceuQuery.data?.total ?? 0)} lead${(amanheceuQuery.data?.total ?? 0) === 1 ? "" : "s"} essa madrugada`}
-      </span>
-    </p>
-    <p className="mt-0.5 text-[11px] text-slate-500">
-      20h → 07h · {amanheceuQuery.data?.unitName ?? "Araguaína"} · clique para ver o detalhamento
-    </p>
-  </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-slate-100">
+            Araguaína ·{" "}
+            <span className="text-slate-50 tabular-nums">
+              {amanheceuQuery.isLoading
+                ? "…"
+                : `${formatNumber(amanheceuQuery.data?.total ?? 0)} lead${
+                    (amanheceuQuery.data?.total ?? 0) === 1 ? "" : "s"
+                  } essa madrugada`}
+            </span>
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-500 tabular-nums">
+            20h → 07h · {amanheceuQuery.data?.unitName ?? "Araguaína"} · clique
+            para ver o detalhamento
+          </p>
+        </div>
 
-  {/* Indicador ao vivo + seta */}
-  <div className="flex shrink-0 items-center gap-3">
-    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-      ao vivo
-    </span>
-    <span className="text-slate-600 transition-colors group-hover:text-slate-300">
-      →
-    </span>
-  </div>
-</Link>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            ao vivo
+          </span>
+          <span className="text-slate-600 transition group-hover:text-slate-300">
+            →
+          </span>
+        </div>
+      </Link>
 
-      {/* ══ Filtros ══════════════════════════════════════════════ */}
-      <div className="mb-6">
-        <DashboardFilters
-          value={filters}
-          onChange={setFilters}
-          onSearch={handleSearch}
-        />
-      </div>
+      {/* Filtros */}
+      <DashboardFilters
+        value={filters}
+        onChange={setFilters}
+        onSearch={handleSearch}
+      />
 
-      {/* ══ Contatos na base — em destaque ═══════════════════════ */}
+      {/* Contatos banner */}
       <ContactsBanner
         loading={contatosCounts.isLoading}
         counts={contatosCounts.data?.counts}
         error={contatosCounts.isError}
       />
 
-      {/* ══ KPIs ════════════════════════════════════════════════ */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-      <KpiCard
-        label="Total de leads"
-        value={total}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/7376/7376481.png" alt="leads" className="h-16 w-16 object-contain" />}
-        tone="blue"
-        loading={overviewLoading}
-      />
-      <KpiCard
-        label="Em atendimento"
-        value={statesData?.service ?? 0}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/2706/2706962.png" alt="atendimento" className="h-16 w-16 object-contain" />}
-        tone="violet"
-        loading={overviewLoading}
-      />
-      <KpiCard
-        label="Na fila"
-        value={statesData?.queue ?? 0}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/5772/5772632.png" alt="fila" className="h-16 w-16 object-contain" />}
-        tone="amber"
-        loading={overviewLoading}
-      />
-      <KpiCard
-        label="Taxa de conversão"
-        value={formatPercent(conversao)}
-        icon={<img src="https://cdn-icons-png.freepik.com/512/5915/5915116.png" alt="conversão" className="h-16 w-16 object-contain" />}
-        tone="blue"
-        loading={overviewLoading || overviewLoading}
-        subtitle={`${formatPercent(pagamentoRate)} pagam na hora`}
-      />
-      <KpiCard
-        label="CAC"
-        value="—"
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/3146/3146459.png" alt="cac" className="h-16 w-16 object-contain" />}
-        tone="amber"
-        subtitle="Custo por aquisição"
-      />
-      <KpiCard
-        label="Agend. c/ pagamento"
-        value={comPagNum}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/10251/10251304.png" alt="agendado com pagamento" className="h-16 w-16 object-contain" />}
-        tone="green"
-        loading={overviewLoading}
-        subtitle="Agendados e pagos"
-      />
-      <KpiCard
-        label="Agend. s/ pagamento"
-        value={semPagNum}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/9955/9955052.png" alt="agendado sem pagamento" className="h-16 w-16 object-contain" />}
-        tone="red"
-        loading={overviewLoading}
-        subtitle="Agendados sem pagar"
-      />
-      <KpiCard
-        label="Em tratamento"
-        value={consultasNum}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/5945/5945068.png" alt="em tratamento" className="h-16 w-16 object-contain" />}
-        tone="green"
-        loading={overviewLoading}
-        subtitle="Fechou / tratando"
-      />
-      <KpiCard
-        label="Fecharam"
-        value={consultasNum}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/5015/5015811.png" alt="fecharam" className="h-16 w-16 object-contain" />}
-        tone="violet"
-        loading={overviewLoading}
-        subtitle="Convertidos total"
-      />
-      <KpiCard
-        label="S/ pagamento %"
-        value={total > 0 ? formatPercent(semPagRate) : "—"}
-        icon={<img src="https://cdn-icons-png.flaticon.com/512/4441/4441817.png" alt="sem pagamento %" className="h-16 w-16 object-contain" />}
-        tone="amber"
-        loading={overviewLoading || overviewLoading}
-        subtitle="Taxa sem pagamento"
-      />
-     </div>
+        <Kpi
+          label="Total de leads"
+          value={formatNumber(total)}
+          tone="sky"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/7376/7376481.png"
+              alt="leads"
+            />
+          }
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Em atendimento"
+          value={formatNumber(statesData?.service ?? 0)}
+          tone="sky"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/2706/2706962.png"
+              alt="atendimento"
+            />
+          }
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Na fila"
+          value={formatNumber(statesData?.queue ?? 0)}
+          tone="amber"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/5772/5772632.png"
+              alt="fila"
+            />
+          }
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Taxa de conversão"
+          value={formatPercent(conversao)}
+          tone="emerald"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.freepik.com/512/5915/5915116.png"
+              alt="conversão"
+            />
+          }
+          hint={`${formatPercent(pagamentoRate)} pagam na hora`}
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="CAC"
+          value="—"
+          tone="slate"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/3146/3146459.png"
+              alt="cac"
+            />
+          }
+          hint="Custo por aquisição"
+        />
+        <Kpi
+          label="Agend. c/ pagamento"
+          value={formatNumber(comPagNum)}
+          tone="emerald"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/10251/10251304.png"
+              alt="agendado com pagamento"
+            />
+          }
+          hint="Agendados e pagos"
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Agend. s/ pagamento"
+          value={formatNumber(semPagNum)}
+          tone="rose"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/9955/9955052.png"
+              alt="agendado sem pagamento"
+            />
+          }
+          hint="Agendados sem pagar"
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Em tratamento"
+          value={formatNumber(consultasNum)}
+          tone="emerald"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/5945/5945068.png"
+              alt="em tratamento"
+            />
+          }
+          hint="Fechou / tratando"
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="Fecharam"
+          value={formatNumber(consultasNum)}
+          tone="emerald"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/5015/5015811.png"
+              alt="fecharam"
+            />
+          }
+          hint="Convertidos total"
+          loading={overviewLoading}
+        />
+        <Kpi
+          label="S/ pagamento %"
+          value={total > 0 ? formatPercent(semPagRate) : "—"}
+          tone="amber"
+          icon={
+            <KpiImg
+              src="https://cdn-icons-png.flaticon.com/512/4441/4441817.png"
+              alt="sem pagamento %"
+            />
+          }
+          hint="Taxa sem pagamento"
+          loading={overviewLoading}
+        />
+      </div>
 
-      {/* ══ Funil + Origens ══════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
-        <Card className="lg:col-span-2">
-          <CardHeader title="Funil de conversão" subtitle="Da entrada do lead até o tratamento em andamento" />
-          <CardBody>
-            <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+      {/* Funil + Origens */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Panel className="lg:col-span-2">
+          <PanelHeader
+            eyebrow="Funil"
+            eyebrowTone="bg-emerald-400"
+            title="Funil de conversão"
+            subtitle="Da entrada do lead até o tratamento em andamento"
+          />
+          <div className="p-5">
+            <Suspense
+              fallback={
+                <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
+              }
+            >
               <FunnelChart
                 stages={[
-                  { label: "Total de leads",           count: total,               tone: "blue"    },
-                  { label: "Agendados sem pagamento",   count: semPagNum,    tone: "amber"   },
-                  { label: "Agendados com pagamento",   count: comPagNum,    tone: "violet"  },
-                  { label: "Fechou / em tratamento",    count: consultasNum, tone: "emerald" },
+                  { label: "Total de leads", count: total, tone: "sky" },
+                  {
+                    label: "Agendados sem pagamento",
+                    count: semPagNum,
+                    tone: "amber",
+                  },
+                  {
+                    label: "Agendados com pagamento",
+                    count: comPagNum,
+                    tone: "indigo",
+                  },
+                  {
+                    label: "Fechou / em tratamento",
+                    count: consultasNum,
+                    tone: "emerald",
+                  },
                 ]}
               />
             </Suspense>
-          </CardBody>
-        </Card>
+          </div>
+        </Panel>
 
-        <Card>
-          <CardHeader
+        <Panel>
+          <PanelHeader
+            eyebrow="Origens"
+            eyebrowTone="bg-sky-400"
             title="Origem dos leads"
             subtitle="Top canais de aquisição"
-            action={<Link to="/sources"><Button variant="ghost" size="sm">Ver tudo</Button></Link>}
+            action={
+              <Link to="/sources">
+                <Button variant="ghost" size="sm">
+                  Ver tudo
+                </Button>
+              </Link>
+            }
           />
-          <CardBody>
+          <div className="p-5">
             {overviewLoading ? (
-              <div className="skeleton h-60 w-full rounded-lg" />
+              <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
             ) : donutData.length ? (
-              <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+              <Suspense
+                fallback={
+                  <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
+                }
+              >
                 <SourceDonut data={donutData} />
               </Suspense>
             ) : (
               <EmptyState title="Sem origens registradas" />
             )}
-          </CardBody>
-        </Card>
+          </div>
+        </Panel>
       </div>
 
-      {/* ══ Evolução + Ao vivo ═══════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-        <Card className="lg:col-span-2">
-          <CardHeader
+      {/* Evolução + Ao vivo */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Panel className="lg:col-span-2">
+          <PanelHeader
+            eyebrow="Evolução"
+            eyebrowTone="bg-sky-400"
             title="Evolução temporal"
-            subtitle={evolutionSubtitle(filters, evolucao.data?.total_current, evolucao.data?.change_percent, evolucao.data?.compare)}
-            action={<Link to="/evolution"><Button variant="ghost" size="sm">Ver detalhes</Button></Link>}
+            subtitle={evolutionSubtitle(
+              filters,
+              evolucao.data?.total_current,
+              evolucao.data?.change_percent,
+              evolucao.data?.compare,
+            )}
+            action={
+              <Link to="/evolution">
+                <Button variant="ghost" size="sm">
+                  Ver detalhes
+                </Button>
+              </Link>
+            }
           />
-          <CardBody>
+          <div className="p-5">
             {evolucao.isLoading ? (
-              <div className="skeleton h-60 w-full rounded-lg" />
+              <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
             ) : (evolucao.data?.current?.length ?? 0) > 0 ? (
-              <Suspense fallback={<div className="skeleton h-60 w-full rounded-lg" />}>
+              <Suspense
+                fallback={
+                  <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
+                }
+              >
                 <EvolutionLine
                   data={(evolucao.data?.current ?? []).map((p) => ({
                     periodo: p.label,
@@ -488,48 +577,73 @@ export default function DashboardPage() {
             ) : (
               <EmptyState title="Sem dados no período" />
             )}
-          </CardBody>
-        </Card>
+          </div>
+        </Panel>
 
-        <Card>
-          <CardHeader title="Ao vivo" subtitle="Sincronizado da Cloudia" />
-          <CardBody className="space-y-3">
+        <Panel>
+          <PanelHeader
+            eyebrow="Ao vivo"
+            eyebrowTone="bg-emerald-400"
+            title="Ao vivo"
+            subtitle="Sincronizado da Cloudia"
+          />
+          <div className="p-5 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <MiniStat label="Em atendimento" value={resumoLive.data?.totalEmAtendimento ?? 0} />
-              <MiniStat label="Na fila"        value={resumoLive.data?.totalNaFila        ?? 0} />
+              <MiniStat
+                label="Em atendimento"
+                value={resumoLive.data?.totalEmAtendimento ?? 0}
+              />
+              <MiniStat
+                label="Na fila"
+                value={resumoLive.data?.totalNaFila ?? 0}
+              />
             </div>
             <MiniStat
               label="Tempo médio de fila"
-              value={resumoLive.data?.tempoMedio
-                ? `${Math.round(resumoLive.data.tempoMedio)} min`
-                : "—"}
+              value={
+                resumoLive.data?.tempoMedio
+                  ? `${Math.round(resumoLive.data.tempoMedio)} min`
+                  : "—"
+              }
             />
             <Link to="/live" className="block pt-2">
-              <Button variant="outline" className="w-full justify-center" size="sm">
+              <Button
+                variant="outline"
+                className="w-full justify-center"
+                size="sm"
+              >
                 Abrir painel ao vivo
               </Button>
             </Link>
-          </CardBody>
-        </Card>
+          </div>
+        </Panel>
       </div>
 
-      {/* ══ Leads ativos + Etapas ════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <Card>
-          <CardHeader
+      {/* Leads ativos + Etapas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Panel>
+          <PanelHeader
+            eyebrow="Feed"
+            eyebrowTone="bg-sky-400"
             title="Leads ativos agora"
             subtitle="Últimos leads em andamento"
-            action={<Link to="/leads"><Button variant="ghost" size="sm">Ver todos</Button></Link>}
+            action={
+              <Link to="/leads">
+                <Button variant="ghost" size="sm">
+                  Ver todos
+                </Button>
+              </Link>
+            }
           />
-          <CardBody className="p-0">
-            <div className="divide-y divide-white/5">
+          <div>
+            <div className="divide-y divide-white/[0.04]">
               {ativos.isLoading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="p-4 flex items-center gap-3">
-                      <div className="skeleton h-9 w-9 rounded-full" />
+                      <div className="h-9 w-9 rounded-full bg-white/[0.03] animate-pulse" />
                       <div className="flex-1 space-y-2">
-                        <div className="skeleton h-3 w-40" />
-                        <div className="skeleton h-3 w-24" />
+                        <div className="h-3 w-40 rounded bg-white/[0.03] animate-pulse" />
+                        <div className="h-3 w-24 rounded bg-white/[0.03] animate-pulse" />
                       </div>
                     </div>
                   ))
@@ -537,17 +651,18 @@ export default function DashboardPage() {
                     <Link
                       key={l.id}
                       to={`/leads/${l.id}`}
-                      className="flex items-center gap-3 p-4 hover:bg-white/[0.04] transition-colors"
+                      className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition"
                     >
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand-400 to-violet-600 grid place-items-center text-xs font-semibold">
+                      <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-200">
                         {(l.name ?? "?").charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-100 truncate">
+                        <p className="text-[13px] text-slate-100 truncate font-medium">
                           {truncate(l.name ?? "Sem nome", 40)}
                         </p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {l.phone ?? "—"} · {formatDate(l.updatedAt ?? l.createdAt)}
+                        <p className="text-[11px] text-slate-500 truncate tabular-nums">
+                          {l.phone ?? "—"} ·{" "}
+                          {formatDate(l.updatedAt ?? l.createdAt)}
                         </p>
                       </div>
                       <StateBadge state={l.conversationState ?? undefined} />
@@ -555,22 +670,32 @@ export default function DashboardPage() {
                   ))}
             </div>
             {!ativos.isLoading && !ativos.data?.length && (
-              <EmptyState title="Nenhum lead ativo" />
+              <div className="p-5">
+                <EmptyState title="Nenhum lead ativo" />
+              </div>
             )}
-          </CardBody>
-        </Card>
+          </div>
+        </Panel>
 
-        <Card>
-          <CardHeader
+        <Panel>
+          <PanelHeader
+            eyebrow="Distribuição"
+            eyebrowTone="bg-indigo-400"
             title="Distribuição por etapa"
             subtitle="Momento atual dos leads"
-            action={<Link to="/funnel"><Button variant="ghost" size="sm">Analisar</Button></Link>}
+            action={
+              <Link to="/funnel">
+                <Button variant="ghost" size="sm">
+                  Analisar
+                </Button>
+              </Link>
+            }
           />
-          <CardBody>
+          <div className="p-5">
             {overviewLoading ? (
-              <div className="skeleton h-60 w-full rounded-lg" />
+              <div className="h-60 w-full rounded bg-white/[0.02] animate-pulse" />
             ) : etapaData.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {etapaData
                   .slice()
                   .sort((a, b) => b.count - a.count)
@@ -580,17 +705,17 @@ export default function DashboardPage() {
                     const pct = (e.count / max) * 100;
                     return (
                       <div key={e.stage}>
-                        <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center justify-between text-[12px] mb-1.5">
                           <span className="text-slate-300 truncate">
                             {e.stage.replace(/_/g, " ")}
                           </span>
-                          <span className="font-semibold text-slate-100">
+                          <span className="font-semibold tabular-nums text-slate-100">
                             {formatNumber(e.count)}
                           </span>
                         </div>
-                        <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-brand-500 to-violet-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-sky-500 to-sky-400 rounded-full transition-all"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -601,30 +726,59 @@ export default function DashboardPage() {
             ) : (
               <EmptyState
                 title="Sem etapas para exibir"
-                icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
+                icon={<AlertTriangle className="h-5 w-5 text-amber-300" />}
               />
             )}
-          </CardBody>
-        </Card>
-      </div>
-    </>
-  );
-}
-
-// ─── MiniStat ─────────────────────────────────────────────────────────────────
-
-function MiniStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-      <div className="label">{label}</div>
-      <div className="text-xl font-semibold text-slate-50 mt-1">
-        {typeof value === "number" ? formatNumber(value) : value}
+          </div>
+        </Panel>
       </div>
     </div>
   );
 }
 
-// ─── ContactsBanner ───────────────────────────────────────────────────────────
+function MiniStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-md border border-white/[0.06] bg-white/[0.015] p-3">
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1.5 text-[18px] font-semibold text-slate-50 tabular-nums leading-none">
+        {typeof value === "number" ? formatNumber(value) : value}
+      </p>
+    </div>
+  );
+}
+
+function SummaryChip({
+  tone,
+  icon,
+  label,
+}: {
+  tone: KpiTone;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  const styles: Record<KpiTone, string> = {
+    emerald: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/20",
+    sky: "bg-sky-500/10 text-sky-300 ring-sky-500/20",
+    amber: "bg-amber-500/10 text-amber-300 ring-amber-500/20",
+    rose: "bg-rose-500/10 text-rose-300 ring-rose-500/20",
+    slate: "bg-white/[0.04] text-slate-300 ring-white/[0.08]",
+    indigo: "bg-indigo-500/10 text-indigo-300 ring-indigo-500/20",
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium ring-1 ring-inset tabular-nums",
+        styles[tone],
+      )}
+    >
+      {icon}
+      {label}
+    </span>
+  );
+}
 
 function ContactsBanner({
   loading,
@@ -642,43 +796,44 @@ function ContactsBanner({
   const pctImported = all > 0 ? (imported / all) * 100 : 0;
 
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_1px_3px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.04)]">
-      {/* Cabeçalho */}
-      <div className="flex items-end justify-between gap-3 px-5 pt-5">
+    <Panel>
+      <div className="flex items-end justify-between gap-3 px-5 pt-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
             Contatos na base
           </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
-            Total cadastrado — webhook + importados via CSV
+          <p className="mt-0.5 text-[15px] font-semibold text-slate-50 tracking-tight">
+            Total cadastrado
+          </p>
+          <p className="text-[11.5px] text-slate-500">
+            Webhook Cloudia + importados via CSV
           </p>
         </div>
         <Link to="/contacts">
-          <Button variant="ghost" size="sm">Ver todos →</Button>
+          <Button variant="ghost" size="sm">
+            Ver todos →
+          </Button>
         </Link>
       </div>
 
-      {/* Corpo */}
       <div className="grid grid-cols-1 gap-4 px-5 py-4 md:grid-cols-[auto_1fr]">
-        {/* Número total gigante */}
-        <div className="flex items-baseline gap-3 md:border-r md:border-white/[0.06] md:pr-6">
+        <div className="flex items-baseline gap-3 md:border-r md:border-white/[0.05] md:pr-6">
           {loading ? (
-            <div className="skeleton h-10 w-32 rounded-lg" />
+            <div className="h-10 w-32 rounded bg-white/[0.04] animate-pulse" />
           ) : error ? (
-            <span className="text-sm text-rose-300">Erro ao carregar</span>
+            <span className="text-[13px] text-rose-300">Erro ao carregar</span>
           ) : (
             <>
-              <span className="text-[2.5rem] font-extrabold leading-none tabular-nums text-slate-50">
+              <span className="text-[28px] font-bold leading-none tabular-nums tracking-tight text-slate-50">
                 {formatNumber(all)}
               </span>
-              <span className="text-[12px] text-slate-500">
+              <span className="text-[11.5px] text-slate-500">
                 contato{all === 1 ? "" : "s"}
               </span>
             </>
           )}
         </div>
 
-        {/* Duas origens */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <OrigemStat
             icon={<Webhook className="h-4 w-4" />}
@@ -686,7 +841,7 @@ function ContactsBanner({
             sublabel="Cloudia · em tempo real"
             value={webhook}
             pct={pctWebhook}
-            barClass="bg-violet-400"
+            barClass="bg-gradient-to-r from-indigo-500 to-indigo-400"
             loading={loading}
           />
           <OrigemStat
@@ -695,20 +850,25 @@ function ContactsBanner({
             sublabel="Base antiga · upload manual"
             value={imported}
             pct={pctImported}
-            barClass="bg-amber-400"
+            barClass="bg-gradient-to-r from-amber-500 to-amber-400"
             loading={loading}
           />
         </div>
       </div>
 
-      {/* Barra de proporção (estilo "stacked bar") */}
       {!loading && all > 0 && (
-        <div className="flex h-1.5 w-full overflow-hidden">
-          <div className="h-full bg-violet-500/80" style={{ width: `${pctWebhook}%` }} />
-          <div className="h-full bg-amber-500/80" style={{ width: `${pctImported}%` }} />
+        <div className="flex h-1 w-full overflow-hidden">
+          <div
+            className="h-full bg-indigo-500/70"
+            style={{ width: `${pctWebhook}%` }}
+          />
+          <div
+            className="h-full bg-amber-500/70"
+            style={{ width: `${pctImported}%` }}
+          />
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -730,19 +890,19 @@ function OrigemStat({
   loading: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-slate-300">
+    <div className="flex items-center gap-3 rounded-md border border-white/[0.06] bg-white/[0.015] px-4 py-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/[0.03] ring-1 ring-inset ring-white/[0.06] text-slate-300">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
           {label}
         </p>
         {loading ? (
-          <div className="skeleton mt-1 h-6 w-20 rounded" />
+          <div className="mt-1 h-6 w-20 rounded bg-white/[0.04] animate-pulse" />
         ) : (
           <div className="mt-0.5 flex items-baseline gap-2">
-            <span className="text-[1.25rem] font-bold leading-none tabular-nums text-slate-50">
+            <span className="text-[18px] font-bold leading-none tabular-nums text-slate-50">
               {formatNumber(value)}
             </span>
             <span className="text-[11px] tabular-nums text-slate-500">
@@ -751,7 +911,7 @@ function OrigemStat({
           </div>
         )}
         <p className="mt-1 truncate text-[10.5px] text-slate-500">{sublabel}</p>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.05]">
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.04]">
           <div className={cn("h-full rounded-full", barClass)} style={{ width: `${pct}%` }} />
         </div>
       </div>

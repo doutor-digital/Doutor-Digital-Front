@@ -95,8 +95,8 @@ export default function RecentLeadsPage() {
               className={cn(
                 "rounded-xl px-3 py-1.5 text-[12px] font-semibold transition-all",
                 preset === p.value
-                  ? "bg-brand-500/15 text-brand-300 ring-1 ring-brand-500/30"
-                  : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                  ? "bg-white/[0.08] text-slate-50 ring-1 ring-inset ring-white/[0.1]"
+                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
               )}
             >
               {p.label}
@@ -108,8 +108,8 @@ export default function RecentLeadsPage() {
             className={cn(
               "rounded-xl px-3 py-1.5 text-[12px] font-semibold transition-all",
               preset === "custom"
-                ? "bg-brand-500/15 text-brand-300 ring-1 ring-brand-500/30"
-                : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                ? "bg-white/[0.08] text-slate-50 ring-1 ring-inset ring-white/[0.1]"
+                : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
             )}
           >
             Personalizado
@@ -122,7 +122,7 @@ export default function RecentLeadsPage() {
                 max={720}
                 value={customHours}
                 onChange={(e) => setCustomHours(Math.max(1, Math.min(720, Number(e.target.value) || 1)))}
-                className="h-8 w-20 rounded-lg border border-white/[0.1] bg-white/[0.05] px-2 text-[12px] text-slate-200 outline-none focus:border-brand-500/50"
+                className="h-8 w-20 rounded-md border border-white/[0.08] bg-white/[0.02] px-2 text-[12px] text-slate-200 outline-none focus:border-white/[0.18] focus:bg-white/[0.03] transition tabular-nums"
               />
               <span className="text-[11px] text-slate-500">horas (máx 720 / 30d)</span>
             </div>

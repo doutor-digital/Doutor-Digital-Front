@@ -11,24 +11,26 @@ export function Tabs({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex gap-1 p-1 bg-white/5 border border-white/10 rounded-xl w-fit">
+    <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
       {tabs.map((t) => (
         <button
           key={t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            "px-3 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5",
+            "px-3 py-1.5 text-[12px] rounded-md transition flex items-center gap-1.5",
             value === t.value
-              ? "bg-brand-500 text-white shadow-sm"
-              : "text-slate-300 hover:bg-white/5"
+              ? "bg-white/[0.08] text-slate-50 shadow-sm"
+              : "text-slate-400 hover:text-slate-200",
           )}
         >
           {t.label}
           {typeof t.count === "number" && (
             <span
               className={cn(
-                "ml-1 px-1.5 py-0.5 text-[10px] rounded-full",
-                value === t.value ? "bg-white/20 text-white" : "bg-white/10 text-slate-400"
+                "ml-1 px-1.5 py-0.5 text-[10px] rounded-full tabular-nums",
+                value === t.value
+                  ? "bg-white/[0.08] text-slate-200"
+                  : "bg-white/[0.04] text-slate-500",
               )}
             >
               {t.count}

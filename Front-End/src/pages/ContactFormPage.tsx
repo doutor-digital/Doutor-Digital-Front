@@ -252,7 +252,7 @@ export default function ContactFormPage() {
                     onChange={(e) => setObservacoes(e.target.value)}
                     rows={4}
                     disabled={isLeadSource}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/60 disabled:opacity-60"
+                    className="w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[13px] text-slate-100 placeholder:text-slate-600 focus:border-white/[0.18] focus:bg-white/[0.03] focus:outline-none transition disabled:opacity-60"
                     placeholder="Contexto adicional sobre o contato"
                   />
                 </Field>
@@ -339,7 +339,7 @@ function StatusToggle({
     emerald: "bg-emerald-500/15 text-emerald-200 ring-emerald-500/40",
     rose: "bg-rose-500/15 text-rose-200 ring-rose-500/40",
     amber: "bg-amber-500/15 text-amber-200 ring-amber-500/40",
-    default: "bg-brand-500/15 text-brand-100 ring-brand-500/40",
+    default: "bg-sky-500/10 text-sky-200 ring-sky-500/20",
   }[color ?? "default"];
 
   return (

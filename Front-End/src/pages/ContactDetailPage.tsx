@@ -284,7 +284,7 @@ function Avatar({ name }: { name: string }) {
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("");
   return (
-    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-violet-600 text-xl font-bold text-white shadow-lg">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] text-[16px] font-semibold text-slate-100">
       {initials || "?"}
     </div>
   );

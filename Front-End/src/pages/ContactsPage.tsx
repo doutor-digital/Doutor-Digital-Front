@@ -290,7 +290,7 @@ export default function ContactsPage() {
             type="checkbox"
             checked={onlyBlocked}
             onChange={(e) => { setOnlyBlocked(e.target.checked); resetPage(); }}
-            className="accent-brand-500"
+            className="accent-emerald-500"
           />
           Somente bloqueados
         </label>
@@ -375,7 +375,7 @@ function StatusChip({
     emerald: "ring-emerald-500/40 bg-emerald-500/15 text-emerald-200",
     rose: "ring-rose-500/40 bg-rose-500/15 text-rose-200",
     amber: "ring-amber-500/40 bg-amber-500/15 text-amber-200",
-    default: "ring-brand-500/40 bg-brand-500/15 text-brand-100",
+    default: "ring-sky-500/20 bg-sky-500/10 text-sky-200",
   }[color ?? "default"];
 
   return (

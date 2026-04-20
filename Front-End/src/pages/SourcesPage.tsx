@@ -186,12 +186,12 @@ export default function SourcesPage() {
                   const barColor =
                     row.taxa >= 30 ? "from-emerald-500 to-emerald-400" :
                     row.taxa >= 15 ? "from-amber-500 to-amber-400"     :
-                    row.taxa > 0   ? "from-brand-500 to-violet-500"    :
+                    row.taxa > 0   ? "from-sky-500 to-sky-400"    :
                     "from-slate-700 to-slate-600";
                   const toneText =
                     row.taxa >= 30 ? "text-emerald-300" :
                     row.taxa >= 15 ? "text-amber-300"   :
-                    row.taxa > 0   ? "text-brand-300"   : "text-slate-500";
+                    row.taxa > 0   ? "text-sky-300"     : "text-slate-500";
                   const TrendIcon =
                     row.taxa >= 30 ? ArrowUpRight :
                     row.taxa >= 15 ? Minus        : ArrowDownRight;
@@ -303,17 +303,17 @@ function KpiCard({
   loading?: boolean;
 }) {
   const p = {
-    blue:    { bg: "bg-brand-500/8",   ring: "ring-brand-500/15",   icon: "text-brand-400",   val: "text-brand-100"   },
-    emerald: { bg: "bg-emerald-500/8", ring: "ring-emerald-500/15", icon: "text-emerald-400", val: "text-emerald-100" },
-    amber:   { bg: "bg-amber-500/8",   ring: "ring-amber-500/15",   icon: "text-amber-400",   val: "text-amber-100"   },
-    violet:  { bg: "bg-violet-500/8",  ring: "ring-violet-500/15",  icon: "text-violet-400",  val: "text-violet-100"  },
-    red:     { bg: "bg-red-500/8",     ring: "ring-red-500/15",     icon: "text-red-400",     val: "text-red-100"     },
+    blue:    { bg: "bg-sky-500/8",     ring: "ring-sky-500/20",     icon: "text-sky-300",     val: "text-sky-100"     },
+    emerald: { bg: "bg-emerald-500/8", ring: "ring-emerald-500/20", icon: "text-emerald-300", val: "text-emerald-100" },
+    amber:   { bg: "bg-amber-500/8",   ring: "ring-amber-500/20",   icon: "text-amber-300",   val: "text-amber-100"   },
+    violet:  { bg: "bg-indigo-500/8",  ring: "ring-indigo-500/20",  icon: "text-indigo-300",  val: "text-indigo-100"  },
+    red:     { bg: "bg-rose-500/8",    ring: "ring-rose-500/20",    icon: "text-rose-300",    val: "text-rose-100"    },
   }[tone];
 
-  if (loading) return <div className="skeleton h-24 rounded-2xl" />;
+  if (loading) return <div className="h-24 rounded-xl bg-white/[0.02] animate-pulse" />;
 
   return (
-    <div className={cn("rounded-2xl p-4 ring-1 backdrop-blur-sm", p.bg, p.ring)}>
+    <div className={cn("rounded-xl p-4 ring-1 ring-inset", p.bg, p.ring)}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
         <span className={cn("h-7 w-7 rounded-lg bg-white/5 grid place-items-center", p.icon)}>{icon}</span>

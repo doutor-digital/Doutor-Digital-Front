@@ -295,7 +295,7 @@ function AiSettingsCard() {
             <select
               value={form.provider}
               onChange={(e) => patch({ provider: e.target.value as AiProvider })}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30 [color-scheme:dark]"
+              className="w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[13px] text-slate-100 focus:border-white/[0.18] focus:bg-white/[0.03] focus:outline-none transition [color-scheme:dark]"
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic (Claude)</option>
@@ -345,7 +345,7 @@ function AiSettingsCard() {
               step="0.05"
               value={form.temperature}
               onChange={(e) => patch({ temperature: e.target.value })}
-              className="w-full accent-brand-500"
+              className="w-full accent-emerald-500"
             />
           </div>
 
@@ -371,7 +371,7 @@ function AiSettingsCard() {
               value={form.systemPrompt}
               onChange={(e) => patch({ systemPrompt: e.target.value })}
               rows={4}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              className="w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[13px] text-slate-100 placeholder:text-slate-600 focus:border-white/[0.18] focus:bg-white/[0.03] focus:outline-none transition"
               placeholder="Você é a assistente da clínica..."
             />
           </div>
@@ -440,7 +440,7 @@ function WhatsAppSettingsCard() {
             <select
               value={form.provider}
               onChange={(e) => patch({ provider: e.target.value as WaProvider })}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30 [color-scheme:dark]"
+              className="w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[13px] text-slate-100 focus:border-white/[0.18] focus:bg-white/[0.03] focus:outline-none transition [color-scheme:dark]"
             >
               <option value="meta_cloud">Meta Cloud API (oficial)</option>
               <option value="twilio">Twilio</option>

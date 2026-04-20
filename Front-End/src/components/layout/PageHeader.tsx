@@ -6,6 +6,7 @@ type PageHeaderProps = {
   description?: string;
   actions?: ReactNode;
   badge?: string;
+  /** @deprecated mantido apenas por compatibilidade — não é mais usado visualmente */
   backgroundImage?: string;
 };
 
@@ -13,71 +14,42 @@ export function PageHeader({
   title,
   description,
   actions,
-  badge = "Clínica",
-  backgroundImage,
+  badge,
 }: PageHeaderProps) {
   return (
-    <header className="relative mb-6 overflow-hidden rounded-2xl">
-      {/* Cartão */}
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-2xl",
-          "border border-hairline bg-surface shadow-card",
-          "px-6 py-5 md:px-8 md:py-6"
-        )}
-      >
-        {/* Imagem de fundo opcional */}
-        {backgroundImage && (
-          <>
-            <img
-              src={backgroundImage}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[rgb(var(--surface)/0.95)] via-[rgb(var(--surface)/0.85)] to-[rgb(var(--surface)/0.35)]" />
-          </>
-        )}
-
-        {/* Decoração — gradiente nas cores da logo */}
-        {!backgroundImage && (
-          <>
-            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-500/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 right-32 h-36 w-36 rounded-full bg-accent-500/15 blur-2xl" />
-          </>
-        )}
-
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            {/* Badge em azul da logo */}
-            <span
-              className={cn(
-                "mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5",
-                "text-[10px] font-bold uppercase tracking-widest",
-                "bg-brand-500/10 text-brand-700 dark:text-brand-300",
-                "ring-1 ring-brand-500/25"
-              )}
-            >
+    <header
+      className={cn(
+        "mt-4 mb-6 md:mb-8",
+        "relative overflow-hidden rounded-xl",
+        "border border-white/[0.07] bg-gradient-to-b from-white/[0.02] to-white/[0.005]",
+        "shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]",
+        "px-5 py-4 md:px-6 md:py-5",
+      )}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          {badge && (
+            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
               {badge}
-            </span>
+            </p>
+          )}
 
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-50 md:text-3xl">
-              {title}
-            </h1>
+          <h1 className="mt-1 text-[22px] md:text-[24px] font-semibold tracking-tight text-slate-50 leading-tight">
+            {title}
+          </h1>
 
-            {description && (
-              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-400">
-                {description}
-              </p>
-            )}
-          </div>
-
-          {actions && (
-            <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
-              {actions}
-            </div>
+          {description && (
+            <p className="mt-1.5 max-w-2xl text-[12.5px] leading-relaxed text-slate-400">
+              {description}
+            </p>
           )}
         </div>
+
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
+            {actions}
+          </div>
+        )}
       </div>
     </header>
   );

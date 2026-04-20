@@ -74,16 +74,15 @@ export function NotificationsBell() {
         onClick={toggleOpen}
         title="Leads recentes"
         className={cn(
-          "relative flex h-8 w-8 items-center justify-center rounded-lg",
-          "text-slate-500 transition-[color,background-color] duration-200",
-          "hover:bg-white/[0.06] hover:text-slate-200",
-          open && "bg-white/[0.06] text-slate-200"
+          "relative flex h-8 w-8 items-center justify-center rounded-md",
+          "text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-200",
+          open && "bg-white/[0.04] text-slate-200",
         )}
       >
         <Bell className="h-3.5 w-3.5" />
         {unseenCount > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-surface"
+            className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold tabular-nums text-rose-50 ring-2 ring-[#0a0a0d]"
             aria-label={`${unseenCount} leads novos`}
           >
             {unseenCount > 9 ? "9+" : unseenCount}
@@ -95,20 +94,27 @@ export function NotificationsBell() {
         <div
           className={cn(
             "absolute right-0 top-[calc(100%+8px)] z-50 w-[360px]",
-            "rounded-xl border border-white/[0.1] bg-[rgba(14,14,24,0.98)] backdrop-blur-xl",
-            "shadow-[0_24px_64px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)]"
+            "rounded-xl border border-white/[0.07] bg-[#0a0a0d]",
+            "shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)]",
           )}
         >
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3">
             <div>
-              <p className="text-[12px] font-semibold text-slate-100">Leads recentes</p>
-              <p className="text-[11px] text-slate-500">últimas 24h · atualiza a cada 30s</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
+                Notificações
+              </p>
+              <p className="mt-0.5 text-[13px] font-semibold text-slate-50 tracking-tight">
+                Leads recentes
+              </p>
+              <p className="text-[11px] text-slate-500 tabular-nums">
+                últimas 24h · atualiza a cada 30s
+              </p>
             </div>
             <button
               type="button"
               onClick={markAsSeen}
               title="Marcar todas como vistas"
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-slate-500 hover:bg-white/[0.04] hover:text-slate-200 transition"
             >
               <CheckCheck className="h-3 w-3" />
               Marcar vistas
@@ -119,7 +125,10 @@ export function NotificationsBell() {
             {query.isLoading ? (
               <div className="space-y-2 p-4">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="skeleton h-10 w-full rounded-md" />
+                  <div
+                    key={i}
+                    className="h-10 w-full rounded-md bg-white/[0.02] animate-pulse"
+                  />
                 ))}
               </div>
             ) : items.length === 0 ? (
@@ -127,7 +136,7 @@ export function NotificationsBell() {
                 Nenhum lead nas últimas 24 horas
               </div>
             ) : (
-              <ul className="divide-y divide-white/[0.05]">
+              <ul className="divide-y divide-white/[0.04]">
                 {items.map((lead) => {
                   const isNew = new Date(lead.created_at).getTime() > lastSeen;
                   return (
@@ -135,14 +144,14 @@ export function NotificationsBell() {
                       <Link
                         to={`/leads/${lead.id}`}
                         onClick={() => setOpen(false)}
-                        className="block px-4 py-2.5 hover:bg-white/[0.04]"
+                        className="block px-4 py-2.5 hover:bg-white/[0.02] transition group"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               {isNew && (
                                 <span
-                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400"
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
                                   aria-label="novo"
                                 />
                               )}
@@ -150,14 +159,18 @@ export function NotificationsBell() {
                                 {lead.name}
                               </span>
                             </div>
-                            <div className="mt-0.5 flex items-center gap-2 text-[10.5px] text-slate-500">
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-slate-500 tabular-nums">
                               <Clock3 className="h-2.5 w-2.5" />
                               <span>{timeAgo(lead.created_at)}</span>
-                              {lead.source && <span className="truncate">· {lead.source}</span>}
-                              {lead.unit_name && <span className="truncate">· {lead.unit_name}</span>}
+                              {lead.source && (
+                                <span className="truncate">· {lead.source}</span>
+                              )}
+                              {lead.unit_name && (
+                                <span className="truncate">· {lead.unit_name}</span>
+                              )}
                             </div>
                           </div>
-                          <ExternalLink className="h-3 w-3 shrink-0 text-slate-600" />
+                          <ExternalLink className="h-3 w-3 shrink-0 text-slate-600 group-hover:text-slate-400 transition" />
                         </div>
                       </Link>
                     </li>
@@ -170,7 +183,7 @@ export function NotificationsBell() {
           <button
             type="button"
             onClick={goToAll}
-            className="block w-full border-t border-white/[0.06] px-4 py-2.5 text-center text-[12px] font-semibold text-brand-300 hover:bg-white/[0.04]"
+            className="block w-full border-t border-white/[0.05] px-4 py-2.5 text-center text-[12px] font-medium text-slate-300 hover:bg-white/[0.02] hover:text-slate-50 transition"
           >
             Ver todos os leads recentes →
           </button>

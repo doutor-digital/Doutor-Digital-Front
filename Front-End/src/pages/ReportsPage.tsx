@@ -118,7 +118,7 @@ export default function ReportsPage() {
                 />
               </div>
             </div>
-            <Button onClick={gerarMensal} loading={monthlyLoading} className="w-full justify-center">
+            <Button onClick={gerarMensal} loading={monthlyLoading} className="w-full justify-center mt-4">
               <FileDown className="h-4 w-4" /> Baixar PDF
             </Button>
           </CardBody>
@@ -151,9 +151,11 @@ export default function ReportsPage() {
                 }
               />
             </div>
+            <div className="mt-4">
             <Button onClick={gerarDiario} loading={dailyLoading} className="w-full justify-center">
               <FileText className="h-4 w-4" /> Visualizar relatório
             </Button>
+            </div>
 
             {dailyData !== null && (
               <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
@@ -371,7 +373,7 @@ function WhatsAppReportCard() {
       <CardHeader
         title={
           <span className="inline-flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-emerald-300" />
+            <img src="https://e7.pngegg.com/pngimages/413/909/png-clipart-call-illustration-whatsapp-computer-icons-whatsapp-text-logo-thumbnail.png" alt="" width={20}/>
             Enviar relatório por WhatsApp
           </span>
         }

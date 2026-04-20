@@ -197,7 +197,7 @@ export default function AlertsPage() {
         </div>
       ) : (
         <Card className="p-8">
-          <EmptyState title="Nenhum alerta ativo" description="Tudo sob controle! 🎯" />
+          <EmptyState title="Nenhum alerta ativo" description="Tudo sob controle." />
         </Card>
       )}
     </>
@@ -293,7 +293,7 @@ function SlaPill({
   const toneCls = {
     violet: "border-violet-500/25 bg-violet-500/[0.06] text-violet-200",
     amber: "border-amber-500/25 bg-amber-500/[0.06] text-amber-200",
-    blue: "border-brand-500/25 bg-brand-500/[0.06] text-brand-200",
+    blue: "border-sky-500/20 bg-sky-500/[0.06] text-sky-200",
   }[tone];
   return (
     <div className={cn("rounded-lg border px-3 py-2 text-[11.5px]", toneCls)}>

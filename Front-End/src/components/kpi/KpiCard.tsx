@@ -2,56 +2,94 @@ import { ReactNode } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { cn, formatNumber } from "@/lib/utils";
 
-const toneConfig = {
+// ─── KpiCard (legado) — renderiza agora o visual canônico do Kpi ──────────────
+// Mantém a API (label, value, icon, trend, tone, subtitle, loading) para não
+// forçar reescrita das páginas; mapeia tones legados para a paleta nova.
+
+type LegacyTone =
+  | "neutral"
+  | "blue"
+  | "green"
+  | "amber"
+  | "red"
+  | "violet"
+  | "slate"
+  | "sky"
+  | "emerald"
+  | "rose"
+  | "indigo";
+
+const TONE_STYLE: Record<
+  LegacyTone,
+  { bar: string; icon: string; iconBg: string; value: string }
+> = {
   neutral: {
-    orb:    "bg-slate-400/10",
-    icon:   "text-slate-400",
-    iconBg: "bg-slate-400/8 ring-slate-400/15",
-    bar:    "bg-slate-400",
-    label:  "text-slate-400",
-    value:  "text-white",
+    bar: "bg-gradient-to-r from-slate-400/60 via-slate-300/50 to-slate-400/20",
+    icon: "text-slate-300",
+    iconBg: "bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]",
+    value: "text-slate-50",
+  },
+  slate: {
+    bar: "bg-gradient-to-r from-slate-400/60 via-slate-300/50 to-slate-400/20",
+    icon: "text-slate-300",
+    iconBg: "bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]",
+    value: "text-slate-50",
+  },
+  sky: {
+    bar: "bg-gradient-to-r from-sky-500 via-sky-400 to-sky-500/40",
+    icon: "text-sky-300",
+    iconBg: "bg-sky-500/10 ring-1 ring-inset ring-sky-500/20",
+    value: "text-slate-50",
   },
   blue: {
-    orb:    "bg-blue-500/12",
-    icon:   "text-blue-300",
-    iconBg: "bg-blue-500/10 ring-blue-400/20",
-    bar:    "bg-blue-400",
-    label:  "text-blue-400/80",
-    value:  "text-blue-50",
+    bar: "bg-gradient-to-r from-sky-500 via-sky-400 to-sky-500/40",
+    icon: "text-sky-300",
+    iconBg: "bg-sky-500/10 ring-1 ring-inset ring-sky-500/20",
+    value: "text-slate-50",
+  },
+  emerald: {
+    bar: "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500/40",
+    icon: "text-emerald-300",
+    iconBg: "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/20",
+    value: "text-slate-50",
   },
   green: {
-    orb:    "bg-emerald-500/12",
-    icon:   "text-emerald-300",
-    iconBg: "bg-emerald-500/10 ring-emerald-400/20",
-    bar:    "bg-emerald-400",
-    label:  "text-emerald-400/80",
-    value:  "text-emerald-50",
+    bar: "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500/40",
+    icon: "text-emerald-300",
+    iconBg: "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/20",
+    value: "text-slate-50",
   },
   amber: {
-    orb:    "bg-amber-500/10",
-    icon:   "text-amber-300",
-    iconBg: "bg-amber-500/8 ring-amber-400/15",
-    bar:    "bg-amber-400",
-    label:  "text-amber-400/80",
-    value:  "text-amber-50",
+    bar: "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500/40",
+    icon: "text-amber-300",
+    iconBg: "bg-amber-500/10 ring-1 ring-inset ring-amber-500/20",
+    value: "text-slate-50",
+  },
+  rose: {
+    bar: "bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500/40",
+    icon: "text-rose-300",
+    iconBg: "bg-rose-500/10 ring-1 ring-inset ring-rose-500/20",
+    value: "text-slate-50",
   },
   red: {
-    orb:    "bg-red-500/10",
-    icon:   "text-red-300",
-    iconBg: "bg-red-500/8 ring-red-400/15",
-    bar:    "bg-red-400",
-    label:  "text-red-400/80",
-    value:  "text-red-50",
+    bar: "bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500/40",
+    icon: "text-rose-300",
+    iconBg: "bg-rose-500/10 ring-1 ring-inset ring-rose-500/20",
+    value: "text-slate-50",
+  },
+  indigo: {
+    bar: "bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-500/40",
+    icon: "text-indigo-300",
+    iconBg: "bg-indigo-500/10 ring-1 ring-inset ring-indigo-500/20",
+    value: "text-slate-50",
   },
   violet: {
-    orb:    "bg-violet-500/12",
-    icon:   "text-violet-300",
-    iconBg: "bg-violet-500/10 ring-violet-400/20",
-    bar:    "bg-violet-400",
-    label:  "text-violet-400/80",
-    value:  "text-violet-50",
+    bar: "bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-500/40",
+    icon: "text-indigo-300",
+    iconBg: "bg-indigo-500/10 ring-1 ring-inset ring-indigo-500/20",
+    value: "text-slate-50",
   },
-} as const;
+};
 
 export function KpiCard({
   label,
@@ -66,118 +104,84 @@ export function KpiCard({
   value: number | string;
   icon?: ReactNode;
   trend?: number;
-  tone?: keyof typeof toneConfig;
+  tone?: LegacyTone;
   subtitle?: string;
   loading?: boolean;
 }) {
-  const t = toneConfig[tone];
+  const t = TONE_STYLE[tone] ?? TONE_STYLE.neutral;
   const trendUp = trend !== undefined && trend >= 0;
 
   return (
     <div
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden",
-        "rounded-2xl p-5 min-h-[130px]",
-        "bg-[rgba(255,255,255,0.03)]",
-        "border border-white/[0.07]",
-        "shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]",
-        "transition-[transform,box-shadow,border-color] duration-300 ease-out",
-        "hover:-translate-y-px",
-        "hover:border-white/[0.12]",
-        "hover:shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)]",
+        "group relative rounded-xl border border-white/[0.07] overflow-hidden",
+        "bg-gradient-to-b from-white/[0.025] via-white/[0.01] to-transparent",
+        "shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_1px_2px_rgba(0,0,0,0.25)]",
+        "hover:border-white/[0.12] hover:bg-white/[0.025] transition-all",
       )}
     >
-      {/* Orb de luz no hover */}
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute -top-4 -right-4 h-24 w-24 rounded-full blur-2xl",
-          "opacity-0 transition-opacity duration-500 group-hover:opacity-100",
-          t.orb
-        )}
-      />
+      <div className={cn("absolute top-0 left-0 right-0 h-[2px]", t.bar)} />
 
-      {/* Topo: label + ícone */}
-      <div className="relative flex items-start justify-between gap-2">
-        <span className={cn(
-          "text-[11px] font-semibold uppercase tracking-[0.13em]",
-          "transition-colors duration-300",
-          t.label
-        )}>
-          {label}
-        </span>
+      <div className="p-5 pt-[22px]">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400">
+            {label}
+          </p>
 
-        {icon && (
-          <span className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
-            "ring-1 transition-[transform,ring-color] duration-300",
-            "group-hover:scale-105",
-            t.icon,
-            t.iconBg
-          )}>
-            <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-          </span>
-        )}
-      </div>
-
-      {/* Centro: valor + trend */}
-      <div className="relative mt-3 flex items-end justify-between gap-2">
-        <div className="flex items-baseline gap-2">
-          {loading ? (
-            <div className="skeleton h-8 w-24 rounded-lg" />
-          ) : (
-            <span className={cn(
-              "text-[1.85rem] font-bold leading-none tracking-tight tabular-nums",
-              "transition-colors duration-300",
-              t.value
-            )}>
-              {typeof value === "number" ? formatNumber(value) : value}
-            </span>
-          )}
-
-          {trend !== undefined && !loading && (
-            <span className={cn(
-              "mb-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5",
-              "text-[10.5px] font-bold tabular-nums",
-              "transition-[opacity,transform] duration-300",
-              "opacity-70 translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0",
-              trendUp
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "bg-red-500/10 text-red-400"
-            )}>
-              {trendUp
-                ? <TrendingUp className="h-2.5 w-2.5 shrink-0" />
-                : <TrendingDown className="h-2.5 w-2.5 shrink-0" />
-              }
-              {trendUp ? "+" : "−"}{Math.abs(trend).toFixed(1)}%
-            </span>
+          {icon && (
+            <div
+              className={cn(
+                "h-7 w-7 shrink-0 grid place-items-center rounded-md",
+                t.iconBg,
+                t.icon,
+                "[&>svg]:h-4 [&>svg]:w-4",
+              )}
+            >
+              {icon}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Subtítulo */}
-      {subtitle && (
-        <div className="relative mt-3 space-y-1.5">
-          <div className="h-[1px] bg-white/[0.05] transition-colors duration-300 group-hover:bg-white/[0.09]" />
-          <p className={cn(
-            "text-[10.5px] leading-4 text-slate-500",
-            "transition-colors duration-300 group-hover:text-slate-400"
-          )}>
+        {loading ? (
+          <div className="mt-3 h-7 w-36 rounded bg-white/[0.04] animate-pulse" />
+        ) : (
+          <div className="mt-3 flex items-end justify-between gap-2">
+            <p
+              className={cn(
+                "text-[26px] md:text-[28px] font-bold tabular-nums tracking-tight leading-none",
+                t.value,
+              )}
+            >
+              {typeof value === "number" ? formatNumber(value) : value}
+            </p>
+
+            {trend !== undefined && (
+              <span
+                className={cn(
+                  "mb-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium tabular-nums ring-1 ring-inset",
+                  trendUp
+                    ? "bg-emerald-500/10 text-emerald-300 ring-emerald-500/20"
+                    : "bg-rose-500/10 text-rose-300 ring-rose-500/20",
+                )}
+              >
+                {trendUp ? (
+                  <TrendingUp className="h-2.5 w-2.5 shrink-0" />
+                ) : (
+                  <TrendingDown className="h-2.5 w-2.5 shrink-0" />
+                )}
+                {trendUp ? "+" : "−"}
+                {Math.abs(trend).toFixed(1)}%
+              </span>
+            )}
+          </div>
+        )}
+
+        {subtitle && (
+          <p className="mt-3 text-[11px] text-slate-500 leading-snug">
             {subtitle}
           </p>
-        </div>
-      )}
-
-      {/* ── Barra inferior — sempre visível, brilha no hover ── */}
-      <div
-        aria-hidden
-        className={cn(
-          "absolute bottom-0 left-0 right-0 h-[2px]",
-          "bg-gradient-to-r from-transparent via-current to-transparent",
-          "opacity-30 transition-opacity duration-300 group-hover:opacity-70",
-          t.bar
         )}
-      />
+      </div>
     </div>
   );
 }

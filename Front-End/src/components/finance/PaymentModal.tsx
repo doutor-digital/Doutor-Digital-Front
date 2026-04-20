@@ -3,7 +3,9 @@ import { X, Loader2, Plus, Trash2, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { SegmentButton } from "@/components/ui/SegmentButton";
 import { LeadSelect } from "@/components/finance/LeadSelect";
+import { METHOD_META } from "@/components/finance/PaymentMethodMark";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   PAYMENT_METHOD_LABEL,
@@ -37,86 +39,6 @@ function newSplit(paymentMethod: PaymentMethod, amount: number): SplitRow {
     installments: 1,
   };
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// BRAND MARKS — SVG para cada forma de pagamento (no lugar dos ícones)
-// ═══════════════════════════════════════════════════════════════════════════
-
-type BrandMarkProps = { className?: string };
-
-const PixMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <path d="M6 16 L16 6 L26 16 L16 26 Z" stroke="currentColor" strokeWidth="2"
-      strokeLinejoin="round" fill="currentColor" fillOpacity="0.08"/>
-    <path d="M11.5 16 L16 11.5 L20.5 16 L16 20.5 Z" fill="currentColor"/>
-  </svg>
-);
-
-const DinheiroMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="4" y="9" width="24" height="14" rx="2" stroke="currentColor" strokeWidth="1.75"
-      fill="currentColor" fillOpacity="0.06"/>
-    <circle cx="16" cy="16" r="3.5" stroke="currentColor" strokeWidth="1.75" fill="none"/>
-    <path d="M16 13.5 V 18.5 M14.5 14.5 H17 a1 1 0 0 1 0 2 H15 a1 1 0 0 0 0 2 H17.5"
-      stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
-    <circle cx="7.5" cy="16" r="0.9" fill="currentColor" opacity=".5"/>
-    <circle cx="24.5" cy="16" r="0.9" fill="currentColor" opacity=".5"/>
-  </svg>
-);
-
-const DebitoMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="4" y="8" width="24" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.75"
-      fill="currentColor" fillOpacity="0.06"/>
-    <rect x="4" y="12" width="24" height="3" fill="currentColor" opacity="0.7"/>
-    <rect x="7" y="19" width="5" height="1.5" rx="0.5" fill="currentColor" opacity="0.5"/>
-    <rect x="14" y="19" width="3" height="1.5" rx="0.5" fill="currentColor" opacity="0.5"/>
-  </svg>
-);
-
-const CreditoMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="4" y="8" width="24" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.75"
-      fill="currentColor" fillOpacity="0.06"/>
-    <rect x="7" y="12" width="5" height="4" rx="0.8" fill="currentColor" opacity="0.85"/>
-    <rect x="7.8" y="13.2" width="3.4" height="0.4" fill="currentColor" opacity="0.3"/>
-    <rect x="7.8" y="14.3" width="3.4" height="0.4" fill="currentColor" opacity="0.3"/>
-    <rect x="14" y="19" width="10" height="1.2" rx="0.6" fill="currentColor" opacity="0.55"/>
-    <rect x="14" y="21.2" width="6" height="1.2" rx="0.6" fill="currentColor" opacity="0.35"/>
-  </svg>
-);
-
-const BoletoMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="4" y="8" width="24" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.75"
-      fill="currentColor" fillOpacity="0.06"/>
-    {[[7,1],[9,2.5],[12.5,1],[14.5,2],[17,1],[19,3],[22.5,1.5],[25,2]].map(([x,w],i)=>(
-      <rect key={i} x={x} y="11" width={w} height="10"
-        fill="currentColor" opacity={0.55 + (i%2)*0.3}/>
-    ))}
-  </svg>
-);
-
-const TransferenciaMark = ({ className }: BrandMarkProps) => (
-  <svg viewBox="0 0 32 32" fill="none" className={className}>
-    <path d="M8 14 H22 M18 10 L22 14 L18 18" stroke="currentColor" strokeWidth="1.75"
-      strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    <path d="M24 20 H10 M14 24 L10 20 L14 16" stroke="currentColor" strokeWidth="1.75"
-      strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-  </svg>
-);
-
-const METHOD_META: Record<
-  PaymentMethod,
-  { mark: React.ComponentType<BrandMarkProps>; tone: string; dot: string; short: string }
-> = {
-  pix:           { mark: PixMark,           tone: "text-teal-300",    dot: "bg-teal-400",    short: "PIX" },
-  dinheiro:      { mark: DinheiroMark,      tone: "text-emerald-300", dot: "bg-emerald-400", short: "Dinheiro" },
-  debito:        { mark: DebitoMark,        tone: "text-sky-300",     dot: "bg-sky-400",     short: "Débito" },
-  credito:       { mark: CreditoMark,       tone: "text-indigo-300",  dot: "bg-indigo-400",  short: "Crédito" },
-  boleto:        { mark: BoletoMark,        tone: "text-amber-300",   dot: "bg-amber-400",   short: "Boleto" },
-  transferencia: { mark: TransferenciaMark, tone: "text-rose-300",    dot: "bg-rose-400",    short: "TED/DOC" },
-};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
@@ -568,24 +490,6 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     <label className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
       {children}
     </label>
-  );
-}
-
-function SegmentButton({
-  active, onClick, children,
-}: {
-  active: boolean; onClick: () => void; children: React.ReactNode;
-}) {
-  return (
-    <button type="button" onClick={onClick}
-      className={cn(
-        "relative px-4 py-1.5 text-[12px] font-medium rounded-md transition",
-        active
-          ? "bg-white/[0.08] text-slate-50 shadow-sm"
-          : "text-slate-400 hover:text-slate-200"
-      )}>
-      {children}
-    </button>
   );
 }
 

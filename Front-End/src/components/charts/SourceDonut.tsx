@@ -1,16 +1,16 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS = [
-  "#3b63f5",
-  "#8b5cf6",
-  "#14b8a6",
-  "#f97316",
-  "#f43f5e",
-  "#22d3ee",
-  "#eab308",
-  "#10b981",
-  "#a855f7",
-  "#94a3b8",
+  "#38bdf8", // sky
+  "#34d399", // emerald
+  "#fbbf24", // amber
+  "#f472b6", // pink
+  "#818cf8", // indigo
+  "#2dd4bf", // teal
+  "#fb7185", // rose
+  "#a78bfa", // violet
+  "#facc15", // yellow
+  "#94a3b8", // slate
 ];
 
 export function SourceDonut({
@@ -26,10 +26,11 @@ export function SourceDonut({
             data={data}
             dataKey="value"
             nameKey="name"
-            innerRadius={60}
-            outerRadius={95}
-            paddingAngle={2}
-            stroke="none"
+            innerRadius={54}
+            outerRadius={82}
+            paddingAngle={3}
+            stroke="rgba(10,10,13,1)"
+            strokeWidth={2}
           >
             {data.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -37,9 +38,13 @@ export function SourceDonut({
           </Pie>
           <Tooltip
             contentStyle={{
-              background: "rgba(11,16,32,.95)",
-              border: "1px solid rgba(148,163,184,.2)",
-              borderRadius: 10,
+              background: "rgba(10,10,13,.96)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 8,
+              fontSize: 12,
+              padding: "8px 10px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+              color: "#e2e8f0",
             }}
           />
           <Legend

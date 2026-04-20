@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Download, Filter, Search, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card } from "@/components/ui/Card";
+import { Panel } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -30,7 +30,8 @@ export default function LeadsPage() {
 
   const query = useQuery({
     queryKey: ["leads", tenantId, unitId],
-    queryFn: () => webhooksService.listLeads({ clinicId: unitId || tenantId || undefined }),
+    queryFn: () =>
+      webhooksService.listLeads({ clinicId: unitId || tenantId || undefined }),
   });
 
   const filtered = useMemo(() => {
@@ -41,7 +42,9 @@ export default function LeadsPage() {
       if (values.stage && l.currentStage !== values.stage) return false;
       if (values.source && (l.source ?? "") !== values.source) return false;
       if (s) {
-        const hay = `${l.name ?? ""} ${l.phone ?? ""} ${l.email ?? ""} ${l.id} ${l.externalId ?? ""}`.toLowerCase();
+        const hay = `${l.name ?? ""} ${l.phone ?? ""} ${l.email ?? ""} ${l.id} ${
+          l.externalId ?? ""
+        }`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
@@ -53,12 +56,16 @@ export default function LeadsPage() {
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stageOptions = useMemo(
-    () => uniq((query.data ?? []).map((l) => l.currentStage).filter(Boolean) as string[]),
-    [query.data]
+    () =>
+      uniq(
+        (query.data ?? []).map((l) => l.currentStage).filter(Boolean) as string[],
+      ),
+    [query.data],
   );
   const sourceOptions = useMemo(
-    () => uniq((query.data ?? []).map((l) => l.source).filter(Boolean) as string[]),
-    [query.data]
+    () =>
+      uniq((query.data ?? []).map((l) => l.source).filter(Boolean) as string[]),
+    [query.data],
   );
 
   function exportCsv() {
@@ -87,74 +94,90 @@ export default function LeadsPage() {
     a.remove();
   }
 
+  const hasActiveFilters =
+    !!values.search || !!values.state || !!values.stage || !!values.source;
+
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader
         title="Leads"
+        badge="Gestão"
         description={`${formatNumber(filtered.length)} leads encontrados`}
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="h-4 w-4" /> Exportar CSV
-            </Button>
-          </>
+          <Button variant="outline" size="sm" onClick={exportCsv} className="gap-2">
+            <Download className="h-4 w-4" /> Exportar CSV
+          </Button>
         }
       />
 
-      <Card className="p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Input
-            icon={<Search className="h-4 w-4" />}
-            placeholder="Nome, telefone, email ou ID..."
-            value={values.search}
-            onChange={(e) => setFilter({ search: e.target.value, page: "1" })}
-          />
-          <Select
-            value={values.state}
-            onChange={(e) => setFilter({ state: e.target.value, page: "1" })}
-          >
-            <option value="">Todos os estados</option>
-            <option value="bot">Bot</option>
-            <option value="queue">Fila</option>
-            <option value="service">Atendimento</option>
-            <option value="concluido">Concluído</option>
-          </Select>
-          <Select
-            value={values.stage}
-            onChange={(e) => setFilter({ stage: e.target.value, page: "1" })}
-          >
-            <option value="">Todas as etapas</option>
-            {stageOptions.map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-            ))}
-          </Select>
-          <Select
-            value={values.source}
-            onChange={(e) => setFilter({ source: e.target.value, page: "1" })}
-          >
-            <option value="">Todas as origens</option>
-            {sourceOptions.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </Select>
+      <Panel>
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Input
+              icon={<Search className="h-4 w-4" />}
+              placeholder="Nome, telefone, email ou ID…"
+              value={values.search}
+              onChange={(e) => setFilter({ search: e.target.value, page: "1" })}
+            />
+            <Select
+              value={values.state}
+              onChange={(e) => setFilter({ state: e.target.value, page: "1" })}
+            >
+              <option value="">Todos os estados</option>
+              <option value="bot">Bot</option>
+              <option value="queue">Fila</option>
+              <option value="service">Atendimento</option>
+              <option value="concluido">Concluído</option>
+            </Select>
+            <Select
+              value={values.stage}
+              onChange={(e) => setFilter({ stage: e.target.value, page: "1" })}
+            >
+              <option value="">Todas as etapas</option>
+              {stageOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace(/_/g, " ")}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={values.source}
+              onChange={(e) => setFilter({ source: e.target.value, page: "1" })}
+            >
+              <option value="">Todas as origens</option>
+              {sourceOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge tone="slate">
+              <Filter className="h-3 w-3" /> Filtros persistentes na URL
+            </Badge>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={reset}
+                className="gap-1.5"
+              >
+                <X className="h-3 w-3" /> Limpar
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <Badge tone="slate">
-            <Filter className="h-3 w-3" /> Filtros persistentes na URL
-          </Badge>
-          {(values.search || values.state || values.stage || values.source) && (
-            <Button variant="ghost" size="sm" onClick={reset}>
-              <X className="h-3 w-3" /> Limpar
-            </Button>
-          )}
-        </div>
-      </Card>
+      </Panel>
 
-      <Card className="p-0">
+      <Panel>
         {query.isLoading ? (
-          <div className="p-4 space-y-2">
+          <div className="p-5 space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="skeleton h-10 w-full rounded" />
+              <div
+                key={i}
+                className="h-10 w-full rounded bg-white/[0.02] animate-pulse"
+              />
             ))}
           </div>
         ) : pageItems.length ? (
@@ -184,20 +207,22 @@ export default function LeadsPage() {
                     <Td>
                       <Link
                         to={`/leads/${l.id}`}
-                        className="flex items-center gap-3 hover:text-brand-300"
+                        className="flex items-center gap-3 hover:text-slate-50 transition"
                       >
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-violet-600 grid place-items-center text-xs font-semibold text-white">
+                        <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-100">
                           {(l.name ?? "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium">{l.name ?? "Sem nome"}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">
+                          <div className="text-[13px] font-medium text-slate-100">
+                            {l.name ?? "Sem nome"}
+                          </div>
+                          <div className="text-[10.5px] text-slate-500 font-mono tabular-nums">
                             {String(l.id).slice(0, 8)}…
                           </div>
                         </div>
                       </Link>
                     </Td>
-                    <Td className="text-slate-300">{l.phone ?? "—"}</Td>
+                    <Td className="text-slate-300 tabular-nums">{l.phone ?? "—"}</Td>
                     <Td>
                       <StateBadge state={l.conversationState ?? undefined} />
                     </Td>
@@ -206,15 +231,18 @@ export default function LeadsPage() {
                     </Td>
                     <Td className="text-slate-300">{l.source ?? "—"}</Td>
                     <Td className="text-slate-300">{l.attendantName ?? "—"}</Td>
-                    <Td className="text-slate-400 text-xs">{formatDate(l.createdAt)}</Td>
+                    <Td className="text-slate-400 text-[11px] tabular-nums">
+                      {formatDate(l.createdAt)}
+                    </Td>
                   </Tr>
                 ))}
               </TBody>
             </Table>
 
-            <div className="flex items-center justify-between p-3 border-t border-white/10">
-              <span className="text-xs text-slate-400">
-                Página {page} de {totalPages} · {formatNumber(filtered.length)} leads
+            <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.05]">
+              <span className="text-[11px] text-slate-500 tabular-nums">
+                Página {page} de {totalPages} · {formatNumber(filtered.length)}{" "}
+                leads
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -237,13 +265,15 @@ export default function LeadsPage() {
             </div>
           </>
         ) : (
-          <EmptyState
-            title="Nenhum lead encontrado"
-            description="Tente ajustar os filtros ou verifique o Clinic ID na topbar."
-          />
+          <div className="p-5">
+            <EmptyState
+              title="Nenhum lead encontrado"
+              description="Tente ajustar os filtros ou verifique o Clinic ID na topbar."
+            />
+          </div>
         )}
-      </Card>
-    </>
+      </Panel>
+    </div>
   );
 }
 

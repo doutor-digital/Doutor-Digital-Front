@@ -34,19 +34,17 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
 function RouteLoader() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-surface/95 backdrop-blur">
-      {/* Logo / identidade */}
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0a0a0d]/95 backdrop-blur">
       <div className="mb-1 flex items-center gap-2 select-none">
-        <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 grid place-items-center shadow-lg shadow-brand-500/25">
-          <span className="text-[13px] font-black text-white">D</span>
+        <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center">
+          <span className="text-[13px] font-semibold text-slate-100">D</span>
         </div>
-        <span className="text-[15px] font-bold tracking-tight text-slate-200">
+        <span className="text-[14px] font-semibold tracking-tight text-slate-200">
           Doutor Digital
         </span>
       </div>
 
-      {/* Spinner */}
-      <Loader2 className="h-5 w-5 animate-spin text-brand-600" />
+      <Loader2 className="h-5 w-5 animate-spin text-emerald-300" />
 
       {/* Texto */}
       <p className="text-[11px] text-slate-600 tracking-widest uppercase">

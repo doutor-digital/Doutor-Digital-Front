@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export function Table({ className, children, ...p }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
-      <table className={cn("w-full text-sm", className)} {...p}>
+    <div className="overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.01]">
+      <table className={cn("w-full text-[12.5px]", className)} {...p}>
         {children}
       </table>
     </div>
@@ -13,14 +13,14 @@ export function Table({ className, children, ...p }: HTMLAttributes<HTMLTableEle
 
 export function THead({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-white/[0.03] text-slate-400 text-xs uppercase tracking-wider border-b border-white/10">
+    <thead className="border-b border-white/[0.05]">
       {children}
     </thead>
   );
 }
 
 export function TBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-white/5">{children}</tbody>;
+  return <tbody className="divide-y divide-white/[0.04]">{children}</tbody>;
 }
 
 export function Tr({
@@ -31,9 +31,9 @@ export function Tr({
   return (
     <tr
       className={cn(
-        "transition-colors",
-        clickable && "cursor-pointer hover:bg-white/[0.04]",
-        className
+        "group transition",
+        clickable && "cursor-pointer hover:bg-white/[0.02]",
+        className,
       )}
       {...p}
     />
@@ -44,12 +44,20 @@ export function Th({ className, ...p }: ThHTMLAttributes<HTMLTableCellElement>) 
   return (
     <th
       scope="col"
-      className={cn("text-left font-medium px-4 py-3 whitespace-nowrap", className)}
+      className={cn(
+        "text-left px-5 py-3 text-[10px] font-medium uppercase tracking-widest text-slate-500 whitespace-nowrap",
+        className,
+      )}
       {...p}
     />
   );
 }
 
 export function Td({ className, ...p }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3 text-slate-200 whitespace-nowrap", className)} {...p} />;
+  return (
+    <td
+      className={cn("px-5 py-3 text-slate-200 whitespace-nowrap", className)}
+      {...p}
+    />
+  );
 }

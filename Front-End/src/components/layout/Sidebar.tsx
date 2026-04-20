@@ -1,8 +1,20 @@
 import { NavLink } from "react-router-dom";
 import {
-  BarChart3, Bell, Building2, Cog, Contact as ContactIcon, DollarSign,
-  FileBarChart, Filter, LayoutDashboard, LineChart,
-  ListChecks, Moon, Radio, Users2, Workflow,
+  BarChart3,
+  Bell,
+  Building2,
+  Cog,
+  Contact as ContactIcon,
+  DollarSign,
+  FileBarChart,
+  Filter,
+  LayoutDashboard,
+  LineChart,
+  ListChecks,
+  Moon,
+  Radio,
+  Users2,
+  Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,42 +22,38 @@ const navGroups = [
   {
     label: "Visão geral",
     items: [
-      { to: "/",          label: "Dashboard",  icon: LayoutDashboard, end: true },
-      { to: "/live",      label: "Ao vivo",    icon: Radio },
-      { to: "/amanheceu", label: "Amanheceu",  icon: Moon },
-      { to: "/analytics", label: "Analytics",  icon: BarChart3 },
+      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+      { to: "/live", label: "Ao vivo", icon: Radio },
+      { to: "/amanheceu", label: "Amanheceu", icon: Moon },
+      { to: "/analytics", label: "Analytics", icon: BarChart3 },
     ],
   },
   {
     label: "Gestão",
     items: [
-      { to: "/leads",      label: "Leads",      icon: ListChecks },
-      { to: "/contacts",   label: "Contatos",   icon: ContactIcon },
-      { to: "/funnel",     label: "Funil",      icon: Workflow },
-      { to: "/sources",    label: "Origens",    icon: Filter },
-      { to: "/evolution",  label: "Evolução",   icon: LineChart },
+      { to: "/leads", label: "Leads", icon: ListChecks },
+      { to: "/contacts", label: "Contatos", icon: ContactIcon },
+      { to: "/funnel", label: "Funil", icon: Workflow },
+      { to: "/sources", label: "Origens", icon: Filter },
+      { to: "/evolution", label: "Evolução", icon: LineChart },
       { to: "/attendants", label: "Atendentes", icon: Users2 },
-      { to: "/units",      label: "Unidades",   icon: Building2 },
+      { to: "/units", label: "Unidades", icon: Building2 },
     ],
   },
   {
     label: "Financeiro",
-    items: [
-      { to: "/finance", label: "Financeiro", icon: DollarSign },
-    ],
+    items: [{ to: "/finance", label: "Financeiro", icon: DollarSign }],
   },
   {
     label: "Relatórios",
     items: [
       { to: "/reports", label: "Relatórios", icon: FileBarChart },
-      { to: "/alerts",  label: "Alertas",    icon: Bell },
+      { to: "/alerts", label: "Alertas", icon: Bell },
     ],
   },
   {
     label: "Sistema",
-    items: [
-      { to: "/settings", label: "Configurações", icon: Cog },
-    ],
+    items: [{ to: "/settings", label: "Configurações", icon: Cog }],
   },
 ];
 
@@ -54,20 +62,13 @@ export function Sidebar() {
     <aside
       className={cn(
         "hidden lg:flex lg:flex-col",
-        "w-72 shrink-0",
-        "border-r border-hairline",
-        "bg-surface/80 backdrop-blur-xl",
-        "shadow-[inset_-1px_0_0_rgba(148,163,184,0.10)]"
+        "w-64 shrink-0",
+        "border-r border-white/[0.05]",
+        "bg-[#0a0a0d]",
       )}
     >
-
-      {/* ── Logo ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-hairline">
-        <div
-          className={cn(
-            "h-10 w-10 shrink-0 overflow-hidden rounded-xl",
-          )}
-        >
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.05]">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-white/[0.08]">
           <img
             src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
             alt="Doutor Digital"
@@ -76,20 +77,19 @@ export function Sidebar() {
         </div>
 
         <div className="leading-tight min-w-0">
-          <div className="text-[14px] font-bold text-slate-50 tracking-tight truncate">
+          <div className="text-[13px] font-semibold text-slate-50 tracking-tight truncate">
             Doutor Digital
           </div>
-          <div className="text-[10px] uppercase tracking-[0.12em] text-slate-500 mt-0.5">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mt-0.5">
             Insights · v1.0
           </div>
         </div>
       </div>
 
-      {/* ── Navegação ─────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+            <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
               {group.label}
             </p>
 
@@ -101,31 +101,23 @@ export function Sidebar() {
                   end={end}
                   className={({ isActive }) =>
                     cn(
-                      "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium",
-                      "transition-[background-color,color,box-shadow] duration-150",
+                      "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[12.5px] font-medium transition",
                       isActive
-                        ? [
-                            "bg-brand-500/12 text-brand-700 dark:text-brand-200",
-                            "ring-1 ring-inset ring-brand-500/30",
-                            "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-                          ]
-                        : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                        ? "bg-white/[0.05] text-slate-50 ring-1 ring-inset ring-white/[0.08]"
+                        : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200",
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <span
+                      <Icon
                         className={cn(
-                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-                          "transition-colors duration-150",
+                          "h-4 w-4 shrink-0 transition-colors",
                           isActive
-                            ? "bg-brand-500/20 text-brand-600 dark:text-brand-300"
-                            : "bg-white/[0.04] text-slate-500 group-hover:bg-white/[0.07] group-hover:text-slate-300"
+                            ? "text-emerald-300"
+                            : "text-slate-500 group-hover:text-slate-300",
                         )}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </span>
+                      />
                       <span>{label}</span>
                     </>
                   )}
@@ -136,16 +128,12 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── Rodapé ────────────────────────────────────────────── */}
-      <div className="p-3 border-t border-hairline">
-        <div
-          className={cn(
-            "rounded-xl border border-hairline p-3.5",
-            "bg-gradient-to-br from-brand-500/10 via-transparent to-accent-500/10"
-          )}
-        >
-          <p className="text-[11px] font-semibold text-slate-300">💡 Dica pro</p>
-          <p className="mt-1 text-[11px] leading-5 text-slate-500">
+      <div className="p-3 border-t border-white/[0.05]">
+        <div className="rounded-md border border-white/[0.06] bg-white/[0.02] p-3">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            Dica
+          </p>
+          <p className="mt-1.5 text-[11px] leading-5 text-slate-400">
             Use filtros por intervalo para cruzar conversão e origem em tempo real.
           </p>
         </div>
