@@ -44,6 +44,7 @@ import {
 } from "@/hooks/useFinance";
 import {
   PAYMENT_METHOD_LABEL,
+  paymentMethodLabel,
   type PaymentMethod,
 } from "@/services/payments";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -419,7 +420,7 @@ function BasicView({
                       {p.leadName}
                     </p>
                     <p className="truncate text-[11px] text-slate-500">
-                      {p.treatment} · {PAYMENT_METHOD_LABEL[p.paymentMethod]}
+                      {p.treatment} · {paymentMethodLabel(p.paymentMethod)}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -796,10 +797,10 @@ function AdvancedView({
                           className="h-1.5 w-1.5 rounded-full"
                           style={{
                             background:
-                              METHOD_COLORS[p.paymentMethod] ?? "#94a3b8",
+                              METHOD_COLORS[p.paymentMethod as PaymentMethod] ?? "#94a3b8",
                           }}
                         />
-                        {PAYMENT_METHOD_LABEL[p.paymentMethod]}
+                        {paymentMethodLabel(p.paymentMethod)}
                       </Badge>
                     </Td>
                     <Td className="text-right tabular-nums text-violet-200">

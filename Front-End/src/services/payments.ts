@@ -20,11 +20,35 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   transferencia: "Transferência",
 };
 
+export const COMPOSITE_METHOD_LABEL = "Múltiplas formas";
+
+export function paymentMethodLabel(method: string | null | undefined): string {
+  if (!method) return "—";
+  if (method === "composite") return COMPOSITE_METHOD_LABEL;
+  return PAYMENT_METHOD_LABEL[method as PaymentMethod] ?? method;
+}
+
 export interface TreatmentOption {
   key: string;
   name: string;
   defaultDurationMonths: number;
   defaultValue: number;
+}
+
+export interface PaymentSplitInput {
+  paymentMethod: PaymentMethod;
+  amount: number;
+  installments: number;
+  notes?: string;
+}
+
+export interface PaymentSplit {
+  id: number;
+  paymentMethod: PaymentMethod;
+  amount: number;
+  installments: number;
+  installmentValue: number;
+  notes?: string | null;
 }
 
 export interface PaymentCreateInput {
@@ -33,11 +57,12 @@ export interface PaymentCreateInput {
   treatment: string;
   treatmentDurationMonths: number;
   treatmentValue?: number;
-  paymentMethod: PaymentMethod;
+  paymentMethod?: PaymentMethod;
   downPayment: number;
   installments: number;
   paidAt?: string;
   notes?: string;
+  splits?: PaymentSplitInput[];
 }
 
 export interface Payment {
@@ -49,7 +74,7 @@ export interface Payment {
   treatment: string;
   treatmentDurationMonths: number;
   treatmentValue: number;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod | "composite";
   downPayment: number;
   installments: number;
   installmentValue: number;
@@ -57,6 +82,7 @@ export interface Payment {
   notes: string | null;
   paidAt: string;
   createdAt: string;
+  splits?: PaymentSplit[];
 }
 
 export interface PaymentMethodBreakdown {
@@ -116,6 +142,14 @@ export const paymentsService = {
       installments: input.installments,
       paidAt: input.paidAt,
       notes: input.notes,
+      splits: input.splits?.length
+        ? input.splits.map((s) => ({
+            paymentMethod: s.paymentMethod,
+            amount: s.amount,
+            installments: s.installments,
+            notes: s.notes,
+          }))
+        : undefined,
     });
     return data;
   },
