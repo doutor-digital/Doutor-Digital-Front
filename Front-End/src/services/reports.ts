@@ -1,6 +1,7 @@
 import { useClinic } from "@/hooks/useClinic";
 import { api } from "@/lib/api";
 import { toInt } from "@/lib/http";
+import type { DailyRelatoryDto, RelatorioMensalResumoDto } from "@/types";
 
 export interface MonthlyReportParams {
   clinicId: number | string;
@@ -35,14 +36,25 @@ export const reportsService = {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
-  async daily(params: DailyReportParams): Promise<unknown> {
+  async monthlySummary(params: MonthlyReportParams): Promise<RelatorioMensalResumoDto> {
+    const clinicId = toInt(params.clinicId);
+    if (!clinicId) throw new Error("clinicId inválido para /api/relatorios/mensal-resumo");
+
+    const { data } = await api.get<RelatorioMensalResumoDto>(
+      "/api/relatorios/mensal-resumo",
+      { params: { clinicId, mes: params.mes, ano: params.ano } },
+    );
+    return data;
+  },
+
+  async daily(params: DailyReportParams): Promise<DailyRelatoryDto[]> {
     const tenantId = toInt(params.tenantId);
     if (!tenantId) throw new Error("tenantId inválido para /daily-relatory/generate");
 
-    const { data } = await api.get<unknown>("/daily-relatory/generate", {
+    const { data } = await api.get<DailyRelatoryDto[]>("/daily-relatory/generate", {
       params: { tenantId, date: params.date },
     });
 
-    return data;
+    return data ?? [];
   },
 };

@@ -571,3 +571,59 @@ export interface LeadDetail {
   assignments: LeadAssignmentDto[];
   payments: LeadPaymentDto[];
 }
+
+/* ─── Relatórios (Daily + Monthly resumo) ─── */
+
+export interface DailyRelatoryDto {
+  unidade: string;
+  totalLeads: number;
+  agendamentos: number;
+  comPagamento: number;
+  resgastes: number;
+  observacoes: string;
+  atendentes: string[];
+}
+
+export interface OrigemAgrupadaRelatorioDto {
+  origem: string;
+  quantidade: number;
+}
+
+export interface EtapaAgrupadaRelatorioDto {
+  etapa: string;
+  quantidade: number;
+}
+
+export interface UnidadeRelatorioItemDto {
+  unitId: number | null;
+  nome: string;
+  quantidadeLeads: number;
+}
+
+export interface LeadsPorDiaItemDto {
+  dia: number;
+  quantidade: number;
+}
+
+export interface LeadRelatorioDetalheDto {
+  nome: string;
+  telefone: string;
+  origem: string;
+  stage: string;
+  criadoEm: string;
+}
+
+export interface RelatorioMensalResumoDto {
+  nomeClinica: string;
+  mes: number;
+  ano: number;
+  geradoEm: string;
+  totalLeads: number;
+  taxaConversaoPercent: number;
+  ticketMedio: number;
+  leadsPorOrigem: OrigemAgrupadaRelatorioDto[];
+  leadsPorUnidade: UnidadeRelatorioItemDto[];
+  leadsPorEtapa: EtapaAgrupadaRelatorioDto[];
+  leadsPorDia: LeadsPorDiaItemDto[];
+  leads: LeadRelatorioDetalheDto[];
+}
