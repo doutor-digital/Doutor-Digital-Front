@@ -38,12 +38,11 @@ function RouteLoader() {
   <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0a0a0d]/95 backdrop-blur">
     <div className="mb-1 flex items-center gap-2 select-none">
       <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center">
-        <span className="text-[13px] font-semibold text-slate-100">D</span>
       </div>
       <img
         src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
         alt="Doutor Digital"
-        className="h-6 w-auto object-contain"
+        className="h-20 w-auto object-contain"
       />
     </div>
 
