@@ -35,22 +35,21 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
 function RouteLoader() {
  return (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0a0a0d]/95 backdrop-blur">
-    <div className="mb-1 flex items-center gap-2 select-none">
-      <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center">
-      </div>
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[#0a0a0d]/95 backdrop-blur">
+    <div className="flex flex-col items-center select-none gap-4 mb-2">
       <img
         src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
         alt="Doutor Digital"
-        className="h-20 w-auto object-contain"
+        className="h-24 w-auto object-contain opacity-90 animate-pulse"
       />
     </div>
 
-    <Loader2 className="h-5 w-5 animate-spin text-emerald-300" />
-
-    <p className="text-[11px] text-slate-600 tracking-widest uppercase">
-      Carregando…
-    </p>
+    <div className="flex flex-col items-center gap-2">
+      <Loader2 className="h-6 w-6 animate-spin text-emerald-300" />
+      <p className="text-[11px] text-slate-600 tracking-widest uppercase">
+        Carregando…
+      </p>
+    </div>
   </div>
 );
 
