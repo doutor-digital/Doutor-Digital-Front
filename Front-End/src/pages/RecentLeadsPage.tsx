@@ -24,7 +24,7 @@ const PRESETS: { value: WindowPreset; label: string; hours: number }[] = [
 
 export default function RecentLeadsPage() {
   const { tenantId, unitId } = useClinic();
-  const clinicId = unitId || tenantId || undefined;
+  const clinicId = tenantId ?? undefined;
 
   const [preset, setPreset] = useState<WindowPreset>("24");
   const [customHours, setCustomHours] = useState<number>(48);
@@ -32,10 +32,11 @@ export default function RecentLeadsPage() {
   const hours = preset === "custom" ? customHours : Number(preset);
 
   const query = useQuery({
-    queryKey: ["recent-leads", "page", clinicId, hours],
+    queryKey: ["recent-leads", "page", clinicId, unitId, hours],
     queryFn: () =>
       webhooksService.recentLeads({
         clinicId,
+        unitId: unitId ?? undefined,
         hours,
         limit: 200,
       }),

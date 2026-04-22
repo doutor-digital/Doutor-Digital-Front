@@ -34,25 +34,27 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
 
 function RouteLoader() {
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0a0a0d]/95 backdrop-blur">
-      <div className="mb-1 flex items-center gap-2 select-none">
-        <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center">
-          <span className="text-[13px] font-semibold text-slate-100">D</span>
-        </div>
-        <span className="text-[14px] font-semibold tracking-tight text-slate-200">
-          Doutor Digital
-        </span>
+ return (
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0a0a0d]/95 backdrop-blur">
+    <div className="mb-1 flex items-center gap-2 select-none">
+      <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center">
+        <span className="text-[13px] font-semibold text-slate-100">D</span>
       </div>
-
-      <Loader2 className="h-5 w-5 animate-spin text-emerald-300" />
-
-      {/* Texto */}
-      <p className="text-[11px] text-slate-600 tracking-widest uppercase">
-        Carregando…
-      </p>
+      <img
+        src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
+        alt="Doutor Digital"
+        className="h-6 w-auto object-contain"
+      />
     </div>
-  );
+
+    <Loader2 className="h-5 w-5 animate-spin text-emerald-300" />
+
+    <p className="text-[11px] text-slate-600 tracking-widest uppercase">
+      Carregando…
+    </p>
+  </div>
+);
+
 }
 
 // ─── Guards ───────────────────────────────────────────────────────────────────

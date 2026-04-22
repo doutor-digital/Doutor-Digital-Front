@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -10,12 +11,13 @@ import { Table, TBody, THead, Td, Th, Tr } from "@/components/ui/Table";
 import { StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { analyticsService } from "@/services/analytics";
+import { useClinic } from "@/hooks/useClinic";
 import { formatDuration, formatNumber } from "@/lib/utils";
 
 export default function AnalyticsPage() {
-  const [unitId, setUnitId] = useState(
-    localStorage.getItem("lf.analytics.unitId") ?? ""
-  );
+  const { unitId, tenantId } = useClinic();
+  const activeUnitId = unitId ?? tenantId ?? null;
+
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -27,38 +29,30 @@ export default function AnalyticsPage() {
   const [state, setState] = useState("");
 
   const summary = useQuery({
-    queryKey: ["unit-summary", unitId, startDate, endDate],
-    queryFn: () => analyticsService.unitSummary(unitId, { startDate, endDate }),
-    enabled: !!unitId,
+    queryKey: ["unit-summary", activeUnitId, startDate, endDate],
+    queryFn: () =>
+      analyticsService.unitSummary(activeUnitId!, { startDate, endDate }),
+    enabled: !!activeUnitId,
   });
 
   const leads = useQuery({
-    queryKey: ["unit-leads-metrics", unitId, startDate, endDate, state],
+    queryKey: ["unit-leads-metrics", activeUnitId, startDate, endDate, state],
     queryFn: () =>
-      analyticsService.unitLeadsMetrics(unitId, {
+      analyticsService.unitLeadsMetrics(activeUnitId!, {
         startDate,
         endDate,
         state: state || undefined,
       }),
-    enabled: !!unitId,
+    enabled: !!activeUnitId,
   });
 
   return (
     <>
       <PageHeader
         title="Analytics"
-        description="Métricas profundas por unidade (dados locais do banco)"
+        description="Métricas profundas da unidade selecionada"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Input
-              className="w-48"
-              placeholder="Unit ID"
-              value={unitId}
-              onChange={(e) => {
-                setUnitId(e.target.value);
-                localStorage.setItem("lf.analytics.unitId", e.target.value);
-              }}
-            />
             <Input
               type="date"
               value={startDate}
@@ -77,18 +71,30 @@ export default function AnalyticsPage() {
               <option value="service">Atendimento</option>
               <option value="concluido">Concluído</option>
             </Select>
-            <Button variant="outline" size="sm" onClick={() => summary.refetch()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                summary.refetch();
+                leads.refetch();
+              }}
+            >
               Aplicar
             </Button>
           </div>
         }
       />
 
-      {!unitId ? (
+      {!activeUnitId ? (
         <Card className="p-8">
           <EmptyState
-            title="Informe um Unit ID"
-            description="As métricas analíticas são consultadas por unidade. Use o campo acima para carregar."
+            title="Nenhuma unidade selecionada"
+            description="Selecione uma unidade para visualizar as métricas analíticas."
+            action={
+              <Link to="/select-unit">
+                <Button size="sm">Selecionar unidade</Button>
+              </Link>
+            }
           />
         </Card>
       ) : (

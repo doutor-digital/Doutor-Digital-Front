@@ -12,21 +12,22 @@ import { useClinic } from "@/hooks/useClinic";
 import { formatDuration, formatNumber } from "@/lib/utils";
 
 export default function LiveMetricsPage() {
-  const { clinicId } = useClinic();
+  const { tenantId } = useClinic();
+  const clinicId = tenantId ?? undefined;
 
   const resumo = useQuery({
     queryKey: ["live-resumo", clinicId],
-    queryFn: () => metricsService.resumo(clinicId || undefined),
+    queryFn: () => metricsService.resumo(clinicId),
     refetchInterval: 15_000,
   });
   const fila = useQuery({
     queryKey: ["live-fila", clinicId],
-    queryFn: () => metricsService.fila(clinicId || undefined),
+    queryFn: () => metricsService.fila(clinicId),
     refetchInterval: 15_000,
   });
   const completo = useQuery({
     queryKey: ["live-completo", clinicId],
-    queryFn: () => metricsService.completo(clinicId || undefined),
+    queryFn: () => metricsService.completo(clinicId),
     refetchInterval: 30_000,
   });
 
