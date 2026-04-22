@@ -267,14 +267,12 @@ export const webhooksService = {
   },
 
   async recentLeads(params: {
-    clinicId?: number | string;
     hours?: number;
     limit?: number;
     unitId?: number | string;
   }): Promise<RecentLeadsResponse> {
     const { data } = await api.get<RecentLeadsResponse>("/webhooks/recent", {
       params: cleanParams({
-        clinicId: toInt(params.clinicId),
         hours: params.hours ?? 24,
         limit: params.limit ?? 50,
         unitId: toInt(params.unitId),
