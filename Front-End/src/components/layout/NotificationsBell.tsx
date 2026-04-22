@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
  * O "última visualização" é persistido por tenant em localStorage.
  */
 export function NotificationsBell() {
-  const { unitId } = useClinic();
-  const clinicId = unitId || undefined;
+  const { tenantId, unitId } = useClinic();
+  const clinicId = unitId || tenantId || undefined;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -25,9 +25,9 @@ export function NotificationsBell() {
   });
 
   const query = useQuery({
-    queryKey: ["recent-leads", "notifications", unitId],
+    queryKey: ["recent-leads", "notifications", clinicId],
     queryFn: () =>
-      webhooksService.recentLeads({ unitId: clinicId, hours: 24, limit: 10 }),
+      webhooksService.recentLeads({ clinicId, hours: 24, limit: 10 }),
     enabled: !!clinicId,
     refetchInterval: 30_000,
     refetchIntervalInBackground: true,
