@@ -180,3 +180,103 @@ html:not(.dark) .card-solid {
   color: rgb(var(--slate-200)) !important;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   MOBILE — regras aplicadas APENAS em telas < 1024px (lg).
+   Não afeta o layout do desktop. Copia o feel de app nativo.
+   ───────────────────────────────────────────────────────────── */
+
+@supports (padding: max(0px)) {
+  :root {
+    --sa-top: env(safe-area-inset-top, 0px);
+    --sa-bottom: env(safe-area-inset-bottom, 0px);
+    --sa-left: env(safe-area-inset-left, 0px);
+    --sa-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* Font stack nativa usada por design systems mobile (iOS SF / Android Roboto) */
+  html, body {
+    font-family:
+      -apple-system, BlinkMacSystemFont,
+      "SF Pro Text", "SF Pro Display",
+      "Segoe UI", Roboto, "Helvetica Neue",
+      "Noto Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  }
+
+  body {
+    /* Base type scale — Apple HIG body: 17px / Material body: 16px */
+    font-size: 15px;
+    line-height: 1.45;
+
+    /* Evita highlight azul/cinza do Android ao tocar */
+    -webkit-tap-highlight-color: transparent;
+
+    /* Comportamento nativo de scroll */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+
+    /* Sem double-tap zoom nos botões */
+    touch-action: manipulation;
+
+    /* Desabilita seleção de texto em elementos de UI — reativada em áreas de conteúdo abaixo */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Permite selecionar texto em conteúdo "real" (parágrafos, inputs, etc.) */
+  input, textarea, [contenteditable], p, li, td, pre, code, .select-text {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* iOS: evita zoom automático quando o input tem font-size < 16 */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  /* Áreas com scroll interno respeitam momentum nativo */
+  main, .scroll-area {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe-area helpers expostos como utilitários simples */
+  .pt-safe { padding-top: max(var(--sa-top, 0px), 8px); }
+  .pb-safe { padding-bottom: max(var(--sa-bottom, 0px), 8px); }
+  .pl-safe { padding-left: var(--sa-left, 0px); }
+  .pr-safe { padding-right: var(--sa-right, 0px); }
+  .h-safe-bottom { height: var(--sa-bottom, 0px); }
+
+  /* Quando em modo standalone (PWA instalado), esconde coisa de browser */
+  @media (display-mode: standalone) {
+    body {
+      /* Evita "bounce" que mostraria o background por trás */
+      overscroll-behavior: none;
+    }
+  }
+
+  /* Cartões/buttons com leve "press" nativo */
+  button, a[role="button"], .tappable {
+    transition: transform 80ms ease, opacity 80ms ease;
+  }
+  button:active, a[role="button"]:active, .tappable:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+
+  /* Scrollbar fina estilo iOS (só aparece ao scrollar) */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* Safe area lateral sempre respeitada (paisagem em iPhone com notch) */
+@media (max-width: 1023.98px) and (orientation: landscape) {
+  body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}

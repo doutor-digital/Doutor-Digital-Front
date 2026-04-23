@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Ban, CalendarCheck, CalendarX, ChevronRight, Clock3, FileText, FileUp,
+  Ban, CalendarCheck, CalendarX, ChevronRight, Clock3, Copy, FileText, FileUp,
   MessageSquare, Pencil, Phone, Search, Trash2, Upload, UserPlus, X,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -167,6 +167,14 @@ export default function ContactsPage() {
               className="hidden"
               onChange={handleFileChange}
             />
+            <Button
+              variant="outline"
+              onClick={() => navigate("/contacts/duplicates")}
+              disabled={!tenantId}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Duplicados
+            </Button>
             <Button
               variant="outline"
               onClick={() => navigate("/contacts/new")}

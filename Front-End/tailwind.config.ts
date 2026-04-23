@@ -86,6 +86,8 @@ export default {
       animation: {
         "fade-in": "fadeIn .25s ease-out both",
         shimmer: "shimmer 1.6s linear infinite",
+        "slide-in-left": "slideInLeft .22s cubic-bezier(0.32, 0.72, 0, 1) both",
+        "slide-in-bottom": "slideInBottom .22s cubic-bezier(0.32, 0.72, 0, 1) both",
       },
       keyframes: {
         fadeIn: {
@@ -95,6 +97,14 @@ export default {
         shimmer: {
           "0%": { backgroundPosition: "-400px 0" },
           "100%": { backgroundPosition: "400px 0" },
+        },
+        slideInLeft: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        slideInBottom: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
         },
       },
     },

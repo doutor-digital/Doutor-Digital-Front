@@ -314,6 +314,23 @@ export interface LeadTimeline {
   insights: TimelineInsights;
 }
 
+export interface DuplicateContactGroup {
+  tenantId: number;
+  phoneNormalized: string;
+  count: number;
+  keepContactId: number;
+  keepName: string;
+  keepCreatedAt: string;
+  deleteContactIds: number[];
+}
+
+export interface DuplicateContactsReport {
+  dryRun: boolean;
+  groupsFound: number;
+  contactsToDelete: number;
+  groups: DuplicateContactGroup[];
+}
+
 export interface OvernightLeadItemDto {
   id: number;
   name: string;

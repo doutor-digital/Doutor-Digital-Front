@@ -25,6 +25,7 @@ const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
+const ContactsDuplicatesPage = lazy(() => import("@/pages/ContactsDuplicatesPage"));
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
           <Route path="/contacts"          element={<ContactsPage />}     />
+          <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
           <Route path="/contacts/new"      element={<ContactFormPage />}  />
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />
           <Route path="/contacts/:id"      element={<ContactDetailPage />} />

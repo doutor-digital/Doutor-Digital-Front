@@ -6,6 +6,7 @@ import type {
   ContactDetail,
   ContactImportResult,
   ContactsListResponse,
+  DuplicateContactsReport,
   FilterCriterion,
   FilterOptionsResponse,
 } from "@/types";
@@ -212,6 +213,30 @@ export const contactsService = {
       }
     );
     return data ?? { key, options: [] };
+  },
+
+  async listDuplicates(clinicId?: number | string): Promise<DuplicateContactsReport> {
+    const { data } = await api.get<DuplicateContactsReport>(
+      "/contacts/admin/duplicates",
+      { params: cleanParams({ tenantId: toInt(clinicId) }) },
+    );
+    return data;
+  },
+
+  async deleteDuplicates(params: {
+    clinicId?: number | string;
+    dryRun?: boolean;
+  }): Promise<DuplicateContactsReport> {
+    const { data } = await api.delete<DuplicateContactsReport>(
+      "/contacts/admin/duplicates",
+      {
+        params: cleanParams({
+          tenantId: toInt(params.clinicId),
+          dryRun: params.dryRun ?? true,
+        }),
+      },
+    );
+    return data;
   },
 
   async importCsv(params: ImportCsvParams): Promise<ContactImportResult> {
