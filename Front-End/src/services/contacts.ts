@@ -215,10 +215,18 @@ export const contactsService = {
     return data ?? { key, options: [] };
   },
 
-  async listDuplicates(clinicId?: number | string): Promise<DuplicateContactsReport> {
+  async listDuplicates(params: {
+    clinicId?: number | string;
+    ignoreTenant?: boolean;
+  } = {}): Promise<DuplicateContactsReport> {
     const { data } = await api.get<DuplicateContactsReport>(
       "/contacts/admin/duplicates",
-      { params: cleanParams({ tenantId: toInt(clinicId) }) },
+      {
+        params: cleanParams({
+          tenantId: toInt(params.clinicId),
+          ignoreTenant: params.ignoreTenant ? true : undefined,
+        }),
+      },
     );
     return data;
   },
@@ -226,6 +234,7 @@ export const contactsService = {
   async deleteDuplicates(params: {
     clinicId?: number | string;
     dryRun?: boolean;
+    ignoreTenant?: boolean;
   }): Promise<DuplicateContactsReport> {
     const { data } = await api.delete<DuplicateContactsReport>(
       "/contacts/admin/duplicates",
@@ -233,6 +242,7 @@ export const contactsService = {
         params: cleanParams({
           tenantId: toInt(params.clinicId),
           dryRun: params.dryRun ?? true,
+          ignoreTenant: params.ignoreTenant ? true : undefined,
         }),
       },
     );

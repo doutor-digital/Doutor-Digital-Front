@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Copy,
+  Globe,
   RefreshCw,
   Shield,
   Trash2,
@@ -21,22 +22,28 @@ import { useClinic } from "@/hooks/useClinic";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
 export default function ContactsDuplicatesPage() {
-  const { unitId, tenantId } = useClinic();
+  const { tenantId } = useClinic();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [ignoreTenant, setIgnoreTenant] = useState(false);
 
   const report = useQuery({
-    queryKey: ["contacts-duplicates", unitId],
-    queryFn: () => contactsService.listDuplicates(unitId ?? tenantId ?? undefined),
-    enabled: !!unitId || !!tenantId,
+    queryKey: ["contacts-duplicates", tenantId, ignoreTenant],
+    queryFn: () =>
+      contactsService.listDuplicates({
+        clinicId: tenantId ?? undefined,
+        ignoreTenant,
+      }),
+    enabled: !!tenantId || ignoreTenant,
     retry: false,
   });
 
   const deleteMut = useMutation({
     mutationFn: () =>
       contactsService.deleteDuplicates({
-        clinicId: unitId ?? tenantId ?? undefined,
+        clinicId: tenantId ?? undefined,
         dryRun: false,
+        ignoreTenant,
       }),
     onSuccess: (data) => {
       toast.success(
@@ -104,18 +111,46 @@ export default function ContactsDuplicatesPage() {
         }
       />
 
-      {!unitId && !tenantId && (
+      {/* Toggle: buscar cross-tenant */}
+      <Card>
+        <CardBody className="py-3">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={ignoreTenant}
+              onChange={(e) => setIgnoreTenant(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded accent-brand-500"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-brand-300" />
+                <span className="text-[13px] font-semibold text-slate-100">
+                  Incluir outros tenants
+                </span>
+              </div>
+              <p className="text-[11.5px] text-slate-500 mt-1">
+                Agrupa contatos só pelo telefone, <b>ignorando o tenant</b>.
+                Útil quando a migração de banco duplicou contatos em tenants
+                diferentes. <span className="text-amber-300">Cuidado:</span> ao
+                apagar, o mais antigo vence mesmo que esteja em outro tenant.
+              </p>
+            </div>
+          </label>
+        </CardBody>
+      </Card>
+
+      {!tenantId && !ignoreTenant && (
         <Card>
           <CardBody>
             <EmptyState
               title="Selecione uma unidade"
-              description="A limpeza de duplicados é por tenant. Escolha um tenant/unidade primeiro."
+              description="Escolha um tenant/unidade, ou marque 'Incluir outros tenants' para varrer tudo."
             />
           </CardBody>
         </Card>
       )}
 
-      {unitId && tenantId && report.isLoading && (
+      {(tenantId || ignoreTenant) && report.isLoading && (
         <Card>
           <CardBody>
             <div className="h-32 animate-pulse bg-white/[0.02] rounded-md" />
@@ -123,7 +158,7 @@ export default function ContactsDuplicatesPage() {
         </Card>
       )}
 
-      {unitId && tenantId && report.isError && (
+      {(tenantId || ignoreTenant) && report.isError && (
         <Card>
           <CardBody>
             <EmptyState
@@ -134,7 +169,7 @@ export default function ContactsDuplicatesPage() {
         </Card>
       )}
 
-      {unitId && tenantId && data && (
+      {(tenantId || ignoreTenant) && data && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SummaryCard
