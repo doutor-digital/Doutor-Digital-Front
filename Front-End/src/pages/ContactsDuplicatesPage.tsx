@@ -21,21 +21,21 @@ import { useClinic } from "@/hooks/useClinic";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
 export default function ContactsDuplicatesPage() {
-  const { unitId } = useClinic();
+  const { unitId, tenantId } = useClinic();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const report = useQuery({
     queryKey: ["contacts-duplicates", unitId],
-    queryFn: () => contactsService.listDuplicates(unitId ?? undefined),
-    enabled: !!unitId,
+    queryFn: () => contactsService.listDuplicates(unitId ?? tenantId ?? undefined),
+    enabled: !!unitId || !!tenantId,
     retry: false,
   });
 
   const deleteMut = useMutation({
     mutationFn: () =>
       contactsService.deleteDuplicates({
-        clinicId: unitId ?? undefined,
+        clinicId: unitId ?? tenantId ?? undefined,
         dryRun: false,
       }),
     onSuccess: (data) => {
@@ -104,7 +104,7 @@ export default function ContactsDuplicatesPage() {
         }
       />
 
-      {!unitId && (
+      {!unitId && !tenantId && (
         <Card>
           <CardBody>
             <EmptyState
@@ -115,7 +115,7 @@ export default function ContactsDuplicatesPage() {
         </Card>
       )}
 
-      {unitId && report.isLoading && (
+      {unitId && tenantId && report.isLoading && (
         <Card>
           <CardBody>
             <div className="h-32 animate-pulse bg-white/[0.02] rounded-md" />
@@ -123,7 +123,7 @@ export default function ContactsDuplicatesPage() {
         </Card>
       )}
 
-      {unitId && report.isError && (
+      {unitId && tenantId && report.isError && (
         <Card>
           <CardBody>
             <EmptyState
@@ -134,7 +134,7 @@ export default function ContactsDuplicatesPage() {
         </Card>
       )}
 
-      {unitId && data && (
+      {unitId && tenantId && data && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SummaryCard
