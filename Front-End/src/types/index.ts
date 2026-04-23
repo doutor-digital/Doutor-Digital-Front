@@ -230,6 +230,90 @@ export interface LeadPaymentDto {
   paidAt: string;
 }
 
+export interface TimelineLeadHeader {
+  id: number;
+  externalId: number;
+  name: string;
+  phone: string;
+  source: string;
+  channel: string;
+  currentStage: string;
+  conversationState?: string | null;
+  hasAppointment: boolean;
+  hasPayment: boolean;
+  createdAt: string;
+  convertedAt?: string | null;
+}
+
+export interface TimelineAttribution {
+  phone: string;
+  ctwaClid: string;
+  sourceId?: string | null;
+  sourceType?: string | null;
+  matchType: string;
+  confidence: string;
+  matchedAt: string;
+}
+
+export interface TimelineStage {
+  label: string;
+  stageId: number;
+  enteredAt: string;
+  exitedAt?: string | null;
+  durationMinutes?: number | null;
+  isCurrent: boolean;
+}
+
+export interface TimelineAssignment {
+  attendantId: number;
+  attendantName: string;
+  stageAtAssignment?: string | null;
+  assignedAt: string;
+  minutesUntilFirstReply?: number | null;
+}
+
+export interface TimelineConversation {
+  id: number;
+  channel: string;
+  source?: string | null;
+  conversationState: string;
+  attendantName?: string | null;
+  startedAt: string;
+  endedAt?: string | null;
+  durationMinutes?: number | null;
+  interactionsCount: number;
+}
+
+export interface TimelineInteraction {
+  id: number;
+  conversationId: number;
+  type: string;
+  content?: string | null;
+  createdAt: string;
+}
+
+export interface TimelineInsights {
+  totalMinutesUntilConversion?: number | null;
+  minutesUntilFirstAssignment?: number | null;
+  minutesInBot: number;
+  minutesInQueue: number;
+  minutesInService: number;
+  stageChanges: number;
+  reassignments: number;
+  longestStageLabel?: string | null;
+  longestStageMinutes?: number | null;
+}
+
+export interface LeadTimeline {
+  lead: TimelineLeadHeader;
+  attribution?: TimelineAttribution | null;
+  stages: TimelineStage[];
+  assignments: TimelineAssignment[];
+  conversations: TimelineConversation[];
+  interactions: TimelineInteraction[];
+  insights: TimelineInsights;
+}
+
 export interface OvernightLeadItemDto {
   id: number;
   name: string;

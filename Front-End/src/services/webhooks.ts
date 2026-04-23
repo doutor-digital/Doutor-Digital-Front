@@ -9,6 +9,7 @@ import type {
   GroupByGranularity,
   Lead,
   LeadDetail,
+  LeadTimeline,
   LeadsCountDto,
   EvolutionAdvancedDto,
   OrigemAgrupada,
@@ -110,6 +111,14 @@ export const webhooksService = {
     if (!numericId) throw new Error("id inválido para /webhooks/{id}");
 
     const { data } = await api.get<LeadDetail>(`/webhooks/${numericId}`);
+    return data;
+  },
+
+  async getLeadTimeline(id: number | string): Promise<LeadTimeline> {
+    const numericId = toInt(id);
+    if (!numericId) throw new Error("id inválido para /webhooks/{id}/timeline");
+
+    const { data } = await api.get<LeadTimeline>(`/webhooks/${numericId}/timeline`);
     return data;
   },
 

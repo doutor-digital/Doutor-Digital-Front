@@ -32,6 +32,9 @@ import {
   Shield,
   Globe,
   Layers,
+  Route,
+  MousePointerClick,
+  Gauge,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { StageBadge, StateBadge } from "@/components/ui/Badge";
@@ -45,7 +48,7 @@ import {
 } from "@/services/assignments";
 import { webhooksService } from "@/services/webhooks";
 import { formatCurrency, formatDate, formatDuration } from "@/lib/utils";
-import type { ConversationState } from "@/types";
+import type { ConversationState, TimelineStage } from "@/types";
 import { cn } from "@/lib/utils";
 
 function EditableField({
@@ -143,7 +146,7 @@ export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const [tab, setTab] = useState<
-    "overview" | "history" | "payments" | "conversations"
+    "overview" | "timeline" | "history" | "payments" | "conversations"
   >("overview");
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
@@ -164,6 +167,12 @@ export default function LeadDetailPage() {
     queryKey: ["lead-history", id],
     queryFn: () => assignmentsService.leadHistory(id!),
     enabled: !!id,
+    retry: false,
+  });
+  const timeline = useQuery({
+    queryKey: ["lead-timeline", id],
+    queryFn: () => webhooksService.getLeadTimeline(id!),
+    enabled: !!id && tab === "timeline",
     retry: false,
   });
 
@@ -255,6 +264,7 @@ export default function LeadDetailPage() {
 
   const TABS = [
     { key: "overview", label: "Visão geral", icon: <BarChart2 className="h-3.5 w-3.5" /> },
+    { key: "timeline", label: "Timeline", icon: <Route className="h-3.5 w-3.5" /> },
     { key: "history", label: "Histórico", icon: <TrendingUp className="h-3.5 w-3.5" /> },
     { key: "payments", label: "Pagamentos", icon: <CreditCard className="h-3.5 w-3.5" /> },
     { key: "conversations", label: "Conversas", icon: <MessageSquare className="h-3.5 w-3.5" /> },
@@ -712,6 +722,27 @@ export default function LeadDetailPage() {
             </div>
           )}
 
+          {tab === "timeline" && (
+            <div className="space-y-4">
+              {timeline.isLoading && (
+                <div className="h-64 rounded-xl bg-white/[0.02] animate-pulse" />
+              )}
+              {timeline.isError && (
+                <Panel>
+                  <div className="p-8">
+                    <EmptyState
+                      title="Timeline indisponível"
+                      description="Falha ao carregar timeline deste lead."
+                    />
+                  </div>
+                </Panel>
+              )}
+              {timeline.data && (
+                <TimelineView data={timeline.data} />
+              )}
+            </div>
+          )}
+
           {tab === "history" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Section
@@ -1151,5 +1182,335 @@ function TimeBlock({
         {formatDuration(value)}
       </p>
     </div>
+  );
+}
+
+function TimelineView({
+  data,
+}: {
+  data: import("@/types").LeadTimeline;
+}) {
+  const { insights, stages, assignments, conversations, interactions, attribution } = data;
+
+  const maxStageMinutes = Math.max(
+    1,
+    ...stages.map((s) => s.durationMinutes ?? 0),
+  );
+
+  const stateColor = (state: string) =>
+    state === "service"
+      ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/25"
+      : state === "queue"
+        ? "bg-amber-500/15 text-amber-300 ring-amber-500/25"
+        : state === "bot"
+          ? "bg-indigo-500/15 text-indigo-300 ring-indigo-500/25"
+          : state === "concluido"
+            ? "bg-sky-500/15 text-sky-300 ring-sky-500/25"
+            : "bg-white/[0.04] text-slate-300 ring-white/[0.08]";
+
+  return (
+    <>
+      <Section
+        title="Insights"
+        subtitle="Tempo agregado do lead"
+        eyebrow="Resumo"
+        eyebrowTone="bg-emerald-400"
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <TimeBlock
+            label="Até converter"
+            value={insights.totalMinutesUntilConversion ?? undefined}
+            tone="emerald"
+            icon={<CheckCircle2 className="h-4 w-4" />}
+          />
+          <TimeBlock
+            label="Até 1ª atribuição"
+            value={insights.minutesUntilFirstAssignment ?? undefined}
+            tone="indigo"
+            icon={<UserCog className="h-4 w-4" />}
+          />
+          <TimeBlock
+            label="Em bot"
+            value={insights.minutesInBot}
+            tone="indigo"
+            icon={<Zap className="h-4 w-4" />}
+          />
+          <TimeBlock
+            label="Em fila"
+            value={insights.minutesInQueue}
+            tone="amber"
+            icon={<Timer className="h-4 w-4" />}
+          />
+          <TimeBlock
+            label="Em atendimento"
+            value={insights.minutesInService}
+            tone="sky"
+            icon={<Activity className="h-4 w-4" />}
+          />
+          <InfoBlock
+            icon={<Gauge className="h-4 w-4" />}
+            label="Mudanças de etapa"
+            value={String(insights.stageChanges)}
+            tone="slate"
+          />
+          <InfoBlock
+            icon={<MousePointerClick className="h-4 w-4" />}
+            label="Reatribuições"
+            value={String(insights.reassignments)}
+            tone="slate"
+          />
+          <InfoBlock
+            icon={<Clock className="h-4 w-4" />}
+            label={`Etapa mais longa${insights.longestStageLabel ? `: ${insights.longestStageLabel}` : ""}`}
+            value={
+              insights.longestStageMinutes != null
+                ? formatDuration(insights.longestStageMinutes)
+                : "—"
+            }
+            tone="amber"
+          />
+        </div>
+      </Section>
+
+      <Section
+        title="Etapas"
+        subtitle={`${stages.length} etapa(s) · duração em cada uma`}
+        eyebrow="Funil"
+        eyebrowTone="bg-sky-400"
+      >
+        {stages.length === 0 ? (
+          <EmptyState title="Sem histórico de etapas" />
+        ) : (
+          <ul className="space-y-2">
+            {stages.map((s, i) => (
+              <StageBar
+                key={`${s.stageId}-${s.enteredAt}-${i}`}
+                stage={s}
+                maxMinutes={maxStageMinutes}
+              />
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Section
+          title="Atribuições"
+          subtitle={`${assignments.length} atribuição(ões)`}
+          eyebrow="Equipe"
+          eyebrowTone="bg-indigo-400"
+        >
+          {assignments.length === 0 ? (
+            <EmptyState title="Sem atribuições" />
+          ) : (
+            <ul className="space-y-2">
+              {assignments.map((a, i) => (
+                <li
+                  key={`${a.attendantId}-${a.assignedAt}-${i}`}
+                  className="flex items-start gap-3 p-3 rounded-md hover:bg-white/[0.02] transition"
+                >
+                  <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-100 shrink-0">
+                    {a.attendantName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-slate-100">
+                      {a.attendantName}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
+                      {formatDate(a.assignedAt)}
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                      {a.stageAtAssignment && <StageBadge stage={a.stageAtAssignment} />}
+                      {a.minutesUntilFirstReply != null && (
+                        <span className="inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+                          <Timer className="h-3 w-3" /> {formatDuration(a.minutesUntilFirstReply)} até 1ª resposta
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section
+          title="Estados da conversa"
+          subtitle={`${conversations.length} conversa(s)`}
+          eyebrow="Fluxo"
+          eyebrowTone="bg-amber-400"
+        >
+          {conversations.length === 0 ? (
+            <EmptyState title="Nenhuma conversa" />
+          ) : (
+            <ul className="space-y-2">
+              {conversations.map((c) => (
+                <li
+                  key={c.id}
+                  className="p-3 rounded-md bg-white/[0.015] ring-1 ring-inset ring-white/[0.05]"
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span
+                      className={cn(
+                        "inline-flex items-center text-[10.5px] font-medium px-2 py-0.5 rounded-full ring-1 ring-inset uppercase tracking-wider",
+                        stateColor(c.conversationState),
+                      )}
+                    >
+                      {c.conversationState}
+                    </span>
+                    <span className="text-[10.5px] text-slate-400 tabular-nums">
+                      {formatDuration(c.durationMinutes ?? 0)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5 tabular-nums">
+                    {formatDate(c.startedAt)}
+                    {c.endedAt ? <> → {formatDate(c.endedAt)}</> : <span className="ml-1 text-emerald-300 font-medium">· ao vivo</span>}
+                  </p>
+                  {c.attendantName && (
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Atendente: <span className="text-slate-300 font-medium">{c.attendantName}</span>
+                    </p>
+                  )}
+                  <p className="text-[10.5px] text-slate-600 mt-1 tabular-nums">
+                    {c.interactionsCount} interação(ões)
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+      </div>
+
+      {attribution && (
+        <Section
+          title="Atribuição de origem"
+          subtitle="Rastreamento do clique / captação"
+          eyebrow="Origem"
+          eyebrowTone="bg-indigo-400"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <InfoBlock
+              icon={<Target className="h-4 w-4" />}
+              label="MatchType"
+              value={attribution.matchType}
+              tone="indigo"
+            />
+            <InfoBlock
+              icon={<Shield className="h-4 w-4" />}
+              label="Confiança"
+              value={attribution.confidence}
+              tone={
+                attribution.confidence === "HIGH" || attribution.confidence === "ALTA"
+                  ? "emerald"
+                  : attribution.confidence === "MEDIUM" || attribution.confidence === "MEDIA"
+                    ? "amber"
+                    : "slate"
+              }
+            />
+            <InfoBlock
+              icon={<Globe className="h-4 w-4" />}
+              label="Source Type"
+              value={attribution.sourceType ?? "—"}
+              tone="sky"
+            />
+            <InfoBlock
+              icon={<Calendar className="h-4 w-4" />}
+              label="Match em"
+              value={formatDate(attribution.matchedAt)}
+              tone="slate"
+            />
+          </div>
+          {attribution.ctwaClid && (
+            <p className="text-[11px] text-slate-500 mt-3 font-mono break-all">
+              CTWA: <span className="text-slate-300">{attribution.ctwaClid}</span>
+            </p>
+          )}
+        </Section>
+      )}
+
+      <Section
+        title="Linha do tempo"
+        subtitle={`${interactions.length} evento(s)`}
+        eyebrow="Interações"
+        eyebrowTone="bg-slate-400"
+      >
+        {interactions.length === 0 ? (
+          <EmptyState title="Nenhum evento" />
+        ) : (
+          <ol className="relative ml-1">
+            {interactions.map((it, idx) => (
+              <li
+                key={it.id}
+                className="relative flex gap-3 pb-4 last:pb-0"
+              >
+                {idx < interactions.length - 1 && (
+                  <span className="absolute left-[9px] top-5 bottom-0 w-px bg-white/[0.06]" />
+                )}
+                <span className="mt-0.5 h-5 w-5 rounded-full ring-4 ring-[#0a0a0d] bg-white/[0.08] grid place-items-center shrink-0 z-10">
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-400">
+                      {it.type}
+                    </span>
+                    <span className="text-[10.5px] text-slate-500 tabular-nums">
+                      {formatDate(it.createdAt)}
+                    </span>
+                  </div>
+                  {it.content && (
+                    <p className="text-[13px] text-slate-300 mt-1 break-words leading-relaxed">
+                      {it.content}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Section>
+    </>
+  );
+}
+
+function StageBar({
+  stage,
+  maxMinutes,
+}: {
+  stage: TimelineStage;
+  maxMinutes: number;
+}) {
+  const duration = stage.durationMinutes ?? 0;
+  const pct = Math.min(100, Math.max(2, (duration / maxMinutes) * 100));
+
+  return (
+    <li className="p-3 rounded-md hover:bg-white/[0.02] transition">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <StageBadge stage={stage.label} />
+          {stage.isCurrent && (
+            <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+              atual
+            </span>
+          )}
+        </div>
+        <span className="text-[11.5px] font-semibold text-slate-200 tabular-nums">
+          {formatDuration(duration)}
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 w-full rounded-full bg-white/[0.04] overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all",
+            stage.isCurrent ? "bg-emerald-400/70" : "bg-sky-400/50",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-[10.5px] text-slate-500 mt-1.5 tabular-nums">
+        {formatDate(stage.enteredAt)}
+        {stage.exitedAt && <> → {formatDate(stage.exitedAt)}</>}
+      </p>
+    </li>
   );
 }
