@@ -196,24 +196,8 @@ html:not(.dark) .card-solid {
 }
 
 @media (max-width: 1023.98px) {
-  /* Font stack nativa usada por design systems mobile (iOS SF / Android Roboto) */
-  html, body {
-    font-family:
-      -apple-system, BlinkMacSystemFont,
-      "SF Pro Text", "SF Pro Display",
-      "Segoe UI", Roboto, "Helvetica Neue",
-      "Noto Sans", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
-  }
-
+  /* Font stack idêntica ao desktop — só preserva ajustes técnicos */
   body {
-    /* Base type scale — Apple HIG body: 17px / Material body: 16px */
-    font-size: 15px;
-    line-height: 1.45;
-
     /* Evita highlight azul/cinza do Android ao tocar */
     -webkit-tap-highlight-color: transparent;
 
@@ -224,7 +208,7 @@ html:not(.dark) .card-solid {
     /* Sem double-tap zoom nos botões */
     touch-action: manipulation;
 
-    /* Desabilita seleção de texto em elementos de UI — reativada em áreas de conteúdo abaixo */
+    /* Desabilita seleção de texto só em elementos de chrome da UI */
     -webkit-user-select: none;
     user-select: none;
   }

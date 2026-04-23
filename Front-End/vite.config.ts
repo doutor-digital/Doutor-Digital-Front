@@ -70,12 +70,20 @@ export default defineConfig({
     port: 5173,
     host: true,
   },
+  esbuild: {
+    // Remove logs/debugger do bundle de produção
+    drop: ["console", "debugger"],
+    legalComments: "none",
+  },
   build: {
+    target: "es2020",
+    cssCodeSplit: true,
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: {
           react: ["react", "react-dom", "react-router-dom"],
-          query: ["@tanstack/react-query", "@tanstack/react-query-devtools"],
+          query: ["@tanstack/react-query"],
           charts: ["recharts"],
           icons: ["lucide-react"],
         },
