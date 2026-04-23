@@ -6,6 +6,7 @@ import type {
   ContactDetail,
   ContactImportResult,
   ContactsListResponse,
+  DuplicateContactsDeleteSummary,
   DuplicateContactsReport,
   FilterCriterion,
   FilterOptionsResponse,
@@ -235,17 +236,18 @@ export const contactsService = {
     clinicId?: number | string;
     dryRun?: boolean;
     ignoreTenant?: boolean;
-  }): Promise<DuplicateContactsReport> {
-    const { data } = await api.delete<DuplicateContactsReport>(
-      "/contacts/admin/duplicates",
-      {
-        params: cleanParams({
-          tenantId: toInt(params.clinicId),
-          dryRun: params.dryRun ?? true,
-          ignoreTenant: params.ignoreTenant ? true : undefined,
-        }),
-      },
-    );
+  }): Promise<DuplicateContactsReport | DuplicateContactsDeleteSummary> {
+    const dryRun = params.dryRun ?? true;
+    const { data } = await api.delete<
+      DuplicateContactsReport | DuplicateContactsDeleteSummary
+    >("/contacts/admin/duplicates", {
+      params: cleanParams({
+        tenantId: toInt(params.clinicId),
+        dryRun,
+        ignoreTenant: params.ignoreTenant ? true : undefined,
+      }),
+      timeout: 180_000,
+    });
     return data;
   },
 

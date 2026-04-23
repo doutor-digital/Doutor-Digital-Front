@@ -331,6 +331,13 @@ export interface DuplicateContactsReport {
   groups: DuplicateContactGroup[];
 }
 
+export interface DuplicateContactsDeleteSummary {
+  groupsFound: number;
+  contactsDeleted: number;
+  batches: number;
+  durationMs: number;
+}
+
 export interface OvernightLeadItemDto {
   id: number;
   name: string;

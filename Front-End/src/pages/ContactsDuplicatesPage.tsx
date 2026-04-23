@@ -46,23 +46,38 @@ export default function ContactsDuplicatesPage() {
         ignoreTenant,
       }),
     onSuccess: (data) => {
-      toast.success(
-        `${data.contactsToDelete} contato(s) duplicado(s) apagado(s) em ${data.groupsFound} grupo(s).`,
-      );
+      const deleted =
+        "contactsDeleted" in data ? data.contactsDeleted : data.contactsToDelete;
+      const seconds =
+        "durationMs" in data ? Math.round(data.durationMs / 100) / 10 : null;
+      const batches = "batches" in data ? data.batches : null;
+
+      const parts = [
+        `${formatNumber(deleted)} contato(s) duplicado(s) apagado(s) em ${data.groupsFound} grupo(s)`,
+      ];
+      if (batches !== null) parts.push(`${batches} lote(s)`);
+      if (seconds !== null) parts.push(`${seconds}s`);
+
+      toast.success(parts.join(" · "));
       queryClient.invalidateQueries({ queryKey: ["contacts-duplicates"] });
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setConfirmOpen(false);
     },
     onError: (err: unknown) => {
       const e = err as {
-        response?: { data?: { error?: string; detail?: string } };
+        response?: { data?: { error?: string; detail?: string; title?: string } };
         message?: string;
+        code?: string;
       };
+      const timeout = e?.code === "ECONNABORTED";
       toast.error(
-        e?.response?.data?.error ??
-          e?.response?.data?.detail ??
-          e?.message ??
-          "Falha ao apagar duplicados",
+        timeout
+          ? "Tempo esgotado. A operação pode ainda estar rodando no servidor — aguarde alguns segundos e recarregue."
+          : e?.response?.data?.error ??
+              e?.response?.data?.detail ??
+              e?.response?.data?.title ??
+              e?.message ??
+              "Falha ao apagar duplicados",
       );
       setConfirmOpen(false);
     },
@@ -391,10 +406,16 @@ function ConfirmDialog({
               Apagar contatos duplicados?
             </h2>
             <p className="text-[12px] text-slate-400 mt-1">
-              Essa ação é <b>irreversível</b>. {total} contato(s) serão
-              removidos em {groups} grupo(s) — o mais antigo de cada grupo
-              permanece.
+              Essa ação é <b>irreversível</b>. {formatNumber(total)} contato(s)
+              serão removidos em {formatNumber(groups)} grupo(s) — o mais antigo
+              de cada grupo permanece.
             </p>
+            {pending && (
+              <p className="text-[11.5px] text-amber-300 mt-2">
+                Apagando em lotes de 1000 — pode levar até ~1 minuto para
+                volumes grandes. Não feche a aba.
+              </p>
+            )}
           </div>
         </div>
         <div className="p-5 flex items-center justify-end gap-2">
@@ -406,7 +427,14 @@ function ConfirmDialog({
             disabled={pending}
             className="bg-rose-500/90 hover:bg-rose-500 text-white"
           >
-            {pending ? "Apagando..." : "Confirmar e apagar"}
+            {pending ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Apagando...
+              </>
+            ) : (
+              "Confirmar e apagar"
+            )}
           </Button>
         </div>
       </div>
