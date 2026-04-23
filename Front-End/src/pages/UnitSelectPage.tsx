@@ -22,7 +22,7 @@ const fallbackUnits: UnitOption[] = [
   },
   { id: "maraba", clinicId: 8021, name: "DOUTOR HÉRNIA UNIDADE MARABÁ", logo: "/assets/logo-maraba.png" },
   { id: "parauapebas", clinicId: 8022, name: "DOUTOR HÉRNIA UNIDADE PARAUAPEBAS", logo: "/assets/logo-parauapebas.png" },
-  { id: "imperatriz", clinicId: 8023, name: "DOUTOR HÉRNIA IMPERATRIZ", logo: "/assets/logo-10anos.png" },
+  { id: "imperatriz", clinicId: 8051, name: "DOUTOR HÉRNIA IMPERATRIZ", logo: "https://i0.wp.com/www.cloudia.com.br/wp-content/uploads/2024/01/Logo-800-sem-fundo.png" },
   { id: "canaa", clinicId: 8024, name: "DOUTOR HÉRNIA CANAÃ", logo: "/assets/logo-10anos.png" },
   { id: "balsas", clinicId: 8025, name: "DOUTOR HÉRNIA BALSAS", logo: "/assets/logo-10anos.png" },
   { id: "trauma", clinicId: 8026, name: "INSTITUTO TRAUMA", logo: "/assets/logo-trauma.png" },
