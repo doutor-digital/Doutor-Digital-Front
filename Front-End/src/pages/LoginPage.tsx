@@ -65,7 +65,7 @@ return (
 
       {/* Imagem de fundo */}
       <img
-        src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
+        src="https://i.postimg.cc/DwB0GsB4/Chat-GPT-Image-23-de-abr-de-2026-15-36-56.png"
         alt=""
         aria-hidden
         className="absolute inset-0 h-full w-full object-contain object-center"
