@@ -6,10 +6,11 @@ import type {
   ContactDetail,
   ContactImportResult,
   ContactsListResponse,
-  DuplicateContactsDeleteProgress,
   DuplicateContactsReport,
+  DuplicateDeleteJob,
   FilterCriterion,
   FilterOptionsResponse,
+  StartDuplicateDeleteJobResponse,
 } from "@/types";
 
 export interface ListContactsParams {
@@ -236,28 +237,6 @@ export const contactsService = {
     return data;
   },
 
-  async deleteDuplicatesChunk(params: {
-    clinicId?: number | string;
-    ignoreTenant?: boolean;
-    batchSize?: number;
-    maxBatches?: number;
-  }): Promise<DuplicateContactsDeleteProgress> {
-    const { data } = await api.delete<DuplicateContactsDeleteProgress>(
-      "/contacts/admin/duplicates",
-      {
-        params: cleanParams({
-          tenantId: toInt(params.clinicId),
-          dryRun: false,
-          ignoreTenant: params.ignoreTenant ? true : undefined,
-          batchSize: params.batchSize ?? 500,
-          maxBatches: params.maxBatches ?? 4,
-        }),
-        timeout: 90_000,
-      },
-    );
-    return data;
-  },
-
   async previewDuplicates(params: {
     clinicId?: number | string;
     ignoreTenant?: boolean;
@@ -267,11 +246,43 @@ export const contactsService = {
       {
         params: cleanParams({
           tenantId: toInt(params.clinicId),
-          dryRun: true,
           ignoreTenant: params.ignoreTenant ? true : undefined,
         }),
         timeout: 30_000,
       },
+    );
+    return data;
+  },
+
+  async startDeleteJob(params: {
+    clinicId?: number | string;
+    ignoreTenant?: boolean;
+    batchSize?: number;
+  }): Promise<StartDuplicateDeleteJobResponse> {
+    const { data } = await api.post<StartDuplicateDeleteJobResponse>(
+      "/contacts/admin/duplicates/jobs",
+      {
+        tenantId: toInt(params.clinicId) ?? null,
+        ignoreTenant: !!params.ignoreTenant,
+        batchSize: params.batchSize ?? 500,
+      },
+      { timeout: 15_000 },
+    );
+    return data;
+  },
+
+  async getDeleteJob(jobId: string): Promise<DuplicateDeleteJob> {
+    const { data } = await api.get<DuplicateDeleteJob>(
+      `/contacts/admin/duplicates/jobs/${encodeURIComponent(jobId)}`,
+      { timeout: 10_000 },
+    );
+    return data;
+  },
+
+  async cancelDeleteJob(jobId: string): Promise<DuplicateDeleteJob> {
+    const { data } = await api.delete<DuplicateDeleteJob>(
+      `/contacts/admin/duplicates/jobs/${encodeURIComponent(jobId)}`,
+      { timeout: 10_000 },
     );
     return data;
   },

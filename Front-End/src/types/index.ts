@@ -334,14 +334,35 @@ export interface DuplicateContactsReport {
   groups: DuplicateContactGroup[];
 }
 
-export interface DuplicateContactsDeleteProgress {
-  deletedThisCall: number;
-  batches: number;
-  remaining: number;
+export type DuplicateDeleteJobStatus =
+  | "Queued"
+  | "Running"
+  | "Completed"
+  | "Failed"
+  | "Cancelling"
+  | "Cancelled";
+
+export interface DuplicateDeleteJob {
+  id: string;
+  status: DuplicateDeleteJobStatus;
+  tenantId: number | null;
+  ignoreTenant: boolean;
+  batchSize: number;
   contactsToDeleteTotal: number;
+  contactsDeleted: number;
   groupsFound: number;
-  completed: boolean;
-  durationMs: number;
+  batchesExecuted: number;
+  progressPct: number;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+  createdBy: string;
+}
+
+export interface StartDuplicateDeleteJobResponse {
+  jobId: string;
+  status: DuplicateDeleteJobStatus;
 }
 
 export interface OvernightLeadItemDto {
