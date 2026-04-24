@@ -6,7 +6,7 @@ import type {
   ContactDetail,
   ContactImportResult,
   ContactsListResponse,
-  DuplicateContactsDeleteSummary,
+  DuplicateContactsDeleteProgress,
   DuplicateContactsReport,
   FilterCriterion,
   FilterOptionsResponse,
@@ -219,6 +219,8 @@ export const contactsService = {
   async listDuplicates(params: {
     clinicId?: number | string;
     ignoreTenant?: boolean;
+    page?: number;
+    pageSize?: number;
   } = {}): Promise<DuplicateContactsReport> {
     const { data } = await api.get<DuplicateContactsReport>(
       "/contacts/admin/duplicates",
@@ -226,28 +228,51 @@ export const contactsService = {
         params: cleanParams({
           tenantId: toInt(params.clinicId),
           ignoreTenant: params.ignoreTenant ? true : undefined,
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 50,
         }),
       },
     );
     return data;
   },
 
-  async deleteDuplicates(params: {
+  async deleteDuplicatesChunk(params: {
     clinicId?: number | string;
-    dryRun?: boolean;
     ignoreTenant?: boolean;
-  }): Promise<DuplicateContactsReport | DuplicateContactsDeleteSummary> {
-    const dryRun = params.dryRun ?? true;
-    const { data } = await api.delete<
-      DuplicateContactsReport | DuplicateContactsDeleteSummary
-    >("/contacts/admin/duplicates", {
-      params: cleanParams({
-        tenantId: toInt(params.clinicId),
-        dryRun,
-        ignoreTenant: params.ignoreTenant ? true : undefined,
-      }),
-      timeout: 180_000,
-    });
+    batchSize?: number;
+    maxBatches?: number;
+  }): Promise<DuplicateContactsDeleteProgress> {
+    const { data } = await api.delete<DuplicateContactsDeleteProgress>(
+      "/contacts/admin/duplicates",
+      {
+        params: cleanParams({
+          tenantId: toInt(params.clinicId),
+          dryRun: false,
+          ignoreTenant: params.ignoreTenant ? true : undefined,
+          batchSize: params.batchSize ?? 500,
+          maxBatches: params.maxBatches ?? 4,
+        }),
+        timeout: 90_000,
+      },
+    );
+    return data;
+  },
+
+  async previewDuplicates(params: {
+    clinicId?: number | string;
+    ignoreTenant?: boolean;
+  }): Promise<DuplicateContactsReport> {
+    const { data } = await api.delete<DuplicateContactsReport>(
+      "/contacts/admin/duplicates",
+      {
+        params: cleanParams({
+          tenantId: toInt(params.clinicId),
+          dryRun: true,
+          ignoreTenant: params.ignoreTenant ? true : undefined,
+        }),
+        timeout: 30_000,
+      },
+    );
     return data;
   },
 

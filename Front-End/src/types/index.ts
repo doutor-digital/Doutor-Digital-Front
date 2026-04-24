@@ -328,13 +328,19 @@ export interface DuplicateContactsReport {
   dryRun: boolean;
   groupsFound: number;
   contactsToDelete: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
   groups: DuplicateContactGroup[];
 }
 
-export interface DuplicateContactsDeleteSummary {
-  groupsFound: number;
-  contactsDeleted: number;
+export interface DuplicateContactsDeleteProgress {
+  deletedThisCall: number;
   batches: number;
+  remaining: number;
+  contactsToDeleteTotal: number;
+  groupsFound: number;
+  completed: boolean;
   durationMs: number;
 }
 
