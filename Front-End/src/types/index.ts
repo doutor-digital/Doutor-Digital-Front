@@ -365,6 +365,49 @@ export interface StartDuplicateDeleteJobResponse {
   status: DuplicateDeleteJobStatus;
 }
 
+export type ContactsBulkDeleteMode = "Ids" | "Filter";
+
+export interface ContactsBulkDeleteFilters {
+  origem?: "all" | "webhook_cloudia" | "import_csv" | "manual";
+  search?: string | null;
+  status?: string | null;
+  etapa?: string | null;
+  tag?: string | null;
+  blocked?: boolean | null;
+  has_consultation?: boolean | null;
+  date_from?: string | null;
+  date_to?: string | null;
+}
+
+export interface ContactsBulkDeleteSelection {
+  mode: ContactsBulkDeleteMode;
+  ids?: number[];
+  filters?: ContactsBulkDeleteFilters;
+}
+
+export interface StartContactsBulkDeleteResponse {
+  jobId: string;
+  status: DuplicateDeleteJobStatus;
+  estimatedTotal: number;
+}
+
+export interface ContactsBulkDeleteJob {
+  id: string;
+  status: DuplicateDeleteJobStatus;
+  tenantId: number;
+  mode: ContactsBulkDeleteMode;
+  batchSize: number;
+  contactsToDeleteTotal: number;
+  contactsDeleted: number;
+  batchesExecuted: number;
+  progressPct: number;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+  createdBy: string;
+}
+
 export interface OvernightLeadItemDto {
   id: number;
   name: string;

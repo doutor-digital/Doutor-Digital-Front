@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Ban, CalendarCheck, CalendarX, ChevronRight, Clock3, Copy, FileText, FileUp,
@@ -11,12 +11,37 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DestructiveActionBar } from "@/components/ui/DestructiveActionBar";
 import { contactsService } from "@/services/contacts";
 import { useClinic } from "@/hooks/useClinic";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn, formatNumber } from "@/lib/utils";
-import type { AttendanceStatus, Contact, ContactImportResult } from "@/types";
+import type {
+  AttendanceStatus,
+  Contact,
+  ContactImportResult,
+  ContactsBulkDeleteJob,
+  ContactsBulkDeleteSelection,
+  DuplicateDeleteJobStatus,
+} from "@/types";
 import { toast } from "sonner";
+
+const BULK_JOB_STORAGE_KEY = "contacts-bulk-delete-job-id";
+const BULK_POLL_INTERVAL_MS = 1500;
+const BULK_BATCH_SIZE = 500;
+
+const isBulkTerminal = (s: DuplicateDeleteJobStatus) =>
+  s === "Completed" || s === "Failed" || s === "Cancelled";
+
+/**
+ * IDs no front vêm prefixados ("c_123" para Contact, "l_456" para Lead).
+ * Bulk delete só opera sobre Contact (c_*), e o backend espera `int`.
+ */
+function extractContactIntId(id: string): number | null {
+  if (!id.startsWith("c_")) return null;
+  const n = Number(id.slice(2));
+  return Number.isFinite(n) ? n : null;
+}
 
 type Origem = "all" | "webhook_cloudia" | "import_csv" | "manual";
 type StatusFilter = "all" | AttendanceStatus | "none";
@@ -153,8 +178,212 @@ export default function ContactsPage() {
     resetPage();
   };
 
+  // ─── Bulk delete: seleção + job em background ───
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
+  const [selectAllFiltered, setSelectAllFiltered] = useState(false);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkJobId, setBulkJobId] = useState<string | null>(
+    () => sessionStorage.getItem(BULK_JOB_STORAGE_KEY),
+  );
+
+  // Ao mudar filtro/origem/página: limpa o modo "selecionar todos filtrados"
+  // (mas preserva IDs individuais — usuário pode ter marcado items de páginas anteriores).
+  useEffect(() => {
+    setSelectAllFiltered(false);
+  }, [origem, debouncedSearch, status, debouncedEtapa, debouncedTag, onlyBlocked]);
+
+  const selectablePageIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const c of contacts) {
+      const n = extractContactIntId(c.id);
+      if (n !== null) ids.push(n);
+    }
+    return ids;
+  }, [contacts]);
+
+  const allPageSelected =
+    selectablePageIds.length > 0 &&
+    selectablePageIds.every((id) => selectedIds.has(id));
+  const somePageSelected =
+    !allPageSelected && selectablePageIds.some((id) => selectedIds.has(id));
+
+  const togglePageSelect = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const id of selectablePageIds) next.delete(id);
+      } else {
+        for (const id of selectablePageIds) next.add(id);
+      }
+      return next;
+    });
+    setSelectAllFiltered(false);
+  };
+
+  const toggleRowSelect = (intId: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(intId)) next.delete(intId);
+      else next.add(intId);
+      return next;
+    });
+    setSelectAllFiltered(false);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectAllFiltered(false);
+    setBulkConfirmOpen(false);
+  };
+
+  const totalFiltered = data?.pagination?.total ?? 0;
+  const selectionCount = selectAllFiltered ? totalFiltered : selectedIds.size;
+  const hasSelection = selectionCount > 0;
+
+  const buildSelection = (): ContactsBulkDeleteSelection => {
+    if (selectAllFiltered) {
+      return {
+        mode: "Filter",
+        filters: {
+          origem,
+          search: debouncedSearch || undefined,
+          status: status === "all" ? undefined : status,
+          etapa: debouncedEtapa || undefined,
+          tag: debouncedTag || undefined,
+          blocked: onlyBlocked ? true : undefined,
+        },
+      };
+    }
+    return { mode: "Ids", ids: [...selectedIds] };
+  };
+
+  const bulkJob = useQuery<ContactsBulkDeleteJob>({
+    queryKey: ["contacts-bulk-delete-job", bulkJobId],
+    queryFn: () => contactsService.getBulkDeleteJob(bulkJobId!),
+    enabled: !!bulkJobId,
+    refetchInterval: (query) => {
+      const s = query.state.data?.status;
+      if (!s || isBulkTerminal(s)) return false;
+      return BULK_POLL_INTERVAL_MS;
+    },
+    refetchIntervalInBackground: true,
+    retry: 2,
+  });
+
+  useEffect(() => {
+    const j = bulkJob.data;
+    if (!j || !bulkJobId || j.id !== bulkJobId) return;
+    if (!isBulkTerminal(j.status)) return;
+
+    sessionStorage.removeItem(BULK_JOB_STORAGE_KEY);
+    setBulkJobId(null);
+    setBulkConfirmOpen(false);
+    clearSelection();
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
+
+    if (j.status === "Completed") {
+      toast.success(
+        `${formatNumber(j.contactsDeleted)} contato(s) apagado(s) em ${j.batchesExecuted} lote(s).`,
+      );
+    } else if (j.status === "Cancelled") {
+      toast.info(
+        `Cancelado. ${formatNumber(j.contactsDeleted)} já haviam sido apagado(s).`,
+      );
+    } else if (j.status === "Failed") {
+      toast.error(j.error ?? "Job falhou.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkJob.data, bulkJobId]);
+
+  const startBulkMut = useMutation({
+    mutationFn: () => {
+      if (!tenantId) throw new Error("Tenant não selecionado");
+      return contactsService.startBulkDelete({
+        clinicId: tenantId,
+        selection: buildSelection(),
+        batchSize: BULK_BATCH_SIZE,
+      });
+    },
+    onSuccess: (res) => {
+      setBulkJobId(res.jobId);
+      sessionStorage.setItem(BULK_JOB_STORAGE_KEY, res.jobId);
+      toast.success(
+        `Job enfileirado para apagar ${formatNumber(res.estimatedTotal)} contato(s).`,
+      );
+    },
+    onError: (err: unknown) => {
+      const e = err as {
+        response?: { data?: { title?: string; error?: string; detail?: string } };
+        message?: string;
+      };
+      toast.error(
+        e?.response?.data?.title ??
+          e?.response?.data?.error ??
+          e?.response?.data?.detail ??
+          e?.message ??
+          "Falha ao iniciar exclusão em massa",
+      );
+    },
+    onSettled: () => setBulkConfirmOpen(false),
+  });
+
+  const cancelBulkMut = useMutation({
+    mutationFn: (id: string) => contactsService.cancelBulkDeleteJob(id),
+    onSuccess: () =>
+      toast.success("Cancelamento solicitado. Interrompendo após o lote atual."),
+    onError: () => toast.error("Falha ao solicitar cancelamento."),
+  });
+
+  const bulkJ = bulkJob.data;
+  const bulkRunning =
+    !!bulkJ && (bulkJ.status === "Queued" || bulkJ.status === "Running" || bulkJ.status === "Cancelling");
+  const bulkBarOpen = bulkConfirmOpen || bulkRunning;
+
   return (
     <>
+      <DestructiveActionBar
+        open={bulkBarOpen}
+        title={
+          bulkRunning
+            ? "Apagando contatos"
+            : `${formatNumber(selectionCount)} contato(s) serão apagados permanentemente`
+        }
+        description={
+          bulkRunning
+            ? undefined
+            : selectAllFiltered
+              ? "Todos os contatos que batem nos filtros atuais. Ação irreversível."
+              : "Apenas os contatos selecionados. Ação irreversível."
+        }
+        confirmLabel={`Apagar ${formatNumber(selectionCount)} contato(s)`}
+        onConfirm={() => startBulkMut.mutate()}
+        onDismiss={() => {
+          if (bulkRunning && bulkJ) {
+            if (bulkJ.status !== "Cancelling") cancelBulkMut.mutate(bulkJ.id);
+          } else {
+            setBulkConfirmOpen(false);
+          }
+        }}
+        pending={startBulkMut.isPending}
+        countdownSeconds={3}
+        progress={
+          bulkRunning && bulkJ
+            ? {
+                current: bulkJ.contactsDeleted,
+                total: bulkJ.contactsToDeleteTotal,
+                label:
+                  bulkJ.status === "Queued"
+                    ? "aguardando na fila"
+                    : bulkJ.status === "Cancelling"
+                      ? "cancelando..."
+                      : `${bulkJ.batchesExecuted} lote(s)`,
+                onStop: () => cancelBulkMut.mutate(bulkJ.id),
+                stopping: cancelBulkMut.isPending || bulkJ.status === "Cancelling",
+              }
+            : undefined
+        }
+      />
+
       <PageHeader
         title="Contatos"
         description="Todos os leads da sua base — do webhook, importados ou criados manualmente."
@@ -332,25 +561,53 @@ export default function ContactsPage() {
               }
             />
           ) : (
-            <ul
-              className={cn(
-                "divide-y divide-slate-800/60",
-                isFetching && "opacity-60 transition-opacity"
-              )}
-            >
-              {contacts.map((c) => (
-                <ContactRow
-                  key={c.id}
-                  contact={c}
-                  onAction={(action) =>
-                    actionMutation.mutate({ id: c.id, action })
-                  }
-                  onDelete={() => handleDelete(c.id, c.name)}
-                  pending={actionMutation.isPending && actionMutation.variables?.id === c.id}
-                  deleting={deleteMutation.isPending && deleteMutation.variables === c.id}
-                />
-              ))}
-            </ul>
+            <>
+              <SelectionHeader
+                pageSelectable={selectablePageIds.length}
+                pageChecked={allPageSelected}
+                pageIndeterminate={somePageSelected}
+                onTogglePage={togglePageSelect}
+                onClear={clearSelection}
+                onDelete={() => setBulkConfirmOpen(true)}
+                deleteDisabled={!hasSelection || bulkRunning || startBulkMut.isPending}
+                selectedTotal={selectionCount}
+                totalFiltered={totalFiltered}
+                allFilteredSelected={selectAllFiltered}
+                canSelectAllFiltered={
+                  allPageSelected &&
+                  totalFiltered > selectablePageIds.length &&
+                  !selectAllFiltered
+                }
+                onSelectAllFiltered={() => setSelectAllFiltered(true)}
+              />
+              <ul
+                className={cn(
+                  "divide-y divide-slate-800/60",
+                  isFetching && "opacity-60 transition-opacity"
+                )}
+              >
+                {contacts.map((c) => {
+                  const intId = extractContactIntId(c.id);
+                  const checked =
+                    selectAllFiltered || (intId !== null && selectedIds.has(intId));
+                  return (
+                    <ContactRow
+                      key={c.id}
+                      contact={c}
+                      onAction={(action) =>
+                        actionMutation.mutate({ id: c.id, action })
+                      }
+                      onDelete={() => handleDelete(c.id, c.name)}
+                      pending={actionMutation.isPending && actionMutation.variables?.id === c.id}
+                      deleting={deleteMutation.isPending && deleteMutation.variables === c.id}
+                      selectable={intId !== null && !bulkRunning}
+                      selected={checked}
+                      onToggleSelect={() => intId !== null && toggleRowSelect(intId)}
+                    />
+                  );
+                })}
+              </ul>
+            </>
           )}
         </CardBody>
       </Card>
@@ -365,6 +622,108 @@ export default function ContactsPage() {
 /* ═══════════════════════════════════════════════════════════════
  *  COMPONENTES
  * ═══════════════════════════════════════════════════════════════ */
+
+function SelectionHeader({
+  pageSelectable,
+  pageChecked,
+  pageIndeterminate,
+  onTogglePage,
+  onClear,
+  onDelete,
+  deleteDisabled,
+  selectedTotal,
+  totalFiltered,
+  allFilteredSelected,
+  canSelectAllFiltered,
+  onSelectAllFiltered,
+}: {
+  pageSelectable: number;
+  pageChecked: boolean;
+  pageIndeterminate: boolean;
+  onTogglePage: () => void;
+  onClear: () => void;
+  onDelete: () => void;
+  deleteDisabled: boolean;
+  selectedTotal: number;
+  totalFiltered: number;
+  allFilteredSelected: boolean;
+  canSelectAllFiltered: boolean;
+  onSelectAllFiltered: () => void;
+}) {
+  const hasSelection = selectedTotal > 0;
+  const masterRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (masterRef.current) masterRef.current.indeterminate = pageIndeterminate;
+  }, [pageIndeterminate]);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 px-5 py-2.5 border-b border-slate-800/60",
+        hasSelection ? "bg-rose-500/[0.04]" : "bg-transparent",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <input
+          ref={masterRef}
+          type="checkbox"
+          aria-label={
+            pageChecked
+              ? "Desmarcar todos desta página"
+              : "Selecionar todos desta página"
+          }
+          checked={pageChecked}
+          onChange={onTogglePage}
+          disabled={pageSelectable === 0}
+          className="h-4 w-4 accent-rose-500 cursor-pointer"
+        />
+        {hasSelection ? (
+          <div className="flex items-center gap-3 text-[12.5px]">
+            <span className="font-medium text-slate-100 tabular-nums">
+              {allFilteredSelected
+                ? `${formatNumber(selectedTotal)} contato(s) — todos os filtrados`
+                : `${formatNumber(selectedTotal)} selecionado(s)`}
+            </span>
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-[11.5px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+            >
+              Limpar
+            </button>
+          </div>
+        ) : (
+          <span className="text-[12px] text-slate-500">
+            Selecionar contatos desta página
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        {canSelectAllFiltered && (
+          <button
+            type="button"
+            onClick={onSelectAllFiltered}
+            className="text-[11.5px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+          >
+            Selecionar todos os {formatNumber(totalFiltered)} filtrados
+          </button>
+        )}
+        {hasSelection && (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onDelete}
+            disabled={deleteDisabled}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Apagar <span className="tabular-nums">{formatNumber(selectedTotal)}</span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function StatusChip({
   label,
@@ -413,12 +772,18 @@ function ContactRow({
   onDelete,
   pending,
   deleting,
+  selectable,
+  selected,
+  onToggleSelect,
 }: {
   contact: Contact;
   onAction: (action: AttendanceStatus) => void;
   onDelete: () => void;
   pending: boolean;
   deleting: boolean;
+  selectable: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const isImported = contact.origem === "import_csv";
   const isManual = contact.origem === "manual";
@@ -428,7 +793,28 @@ function ContactRow({
   const canEditDelete = !isLead && contact.id.startsWith("c_");
 
   return (
-    <li className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.04]">
+    <li
+      className={cn(
+        "group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.04]",
+        selected && "bg-rose-500/[0.04]",
+      )}
+    >
+      {selectable ? (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Selecionar ${contact.name}`}
+          className="h-4 w-4 accent-rose-500 cursor-pointer shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className="h-4 w-4 shrink-0"
+          aria-hidden
+          title="Esse contato não pode ser selecionado para exclusão"
+        />
+      )}
       <Link
         to={`/contacts/${encodeURIComponent(String(contact.id))}`}
         className="flex min-w-0 flex-1 items-center gap-4"

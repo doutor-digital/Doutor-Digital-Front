@@ -5,11 +5,14 @@ import type {
   Contact,
   ContactDetail,
   ContactImportResult,
+  ContactsBulkDeleteJob,
+  ContactsBulkDeleteSelection,
   ContactsListResponse,
   DuplicateContactsReport,
   DuplicateDeleteJob,
   FilterCriterion,
   FilterOptionsResponse,
+  StartContactsBulkDeleteResponse,
   StartDuplicateDeleteJobResponse,
 } from "@/types";
 
@@ -282,6 +285,39 @@ export const contactsService = {
   async cancelDeleteJob(jobId: string): Promise<DuplicateDeleteJob> {
     const { data } = await api.delete<DuplicateDeleteJob>(
       `/contacts/admin/duplicates/jobs/${encodeURIComponent(jobId)}`,
+      { timeout: 10_000 },
+    );
+    return data;
+  },
+
+  async startBulkDelete(params: {
+    clinicId: number | string;
+    selection: ContactsBulkDeleteSelection;
+    batchSize?: number;
+  }): Promise<StartContactsBulkDeleteResponse> {
+    const { data } = await api.post<StartContactsBulkDeleteResponse>(
+      "/contacts/bulk-delete/jobs",
+      {
+        tenantId: toInt(params.clinicId),
+        selection: params.selection,
+        batchSize: params.batchSize ?? 500,
+      },
+      { timeout: 15_000 },
+    );
+    return data;
+  },
+
+  async getBulkDeleteJob(jobId: string): Promise<ContactsBulkDeleteJob> {
+    const { data } = await api.get<ContactsBulkDeleteJob>(
+      `/contacts/bulk-delete/jobs/${encodeURIComponent(jobId)}`,
+      { timeout: 10_000 },
+    );
+    return data;
+  },
+
+  async cancelBulkDeleteJob(jobId: string): Promise<ContactsBulkDeleteJob> {
+    const { data } = await api.delete<ContactsBulkDeleteJob>(
+      `/contacts/bulk-delete/jobs/${encodeURIComponent(jobId)}`,
       { timeout: 10_000 },
     );
     return data;
