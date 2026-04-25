@@ -5,6 +5,9 @@ import { Topbar } from "./Topbar";
 import { MobileTopbar } from "./MobileTopbar";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileDrawer } from "./MobileDrawer";
+import { CommandPalette } from "@/components/command/CommandPalette";
+import { ActivityFeed } from "@/components/global/ActivityFeed";
+import { FloatingAssistant } from "@/components/global/FloatingAssistant";
 
 export default function DashboardLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,6 +37,11 @@ export default function DashboardLayout() {
       </div>
 
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      {/* Globais: paleta de comandos, feed de atividades, assistente flutuante */}
+      <CommandPalette />
+      <ActivityFeed />
+      <FloatingAssistant />
     </div>
   );
 }

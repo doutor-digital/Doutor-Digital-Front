@@ -29,6 +29,8 @@ import {
   DashboardFiltersState,
   defaultFilters,
 } from "@/components/filters/DashboardFilters";
+import { InsightsCard } from "@/components/dashboard/InsightsCard";
+import { GoalsCard } from "@/components/dashboard/GoalsCard";
 
 const FunnelChart = lazy(() =>
   import("@/components/charts/FunnelChart").then((m) => ({ default: m.FunnelChart })),
@@ -335,6 +337,33 @@ export default function DashboardPage() {
         counts={contatosCounts.data?.counts}
         error={contatosCounts.isError}
       />
+
+      {/* Insights + Metas */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <InsightsCard
+            loading={overviewLoading}
+            total={total}
+            conversao={conversao}
+            comPagamento={comPagNum}
+            semPagamento={semPagNum}
+            inService={statesData?.service ?? 0}
+            inQueue={statesData?.queue ?? 0}
+            topOrigem={
+              donutData[0]
+                ? { name: donutData[0].name, value: donutData[0].value }
+                : undefined
+            }
+          />
+        </div>
+        <div>
+          <GoalsCard
+            currentLeads={total}
+            currentConversion={conversao}
+            loading={overviewLoading}
+          />
+        </div>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">

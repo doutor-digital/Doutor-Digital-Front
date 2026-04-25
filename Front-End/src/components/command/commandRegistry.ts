@@ -1,7 +1,8 @@
 import {
-  BarChart3, Bell, Building2, Cog, Contact, DollarSign, FileBarChart,
-  Filter, LayoutDashboard, LineChart, ListChecks, Moon, Radio, Users2,
-  Workflow, type LucideIcon,
+  Activity, BarChart3, Bell, Bot, Building2, Cog, Contact, Copy,
+  DollarSign, FileBarChart, Filter, LayoutDashboard, LineChart, ListChecks,
+  Moon, RefreshCw, Radio, UserPlus, Users2, Workflow,
+  type LucideIcon,
 } from "lucide-react";
 
 export type CommandItem = {
@@ -10,6 +11,7 @@ export type CommandItem = {
   subtitle?: string;
   icon: LucideIcon;
   to?: string;
+  action?: () => void;
   keywords?: string[];
   group: "Navegação" | "Ações";
   shortcut?: string;
@@ -33,6 +35,65 @@ export const PAGE_COMMANDS: CommandItem[] = [
   { id: "nav:logs", title: "Logs", icon: Bell, to: "/logs", group: "Navegação", keywords: ["debug"] },
   { id: "nav:settings", title: "Configurações", icon: Cog, to: "/settings", group: "Navegação", shortcut: "g s" },
 ];
+
+/**
+ * Cria os comandos de "Ações" — recebe callbacks injetados pelo CommandPalette
+ * para evitar acoplamento direto com hooks/QueryClient no registry estático.
+ */
+export function buildActionCommands(handlers: {
+  openActivityFeed: () => void;
+  openAssistant: () => void;
+  refreshAll: () => void;
+  copyCurrentUrl: () => void;
+}): CommandItem[] {
+  return [
+    {
+      id: "act:activity-feed",
+      title: "Abrir feed de atividades",
+      subtitle: "Eventos recentes de leads e atendimentos",
+      icon: Activity,
+      action: handlers.openActivityFeed,
+      group: "Ações",
+      keywords: ["atividade", "feed", "evento", "tempo real"],
+    },
+    {
+      id: "act:assistant",
+      title: "Abrir assistente",
+      subtitle: "Chat com o robô do Doutor Digital",
+      icon: Bot,
+      action: handlers.openAssistant,
+      group: "Ações",
+      keywords: ["bot", "ajuda", "chat", "robo"],
+    },
+    {
+      id: "act:refresh",
+      title: "Atualizar todos os dados",
+      subtitle: "Reexecuta as queries da página",
+      icon: RefreshCw,
+      action: handlers.refreshAll,
+      group: "Ações",
+      keywords: ["recarregar", "reload", "refresh"],
+    },
+    {
+      id: "act:copy-url",
+      title: "Copiar URL da página",
+      subtitle: "Compartilha o estado atual (filtros + período)",
+      icon: Copy,
+      action: handlers.copyCurrentUrl,
+      group: "Ações",
+      keywords: ["link", "share", "compartilhar"],
+    },
+    {
+      id: "act:new-contact",
+      title: "Novo contato",
+      subtitle: "Abrir formulário",
+      icon: UserPlus,
+      to: "/contacts/new",
+      group: "Ações",
+      keywords: ["criar", "adicionar"],
+    },
+  ];
+}
 
 export function scoreCommand(cmd: CommandItem, query: string): number {
   if (!query) return 0.5;

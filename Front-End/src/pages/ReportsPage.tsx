@@ -98,6 +98,79 @@ interface FormatOptions {
   signature: string;
 }
 
+type LintSeverity = "error" | "warning" | "info";
+
+interface LintIssue {
+  severity: LintSeverity;
+  code: string;
+  message: string;
+}
+
+interface MessageTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  intro: string;
+  outro: string;
+  builtin?: boolean;
+}
+
+type TemplateVars = Record<string, string | number>;
+
+const TEMPLATE_VARS_DOC: Array<{ key: string; desc: string }> = [
+  { key: "periodLabel", desc: "Período do relatório" },
+  { key: "unitLabel", desc: "Nome da unidade" },
+  { key: "mode", desc: '"diário" ou "mensal"' },
+  { key: "leads", desc: "Total de leads" },
+  { key: "agendamentos", desc: "Total de agendamentos" },
+  { key: "comPagamento", desc: "Com pagamento" },
+  { key: "conversao", desc: "% de conversão" },
+  { key: "date", desc: "Data/hora atual (gerado em)" },
+  { key: "userName", desc: "Seu nome / assinatura" },
+];
+
+const BUILTIN_TEMPLATES: MessageTemplate[] = [
+  {
+    id: "raw",
+    name: "Sem wrapper",
+    description: "Envia apenas o relatório gerado, sem cumprimento ou despedida.",
+    intro: "",
+    outro: "",
+    builtin: true,
+  },
+  {
+    id: "corporate",
+    name: "Saudação corporativa",
+    description: "Tom formal com cumprimento, contexto e despedida profissional.",
+    intro:
+      "Olá! Segue o relatório de *{{unitLabel}}* referente a *{{periodLabel}}*.\n\n",
+    outro:
+      "\n\nQualquer dúvida estou à disposição.\n_— {{userName}}_",
+    builtin: true,
+  },
+  {
+    id: "executive",
+    name: "Resumo executivo",
+    description: "Cabeçalho destacado e rodapé técnico com timestamp.",
+    intro:
+      "📊 *Resumo {{mode}} · {{periodLabel}}*\n🏥 {{unitLabel}}\n\n━━━━━━━━━━━━━━━━━\n\n",
+    outro:
+      "\n\n━━━━━━━━━━━━━━━━━\n_Gerado automaticamente em {{date}}_",
+    builtin: true,
+  },
+  {
+    id: "casual",
+    name: "Casual",
+    description: "Tom informal e direto, ideal para conversas frequentes.",
+    intro: "Oi! 👋\n\nSegue o resumo de hoje:\n\n",
+    outro: "\n\nQualquer coisa, é só chamar! 🙌",
+    builtin: true,
+  },
+];
+
+const TEMPLATES_STORAGE_KEY = "wa-templates-v1";
+const TEMPLATE_ID_STORAGE_KEY = "wa-template-active-v1";
+
 const DEFAULT_OPTIONS: FormatOptions = {
   useEmojis: true,
   includeObservations: true,
@@ -200,6 +273,53 @@ export default function ReportsPage() {
   // ── Opções de formato ──────────────────────────────
   const [opts, setOpts] = useState<FormatOptions>(DEFAULT_OPTIONS);
   const patch = (p: Partial<FormatOptions>) => setOpts((prev) => ({ ...prev, ...p }));
+
+  // ── Templates de mensagem ──────────────────────────
+  const [customTemplates, setCustomTemplates] = useState<MessageTemplate[]>(() =>
+    loadCustomTemplates(),
+  );
+  const [templateId, setTemplateId] = useState<string>(() => {
+    try {
+      return localStorage.getItem(TEMPLATE_ID_STORAGE_KEY) || "raw";
+    } catch {
+      return "raw";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEMPLATE_ID_STORAGE_KEY, templateId);
+    } catch {
+      /* noop */
+    }
+  }, [templateId]);
+
+  const allTemplates = useMemo<MessageTemplate[]>(
+    () => [...BUILTIN_TEMPLATES, ...customTemplates],
+    [customTemplates],
+  );
+  const activeTemplate =
+    allTemplates.find((t) => t.id === templateId) ?? BUILTIN_TEMPLATES[0];
+
+  const saveCustomTemplate = (tpl: MessageTemplate) => {
+    setCustomTemplates((prev) => {
+      const idx = prev.findIndex((t) => t.id === tpl.id);
+      const next = idx >= 0
+        ? prev.map((t, i) => (i === idx ? { ...tpl, builtin: false } : t))
+        : [...prev, { ...tpl, builtin: false }];
+      saveCustomTemplates(next);
+      return next;
+    });
+    setTemplateId(tpl.id);
+  };
+
+  const deleteCustomTemplate = (id: string) => {
+    setCustomTemplates((prev) => {
+      const next = prev.filter((t) => t.id !== id);
+      saveCustomTemplates(next);
+      return next;
+    });
+    if (templateId === id) setTemplateId("raw");
+  };
 
   // ── Imagem ─────────────────────────────────────────
   const [image, setImage] = useState<{ file: File; url: string } | null>(null);
@@ -332,8 +452,8 @@ export default function ReportsPage() {
     ];
   }, [mode, dailyAggregate, prevDailyAggregate, monthlyQuery.data, prevMonthlyQuery.data, compare]);
 
-  // ── Texto do relatório WhatsApp ────────────────────
-  const reportText = useMemo(() => {
+  // ── Texto bruto do relatório (sem template wrapper) ────
+  const reportBody = useMemo(() => {
     if (!hasClinic) return "";
     if (mode === "daily") {
       const rows = dailyQuery.data ?? [];
@@ -343,6 +463,69 @@ export default function ReportsPage() {
     if (!data) return "";
     return buildMonthlyText({ data, opts });
   }, [mode, hasClinic, dailyQuery.data, monthlyQuery.data, dailyDate, unitLabel, opts]);
+
+  // ── Variáveis disponíveis para templates ───────────
+  const periodLabel =
+    mode === "daily"
+      ? formatBrDate(dailyDate)
+      : `${MESES_PT[mes - 1]} / ${ano}`;
+
+  const templateVars = useMemo<TemplateVars>(() => {
+    const nowStr = new Date().toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    if (mode === "daily") {
+      const a = dailyAggregate;
+      return {
+        periodLabel,
+        unitLabel,
+        mode: "diário",
+        leads: a.total,
+        agendamentos: a.agendamentos,
+        comPagamento: a.comPagamento,
+        conversao:
+          a.total > 0
+            ? formatPercent((a.agendamentos / a.total) * 100)
+            : "—",
+        date: nowStr,
+        userName: "Doutor Digital",
+      };
+    }
+    const d = monthlyQuery.data;
+    return {
+      periodLabel,
+      unitLabel,
+      mode: "mensal",
+      leads: d?.totalLeads ?? 0,
+      agendamentos: 0,
+      comPagamento: 0,
+      conversao: d ? formatPercent(d.taxaConversaoPercent) : "—",
+      date: nowStr,
+      userName: "Doutor Digital",
+    };
+  }, [mode, dailyAggregate, monthlyQuery.data, periodLabel, unitLabel]);
+
+  // ── Texto final aplicando o template ───────────────
+  const reportText = useMemo(
+    () => applyTemplate(activeTemplate, reportBody, templateVars),
+    [activeTemplate, reportBody, templateVars],
+  );
+
+  // ── Lint da mensagem ───────────────────────────────
+  const lintIssues = useMemo(
+    () =>
+      lintMessage(reportText, {
+        hasRecipient: !!whatsappRaw,
+        recipientValid: waValid,
+        hasClinic,
+      }),
+    [reportText, whatsappRaw, waValid, hasClinic],
+  );
+  const hasLintError = lintIssues.some((i) => i.severity === "error");
 
   // ── Handlers ───────────────────────────────────────
   const handleCopyText = async () => {
@@ -404,6 +587,10 @@ export default function ReportsPage() {
   };
 
   const handleSendWhatsApp = () => {
+    if (hasLintError) {
+      const firstErr = lintIssues.find((i) => i.severity === "error");
+      return toast.error(firstErr?.message ?? "Corrija os erros antes de enviar.");
+    }
     if (!reportText) return toast.error("Gere o relatório primeiro.");
     if (!waValid) return toast.error("Número de WhatsApp inválido (use +55 DDD + 8 ou 9 dígitos).");
     const normalized = waDigits.startsWith("55") ? waDigits : `55${waDigits}`;
@@ -445,12 +632,6 @@ export default function ReportsPage() {
       toast.error("Falha ao copiar link.");
     }
   };
-
-  // ── Rótulos ────────────────────────────────────────
-  const periodLabel =
-    mode === "daily"
-      ? formatBrDate(dailyDate)
-      : `${MESES_PT[mes - 1]} / ${ano}`;
 
   // ── Derivações para tabs ───────────────────────────
   const dailyRows = dailyQuery.data ?? [];
@@ -783,6 +964,14 @@ export default function ReportsPage() {
               fileInputRef={fileInputRef}
               onCopyText={handleCopyText}
               onSend={handleSendWhatsApp}
+              templates={allTemplates}
+              activeTemplateId={templateId}
+              onTemplateChange={setTemplateId}
+              onSaveTemplate={saveCustomTemplate}
+              onDeleteTemplate={deleteCustomTemplate}
+              templateVars={templateVars}
+              lintIssues={lintIssues}
+              hasLintError={hasLintError}
             />
           )}
         </CardBody>
@@ -1202,6 +1391,442 @@ function MonthlySources({
  *  WhatsApp composer
  * ═══════════════════════════════════════════════════════════════ */
 
+/* ─── Template Panel ─── */
+
+function TemplatePanel({
+  templates,
+  activeTemplateId,
+  onChange,
+  onSave,
+  onDelete,
+  vars,
+}: {
+  templates: MessageTemplate[];
+  activeTemplateId: string;
+  onChange: (id: string) => void;
+  onSave: (tpl: MessageTemplate) => void;
+  onDelete: (id: string) => void;
+  vars: TemplateVars;
+}) {
+  const active =
+    templates.find((t) => t.id === activeTemplateId) ?? templates[0];
+  const isCustom = !active.builtin;
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<MessageTemplate>(active);
+  const introRef = useRef<HTMLTextAreaElement | null>(null);
+  const outroRef = useRef<HTMLTextAreaElement | null>(null);
+  const [activeField, setActiveField] = useState<"intro" | "outro">("intro");
+
+  const startEdit = (mode: "edit" | "duplicate") => {
+    if (mode === "duplicate") {
+      setDraft({
+        id: `tpl-${Date.now().toString(36)}`,
+        name: `${active.name} (cópia)`,
+        description: active.description,
+        intro: active.intro,
+        outro: active.outro,
+        builtin: false,
+      });
+    } else {
+      setDraft({ ...active, builtin: false });
+    }
+    setEditing(true);
+  };
+
+  const startNew = () => {
+    setDraft({
+      id: `tpl-${Date.now().toString(36)}`,
+      name: "Novo modelo",
+      description: "",
+      intro: "Olá! Segue o relatório:\n\n",
+      outro: "\n\n— {{userName}}",
+      builtin: false,
+    });
+    setEditing(true);
+  };
+
+  const insertVar = (key: string) => {
+    const ref = activeField === "intro" ? introRef.current : outroRef.current;
+    const token = `{{${key}}}`;
+    const cur = activeField === "intro" ? draft.intro : draft.outro;
+    if (!ref) {
+      setDraft((d) => ({
+        ...d,
+        [activeField]: (cur || "") + token,
+      } as MessageTemplate));
+      return;
+    }
+    const start = ref.selectionStart ?? cur.length;
+    const end = ref.selectionEnd ?? cur.length;
+    const next = cur.slice(0, start) + token + cur.slice(end);
+    setDraft((d) => ({ ...d, [activeField]: next } as MessageTemplate));
+    requestAnimationFrame(() => {
+      ref.focus();
+      const pos = start + token.length;
+      ref.setSelectionRange(pos, pos);
+    });
+  };
+
+  const handleSave = () => {
+    if (!draft.name.trim()) {
+      toast.error("Dê um nome ao modelo.");
+      return;
+    }
+    onSave(draft);
+    setEditing(false);
+    toast.success("Modelo salvo");
+  };
+
+  const handleDelete = () => {
+    if (!isCustom) return;
+    if (!window.confirm(`Remover o modelo "${active.name}"?`)) return;
+    onDelete(active.id);
+    setEditing(false);
+    toast.success("Modelo removido");
+  };
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.025] to-white/[0.005]">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.05] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-400/10 ring-1 ring-inset ring-emerald-400/20">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+          </div>
+          <div className="leading-tight">
+            <p className="text-[12px] font-semibold text-slate-100">
+              Modelo de mensagem
+            </p>
+            <p className="text-[10.5px] text-slate-500">
+              Wrappa o relatório com saudação e despedida personalizadas.
+            </p>
+          </div>
+        </div>
+
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Select
+            value={activeTemplateId}
+            onChange={(e) => onChange(e.target.value)}
+            className="min-w-[200px]"
+          >
+            <optgroup label="Pré-definidos">
+              {templates
+                .filter((t) => t.builtin)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+            </optgroup>
+            {templates.some((t) => !t.builtin) && (
+              <optgroup label="Meus modelos">
+                {templates
+                  .filter((t) => !t.builtin)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+              </optgroup>
+            )}
+          </Select>
+
+          {!editing && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => startEdit(isCustom ? "edit" : "duplicate")}>
+                <FileText className="mr-1.5 h-3.5 w-3.5" />
+                {isCustom ? "Editar" : "Duplicar"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={startNew}>
+                + Novo
+              </Button>
+              {isCustom && (
+                <Button variant="ghost" size="sm" onClick={handleDelete}>
+                  <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Description / preview */}
+      {!editing && (
+        <div className="px-4 py-3">
+          {active.description && (
+            <p className="text-[11.5px] text-slate-400">{active.description}</p>
+          )}
+          {active.id !== "raw" && (active.intro || active.outro) && (
+            <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+              {active.intro && (
+                <div className="rounded-md border border-white/[0.06] bg-black/20 p-2.5">
+                  <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-wider text-slate-500">
+                    Intro
+                  </p>
+                  <pre className="whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">
+                    {resolveVars(active.intro, vars)}
+                  </pre>
+                </div>
+              )}
+              {active.outro && (
+                <div className="rounded-md border border-white/[0.06] bg-black/20 p-2.5">
+                  <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-wider text-slate-500">
+                    Outro
+                  </p>
+                  <pre className="whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">
+                    {resolveVars(active.outro, vars)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+          {active.id === "raw" && (
+            <p className="text-[11px] text-slate-500">
+              Sem wrapper — só o relatório auto-gerado é enviado.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Editor */}
+      {editing && (
+        <div className="space-y-3 px-4 py-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label className="label">Nome do modelo</label>
+              <Input
+                className="mt-1"
+                value={draft.name}
+                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                placeholder="Ex: Saudação corporativa"
+              />
+            </div>
+            <div>
+              <label className="label">Descrição (opcional)</label>
+              <Input
+                className="mt-1"
+                value={draft.description ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                placeholder="Tom da mensagem, contexto de uso…"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label className="label">Intro (vai antes do relatório)</label>
+              <textarea
+                ref={introRef}
+                className="mt-1 w-full min-h-[110px] rounded-md border border-white/[0.08] bg-black/30 px-3 py-2 text-[12.5px] font-mono text-slate-200 leading-relaxed focus:border-emerald-400/40 focus:outline-none"
+                value={draft.intro}
+                onFocus={() => setActiveField("intro")}
+                onChange={(e) => setDraft((d) => ({ ...d, intro: e.target.value }))}
+                placeholder="Olá! Segue o relatório de {{unitLabel}}…"
+              />
+            </div>
+            <div>
+              <label className="label">Outro (vai depois do relatório)</label>
+              <textarea
+                ref={outroRef}
+                className="mt-1 w-full min-h-[110px] rounded-md border border-white/[0.08] bg-black/30 px-3 py-2 text-[12.5px] font-mono text-slate-200 leading-relaxed focus:border-emerald-400/40 focus:outline-none"
+                value={draft.outro}
+                onFocus={() => setActiveField("outro")}
+                onChange={(e) => setDraft((d) => ({ ...d, outro: e.target.value }))}
+                placeholder="Qualquer dúvida estou à disposição. — {{userName}}"
+              />
+            </div>
+          </div>
+
+          {/* Variable picker */}
+          <div>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Variáveis disponíveis · clique para inserir em <span className="text-emerald-300">{activeField}</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATE_VARS_DOC.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => insertVar(v.key)}
+                  title={v.desc}
+                  className="group inline-flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[11px] font-mono text-slate-300 transition hover:border-emerald-400/30 hover:bg-emerald-400/[0.06] hover:text-emerald-200"
+                >
+                  <span>{`{{${v.key}}}`}</span>
+                  <span className="text-[9.5px] text-slate-500 group-hover:text-emerald-300/70">
+                    = {String(vars[v.key] ?? "—")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t border-white/[0.05] pt-3">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950"
+            >
+              <Check className="mr-1.5 h-3.5 w-3.5" /> Salvar modelo
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Lint Bar ─── */
+
+function LintBar({
+  issues,
+  charCount,
+}: {
+  issues: LintIssue[];
+  charCount: number;
+}) {
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
+  const infos = issues.filter((i) => i.severity === "info");
+
+  const tone =
+    errors.length > 0
+      ? "error"
+      : warnings.length > 0
+        ? "warning"
+        : "ok";
+
+  const toneStyles = {
+    error: {
+      ring: "ring-rose-500/20",
+      bg: "bg-rose-500/[0.06]",
+      pillBg: "bg-rose-500/15 text-rose-300 ring-rose-500/25",
+      icon: "text-rose-400",
+      label: "Bloqueado para envio",
+    },
+    warning: {
+      ring: "ring-amber-500/20",
+      bg: "bg-amber-500/[0.05]",
+      pillBg: "bg-amber-500/15 text-amber-200 ring-amber-500/25",
+      icon: "text-amber-400",
+      label: "Avisos antes de enviar",
+    },
+    ok: {
+      ring: "ring-emerald-500/20",
+      bg: "bg-emerald-500/[0.05]",
+      pillBg: "bg-emerald-500/15 text-emerald-200 ring-emerald-500/25",
+      icon: "text-emerald-400",
+      label: "Pronto para envio",
+    },
+  } as const;
+
+  const style = toneStyles[tone];
+  const pct = Math.min(100, Math.round((charCount / WA_MAX_CHARS) * 100));
+  const barColor =
+    charCount > WA_MAX_CHARS
+      ? "bg-rose-500"
+      : charCount > WA_NEAR_LIMIT
+        ? "bg-amber-400"
+        : "bg-emerald-400";
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl ring-1 ring-inset",
+        style.ring,
+        style.bg,
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          {tone === "ok" ? (
+            <Check className={cn("h-4 w-4", style.icon)} />
+          ) : (
+            <span
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold",
+                style.icon,
+              )}
+            >
+              !
+            </span>
+          )}
+          <p className="text-[12px] font-semibold text-slate-100">
+            {style.label}
+          </p>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2 text-[10.5px]">
+          {errors.length > 0 && (
+            <span className={cn("rounded-full px-2 py-0.5 ring-1 ring-inset", toneStyles.error.pillBg)}>
+              {errors.length} erro{errors.length > 1 ? "s" : ""}
+            </span>
+          )}
+          {warnings.length > 0 && (
+            <span className={cn("rounded-full px-2 py-0.5 ring-1 ring-inset", toneStyles.warning.pillBg)}>
+              {warnings.length} aviso{warnings.length > 1 ? "s" : ""}
+            </span>
+          )}
+          {infos.length > 0 && (
+            <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-sky-200 ring-1 ring-inset ring-sky-500/25">
+              {infos.length} dica{infos.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Char meter */}
+      <div className="px-4 pb-2">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+          <span>Caracteres</span>
+          <span className="tabular-nums">
+            {charCount.toLocaleString("pt-BR")} / {WA_MAX_CHARS.toLocaleString("pt-BR")}
+          </span>
+        </div>
+        <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className={cn("h-full transition-all duration-300", barColor)}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Issues list */}
+      {issues.length > 0 && (
+        <ul className="border-t border-white/[0.04] px-4 py-2 space-y-1">
+          {issues.map((iss) => (
+            <li
+              key={iss.code}
+              className="flex items-start gap-2 text-[11.5px]"
+            >
+              <span
+                className={cn(
+                  "mt-[2px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full",
+                  iss.severity === "error" && "bg-rose-400",
+                  iss.severity === "warning" && "bg-amber-400",
+                  iss.severity === "info" && "bg-sky-400",
+                )}
+              />
+              <span
+                className={cn(
+                  iss.severity === "error" && "text-rose-200",
+                  iss.severity === "warning" && "text-amber-200",
+                  iss.severity === "info" && "text-sky-200",
+                )}
+              >
+                {iss.message}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /* ─── WhatsApp text rendering (parses *bold* _italic_ ~strike~ `mono`) ─── */
 
 function renderWhatsAppLine(line: string, keyPrefix: string): React.ReactNode[] {
@@ -1448,6 +2073,14 @@ function WhatsAppComposer(props: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   onCopyText: () => void;
   onSend: () => void;
+  templates: MessageTemplate[];
+  activeTemplateId: string;
+  onTemplateChange: (id: string) => void;
+  onSaveTemplate: (tpl: MessageTemplate) => void;
+  onDeleteTemplate: (id: string) => void;
+  templateVars: TemplateVars;
+  lintIssues: LintIssue[];
+  hasLintError: boolean;
 }) {
   const {
     reportText, loading, hasClinic, periodLabel,
@@ -1455,6 +2088,9 @@ function WhatsAppComposer(props: {
     whatsappRaw, setWhatsappRaw, waValid,
     image, onImagePick, onImageClear, onImageCopy, onImageDownload, fileInputRef,
     onCopyText, onSend,
+    templates, activeTemplateId, onTemplateChange,
+    onSaveTemplate, onDeleteTemplate, templateVars,
+    lintIssues, hasLintError,
   } = props;
 
   return (
@@ -1485,6 +2121,15 @@ function WhatsAppComposer(props: {
           </p>
         </div>
       </div>
+
+      <TemplatePanel
+        templates={templates}
+        activeTemplateId={activeTemplateId}
+        onChange={onTemplateChange}
+        onSave={onSaveTemplate}
+        onDelete={onDeleteTemplate}
+        vars={templateVars}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Phone preview — coluna principal */}
@@ -1659,6 +2304,9 @@ function WhatsAppComposer(props: {
         </div>
       </details>
 
+      {/* Linter pré-envio */}
+      <LintBar issues={lintIssues} charCount={reportText.length} />
+
       {/* Ações */}
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/[0.05] pt-4">
         <Button variant="outline" onClick={onCopyText} disabled={!reportText}>
@@ -1666,10 +2314,11 @@ function WhatsAppComposer(props: {
         </Button>
         <Button
           onClick={onSend}
-          disabled={!reportText || !waValid}
-          className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950"
+          disabled={!reportText || !waValid || hasLintError}
+          className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 disabled:opacity-50"
         >
-          <Send className="mr-1.5 h-4 w-4" /> Enviar no WhatsApp
+          <Send className="mr-1.5 h-4 w-4" />
+          {hasLintError ? "Corrija os erros" : "Enviar no WhatsApp"}
         </Button>
       </div>
 
@@ -2131,6 +2780,152 @@ function formatPhoneMask(raw: string): string {
   if (rest.length <= 4) return `${cc} (${dd}) ${rest}`;
   if (rest.length <= 8) return `${cc} (${dd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
   return `${cc} (${dd}) ${rest.slice(0, 5)}-${rest.slice(5, 9)}`;
+}
+
+/* ─── Templates & vars ─── */
+
+function resolveVars(text: string, vars: TemplateVars): string {
+  if (!text) return text;
+  return text.replace(/\{\{(\w+)\}\}/g, (m, key) =>
+    vars[key] !== undefined && vars[key] !== "" ? String(vars[key]) : m,
+  );
+}
+
+function applyTemplate(
+  template: MessageTemplate,
+  body: string,
+  vars: TemplateVars,
+): string {
+  if (!body) return "";
+  if (!template.intro && !template.outro) return body;
+  return `${resolveVars(template.intro, vars)}${body}${resolveVars(template.outro, vars)}`;
+}
+
+/* ─── Linter ─── */
+
+const WA_MAX_CHARS = 4096;
+const WA_NEAR_LIMIT = 3500;
+
+function lintMessage(
+  text: string,
+  ctx: { hasRecipient: boolean; recipientValid: boolean; hasClinic: boolean },
+): LintIssue[] {
+  const issues: LintIssue[] = [];
+
+  if (!ctx.hasClinic) {
+    issues.push({
+      severity: "error",
+      code: "no-clinic",
+      message: "Selecione uma unidade para gerar a mensagem.",
+    });
+  }
+
+  const trimmed = text.trim();
+  if (!trimmed) {
+    if (ctx.hasClinic) {
+      issues.push({
+        severity: "error",
+        code: "empty",
+        message: "A mensagem está vazia — verifique o período selecionado.",
+      });
+    }
+  } else {
+    const len = text.length;
+    if (len > WA_MAX_CHARS) {
+      issues.push({
+        severity: "error",
+        code: "over-limit",
+        message: `Excede em ${len - WA_MAX_CHARS} caractere(s) o limite do WhatsApp (máx. ${WA_MAX_CHARS}).`,
+      });
+    } else if (len > WA_NEAR_LIMIT) {
+      issues.push({
+        severity: "warning",
+        code: "near-limit",
+        message: `Próximo do limite — ${len.toLocaleString("pt-BR")} de ${WA_MAX_CHARS} caracteres.`,
+      });
+    }
+
+    // Unclosed inline markers (per line, ignoring code spans)
+    const stripCode = text.replace(/`[^`\n]+`/g, "");
+    const checkPair = (char: string, label: string) => {
+      const lines = stripCode.split("\n");
+      let badLines = 0;
+      for (const line of lines) {
+        const re = new RegExp(`\\${char}`, "g");
+        const matches = line.match(re);
+        if (matches && matches.length % 2 !== 0) badLines++;
+      }
+      if (badLines > 0) {
+        issues.push({
+          severity: "warning",
+          code: `unclosed-${char}`,
+          message: `${badLines} linha(s) com ${label} aberto sem fechamento (${char}).`,
+        });
+      }
+    };
+    checkPair("*", "negrito");
+    checkPair("_", "itálico");
+    checkPair("~", "tachado");
+
+    // Unresolved variables remaining
+    const unresolved = text.match(/\{\{\w+\}\}/g);
+    if (unresolved && unresolved.length > 0) {
+      const uniq = Array.from(new Set(unresolved));
+      issues.push({
+        severity: "warning",
+        code: "unresolved-vars",
+        message: `Variáveis não preenchidas: ${uniq.join(", ")}.`,
+      });
+    }
+
+    // Excessive blank lines
+    if (/\n{4,}/.test(text)) {
+      issues.push({
+        severity: "info",
+        code: "blank-lines",
+        message: "Há blocos com 4+ linhas em branco — pode ficar desformatado.",
+      });
+    }
+  }
+
+  if (!ctx.hasRecipient) {
+    issues.push({
+      severity: "warning",
+      code: "no-recipient",
+      message: "Nenhum destinatário definido — defina o WhatsApp acima.",
+    });
+  } else if (!ctx.recipientValid) {
+    issues.push({
+      severity: "error",
+      code: "bad-recipient",
+      message: "Telefone inválido — use DDI 55 + DDD + 8/9 dígitos.",
+    });
+  }
+
+  return issues;
+}
+
+function loadCustomTemplates(): MessageTemplate[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (t): t is MessageTemplate =>
+        t && typeof t.id === "string" && typeof t.name === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomTemplates(items: MessageTemplate[]): void {
+  try {
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    /* storage indisponível */
+  }
 }
 
 function styleFns(style: ReportStyle) {

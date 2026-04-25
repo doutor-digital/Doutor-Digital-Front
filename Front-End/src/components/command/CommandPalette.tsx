@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useCommandPalette } from "@/hooks/useCommandPalette";
+import { useGlobalUI } from "@/hooks/useGlobalUI";
 import { useShortcut } from "@/hooks/useShortcut";
 import { cn } from "@/lib/utils";
-import { PAGE_COMMANDS, scoreCommand, type CommandItem } from "./commandRegistry";
+import {
+  PAGE_COMMANDS,
+  buildActionCommands,
+  scoreCommand,
+  type CommandItem,
+} from "./commandRegistry";
 
 /**
  * ⌘K — paleta de comandos global.
@@ -15,6 +23,9 @@ import { PAGE_COMMANDS, scoreCommand, type CommandItem } from "./commandRegistry
  */
 export function CommandPalette({ extra = [] as CommandItem[] }) {
   const { open, setOpen } = useCommandPalette();
+  const setActivityOpen = useGlobalUI((s) => s.setActivityOpen);
+  const setAssistantOpen = useGlobalUI((s) => s.setAssistantOpen);
+  const qc = useQueryClient();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
@@ -22,6 +33,27 @@ export function CommandPalette({ extra = [] as CommandItem[] }) {
 
   useShortcut("mod+k", () => useCommandPalette.getState().toggle());
   useShortcut("esc", () => setOpen(false), { enabled: open });
+
+  const actionCommands = useMemo(
+    () =>
+      buildActionCommands({
+        openActivityFeed: () => setActivityOpen(true),
+        openAssistant: () => setAssistantOpen(true),
+        refreshAll: () => {
+          qc.invalidateQueries();
+          toast.success("Dados recarregados");
+        },
+        copyCurrentUrl: async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast.success("URL copiada");
+          } catch {
+            toast.error("Falha ao copiar URL");
+          }
+        },
+      }),
+    [qc, setActivityOpen, setAssistantOpen],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -34,13 +66,13 @@ export function CommandPalette({ extra = [] as CommandItem[] }) {
   }, [open]);
 
   const items = useMemo(() => {
-    const all = [...PAGE_COMMANDS, ...extra];
+    const all = [...PAGE_COMMANDS, ...actionCommands, ...extra];
     return all
       .map((c) => ({ c, score: scoreCommand(c, query) }))
       .filter((x) => x.score >= 0)
       .sort((a, b) => b.score - a.score)
       .map((x) => x.c);
-  }, [query, extra]);
+  }, [query, extra, actionCommands]);
 
   useEffect(() => {
     setSelected(0);
@@ -59,6 +91,7 @@ export function CommandPalette({ extra = [] as CommandItem[] }) {
 
   const execute = (cmd: CommandItem) => {
     setOpen(false);
+    if (cmd.action) cmd.action();
     if (cmd.to) navigate(cmd.to);
   };
 
