@@ -1,9 +1,10 @@
-import { NavLink } from "react-router-dom";
-import { useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   Bell,
   Building2,
+  ChevronDown,
   Cog,
   Contact as ContactIcon,
   DollarSign,
@@ -13,8 +14,9 @@ import {
   LineChart,
   ListChecks,
   LogOut,
-  Moon,
+  type LucideIcon,
   Radio,
+  Sunrise,
   Users2,
   Workflow,
   X,
@@ -22,13 +24,33 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
-const navGroups = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+};
+
+type NavEntry =
+  | NavItem
+  | {
+      label: string;
+      icon: LucideIcon;
+      basePaths: string[];
+      children: NavItem[];
+    };
+
+type NavGroup = {
+  label: string;
+  items: NavEntry[];
+};
+
+const navGroups: NavGroup[] = [
   {
     label: "Visão geral",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
       { to: "/live", label: "Ao vivo", icon: Radio },
-      { to: "/amanheceu", label: "Amanheceu", icon: Moon },
       { to: "/analytics", label: "Analytics", icon: BarChart3 },
     ],
   },
@@ -41,7 +63,16 @@ const navGroups = [
       { to: "/sources", label: "Origens", icon: Filter },
       { to: "/evolution", label: "Evolução", icon: LineChart },
       { to: "/attendants", label: "Atendentes", icon: Users2 },
-      { to: "/units", label: "Unidades", icon: Building2 },
+      {
+        label: "Unidades",
+        icon: Building2,
+        basePaths: ["/units", "/amanheceu"],
+        children: [
+          { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
+          { to: "/amanheceu", label: "Amanheceu", icon: Sunrise },
+          { to: "/live", label: "Ao vivo (por unidade)", icon: Radio },
+        ],
+      },
     ],
   },
   {
@@ -61,6 +92,145 @@ const navGroups = [
   },
 ];
 
+function isNestedEntry(
+  entry: NavEntry,
+): entry is Extract<NavEntry, { children: NavItem[] }> {
+  return "children" in entry;
+}
+
+function pathMatches(pathname: string, base: string): boolean {
+  if (base === "/") return pathname === "/";
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+function MobileNavLink({
+  item,
+  onClose,
+}: {
+  item: NavItem;
+  onClose: () => void;
+}) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onClose}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 transition active:scale-[0.97]",
+          isActive
+            ? "bg-brand-500/15 text-brand-200 ring-1 ring-inset ring-brand-500/25"
+            : "text-slate-300 hover:bg-white/[0.04]",
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon
+            className={cn(
+              "h-[20px] w-[20px] shrink-0",
+              isActive ? "text-brand-300" : "text-slate-500",
+            )}
+          />
+          <span className="text-[14.5px] font-medium">{item.label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function MobileNavCollapsible({
+  entry,
+  pathname,
+  onClose,
+}: {
+  entry: Extract<NavEntry, { children: NavItem[] }>;
+  pathname: string;
+  onClose: () => void;
+}) {
+  const Icon = entry.icon;
+  const isWithin = entry.basePaths.some((p) => pathMatches(pathname, p));
+  const [open, setOpen] = useState(isWithin);
+
+  useEffect(() => {
+    if (isWithin) setOpen(true);
+  }, [isWithin]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition active:scale-[0.97]",
+          isWithin
+            ? "bg-white/[0.04] text-slate-100 ring-1 ring-inset ring-white/[0.06]"
+            : "text-slate-300 hover:bg-white/[0.04]",
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-[20px] w-[20px] shrink-0",
+            isWithin ? "text-brand-300" : "text-slate-500",
+          )}
+        />
+        <span className="flex-1 text-left text-[14.5px] font-medium">
+          {entry.label}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      <div
+        className={cn(
+          "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0">
+          <div className="ml-4 mt-1 space-y-0.5 border-l border-white/[0.06] pl-2">
+            {entry.children.map((child) => (
+              <NavLink
+                key={child.to + child.label}
+                to={child.to}
+                end={child.end}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-2.5 rounded-md px-2.5 py-2 transition active:scale-[0.97]",
+                    isActive
+                      ? "bg-brand-500/[0.12] text-brand-100 ring-1 ring-inset ring-brand-500/25"
+                      : "text-slate-300 hover:bg-white/[0.04]",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <child.icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        isActive ? "text-brand-300" : "text-slate-500",
+                      )}
+                    />
+                    <span className="truncate text-[13.5px] font-medium">
+                      {child.label}
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MobileDrawer({
   open,
   onClose,
@@ -69,6 +239,7 @@ export function MobileDrawer({
   onClose: () => void;
 }) {
   const { user, logout } = useAuth();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (!open) return;
@@ -89,15 +260,15 @@ export function MobileDrawer({
     .toUpperCase();
 
   return (
-    <div className="lg:hidden fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 lg:hidden">
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 animate-fade-in bg-black/60 backdrop-blur-sm"
       />
 
       <aside
         className={cn(
-          "absolute top-0 bottom-0 left-0 w-[84%] max-w-[320px]",
+          "absolute bottom-0 left-0 top-0 w-[84%] max-w-[320px]",
           "bg-[#0a0a0d]",
           "border-r border-white/[0.06]",
           "flex flex-col",
@@ -109,77 +280,62 @@ export function MobileDrawer({
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.05]">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 grid place-items-center text-[13px] font-semibold text-white ring-1 ring-inset ring-white/[0.08]">
+        <div className="flex items-center gap-3 border-b border-white/[0.05] px-4 py-4">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-[13px] font-semibold text-white ring-1 ring-inset ring-white/[0.08]">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-semibold text-slate-50 truncate">
+            <p className="truncate text-[14px] font-semibold text-slate-50">
               {user?.name ?? "Usuário"}
             </p>
-            <p className="text-[11px] text-slate-500 truncate">
+            <p className="truncate text-[11px] text-slate-500">
               {user?.email ?? ""}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 grid place-items-center rounded-full hover:bg-white/[0.05] transition"
+            className="grid h-9 w-9 place-items-center rounded-full transition hover:bg-white/[0.05]"
             aria-label="Fechar"
           >
             <X className="h-5 w-5 text-slate-300" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+        <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
           {navGroups.map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {group.label}
               </p>
               <div className="space-y-0.5">
-                {group.items.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 transition",
-                        "active:scale-[0.97]",
-                        isActive
-                          ? "bg-brand-500/15 text-brand-200 ring-1 ring-inset ring-brand-500/25"
-                          : "text-slate-300 hover:bg-white/[0.04]",
-                      )
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Icon
-                          className={cn(
-                            "h-[20px] w-[20px] shrink-0",
-                            isActive ? "text-brand-300" : "text-slate-500",
-                          )}
-                        />
-                        <span className="text-[14.5px] font-medium">
-                          {label}
-                        </span>
-                      </>
-                    )}
-                  </NavLink>
-                ))}
+                {group.items.map((entry) =>
+                  isNestedEntry(entry) ? (
+                    <MobileNavCollapsible
+                      key={entry.label}
+                      entry={entry}
+                      pathname={pathname}
+                      onClose={onClose}
+                    />
+                  ) : (
+                    <MobileNavLink
+                      key={entry.to}
+                      item={entry}
+                      onClose={onClose}
+                    />
+                  ),
+                )}
               </div>
             </div>
           ))}
         </nav>
 
-        <div className="p-3 border-t border-white/[0.05]">
+        <div className="border-t border-white/[0.05] p-3">
           <button
             onClick={() => {
               onClose();
               logout();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-rose-300 hover:bg-rose-500/[0.08] active:scale-[0.97] transition"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-rose-300 transition hover:bg-rose-500/[0.08] active:scale-[0.97]"
           >
             <LogOut className="h-5 w-5" />
             <span className="text-[14.5px] font-medium">Sair</span>
