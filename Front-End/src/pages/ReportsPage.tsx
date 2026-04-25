@@ -1,10 +1,14 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowLeft,
   BarChart3,
   BarChart as BarChartIcon,
+  Battery,
   CalendarDays,
+  Camera,
   Check,
+  CheckCheck,
   ChevronDown,
   ChevronRight,
   ClipboardCopy,
@@ -19,15 +23,23 @@ import {
   Link2,
   ListTree,
   MessageCircle,
+  Mic,
+  MoreVertical,
+  Paperclip,
+  Phone,
   PieChart as PieChartIcon,
   RefreshCw,
   Send,
+  Signal,
+  Smile,
   Sparkles,
   Trash2,
   TrendingDown,
   TrendingUp,
   Users,
+  Video,
   Wallet,
+  Wifi,
 } from "lucide-react";
 import {
   Area,
@@ -1190,6 +1202,232 @@ function MonthlySources({
  *  WhatsApp composer
  * ═══════════════════════════════════════════════════════════════ */
 
+/* ─── WhatsApp text rendering (parses *bold* _italic_ ~strike~ `mono`) ─── */
+
+function renderWhatsAppLine(line: string, keyPrefix: string): React.ReactNode[] {
+  // Token regex: matches *bold*, _italic_, ~strike~, `mono` with non-greedy content
+  const tokenRe = /(\*[^*\n]+\*|_[^_\n]+_|~[^~\n]+~|`[^`\n]+`)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIdx = 0;
+  let m: RegExpExecArray | null;
+  let i = 0;
+
+  while ((m = tokenRe.exec(line)) !== null) {
+    if (m.index > lastIdx) {
+      parts.push(line.slice(lastIdx, m.index));
+    }
+    const token = m[0];
+    const inner = token.slice(1, -1);
+    const k = `${keyPrefix}-${i++}`;
+
+    if (token.startsWith("*")) {
+      parts.push(<strong key={k} className="font-semibold">{inner}</strong>);
+    } else if (token.startsWith("_")) {
+      parts.push(<em key={k} className="italic">{inner}</em>);
+    } else if (token.startsWith("~")) {
+      parts.push(<s key={k} className="opacity-80">{inner}</s>);
+    } else {
+      parts.push(
+        <code
+          key={k}
+          className="rounded bg-black/[0.06] px-1 py-[1px] font-mono text-[11.5px]"
+        >
+          {inner}
+        </code>,
+      );
+    }
+    lastIdx = m.index + token.length;
+  }
+  if (lastIdx < line.length) parts.push(line.slice(lastIdx));
+  return parts;
+}
+
+function renderWhatsAppText(text: string): React.ReactNode {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, idx) => (
+    <Fragment key={idx}>
+      {line.length === 0 ? <span>&nbsp;</span> : renderWhatsAppLine(line, `l${idx}`)}
+      {idx < lines.length - 1 && <br />}
+    </Fragment>
+  ));
+}
+
+/* ─── WhatsApp Phone Preview ─── */
+
+function WhatsAppPhonePreview({
+  text,
+  contactName,
+  contactPhone,
+  imageUrl,
+  loading,
+}: {
+  text: string;
+  contactName: string;
+  contactPhone: string;
+  imageUrl: string | null;
+  loading: boolean;
+}) {
+  const now = new Date();
+  const timeLabel = now.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const statusTime = now.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const initials = (contactName || "Cliente")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("") || "DD";
+
+  return (
+    <div className="flex justify-center">
+      {/* Phone outer frame */}
+      <div
+        className={cn(
+          "relative w-[300px] sm:w-[320px] rounded-[44px]",
+          "bg-gradient-to-b from-[#1c1c22] via-[#0e0e12] to-[#0a0a0d]",
+          "p-[10px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.05)_inset]",
+          "ring-1 ring-white/[0.06]",
+        )}
+      >
+        {/* Side buttons */}
+        <span className="absolute -left-[2px] top-[110px] h-8 w-[3px] rounded-l-full bg-[#2a2a30]" />
+        <span className="absolute -left-[2px] top-[160px] h-12 w-[3px] rounded-l-full bg-[#2a2a30]" />
+        <span className="absolute -right-[2px] top-[140px] h-16 w-[3px] rounded-r-full bg-[#2a2a30]" />
+
+        {/* Screen */}
+        <div className="relative overflow-hidden rounded-[36px] bg-[#0b141a]">
+          {/* Status bar */}
+          <div className="flex items-center justify-between bg-[#1f2c33] px-5 pt-2 pb-1 text-[10px] font-medium text-white">
+            <span className="tabular-nums">{statusTime}</span>
+            {/* Dynamic island */}
+            <div className="absolute left-1/2 top-1.5 h-[18px] w-[80px] -translate-x-1/2 rounded-full bg-black" />
+            <div className="flex items-center gap-1">
+              <Signal className="h-2.5 w-2.5" />
+              <Wifi className="h-2.5 w-2.5" />
+              <Battery className="h-3 w-3" />
+            </div>
+          </div>
+
+          {/* WhatsApp header */}
+          <div className="flex items-center gap-2.5 bg-[#1f2c33] px-2.5 py-2 text-white">
+            <ArrowLeft className="h-4 w-4 text-white/80" />
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 ring-1 ring-white/10">
+              <div className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
+                {initials}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="truncate text-[12.5px] font-medium">
+                {contactName || "Destinatário"}
+              </div>
+              <div className="truncate text-[10px] text-white/60">
+                {contactPhone || "online"}
+              </div>
+            </div>
+            <Video className="h-4 w-4 text-white/80" />
+            <Phone className="h-4 w-4 text-white/80" />
+            <MoreVertical className="h-4 w-4 text-white/80" />
+          </div>
+
+          {/* Chat area with WA wallpaper */}
+          <div
+            className="relative h-[460px] overflow-y-auto px-3 py-3"
+            style={{
+              backgroundColor: "#0b141a",
+              backgroundImage:
+                "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.018) 0 1px, transparent 1.5px), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.015) 0 1px, transparent 1.5px), radial-gradient(circle at 50% 50%, rgba(255,255,255,0.012) 0 1px, transparent 1.5px)",
+              backgroundSize: "60px 60px, 80px 80px, 40px 40px",
+            }}
+          >
+            {/* Date pill */}
+            <div className="mb-3 flex justify-center">
+              <span className="rounded-md bg-[#1f2c33]/95 px-2.5 py-1 text-[10px] font-medium text-white/70 shadow-sm">
+                HOJE
+              </span>
+            </div>
+
+            {/* Encrypted notice */}
+            <div className="mb-3 flex justify-center">
+              <span className="max-w-[240px] rounded-md bg-[#1f2c33]/80 px-2.5 py-1.5 text-center text-[9.5px] leading-tight text-amber-200/80">
+                🔒 As mensagens são protegidas com criptografia de
+                ponta a ponta.
+              </span>
+            </div>
+
+            {/* Outgoing bubble */}
+            <div className="flex justify-end">
+              <div
+                className={cn(
+                  "relative max-w-[85%] rounded-lg rounded-tr-sm bg-[#005c4b] px-2 pt-1.5 pb-1 text-white shadow-[0_1px_0.5px_rgba(0,0,0,0.13)]",
+                  "before:absolute before:-right-[7px] before:top-0 before:h-0 before:w-0",
+                  "before:border-y-[8px] before:border-l-[8px] before:border-y-transparent before:border-l-[#005c4b]",
+                )}
+              >
+                {imageUrl && (
+                  <div className="mb-1 overflow-hidden rounded-md">
+                    <img
+                      src={imageUrl}
+                      alt="anexo"
+                      className="block max-h-[180px] w-full object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="px-1 text-[12.5px] leading-[1.35] text-white/95 break-words whitespace-pre-wrap">
+                  {loading ? (
+                    <span className="inline-flex items-center gap-1.5 text-white/60">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      gerando relatório…
+                    </span>
+                  ) : text ? (
+                    renderWhatsAppText(text)
+                  ) : (
+                    <span className="text-white/50 italic">
+                      Sua mensagem aparecerá aqui…
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-0.5 flex items-center justify-end gap-1 pr-0.5">
+                  <span className="text-[9.5px] text-white/60 tabular-nums">
+                    {timeLabel}
+                  </span>
+                  <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Composer bar */}
+          <div className="flex items-center gap-1.5 bg-[#1f2c33] px-2 py-2">
+            <div className="flex flex-1 items-center gap-1.5 rounded-full bg-[#2a3942] px-3 py-1.5">
+              <Smile className="h-4 w-4 text-white/60" />
+              <span className="flex-1 text-[11px] text-white/40">Mensagem</span>
+              <Paperclip className="h-4 w-4 text-white/60" />
+              <Camera className="h-4 w-4 text-white/60" />
+            </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00a884]">
+              <Mic className="h-4 w-4 text-white" />
+            </div>
+          </div>
+
+          {/* Home indicator */}
+          <div className="flex items-center justify-center bg-[#0b141a] py-1.5">
+            <div className="h-[3px] w-24 rounded-full bg-white/40" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WhatsAppComposer(props: {
   reportText: string;
   loading: boolean;
@@ -1248,12 +1486,12 @@ function WhatsAppComposer(props: {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {/* Preview texto */}
-        <div className="lg:col-span-3 min-w-0">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        {/* Phone preview — coluna principal */}
+        <div className="lg:col-span-2 min-w-0">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-              Prévia da mensagem
+              Prévia no WhatsApp
             </p>
             <div className="flex items-center gap-3 text-[11px] text-slate-500">
               {loading && (
@@ -1262,54 +1500,87 @@ function WhatsAppComposer(props: {
                 </span>
               )}
               <span className="tabular-nums">
-                {formatNumber(reportText.length)} caracteres
+                {formatNumber(reportText.length)} chars
               </span>
             </div>
           </div>
-          <pre
-            className={cn(
-              "max-h-[420px] min-h-[220px] overflow-auto whitespace-pre-wrap rounded-xl",
-              "border border-white/[0.08] bg-[rgba(10,10,18,0.85)] p-4",
-              "font-mono text-[12.5px] leading-relaxed text-slate-200",
-            )}
-          >
-            {reportText || (
-              <span className="text-slate-500">
-                {hasClinic
-                  ? "Sem dados para o período selecionado."
-                  : "Selecione uma unidade para gerar a prévia."}
-              </span>
-            )}
-          </pre>
+
+          <div className="lg:sticky lg:top-4">
+            <WhatsAppPhonePreview
+              text={reportText}
+              loading={loading}
+              contactName={
+                hasClinic ? "Cliente Doutor Digital" : "Selecione uma unidade"
+              }
+              contactPhone={
+                whatsappRaw
+                  ? formatPhoneMask(whatsappRaw)
+                  : "online"
+              }
+              imageUrl={image?.url ?? null}
+            />
+
+            <p className="mt-3 text-center text-[10.5px] text-slate-500 leading-relaxed">
+              Pré-visualização exata de como o destinatário verá a mensagem.
+            </p>
+          </div>
         </div>
 
-        {/* Imagem anexada */}
-        <div className="lg:col-span-2 min-w-0">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            Imagem anexada (opcional)
-          </p>
-          <ImageDropzone
-            image={image}
-            onPick={onImagePick}
-            onClear={onImageClear}
-            inputRef={fileInputRef}
-          />
-          {image && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={onImageCopy}>
-                <ClipboardCopy className="mr-1.5 h-3.5 w-3.5" /> Copiar imagem
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onImageDownload}>
-                <Download className="mr-1.5 h-3.5 w-3.5" /> Baixar
-              </Button>
-            </div>
-          )}
-          <p className="mt-2 text-[10.5px] text-slate-500 leading-relaxed">
-            O wa.me não suporta anexar imagens automaticamente.
-            Após abrir o WhatsApp, use <strong>Copiar imagem</strong> e cole com{" "}
-            <kbd className="rounded bg-white/[0.06] px-1 text-[10px]">Ctrl</kbd>+
-            <kbd className="rounded bg-white/[0.06] px-1 text-[10px]">V</kbd>.
-          </p>
+        {/* Coluna direita: imagem + texto cru */}
+        <div className="lg:col-span-3 space-y-5 min-w-0">
+          {/* Imagem anexada */}
+          <div>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Imagem anexada (opcional)
+            </p>
+            <ImageDropzone
+              image={image}
+              onPick={onImagePick}
+              onClear={onImageClear}
+              inputRef={fileInputRef}
+            />
+            {image && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={onImageCopy}>
+                  <ClipboardCopy className="mr-1.5 h-3.5 w-3.5" /> Copiar imagem
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onImageDownload}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Baixar
+                </Button>
+              </div>
+            )}
+            <p className="mt-2 text-[10.5px] text-slate-500 leading-relaxed">
+              O wa.me não suporta anexar imagens automaticamente.
+              Após abrir o WhatsApp, use <strong>Copiar imagem</strong> e cole com{" "}
+              <kbd className="rounded bg-white/[0.06] px-1 text-[10px]">Ctrl</kbd>+
+              <kbd className="rounded bg-white/[0.06] px-1 text-[10px]">V</kbd>.
+            </p>
+          </div>
+
+          {/* Texto cru (colapsável) */}
+          <details className="group rounded-xl border border-white/[0.06] bg-white/[0.01]">
+            <summary className="flex cursor-pointer items-center justify-between px-4 py-2.5 text-[12px] font-semibold text-slate-300 hover:bg-white/[0.02] group-open:border-b group-open:border-white/[0.05]">
+              <span className="inline-flex items-center gap-2">
+                <FileText className="h-3.5 w-3.5" /> Ver texto cru
+              </span>
+              <span className="text-slate-500 transition group-open:rotate-180">▾</span>
+            </summary>
+            <pre
+              className={cn(
+                "max-h-[260px] overflow-auto whitespace-pre-wrap rounded-b-xl",
+                "bg-[rgba(10,10,18,0.85)] p-4",
+                "font-mono text-[12px] leading-relaxed text-slate-200",
+              )}
+            >
+              {reportText || (
+                <span className="text-slate-500">
+                  {hasClinic
+                    ? "Sem dados para o período selecionado."
+                    : "Selecione uma unidade para gerar a prévia."}
+                </span>
+              )}
+            </pre>
+          </details>
         </div>
       </div>
 
