@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -8,9 +8,39 @@ import { MobileDrawer } from "./MobileDrawer";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { ActivityFeed } from "@/components/global/ActivityFeed";
 import { FloatingAssistant } from "@/components/global/FloatingAssistant";
+import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal";
+import { useTrackRecentNav } from "@/hooks/useRecentNav";
+import {
+  hasUnseenRelease,
+  WhatsNewModal,
+} from "@/components/overlay/WhatsNewModal";
+
+// Lazy: overlays não-críticos
+const OnboardingChecklist = lazy(() =>
+  import("@/components/overlay/OnboardingChecklist").then((m) => ({
+    default: m.OnboardingChecklist,
+  })),
+);
+const FeedbackWidget = lazy(() =>
+  import("@/components/overlay/FeedbackWidget").then((m) => ({
+    default: m.FeedbackWidget,
+  })),
+);
 
 export default function DashboardLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+
+  // Tracking: salva últimas rotas visitadas para o ⌘K
+  useTrackRecentNav();
+
+  // Auto-abrir "Novidades" se houver release não vista
+  useEffect(() => {
+    if (hasUnseenRelease()) {
+      const t = setTimeout(() => setWhatsNewOpen(true), 1500);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-surface-2">
@@ -38,10 +68,20 @@ export default function DashboardLayout() {
 
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      {/* Globais: paleta de comandos, feed de atividades, assistente flutuante */}
+      {/* Globais críticos */}
       <CommandPalette />
       <ActivityFeed />
       <FloatingAssistant />
+
+      {/* Atalhos (?) e novidades */}
+      <ShortcutsModal />
+      <WhatsNewModal open={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+
+      {/* Lazy: overlays não-críticos (não bloqueiam a primeira renderização) */}
+      <Suspense fallback={null}>
+        <OnboardingChecklist />
+        <FeedbackWidget mailto="doutordigitalconsultoria@gmail.com" />
+      </Suspense>
     </div>
   );
 }

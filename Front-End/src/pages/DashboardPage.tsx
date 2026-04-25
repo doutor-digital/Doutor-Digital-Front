@@ -31,6 +31,15 @@ import {
 } from "@/components/filters/DashboardFilters";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
 import { GoalsCard } from "@/components/dashboard/GoalsCard";
+import { SnapshotButton } from "@/components/global/SnapshotButton";
+
+// Lazy: cards "extras" para não pesar a primeira renderização
+const HeatmapCard = lazy(() =>
+  import("@/components/dashboard/HeatmapCard").then((m) => ({ default: m.HeatmapCard })),
+);
+const LeaderboardCard = lazy(() =>
+  import("@/components/dashboard/LeaderboardCard").then((m) => ({ default: m.LeaderboardCard })),
+);
 
 const FunnelChart = lazy(() =>
   import("@/components/charts/FunnelChart").then((m) => ({ default: m.FunnelChart })),
@@ -192,6 +201,7 @@ export default function DashboardPage() {
         }
         actions={
           <>
+            <SnapshotButton />
             <Link to="/live">
               <Button variant="outline" size="sm" className="gap-2">
                 <span className="relative flex h-2 w-2">
@@ -362,6 +372,23 @@ export default function DashboardPage() {
             currentConversion={conversao}
             loading={overviewLoading}
           />
+        </div>
+      </div>
+
+      {/* Heatmap + Leaderboard (lazy) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Suspense fallback={<div className="h-44 animate-pulse rounded-xl bg-white/[0.02]" />}>
+            <HeatmapCard
+              rawDates={(ativos.data ?? []).map((l) => l.createdAt)}
+              loading={ativos.isLoading}
+            />
+          </Suspense>
+        </div>
+        <div>
+          <Suspense fallback={<div className="h-44 animate-pulse rounded-xl bg-white/[0.02]" />}>
+            <LeaderboardCard leads={ativos.data ?? []} loading={ativos.isLoading} />
+          </Suspense>
         </div>
       </div>
 

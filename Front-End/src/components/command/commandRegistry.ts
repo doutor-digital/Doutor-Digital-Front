@@ -13,7 +13,7 @@ export type CommandItem = {
   to?: string;
   action?: () => void;
   keywords?: string[];
-  group: "Navegação" | "Ações";
+  group: "Navegação" | "Ações" | "Recentes";
   shortcut?: string;
 };
 

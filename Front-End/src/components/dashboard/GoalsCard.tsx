@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Target, TrendingUp, X } from "lucide-react";
+import { Check, Flame, Pencil, Target, TrendingUp, X } from "lucide-react";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
+import { Confetti } from "@/components/global/Confetti";
+import { useStreak, useRecordStreakOnGoal } from "@/hooks/useStreak";
+import { useEvaluateBadges } from "@/hooks/useBadges";
 
 interface Goals {
   monthlyLeads: number;
@@ -47,6 +50,38 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
   const [goals, setGoals] = useState<Goals>(() => loadGoals());
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Goals>(goals);
+  const [confetti, setConfetti] = useState(false);
+
+  const streak = useStreak();
+  const goalReached =
+    !loading && currentLeads >= goals.monthlyLeads && goals.monthlyLeads > 0;
+
+  // Registra streak quando bate a meta
+  useRecordStreakOnGoal(goalReached);
+
+  // Avalia badges
+  useEvaluateBadges({
+    totalLeads: currentLeads,
+    conversionPct: currentConversion,
+    streakDays: streak.current,
+  });
+
+  // Dispara confetti quando atinge 100% (uma vez por sessão por nível)
+  useEffect(() => {
+    if (goalReached) {
+      const key = `dashboard-goal-celebrated-${new Date().toISOString().slice(0, 10)}`;
+      try {
+        if (!sessionStorage.getItem(key)) {
+          setConfetti(true);
+          sessionStorage.setItem(key, "1");
+          const t = setTimeout(() => setConfetti(false), 2600);
+          return () => clearTimeout(t);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [goalReached]);
 
   useEffect(() => {
     if (editing) setDraft(goals);
@@ -93,6 +128,8 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
 
   return (
     <div className="rounded-xl border border-white/[0.07] bg-gradient-to-br from-white/[0.02] to-white/[0.005]">
+      <Confetti trigger={confetti} />
+
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-400/10 ring-1 ring-inset ring-violet-400/20">
@@ -106,6 +143,16 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
             projeção: {formatNumber(projection.leads)} leads
           </p>
         </div>
+
+        {streak.current > 0 && (
+          <div
+            className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10.5px] font-semibold text-amber-200 ring-1 ring-inset ring-amber-400/25"
+            title={`Melhor: ${streak.best} dias`}
+          >
+            <Flame className="h-3 w-3" />
+            {streak.current}d
+          </div>
+        )}
 
         {!editing ? (
           <button

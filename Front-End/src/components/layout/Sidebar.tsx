@@ -32,6 +32,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SavedViewsSection } from "./SavedViewsSection";
 
 type NavItem = {
   to: string;
@@ -354,6 +355,8 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.05] [&::-webkit-scrollbar-track]:bg-transparent">
+        <SavedViewsSection />
+
         {navGroups.map((group) => (
           <div key={group.label}>
             <div className="mb-1.5 flex items-center gap-2 px-3">

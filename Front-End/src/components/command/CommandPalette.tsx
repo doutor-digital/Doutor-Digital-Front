@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCommandPalette } from "@/hooks/useCommandPalette";
 import { useGlobalUI } from "@/hooks/useGlobalUI";
+import { useRecentNav } from "@/hooks/useRecentNav";
 import { useShortcut } from "@/hooks/useShortcut";
 import { cn } from "@/lib/utils";
 import {
@@ -65,14 +66,26 @@ export function CommandPalette({ extra = [] as CommandItem[] }) {
     return () => clearTimeout(t);
   }, [open]);
 
+  const recent = useRecentNav((s) => s.recent);
+  const recentCommands = useMemo<CommandItem[]>(() => {
+    if (query) return [];
+    const all = [...PAGE_COMMANDS, ...actionCommands];
+    const lookup = new Map(all.filter((c) => c.to).map((c) => [c.to as string, c]));
+    return recent
+      .map((path) => lookup.get(path))
+      .filter((c): c is CommandItem => !!c)
+      .slice(0, 4)
+      .map((c) => ({ ...c, id: `recent:${c.id}`, group: "Recentes" as const }));
+  }, [recent, query, actionCommands]);
+
   const items = useMemo(() => {
-    const all = [...PAGE_COMMANDS, ...actionCommands, ...extra];
+    const all = [...recentCommands, ...PAGE_COMMANDS, ...actionCommands, ...extra];
     return all
       .map((c) => ({ c, score: scoreCommand(c, query) }))
       .filter((x) => x.score >= 0)
       .sort((a, b) => b.score - a.score)
       .map((x) => x.c);
-  }, [query, extra, actionCommands]);
+  }, [query, extra, actionCommands, recentCommands]);
 
   useEffect(() => {
     setSelected(0);
