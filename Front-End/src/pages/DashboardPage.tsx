@@ -387,7 +387,7 @@ export default function DashboardPage() {
         </div>
         <div>
           <Suspense fallback={<div className="h-44 animate-pulse rounded-xl bg-white/[0.02]" />}>
-            <LeaderboardCard leads={ativos.data ?? []} loading={ativos.isLoading} />
+            <LeaderboardCard />
           </Suspense>
         </div>
       </div>

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Flame, Pencil, Target, TrendingUp, X } from "lucide-react";
+import { Check, Flame, Pencil, TrendingUp, X } from "lucide-react";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { Confetti } from "@/components/global/Confetti";
 import { useStreak, useRecordStreakOnGoal } from "@/hooks/useStreak";
 import { useEvaluateBadges } from "@/hooks/useBadges";
+
+const GOALS_ICON =
+  "https://cdn-icons-png.flaticon.com/512/12306/12306882.png";
 
 interface Goals {
   monthlyLeads: number;
@@ -132,8 +135,12 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
 
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-400/10 ring-1 ring-inset ring-violet-400/20">
-          <Target className="h-4 w-4 text-violet-300" />
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-violet-400/10 ring-1 ring-inset ring-violet-400/20">
+          <img
+            src={GOALS_ICON}
+            alt="Metas"
+            className="h-6 w-6 object-contain"
+          />
         </div>
 
         <div className="min-w-0 flex-1 leading-tight">

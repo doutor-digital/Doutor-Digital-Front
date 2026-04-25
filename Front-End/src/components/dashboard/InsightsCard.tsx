@@ -5,10 +5,12 @@ import {
   ArrowUpRight,
   Lightbulb,
   Minus,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
+
+const INSIGHTS_ICON =
+  "https://cdn-icons-png.flaticon.com/512/9506/9506312.png";
 
 type Trend = "up" | "down" | "flat";
 
@@ -185,8 +187,12 @@ export function InsightsCard({
       <div className="relative space-y-4 p-5">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400/30 to-sky-500/20 ring-1 ring-inset ring-emerald-400/30">
-            <Sparkles className="h-4 w-4 text-emerald-300" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-emerald-400/30 to-sky-500/20 ring-1 ring-inset ring-emerald-400/30">
+            <img
+              src={INSIGHTS_ICON}
+              alt="Insights"
+              className="h-7 w-7 object-contain"
+            />
           </div>
 
           <div className="min-w-0 flex-1">
