@@ -8,6 +8,9 @@ import { Loader2 } from "lucide-react";
 
 const DashboardLayout  = lazy(() => import("@/components/layout/DashboardLayout"));
 const LoginPage        = lazy(() => import("@/pages/LoginPage"));
+const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
+const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
+const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
 const LeadsPage        = lazy(() => import("@/pages/LeadsPage"));
@@ -79,6 +82,9 @@ export default function App() {
 
         {/* Pública */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-code" element={<VerifyResetCodePage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
         <Route path="/logs" element={<LogsPage />} />

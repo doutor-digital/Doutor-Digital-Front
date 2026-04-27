@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Gauge, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -171,9 +171,17 @@ return (
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-              Senha
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                Senha
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-[11px] font-medium text-[#4DB8FF] hover:text-[#7CC9FF] transition"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
             <div className="mt-1.5">
               <Input
                 type="password"
