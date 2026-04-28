@@ -9,12 +9,15 @@ import type {
   GroupByGranularity,
   Lead,
   LeadDetail,
+  LeadProcessResponse,
   LeadTimeline,
   LeadsCountDto,
   EvolutionAdvancedDto,
+  MarkAttendancePayload,
   OrigemAgrupada,
   OvernightLeadsDto,
   RecentLeadsResponse,
+  RecoveryLead,
   StageCount,
   TimeSeriesPoint,
 } from "@/types";
@@ -330,5 +333,29 @@ export const webhooksService = {
 
     const { data } = await api.patch<LeadDetail>(`/webhooks/${numericId}`, patch);
     return data;
+  },
+
+  async markAttendance(id: number | string, payload: MarkAttendancePayload): Promise<LeadProcessResponse> {
+    const numericId = toInt(id);
+    if (!numericId) throw new Error("id inválido para POST /webhooks/{id}/attendance");
+
+    const body: MarkAttendancePayload = {
+      attended: payload.attended,
+      ...(payload.attended && payload.outcome ? { outcome: payload.outcome } : {}),
+      ...(payload.notes ? { notes: payload.notes } : {}),
+    };
+
+    const { data } = await api.post<LeadProcessResponse>(`/webhooks/${numericId}/attendance`, body);
+    return data;
+  },
+
+  async recoveryQueue(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<RecoveryLead[]> {
+    const { data } = await api.get<RecoveryLead[]>("/webhooks/recuperacao", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+      }),
+    });
+    return asArray<RecoveryLead>(data);
   },
 };

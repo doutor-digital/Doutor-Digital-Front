@@ -173,6 +173,14 @@ export default function DashboardPage() {
   const inService = ov?.states?.service ?? 0;
   const inQueue = ov?.states?.queue ?? 0;
   const conversao = ov?.conversao_rate ?? 0;
+
+  const consultasAgendadas = ov?.consultas_agendadas ?? 0;
+  const compareceuCount = ov?.compareceu ?? 0;
+  const faltouCount = ov?.faltou ?? 0;
+  const naoFechouCount = ov?.nao_fechou ?? 0;
+  const fechouCount = ov?.fechou ?? 0;
+  const comparecimentoRate = ov?.comparecimento_rate ?? 0;
+  const fechamentoRate = ov?.fechamento_rate ?? 0;
   const webhookCount = contatosCounts.data?.counts.webhook_cloudia ?? 0;
   const importedCount = contatosCounts.data?.counts.import_csv ?? 0;
 
@@ -452,6 +460,61 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* ---- Funil: comparecimento / fechamento / recuperação ---- */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
+        <FunnelKpi
+          tone="amber"
+          value={overviewLoading ? "…" : formatNumber(consultasAgendadas)}
+          label="consultas agendadas"
+        />
+        <FunnelKpi
+          tone="emerald"
+          value={overviewLoading ? "…" : formatNumber(compareceuCount)}
+          label="compareceram"
+        />
+        <FunnelKpi
+          tone="rose"
+          value={overviewLoading ? "…" : formatNumber(faltouCount)}
+          label="faltaram"
+        />
+        <FunnelKpi
+          tone="emerald"
+          value={overviewLoading ? "…" : formatNumber(fechouCount)}
+          label="fecharam"
+        />
+        <FunnelKpi
+          tone="violet"
+          value={overviewLoading ? "…" : formatPercent(comparecimentoRate)}
+          label="taxa de comparecimento"
+        />
+        <FunnelKpi
+          tone="cyan"
+          value={overviewLoading ? "…" : formatPercent(fechamentoRate)}
+          label="taxa de fechamento"
+        />
+      </div>
+
+      {/* ---- Fila de recuperação (CTA) ---- */}
+      <Link
+        to="/recuperacao"
+        className="group flex items-center justify-between gap-4 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.08] to-transparent px-5 py-4 transition hover:border-amber-500/40"
+      >
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium uppercase tracking-wider text-amber-300">
+            Oportunidades de recuperação
+          </p>
+          <p className="mt-0.5 text-[13px] text-slate-300">
+            <span className="font-semibold text-slate-100">
+              {overviewLoading ? "…" : formatNumber(naoFechouCount)}
+            </span>{" "}
+            lead(s) compareceram mas não fecharam tratamento.
+          </p>
+        </div>
+        <span className="text-[12px] font-medium text-amber-300 transition group-hover:text-amber-200">
+          Ver fila →
+        </span>
+      </Link>
+
       {/* ---- Atividade ao vivo + Alertas críticos ---- */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <ActivityFeed
@@ -459,6 +522,28 @@ export default function DashboardPage() {
           loading={ativos.isLoading}
         />
         <AlertsPanel items={alerts} />
+      </div>
+    </div>
+  );
+}
+
+interface FunnelKpiProps {
+  tone: ChipTone;
+  value: string;
+  label: string;
+}
+
+function FunnelKpi({ tone, value, label }: FunnelKpiProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 ring-1 ring-inset",
+        TONES[tone],
+      )}
+    >
+      <div className="text-[18px] font-semibold tabular-nums">{value}</div>
+      <div className="mt-0.5 text-[10.5px] uppercase tracking-wider opacity-80">
+        {label}
       </div>
     </div>
   );

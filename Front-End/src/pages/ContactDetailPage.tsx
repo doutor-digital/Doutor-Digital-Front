@@ -405,6 +405,8 @@ function humanizeEtapa(etapa: string): string {
     "01_ENTRADA_LEAD_SEQUENCIA_24H": "Entrada · 24h",
     "04_AGENDADO_SEM_PAGAMENTO": "Agendado · sem pagamento",
     "05_AGENDADO_COM_PAGAMENTO": "Agendado · pago",
+    "07_FALTOU": "Faltou na consulta",
+    "08_NAO_FECHOU_TRATAMENTO": "Não fechou (recuperação)",
     "09_FECHOU_TRATAMENTO": "Fechou tratamento",
     "10_EM_TRATAMENTO": "Em tratamento",
     "13_ALTA_SATISFEITO": "Alta · satisfeito",

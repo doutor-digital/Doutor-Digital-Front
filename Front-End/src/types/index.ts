@@ -675,9 +675,46 @@ export interface DashboardOverview {
   conversao_rate: number;
   pagamento_rate: number;
   sem_pagamento_rate: number;
+  consultas_agendadas: number;
+  compareceu: number;
+  faltou: number;
+  nao_fechou: number;
+  fechou: number;
+  comparecimento_rate: number;
+  fechamento_rate: number;
   states: LeadsCountDto;
   etapas: Array<{ etapa: string; quantidade: number }>;
   origens: OrigemAgrupada[];
+}
+
+/* ─── Comparecimento (Marcar Comparecimento) ──────────────────── */
+
+export type AttendanceOutcome = "fechou" | "nao_fechou";
+
+export interface MarkAttendancePayload {
+  attended: boolean;
+  outcome?: AttendanceOutcome;
+  notes?: string;
+}
+
+export interface LeadProcessResponse {
+  result: number;
+  leadId?: number | null;
+  message?: string | null;
+  source?: string | null;
+  trackingConfidence?: string | null;
+}
+
+export interface RecoveryLead {
+  id: number;
+  name: string;
+  phone?: string | null;
+  unitId?: number | null;
+  unitName?: string | null;
+  source?: string | null;
+  campaign?: string | null;
+  attendanceStatusAt?: string | null;
+  updatedAt: string;
 }
 
 /* ─── Dashboard evolução com group_by + compare ─── */
@@ -732,6 +769,9 @@ export interface LeadDetail {
   hasHealthInsurancePlan?: boolean | null;
   observations?: string | null;
   tags: string[];
+
+  attendanceStatus?: string | null;
+  attendanceStatusAt?: string | null;
 
   unitId?: number | null;
   unitName?: string | null;

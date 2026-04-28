@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -41,6 +42,8 @@ import { StageBadge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
+import { MarkAttendanceModal } from "@/components/overlay/MarkAttendanceModal";
+import type { MarkAttendancePayload } from "@/types";
 import { analyticsService } from "@/services/analytics";
 import {
   assignmentsService,
@@ -150,6 +153,7 @@ export default function LeadDetailPage() {
   >("overview");
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
+  const [attendanceOpen, setAttendanceOpen] = useState(false);
 
   const lead = useQuery({
     queryKey: ["lead-detail", id],
@@ -180,6 +184,24 @@ export default function LeadDetailPage() {
     mutationFn: (data: Record<string, unknown>) =>
       webhooksService.patchLead(id!, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lead-detail", id] }),
+  });
+
+  const markAttendance = useMutation({
+    mutationFn: (payload: MarkAttendancePayload) =>
+      webhooksService.markAttendance(id!, payload),
+    onSuccess: (data) => {
+      toast.success(data.message ?? "Comparecimento registrado");
+      setAttendanceOpen(false);
+      qc.invalidateQueries({ queryKey: ["lead-detail", id] });
+      qc.invalidateQueries({ queryKey: ["lead-timeline", id] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { title?: string } } })?.response?.data?.title ??
+        (err as Error)?.message ??
+        "Falha ao registrar comparecimento";
+      toast.error(msg);
+    },
   });
 
   const l = lead.data;
@@ -292,6 +314,17 @@ export default function LeadDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {(l.currentStage === "04_AGENDADO_SEM_PAGAMENTO" ||
+            l.currentStage === "05_AGENDADO_COM_PAGAMENTO") && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setAttendanceOpen(true)}
+              className="gap-1.5"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Marcar comparecimento
+            </Button>
+          )}
           <button
             onClick={() => navigator.clipboard.writeText(String(l.id))}
             className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.14] px-3 py-1.5 rounded-md transition"
@@ -923,6 +956,14 @@ export default function LeadDetailPage() {
           )}
         </div>
       </div>
+
+      <MarkAttendanceModal
+        open={attendanceOpen}
+        leadName={l.name}
+        loading={markAttendance.isPending}
+        onClose={() => setAttendanceOpen(false)}
+        onConfirm={(payload) => markAttendance.mutate(payload)}
+      />
     </div>
   );
 }

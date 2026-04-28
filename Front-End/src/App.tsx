@@ -32,6 +32,7 @@ const ContactsDuplicatesPage = lazy(() => import("@/pages/ContactsDuplicatesPage
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
+const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
@@ -125,6 +126,7 @@ export default function App() {
           <Route path="/settings"          element={<SettingsPage />}     />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
+          <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
           <Route path="/contacts"          element={<ContactsPage />}     />
           <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
           <Route path="/contacts/new"      element={<ContactFormPage />}  />

@@ -69,9 +69,12 @@ export function StageBadge({ stage }: { stage?: string | null }) {
   if (!stage) return <Badge tone="slate">—</Badge>;
   const s = stage.toLowerCase();
   let tone: Tone = "neutral";
-  if (s.includes("fechou") || s.includes("tratamento")) tone = "emerald";
+  // Ordem importa: "nao_fechou" e "faltou" precisam ser detectados antes de
+  // "fechou"/"tratamento" porque também contêm essas substrings.
+  if (s.includes("nao_fechou") || s.includes("não_fechou")) tone = "amber";
+  else if (s.includes("faltou") || s.includes("perdido") || s.includes("cancelado")) tone = "rose";
+  else if (s.includes("fechou") || s.includes("tratamento")) tone = "emerald";
   else if (s.includes("pagamento")) tone = "sky";
   else if (s.includes("agendado")) tone = "amber";
-  else if (s.includes("perdido") || s.includes("cancelado")) tone = "rose";
   return <Badge tone={tone}>{stage.replace(/_/g, " ")}</Badge>;
 }
