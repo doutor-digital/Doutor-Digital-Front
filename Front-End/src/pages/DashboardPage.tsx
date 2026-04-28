@@ -494,26 +494,90 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ---- Fila de recuperação (CTA) ---- */}
+      {/* ---- RESGATES (destaque hero) ---- */}
       <Link
         to="/recuperacao"
-        className="group flex items-center justify-between gap-4 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.08] to-transparent px-5 py-4 transition hover:border-amber-500/40"
+        className={cn(
+          "group relative block overflow-hidden rounded-2xl border border-amber-500/30 px-6 py-5 transition",
+          "bg-[radial-gradient(ellipse_at_top_left,rgba(251,191,36,0.18),transparent_60%),linear-gradient(135deg,rgba(244,63,94,0.10),rgba(251,191,36,0.06))]",
+          "hover:border-amber-400/60 hover:shadow-[0_8px_30px_-12px_rgba(251,191,36,0.45)]",
+          naoFechouCount > 0 && "ring-1 ring-amber-500/30 ring-offset-2 ring-offset-[#0a0a0d]",
+        )}
       >
-        <div className="min-w-0">
-          <p className="text-[12px] font-medium uppercase tracking-wider text-amber-300">
-            Oportunidades de recuperação
-          </p>
-          <p className="mt-0.5 text-[13px] text-slate-300">
-            <span className="font-semibold text-slate-100">
+        {/* anel pulsante quando há leads */}
+        {naoFechouCount > 0 && (
+          <span
+            aria-hidden
+            className="absolute right-5 top-5 inline-flex h-2 w-2"
+          >
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+          </span>
+        )}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-amber-300">
+              Resgates
+            </p>
+            <h2 className="mt-1 text-[36px] font-bold leading-none tracking-tight text-slate-50 tabular-nums sm:text-[44px]">
               {overviewLoading ? "…" : formatNumber(naoFechouCount)}
-            </span>{" "}
-            lead(s) compareceram mas não fecharam tratamento.
-          </p>
+            </h2>
+            <p className="mt-2 max-w-md text-[12.5px] text-slate-300">
+              {naoFechouCount > 0 ? (
+                <>
+                  <span className="font-semibold text-amber-200">
+                    {naoFechouCount === 1 ? "1 oportunidade" : `${formatNumber(naoFechouCount)} oportunidades`}
+                  </span>{" "}
+                  de recuperação comercial. Compareceram, mas ainda não fecharam tratamento.
+                </>
+              ) : (
+                <>Nenhum lead em fila de recuperação no momento. Bom trabalho! 🎯</>
+              )}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-3 py-2 text-[12.5px] font-semibold text-amber-200 ring-1 ring-inset ring-amber-500/30 transition group-hover:bg-amber-500/15 group-hover:text-amber-100">
+            Abrir fila de resgates
+            <span aria-hidden>→</span>
+          </span>
         </div>
-        <span className="text-[12px] font-medium text-amber-300 transition group-hover:text-amber-200">
-          Ver fila →
-        </span>
       </Link>
+
+      {/* ---- Atalhos: mudanças de etapa + conversão ---- */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Link
+          to="/mudancas-etapas"
+          className="group flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-3 transition hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
+        >
+          <div className="min-w-0">
+            <p className="text-[11.5px] font-medium uppercase tracking-wider text-slate-400">
+              Mudanças de etapa
+            </p>
+            <p className="mt-0.5 text-[12.5px] text-slate-300">
+              Feed de transições com gráficos por dia, top destinos e jornada por lead.
+            </p>
+          </div>
+          <span className="text-[12px] font-medium text-slate-400 transition group-hover:text-emerald-300">
+            Ver feed →
+          </span>
+        </Link>
+
+        <Link
+          to="/conversao"
+          className="group flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-3 transition hover:border-fuchsia-500/30 hover:bg-fuchsia-500/[0.04]"
+        >
+          <div className="min-w-0">
+            <p className="text-[11.5px] font-medium uppercase tracking-wider text-slate-400">
+              Conversão
+            </p>
+            <p className="mt-0.5 text-[12.5px] text-slate-300">
+              Quanto entra, quanto fecha e por que os outros não fecham (motivos extraídos das observações).
+            </p>
+          </div>
+          <span className="text-[12px] font-medium text-slate-400 transition group-hover:text-fuchsia-300">
+            Abrir →
+          </span>
+        </Link>
+      </div>
 
       {/* ---- Atividade ao vivo + Alertas críticos ---- */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">

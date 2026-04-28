@@ -18,6 +18,8 @@ import {
   History,
   LayoutDashboard,
   LifeBuoy,
+  PieChart,
+  Route as RouteIcon,
   LineChart,
   ListChecks,
   type LucideIcon,
@@ -81,11 +83,13 @@ const navGroups: NavGroup[] = [
       {
         label: "Leads",
         icon: ListChecks,
-        basePaths: ["/leads", "/recent-leads", "/recuperacao", "/funnel", "/sources"],
+        basePaths: ["/leads", "/recent-leads", "/recuperacao", "/mudancas-etapas", "/conversao", "/funnel", "/sources"],
         children: [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
           { to: "/recent-leads", label: "Recentes", icon: History },
           { to: "/recuperacao", label: "Recuperação", icon: LifeBuoy },
+          { to: "/mudancas-etapas", label: "Mudanças de etapa", icon: RouteIcon },
+          { to: "/conversao", label: "Conversão", icon: PieChart },
           { to: "/funnel", label: "Funil", icon: Workflow },
           { to: "/sources", label: "Origens", icon: Filter },
         ],

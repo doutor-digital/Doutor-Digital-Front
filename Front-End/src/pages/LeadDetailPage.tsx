@@ -325,6 +325,12 @@ export default function LeadDetailPage() {
               <CheckCircle2 className="h-3.5 w-3.5" /> Marcar comparecimento
             </Button>
           )}
+          <Link
+            to={`/leads/${l.id}/journey`}
+            className="flex items-center gap-1.5 text-[11px] text-slate-300 hover:text-emerald-300 bg-white/[0.02] hover:bg-emerald-500/[0.06] border border-white/[0.08] hover:border-emerald-500/30 px-3 py-1.5 rounded-md transition"
+          >
+            <Route className="h-3.5 w-3.5" /> Ver jornada
+          </Link>
           <button
             onClick={() => navigator.clipboard.writeText(String(l.id))}
             className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.14] px-3 py-1.5 rounded-md transition"

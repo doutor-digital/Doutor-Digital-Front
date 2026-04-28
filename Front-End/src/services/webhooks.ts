@@ -4,6 +4,7 @@ import type {
   ActiveLeadDto,
   ApiCountPayload,
   CompareMode,
+  ConversionAnalytics,
   DashboardEvolutionResponse,
   DashboardOverview,
   GroupByGranularity,
@@ -18,6 +19,7 @@ import type {
   OvernightLeadsDto,
   RecentLeadsResponse,
   RecoveryLead,
+  StageChangesSummary,
   StageCount,
   TimeSeriesPoint,
 } from "@/types";
@@ -357,5 +359,41 @@ export const webhooksService = {
       }),
     });
     return asArray<RecoveryLead>(data);
+  },
+
+  async conversionAnalytics(params: {
+    clinicId?: number | string;
+    unitId?: number | string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {}): Promise<ConversionAnalytics> {
+    const { data } = await api.get<ConversionAnalytics>("/webhooks/conversion-analytics", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+      }),
+    });
+    return data;
+  },
+
+  async stageChanges(params: {
+    clinicId?: number | string;
+    unitId?: number | string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  } = {}): Promise<StageChangesSummary> {
+    const { data } = await api.get<StageChangesSummary>("/webhooks/stage-changes", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        limit: params.limit ?? 100,
+      }),
+    });
+    return data ?? { total: 0, daily: [], byDestination: [], items: [] };
   },
 };

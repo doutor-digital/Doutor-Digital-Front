@@ -33,6 +33,9 @@ const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
 const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
+const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
+const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
+const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
@@ -113,6 +116,7 @@ export default function App() {
           <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/leads"             element={<LeadsPage />}        />
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
+          <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/sources"           element={<SourcesPage />}      />
           <Route path="/evolution"         element={<EvolutionPage />}    />
@@ -127,6 +131,8 @@ export default function App() {
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
           <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
+          <Route path="/mudancas-etapas"   element={<MudancasEtapasPage />} />
+          <Route path="/conversao"         element={<ConversaoPage />}    />
           <Route path="/contacts"          element={<ContactsPage />}     />
           <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
           <Route path="/contacts/new"      element={<ContactFormPage />}  />

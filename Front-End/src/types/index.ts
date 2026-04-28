@@ -717,6 +717,81 @@ export interface RecoveryLead {
   updatedAt: string;
 }
 
+/* ─── Mudanças de etapa (feed cross-lead) ─────────────────────── */
+
+export interface StageChange {
+  id: number;
+  leadId: number;
+  leadName: string;
+  leadPhone?: string | null;
+  unitId?: number | null;
+  unitName?: string | null;
+  source?: string | null;
+  fromStage?: string | null;
+  toStage: string;
+  changedAt: string;
+}
+
+export interface StageChangeDailyPoint {
+  date: string;
+  count: number;
+}
+
+export interface StageChangeDestination {
+  stage: string;
+  count: number;
+}
+
+export interface StageChangesSummary {
+  total: number;
+  daily: StageChangeDailyPoint[];
+  byDestination: StageChangeDestination[];
+  items: StageChange[];
+}
+
+/* ─── Conversion analytics (entradas, conversão, motivos) ───── */
+
+export interface NaoConversaoMotivo {
+  motivo: string;
+  categoria: string;
+  quantidade: number;
+  percentual: number;
+  palavrasChave: string[];
+}
+
+export interface NaoConvertidoItem {
+  leadId: number;
+  name: string;
+  phone?: string | null;
+  currentStage: string;
+  observations?: string | null;
+  motivoCategoria?: string | null;
+  source?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversaoFunilEtapa {
+  stage: string;
+  quantidade: number;
+}
+
+export interface ConversionAnalytics {
+  dateFrom: string;
+  dateTo: string;
+  totalEntradas: number;
+  totalConvertidos: number;
+  totalNaoConvertidos: number;
+  totalEmAndamento: number;
+  taxaConversao: number;
+  taxaNaoConversao: number;
+  mediaDiasAteConversao?: number | null;
+  medianaDiasAteConversao?: number | null;
+  motivos: NaoConversaoMotivo[];
+  exemplos: NaoConvertidoItem[];
+  funil: ConversaoFunilEtapa[];
+}
+
 /* ─── Dashboard evolução com group_by + compare ─── */
 
 export type GroupByGranularity = "day" | "week" | "month" | "quarter";
