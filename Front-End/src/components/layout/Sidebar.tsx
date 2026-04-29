@@ -132,6 +132,8 @@ const navGroups: NavGroup[] = [
   {
     label: "Insights",
     items: [
+      { to: "/insights",        label: "Hub",            icon: Sparkles, end: true, badge: "Novo" },
+      { to: "/insights/system", label: "Mapa do sistema", icon: Brain },
       {
         label: "Meta CAPI",
         icon: Send,
