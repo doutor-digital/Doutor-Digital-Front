@@ -37,6 +37,20 @@ const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
+
+// ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
+const CapiEventsPage      = lazy(() => import("@/pages/CapiEventsPage"));
+const PixelHealthPage     = lazy(() => import("@/pages/PixelHealthPage"));
+const AttributionPathPage = lazy(() => import("@/pages/AttributionPathPage"));
+const UtmExplorerPage     = lazy(() => import("@/pages/UtmExplorerPage"));
+const SlaPage             = lazy(() => import("@/pages/SlaPage"));
+const HeatmapPage         = lazy(() => import("@/pages/HeatmapPage"));
+const CohortPage          = lazy(() => import("@/pages/CohortPage"));
+const LostReasonsPage     = lazy(() => import("@/pages/LostReasonsPage"));
+const ForecastPage        = lazy(() => import("@/pages/ForecastPage"));
+const LeadsMapPage        = lazy(() => import("@/pages/LeadsMapPage"));
+const QualityScorePage    = lazy(() => import("@/pages/QualityScorePage"));
+
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
@@ -138,6 +152,20 @@ export default function App() {
           <Route path="/contacts/new"      element={<ContactFormPage />}  />
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />
           <Route path="/contacts/:id"      element={<ContactDetailPage />} />
+
+          {/* Insights ── CAPI mockada + analytics agregadas */}
+          <Route path="/insights/capi-events"   element={<CapiEventsPage />}      />
+          <Route path="/insights/pixel-health"  element={<PixelHealthPage />}     />
+          <Route path="/insights/attribution"   element={<AttributionPathPage />} />
+          <Route path="/insights/utm"           element={<UtmExplorerPage />}     />
+          <Route path="/insights/sla"           element={<SlaPage />}             />
+          <Route path="/insights/heatmap"       element={<HeatmapPage />}         />
+          <Route path="/insights/cohort"        element={<CohortPage />}          />
+          <Route path="/insights/lost-reasons"  element={<LostReasonsPage />}     />
+          <Route path="/insights/forecast"      element={<ForecastPage />}        />
+          <Route path="/insights/map"           element={<LeadsMapPage />}        />
+          <Route path="/insights/quality-score" element={<QualityScorePage />}    />
+
           <Route path="*"                  element={<NotFoundPage />}     />
         </Route>
 
