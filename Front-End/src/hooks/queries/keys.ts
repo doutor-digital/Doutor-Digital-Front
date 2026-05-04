@@ -109,6 +109,12 @@ export const qk = {
     daily: (tenantId: number, date: string) =>
       ["relatorios", "daily", tenantId, date] as const,
   },
+  cashMovements: {
+    all: () => ["cashMovements"] as const,
+    history: (input: unknown) => ["cashMovements", "history", input] as const,
+    dashboard: (date?: string | null) =>
+      ["cashMovements", "dashboard", date ?? null] as const,
+  },
   payments: {
     all: () => ["payments"] as const,
     treatments: () => ["payments", "treatments"] as const,

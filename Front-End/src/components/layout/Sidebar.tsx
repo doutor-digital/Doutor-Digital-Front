@@ -44,6 +44,7 @@ import {
   Users,
   Users2,
   Wallet,
+  ArrowLeftRight,
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -189,6 +190,7 @@ const navGroups: NavGroup[] = [
           { to: "/finance", label: "Visão geral", icon: Wallet, end: true },
           { to: "/finance?tab=revenue", label: "Receita", icon: TrendingUp },
           { to: "/finance?tab=transactions", label: "Transações", icon: ClipboardList },
+          { to: "/movimentacoes", label: "Movimentações", icon: ArrowLeftRight, badge: "Novo" },
         ],
       },
     ],
