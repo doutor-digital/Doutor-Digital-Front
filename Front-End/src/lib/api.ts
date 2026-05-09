@@ -1,6 +1,17 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import type { ProblemDetails } from "@/types";
 import { toast } from "sonner";
+
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /**
+     * Quando `true`, um 401 nessa request NÃO desloga o usuário.
+     * Use em endpoints que podem retornar 401 por razões não relacionadas
+     * ao JWT (ex.: missing admin key, expired admin key).
+     */
+    silent401?: boolean;
+  }
+}
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -40,11 +51,16 @@ api.interceptors.response.use(
       error.response?.data?.title ||
       error.message;
 
-    if (status === 401) {
+    const cfg = error.config as AxiosRequestConfig | undefined;
+    const silent401 = cfg?.silent401 === true;
+
+    if (status === 401 && !silent401) {
       localStorage.removeItem("auth_token");
       if (!window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
+    } else if (status === 401 && silent401) {
+      // não desloga, deixa o caller tratar
     } else if (status && status >= 500) {
       toast.error(`Erro ${status}: ${msg || "falha no servidor"}`);
     } else if (status === 404) {
