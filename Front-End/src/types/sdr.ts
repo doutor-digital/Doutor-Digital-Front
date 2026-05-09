@@ -45,6 +45,16 @@ export interface SdrLead {
   dataOrigem: string; // data.created_at
   dataModificacao?: string; // data.last_updated_at
 
+  // Origem do registro (define se passa por revisão ou já entra aprovado)
+  source: "cloudia" | "manual" | "importado";
+
+  // Status no fluxo de revisão CRM
+  status: "pendente_revisao" | "aprovado" | "rejeitado";
+  reviewedAt?: string;
+  reviewedByUserId?: string;
+  reviewedByName?: string;
+  rejectionReason?: string;
+
   // Provenance
   cloudiaFields: SdrCloudiaFieldKey[];
   cloudiaProvenance?: CloudiaProvenance;
@@ -168,6 +178,31 @@ export interface SdrMeta {
 }
 
 // ---------------------------------------------------------------------------
+// SDR Audit Log
+// ---------------------------------------------------------------------------
+// Toda ação importante (aprovação, rejeição, edição, criação manual, deleção)
+// gera um SdrAuditLog. A chefe consulta na página /sdr/auditoria.
+export interface SdrAuditLog {
+  id: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  /** "sdr_lead.review_approved" | "sdr_lead.review_rejected" | "sdr_lead.created_manual"
+   * | "sdr_lead.updated" | "sdr_lead.deleted" | etc. */
+  action: string;
+  /** "SdrLead" | "SdrConsulta" | "SdrTratamento" | ... */
+  entityType: string;
+  entityId: string;
+  /** Resumo legível, ex.: "Aprovou revisão de João da Silva". */
+  summary: string;
+  beforeJson?: string;
+  afterJson?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Estado completo do store SDR
 // ---------------------------------------------------------------------------
 export interface SdrState {
@@ -177,6 +212,7 @@ export interface SdrState {
   tarefas: SdrTarefa[];
   agenda: SdrAgendaEvento[];
   metas: SdrMeta[];
+  auditLogs: SdrAuditLog[];
 }
 
 // ---------------------------------------------------------------------------

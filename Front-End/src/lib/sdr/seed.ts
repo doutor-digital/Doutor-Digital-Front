@@ -11,6 +11,12 @@ import type {
   SdrTratamento,
 } from "@/types/sdr";
 
+/**
+ * Tipo do seed antes da normalização — `source` e `status` são preenchidos
+ * automaticamente pelo store ao carregar (`normalizeLead` em sdr-store.ts).
+ */
+type SdrLeadSeed = Omit<SdrLead, "source" | "status">;
+
 const HOJE = new Date();
 function diasAtras(n: number): string {
   const d = new Date(HOJE);
@@ -23,7 +29,7 @@ function diasFrente(n: number): string {
   return d.toISOString();
 }
 
-export const SEED_LEADS: SdrLead[] = [
+export const SEED_LEADS: SdrLeadSeed[] = [
   {
     id: "lead_seed_001",
     externalId: 12345,

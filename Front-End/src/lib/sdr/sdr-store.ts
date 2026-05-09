@@ -11,6 +11,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type {
   SdrAgendaEvento,
+  SdrAuditLog,
   SdrConsulta,
   SdrLead,
   SdrMeta,
@@ -27,7 +28,7 @@ import {
   SEED_TRATAMENTOS,
 } from "./seed";
 
-const STORAGE_KEY = "sdr_store_v1";
+const STORAGE_KEY = "sdr_store_v2";
 
 const emptyState: SdrState = {
   leads: [],
@@ -36,22 +37,32 @@ const emptyState: SdrState = {
   tarefas: [],
   agenda: [],
   metas: [],
+  auditLogs: [],
 };
 
 function seedState(): SdrState {
   return {
-    leads: [...SEED_LEADS],
+    leads: SEED_LEADS.map(normalizeLead),
     consultas: [...SEED_CONSULTAS],
     tratamentos: [...SEED_TRATAMENTOS],
     tarefas: [...SEED_TAREFAS],
     agenda: [...SEED_AGENDA],
     metas: [...SEED_METAS],
+    auditLogs: [],
   };
 }
 
 const listeners = new Set<() => void>();
 let memoryState: SdrState = emptyState;
 let initialized = false;
+
+/** Preenche source/status default para leads vindos do seed ou de versões anteriores. */
+function normalizeLead(lead: Partial<SdrLead> & Omit<SdrLead, "source" | "status">): SdrLead {
+  const source: SdrLead["source"] = lead.source ?? (lead.externalId ? "cloudia" : "manual");
+  const status: SdrLead["status"] =
+    lead.status ?? (source === "cloudia" ? "pendente_revisao" : "aprovado");
+  return { ...lead, source, status };
+}
 
 function loadFromStorage(): SdrState {
   if (typeof window === "undefined") return seedState();
@@ -60,12 +71,13 @@ function loadFromStorage(): SdrState {
     if (!raw) return seedState();
     const parsed = JSON.parse(raw) as Partial<SdrState>;
     return {
-      leads: parsed.leads ?? [],
+      leads: (parsed.leads ?? []).map(normalizeLead),
       consultas: parsed.consultas ?? [],
       tratamentos: parsed.tratamentos ?? [],
       tarefas: parsed.tarefas ?? [],
       agenda: parsed.agenda ?? [],
       metas: parsed.metas ?? [],
+      auditLogs: parsed.auditLogs ?? [],
     };
   } catch {
     return seedState();
@@ -127,16 +139,116 @@ function update(mutate: (s: SdrState) => SdrState) {
 // Mutations — Leads
 // ---------------------------------------------------------------------------
 
-export function upsertSdrLead(lead: SdrLead) {
+export function upsertSdrLead(lead: SdrLead, actor?: { id?: string; name?: string; email?: string }) {
   update((s) => {
+    const existing = s.leads.find((l) => l.id === lead.id);
     const idx = s.leads.findIndex((l) => l.id === lead.id);
     const next = idx >= 0 ? s.leads.map((l, i) => (i === idx ? lead : l)) : [lead, ...s.leads];
-    return { ...s, leads: next };
+    const auditEntry: SdrAuditLog = {
+      id: makeId("audit"),
+      userId: actor?.id,
+      userName: actor?.name,
+      userEmail: actor?.email,
+      action: existing ? "sdr_lead.updated" : `sdr_lead.created_${lead.source}`,
+      entityType: "SdrLead",
+      entityId: lead.id,
+      summary: existing ? `Editou lead ${lead.nome}` : `Criou lead ${lead.nome} (${lead.source})`,
+      beforeJson: existing ? JSON.stringify(existing) : undefined,
+      afterJson: JSON.stringify(lead),
+      createdAt: nowIso(),
+    };
+    return { ...s, leads: next, auditLogs: [auditEntry, ...s.auditLogs] };
   });
 }
 
-export function deleteSdrLead(id: string) {
-  update((s) => ({ ...s, leads: s.leads.filter((l) => l.id !== id) }));
+export function deleteSdrLead(id: string, actor?: { id?: string; name?: string; email?: string }) {
+  update((s) => {
+    const existing = s.leads.find((l) => l.id === id);
+    if (!existing) return s;
+    const auditEntry: SdrAuditLog = {
+      id: makeId("audit"),
+      userId: actor?.id,
+      userName: actor?.name,
+      userEmail: actor?.email,
+      action: "sdr_lead.deleted",
+      entityType: "SdrLead",
+      entityId: id,
+      summary: `Removeu lead ${existing.nome}`,
+      beforeJson: JSON.stringify(existing),
+      createdAt: nowIso(),
+    };
+    return {
+      ...s,
+      leads: s.leads.filter((l) => l.id !== id),
+      auditLogs: [auditEntry, ...s.auditLogs],
+    };
+  });
+}
+
+/**
+ * Aprova ou rejeita uma revisão de lead. É O ponto crítico do fluxo CRM:
+ * depois daqui o lead aparece em /sdr/leads-aprovados.
+ *
+ * Sempre grava entrada no audit log com snapshot before/after para a chefe consultar.
+ */
+export function reviewSdrLead(
+  id: string,
+  decision: "approve" | "reject",
+  opts: {
+    actor?: { id?: string; name?: string; email?: string };
+    rejectionReason?: string;
+    /** Patch opcional de campos que a SDR editou durante a revisão. */
+    patch?: Partial<SdrLead>;
+  } = {},
+): SdrLead | null {
+  ensureInit();
+  const existing = memoryState.leads.find((l) => l.id === id);
+  if (!existing) return null;
+
+  const now = nowIso();
+  const updated: SdrLead = {
+    ...existing,
+    ...(opts.patch ?? {}),
+    status: decision === "approve" ? "aprovado" : "rejeitado",
+    reviewedAt: now,
+    reviewedByUserId: opts.actor?.id,
+    reviewedByName: opts.actor?.name,
+    rejectionReason: decision === "reject" ? opts.rejectionReason : undefined,
+    dataModificacao: now,
+  };
+
+  const auditEntry: SdrAuditLog = {
+    id: makeId("audit"),
+    userId: opts.actor?.id,
+    userName: opts.actor?.name,
+    userEmail: opts.actor?.email,
+    action: decision === "approve" ? "sdr_lead.review_approved" : "sdr_lead.review_rejected",
+    entityType: "SdrLead",
+    entityId: id,
+    summary:
+      decision === "approve"
+        ? `Aprovou revisão de ${existing.nome}`
+        : `Rejeitou revisão de ${existing.nome}: ${opts.rejectionReason ?? "sem motivo"}`,
+    beforeJson: JSON.stringify(existing),
+    afterJson: JSON.stringify(updated),
+    createdAt: now,
+  };
+
+  memoryState = {
+    ...memoryState,
+    leads: memoryState.leads.map((l) => (l.id === id ? updated : l)),
+    auditLogs: [auditEntry, ...memoryState.auditLogs],
+  };
+  persist(memoryState);
+  emit();
+  return updated;
+}
+
+export function appendAuditLog(entry: Omit<SdrAuditLog, "id" | "createdAt">) {
+  update((s) => ({
+    ...s,
+    auditLogs: [{ ...entry, id: makeId("audit"), createdAt: nowIso() }, ...s.auditLogs],
+  }));
 }
 
 // ---------------------------------------------------------------------------

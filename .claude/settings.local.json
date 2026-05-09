@@ -11,7 +11,16 @@
       "Bash(npm list *)",
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(echo \"EXIT_CODE=$?\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\douto\\\\Doutor-Digital-Dash\\\\Back-End\\\\LeadAnalytics.Api\" -Directory)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(dotnet --version)",
+      "Bash(dotnet ef *)",
+      "Bash(where dotnet.exe)",
+      "Read(//c/Program Files/dotnet/**)",
+      "Bash(\"/c/Program Files/dotnet/dotnet.exe\" build \"/c/Users/douto/Doutor-Digital-Dash/Back-End/LeadAnalytics.Api/LeadAnalytics.Api.csproj\")",
+      "Bash(echo \"EXIT=$?\")",
+      "PowerShell($env:DOTNET_CLI_TELEMETRY_OPTOUT=1; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --list-sdks; echo \"---\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --info | Select-String -Pattern \"SDK|Runtime\" | Select-Object -First 6)"
     ]
   }
 }

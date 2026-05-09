@@ -29,8 +29,15 @@ export default function CadastroGeralPage() {
   const [filterOrigem, setFilterOrigem] = useState<FilterOrigem>("todas");
   const [reviewLeadId, setReviewLeadId] = useState<string | null>(null);
 
+  // Esta página é a etapa de REVISÃO: só mostra leads pendentes de revisão.
+  // Quem já foi aprovado/rejeitado vai para /sdr/leads-aprovados (bento).
+  const pendingLeads = useMemo(
+    () => leads.filter((l) => l.status === "pendente_revisao"),
+    [leads],
+  );
+
   const filtered = useMemo(() => {
-    let r = leads;
+    let r = pendingLeads;
     if (search.trim()) {
       const q = search.toLowerCase();
       r = r.filter(
@@ -44,21 +51,23 @@ export default function CadastroGeralPage() {
     if (filterOrigem === "cloudia") r = r.filter((l) => l.cloudiaFields.length > 0);
     if (filterOrigem === "manual") r = r.filter((l) => l.cloudiaFields.length === 0);
     return r;
-  }, [leads, search, filterTipo, filterOrigem]);
+  }, [pendingLeads, search, filterTipo, filterOrigem]);
 
-  const totalCloudia = leads.filter((l) => l.cloudiaFields.length > 0).length;
+  const totalCloudia = pendingLeads.filter((l) => l.cloudiaFields.length > 0).length;
   const reviewLead = reviewLeadId ? leads.find((l) => l.id === reviewLeadId) : null;
 
   return (
     <div>
       <PageHeader
-        badge="Seção 1 · Cadastro Geral"
-        title="Leads"
-        description="Cada linha é um lead que chegou na sua unidade. Os campos com badge verde foram preenchidos automaticamente pela Cloudia."
+        badge="Seção 1 · Cadastro Geral · Revisão pendente"
+        title="Revisar leads"
+        description="Cada linha é um lead que chegou na sua unidade e precisa da sua revisão antes de virar lead oficial. Clique em Revisar para aprovar ou rejeitar."
         actions={
           <div className="flex items-center gap-2 text-[11px] text-slate-400">
             <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
-            <span>{formatNumber(totalCloudia)} de {formatNumber(leads.length)} via Cloudia</span>
+            <span>
+              {formatNumber(totalCloudia)} via Cloudia · {formatNumber(pendingLeads.length)} pendentes
+            </span>
           </div>
         }
       />
@@ -134,7 +143,11 @@ export default function CadastroGeralPage() {
             </table>
           </div>
           <div className="border-t border-white/[0.04] bg-white/[0.015] px-4 py-2.5 text-[11px] text-slate-500">
-            Mostrando {formatNumber(filtered.length)} de {formatNumber(leads.length)} leads
+            Mostrando {formatNumber(filtered.length)} de {formatNumber(pendingLeads.length)} pendentes ·{" "}
+            {formatNumber(leads.length - pendingLeads.length)} já revisados em{" "}
+            <a href="/sdr/leads-aprovados" className="text-emerald-300 hover:underline">
+              Leads Aprovados
+            </a>
           </div>
         </div>
       )}
