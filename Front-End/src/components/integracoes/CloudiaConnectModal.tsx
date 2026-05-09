@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, Save, Webhook, X } from "lucide-react";
+import { Copy, Eye, EyeOff, Save, Webhook, X, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { configurationService } from "@/services/configuration";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "sonner";
-import { useClinic } from "@/hooks/useClinic";
 import { API_BASE_URL } from "@/lib/api";
 
 interface Props {
@@ -13,10 +13,83 @@ interface Props {
   onConnected?: () => void;
 }
 
-type Tab = "webhook" | "apikey";
+/**
+ * Mapeia o campo do payload Cloudia → o campo no nosso sistema.
+ * Esta tabela serve de DOCUMENTAÇÃO viva pro usuário que está
+ * configurando o webhook: ele vê exatamente onde cada coisa aparece.
+ *
+ * Origem do mapping: backend `CloudiaAdapter` + `Models.Lead`.
+ */
+const FIELD_MAPPING: Array<{
+  cloudia: string;
+  label: string;
+  location: string;
+}> = [
+  {
+    cloudia: "data.name",
+    label: "Nome",
+    location: "Revisar leads · coluna Nome",
+  },
+  {
+    cloudia: "data.phone",
+    label: "Telefone",
+    location: "Revisar leads · coluna Telefone (E.164)",
+  },
+  {
+    cloudia: "data.clinic_id",
+    label: "Clínica / Tenant",
+    location: "Lead.TenantId (filtro de unidade)",
+  },
+  {
+    cloudia: "data.source",
+    label: "Origem",
+    location: "Revisar leads · coluna Origem",
+  },
+  {
+    cloudia: "data.tags[]",
+    label: "Tags",
+    location: "Lead.Tags + filtro 'Resgate:*'",
+  },
+  {
+    cloudia: "data.stage / status",
+    label: "Situação",
+    location: "Lead.CurrentStage · funil",
+  },
+  {
+    cloudia: "data.assigned_user",
+    label: "Atendente",
+    location: "Lead.Attendant.Name · 'Responsável'",
+  },
+  {
+    cloudia: "data.observation",
+    label: "Observação",
+    location: "Revisar leads · coluna Observação",
+  },
+  {
+    cloudia: "data.appointment_at",
+    label: "Agendamento",
+    location: "Lead.HasAppointment · 'Agendou consulta'",
+  },
+  {
+    cloudia: "createdAt",
+    label: "Data Origem",
+    location: "Lead.CreatedAt",
+  },
+  {
+    cloudia: "updatedAt",
+    label: "Data Modificação",
+    location: "Lead.UpdatedAt",
+  },
+  {
+    cloudia: "event_type",
+    label: "Tipo do evento",
+    location: "Audit log · CUSTOMER_CREATED/UPDATED",
+  },
+];
+
+type Tab = "webhook" | "apikey" | "campos";
 
 export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
-  const { tenantId } = useClinic();
   const [tab, setTab] = useState<Tab>("webhook");
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -27,9 +100,9 @@ export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
     expiresAt?: string | null;
   } | null>(null);
 
-  const webhookUrl = tenantId
-    ? `${API_BASE_URL}/api/empresas/${tenantId}/cloudia/webhook`
-    : `${API_BASE_URL}/api/empresas/<TENANT_ID>/cloudia/webhook`;
+  // URL pública do webhook que a Cloudia já usa em produção.
+  // O backend tem POST /webhooks/cloudia em LeadController.cs (AllowAnonymous).
+  const webhookUrl = `${API_BASE_URL.replace(/\/$/, "")}/webhooks/cloudia`;
 
   useEffect(() => {
     if (!open) return;
@@ -122,18 +195,24 @@ export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
 
         {/* tabs */}
         <div className="flex gap-1 px-6 pt-4">
-          {(["webhook", "apikey"] as const).map((t) => (
+          {(
+            [
+              { id: "webhook", label: "Webhook (entrada)" },
+              { id: "campos", label: "Mapeamento de campos" },
+              { id: "apikey", label: "API key (saída)" },
+            ] as const
+          ).map(({ id, label }) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={id}
+              onClick={() => setTab(id as Tab)}
               className={[
                 "rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors",
-                tab === t
+                tab === id
                   ? "bg-white/[0.06] text-slate-100 ring-1 ring-inset ring-white/[0.08]"
                   : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200",
               ].join(" ")}
             >
-              {t === "webhook" ? "Webhook (entrada)" : "API key (saída)"}
+              {label}
             </button>
           ))}
         </div>
@@ -147,7 +226,7 @@ export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
                   <Webhook className="mt-0.5 h-4 w-4 text-cyan-300 shrink-0" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <p className="text-[13px] text-slate-200">
-                      Cole esta URL no painel da Cloudia → Webhooks
+                      URL pública que a Cloudia chama quando um lead chega
                     </p>
                     <div className="flex items-center gap-2 rounded-md border border-white/[0.06] bg-black/30 px-3 py-2">
                       <code className="flex-1 truncate text-[11.5px] text-slate-300 font-mono">
@@ -161,25 +240,82 @@ export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
                       </button>
                     </div>
                     <p className="text-[11.5px] text-slate-500">
-                      A Cloudia identifica a clínica via{" "}
+                      Esta é a URL real do backend (
                       <code className="rounded bg-white/[0.04] px-1 text-[11px]">
-                        data.clinic_id
+                        WebhooksController · POST /webhooks/cloudia
                       </code>
-                      . Não precisa de API key pra receber.
+                      ). A Cloudia identifica a clínica pelo{" "}
+                      <code className="rounded bg-white/[0.04] px-1 text-[11px]">
+                        TenantId
+                      </code>{" "}
+                      no payload.
                     </p>
                   </div>
                 </div>
               </div>
 
               <ol className="space-y-2 text-[12.5px] text-slate-400 list-decimal list-inside">
-                <li>Acesse o painel da Cloudia → Configurações → Integrações.</li>
-                <li>Clique em "Adicionar webhook" e cole a URL acima.</li>
                 <li>
-                  Selecione os eventos:{" "}
-                  <span className="text-slate-200">CUSTOMER_CREATED, UPDATED, STAGE, TAGS, ASSIGNED</span>.
+                  No painel da Cloudia → <strong>Configurações → Integrações → Webhooks</strong>.
                 </li>
-                <li>Salve. O primeiro evento que cair aqui já mostra como "Conectado".</li>
+                <li>Cole a URL acima e selecione os eventos do lead.</li>
+                <li>
+                  Salve. Cada lead novo cai na fila de revisão da{" "}
+                  <strong>Central de Cadastros · SDR</strong>.
+                </li>
               </ol>
+
+              <Link
+                to="/sdr/cadastro-geral"
+                onClick={onClose}
+                className="flex items-center justify-between rounded-md border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-[13px] font-medium text-emerald-200 hover:bg-emerald-400/15 transition-colors"
+              >
+                <span>Ir para "Revisar leads" agora</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </>
+          )}
+
+          {tab === "campos" && (
+            <>
+              <p className="text-[13px] text-slate-300">
+                A Cloudia envia este payload (extrato dos campos principais).
+                A coluna direita mostra <strong>onde aparece</strong> no nosso sistema.
+              </p>
+              <div className="overflow-hidden rounded-md border border-white/[0.06]">
+                <table className="w-full text-[12px]">
+                  <thead className="bg-white/[0.02] text-[10px] uppercase tracking-widest text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Campo Cloudia</th>
+                      <th className="px-3 py-2 text-left">→</th>
+                      <th className="px-3 py-2 text-left">Onde aparece</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {FIELD_MAPPING.map((row) => (
+                      <tr key={row.cloudia} className="hover:bg-white/[0.02]">
+                        <td className="px-3 py-2 font-mono text-[11px] text-cyan-200">
+                          {row.cloudia}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600">→</td>
+                        <td className="px-3 py-2">
+                          <span className="text-slate-200">{row.label}</span>
+                          <span className="ml-2 text-[10.5px] text-slate-500">
+                            ({row.location})
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-[11.5px] text-slate-500">
+                Backend: <code>LeadController · POST /webhooks/cloudia</code> chama{" "}
+                <code>LeadService.SaveLeadAsync</code> que persiste em{" "}
+                <code>Models.Lead</code>. A tela de revisão lê via{" "}
+                <code>POST /api/sdr/leads/sync-from-cloudia</code>.
+              </p>
             </>
           )}
 

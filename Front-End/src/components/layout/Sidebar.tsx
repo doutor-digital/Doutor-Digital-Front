@@ -90,6 +90,7 @@ const navGroups: NavGroup[] = [
     label: "Visão geral",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users, badge: "Cloudia" },
       {
         label: "Performance",
         icon: Gauge,
