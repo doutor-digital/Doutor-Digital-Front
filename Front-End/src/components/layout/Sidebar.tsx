@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Activity,
@@ -11,6 +11,7 @@ import {
   Building2,
   CalendarRange,
   CheckCircle2,
+  ChefHat,
   ChevronDown,
   ClipboardCheck,
   ClipboardList,
@@ -36,11 +37,13 @@ import {
   Map,
   Network,
   PieChart,
+  Plug,
   Plug2,
   Radio,
   Route as RouteIcon,
   ScrollText,
   Send,
+  ShieldAlert,
   Sparkles,
   Stethoscope,
   Sunrise,
@@ -56,6 +59,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import { SavedViewsSection } from "./SavedViewsSection";
 
 type NavItem = {
@@ -255,6 +259,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Integrações",
+    items: [
+      { to: "/integracoes", label: "Conexões e convites", icon: Plug, badge: "Novo" },
+    ],
+  },
+  {
     label: "Sistema",
     items: [
       {
@@ -269,6 +279,13 @@ const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+const chefGroup: NavGroup = {
+  label: "Chef · Super-admin",
+  items: [
+    { to: "/chef/audit-logs", label: "Auditoria global", icon: ChefHat },
+  ],
+};
 
 function isNestedEntry(
   entry: NavEntry,
@@ -432,6 +449,13 @@ function NavCollapsible({
 
 export function Sidebar() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+
+  const groups = useMemo(() => {
+    const r = (user?.role || "").toLowerCase();
+    const isSuperAdmin = ["super_admin", "super-admin", "superadmin"].includes(r);
+    return isSuperAdmin ? [...navGroups, chefGroup] : navGroups;
+  }, [user?.role]);
 
   return (
     <aside
@@ -469,7 +493,7 @@ export function Sidebar() {
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.05] [&::-webkit-scrollbar-track]:bg-transparent">
         <SavedViewsSection />
 
-        {navGroups.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             <div className="mb-1.5 flex items-center gap-2 px-3">
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">

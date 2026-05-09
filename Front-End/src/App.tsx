@@ -56,6 +56,9 @@ const LeadsMapPage        = lazy(() => import("@/pages/LeadsMapPage"));
 const QualityScorePage    = lazy(() => import("@/pages/QualityScorePage"));
 
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
+const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
+const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
+const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
 
 // ─── cadastra.ai (subdomínio /cadastro/*) ─────────────────────────────────
 const CadastroLayout        = lazy(() => import("@/components/cadastro/CadastroLayout"));
@@ -128,6 +131,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/verify-code" element={<VerifyResetCodePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/invite/:token" element={<InviteAcceptPage />} />
 
         {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
         <Route path="/logs" element={<LogsPage />} />
@@ -245,6 +249,10 @@ export default function App() {
           <Route path="/sdr/auditoria"       element={<SdrAuditoriaPage />}      />
           <Route path="/sdr/listas"          element={<SdrListasDominioPage />}  />
           <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
+
+          {/* Integrações + Chef (auditoria global) */}
+          <Route path="/integracoes"        element={<IntegracoesPage />}     />
+          <Route path="/chef/audit-logs"    element={<ChefAuditPage />}       />
 
           {/* Insights ── CAPI mockada + analytics agregadas */}
           <Route path="/insights"               element={<InsightsHubPage />}     />

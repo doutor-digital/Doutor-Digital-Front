@@ -8,6 +8,7 @@ interface User {
   role?: string;
   photoUrl?: string | null;
   phone?: string | null;
+  unitIds?: number[];
 }
 interface AuthStore {
   user: User | null;
