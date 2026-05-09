@@ -16,12 +16,28 @@ export interface LoginResponse {
   userName: string;
   email: string;
   role: string;
+  photoUrl?: string | null;
+  authMethod?: string;
   tokenType: string;
   accessToken: string;
   refreshToken: string;
   expiresAtUtc: string;
   selectedUnit: Unit;
   availableUnits: Unit[];
+}
+
+export interface MeResponse {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  phone?: string | null;
+  photoUrl?: string | null;
+  authMethod?: string;
+  tenantId?: number | null;
+  lastLoginAt?: string | null;
+  createdAt?: string;
+  unitIds: string[];
 }
 
 export interface ForgotPasswordRequest {
@@ -82,6 +98,11 @@ export const authService = {
       "/api/auth/reset-password",
       payload
     );
+    return data;
+  },
+
+  async me(): Promise<MeResponse> {
+    const { data } = await api.get<MeResponse>("/api/auth/me");
     return data;
   },
 };

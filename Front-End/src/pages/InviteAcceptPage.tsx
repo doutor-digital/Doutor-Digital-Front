@@ -42,7 +42,12 @@ export default function InviteAcceptPage() {
       try {
         const data = await invitationsService.accept(token, idToken);
         login(
-          { name: data.userName, email: data.email, role: data.role },
+          {
+            name: data.userName,
+            email: data.email,
+            role: data.role,
+            photoUrl: data.photoUrl,
+          },
           data.accessToken,
         );
         setContext(data.selectedUnit.clinicId, data.selectedUnit.id);

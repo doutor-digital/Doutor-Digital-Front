@@ -37,6 +37,7 @@ export default function LoginPage() {
         name: data.userName,
         email: data.email,
         role: data.role,
+        photoUrl: data.photoUrl,
       },
       data.accessToken
     );
@@ -67,6 +68,7 @@ const handleGoogleCredential = useCallback(async (idToken: string) => {
         name: data.userName,
         email: data.email,
         role: data.role,
+        photoUrl: data.photoUrl,
       },
       data.accessToken
     );
