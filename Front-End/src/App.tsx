@@ -2,8 +2,12 @@ import { ReactElement, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+<<<<<<< HEAD
 import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
+=======
+import { Loader2 } from "lucide-react";
+>>>>>>> 9eaf965 (feat: update sidebar labels and remove legacy system links; enhance IntegracoesPage with provider management and Cloudia connection modal)
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
@@ -62,12 +66,8 @@ const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
 const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
 const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
 
-// ─── cadastra.ai (subdomínio /cadastro/*) ─────────────────────────────────
-const CadastroLayout        = lazy(() => import("@/components/cadastro/CadastroLayout"));
+// ─── Aceite de convite legado (mantido por compat — para tokens já enviados antes da migração)
 const CadastroPublicLayout  = lazy(() => import("@/components/cadastro/CadastroPublicLayout"));
-const LoginCadastroPage     = lazy(() => import("@/pages/cadastro/LoginCadastroPage"));
-const SignupCadastroPage    = lazy(() => import("@/pages/cadastro/SignupCadastroPage"));
-const DashboardCadastroPage = lazy(() => import("@/pages/cadastro/DashboardCadastroPage"));
 const AceitarConvitePage    = lazy(() => import("@/pages/cadastro/AceitarConvitePage"));
 
 // ─── SDR Unificado (/sdr/*) — pages dentro do DashboardLayout principal ────
@@ -138,59 +138,9 @@ export default function App() {
         {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
         <Route path="/logs" element={<LogsPage />} />
 
-        {/* cadastra.ai — rotas públicas (login, signup, aceitar convite) */}
+        {/* Aceite de convite legado (compat) — novos convites usam /invite/:token */}
         <Route element={<CadastroPublicLayout />}>
-          <Route path="/cadastro/login"  element={<LoginCadastroPage />} />
-          <Route path="/cadastro/signup" element={<SignupCadastroPage />} />
           <Route path="/cadastro/aceitar-convite/:token" element={<AceitarConvitePage />} />
-        </Route>
-
-        {/* cadastra.ai — área protegida (dashboard interno + sub-views por search params) */}
-        <Route
-          element={
-            <CadastroLayout />
-          }
-        >
-          <Route
-            path="/cadastro"
-            element={
-              <RequireCadastraAuth>
-                <DashboardCadastroPage />
-              </RequireCadastraAuth>
-            }
-          />
-          <Route
-            path="/cadastro/leads"
-            element={
-              <RequireCadastraAuth>
-                <DashboardCadastroPage />
-              </RequireCadastraAuth>
-            }
-          />
-          <Route
-            path="/cadastro/importados"
-            element={
-              <RequireCadastraAuth>
-                <DashboardCadastroPage />
-              </RequireCadastraAuth>
-            }
-          />
-          <Route
-            path="/cadastro/integracoes"
-            element={
-              <RequireCadastraAuth>
-                <DashboardCadastroPage />
-              </RequireCadastraAuth>
-            }
-          />
-          <Route
-            path="/cadastro/empresa/criar"
-            element={
-              <RequireCadastraAuth>
-                <DashboardCadastroPage />
-              </RequireCadastraAuth>
-            }
-          />
         </Route>
 
         {/* Seleção de unidade — requer login, mas não clínica */}
