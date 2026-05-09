@@ -25,7 +25,8 @@ export const configurationService = {
 
   async getCloudiaStatus(): Promise<CloudiaKeyStatusDto> {
     const { data } = await api.get<unknown>(
-      "/api/config/cloudia-api-key/status"
+      "/api/config/cloudia-api-key/status",
+      { silent401: true }
     );
     return normalizeCloudiaStatus(data);
   },

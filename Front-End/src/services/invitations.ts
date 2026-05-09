@@ -45,6 +45,7 @@ export const invitationsService = {
   async list(unitId?: number): Promise<InvitationListItem[]> {
     const { data } = await api.get<InvitationListItem[]>("/api/invitations", {
       params: unitId ? { unitId } : undefined,
+      silent401: true,
     });
     return data;
   },
