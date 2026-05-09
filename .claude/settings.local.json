@@ -20,7 +20,11 @@
       "Read(//c/Program Files/dotnet/**)",
       "Bash(\"/c/Program Files/dotnet/dotnet.exe\" build \"/c/Users/douto/Doutor-Digital-Dash/Back-End/LeadAnalytics.Api/LeadAnalytics.Api.csproj\")",
       "Bash(echo \"EXIT=$?\")",
-      "PowerShell($env:DOTNET_CLI_TELEMETRY_OPTOUT=1; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --list-sdks; echo \"---\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --info | Select-String -Pattern \"SDK|Runtime\" | Select-Object -First 6)"
+      "PowerShell($env:DOTNET_CLI_TELEMETRY_OPTOUT=1; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --list-sdks; echo \"---\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --info | Select-String -Pattern \"SDK|Runtime\" | Select-Object -First 6)",
+      "PowerShell($env:ConnectionStrings__DefaultConnection; echo \"---\"; [System.Environment]::GetEnvironmentVariable\\('ConnectionStrings__DefaultConnection', 'User'\\); echo \"---\"; [System.Environment]::GetEnvironmentVariable\\('ConnectionStrings__DefaultConnection', 'Machine'\\))",
+      "PowerShell(Get-ChildItem env: | Where-Object { $_.Name -match 'POSTGRES|DB_|DATABASE|CONN' } | Select-Object Name, @{N='Value';E={if \\($_.Value.Length -gt 80\\) { $_.Value.Substring\\(0, 80\\) + '...' } else { $_.Value }}})",
+      "Bash(DB_URL='postgresql://postgres:MWaBJnGrmPkcyaPXbzXtyGzTLVFlDDMd@crossover.proxy.rlwy.net:44184/railway' node check.mjs)",
+      "Bash(DB_URL='postgresql://postgres:MWaBJnGrmPkcyaPXbzXtyGzTLVFlDDMd@crossover.proxy.rlwy.net:44184/railway' node *)"
     ]
   }
 }

@@ -251,6 +251,51 @@ export function appendAuditLog(entry: Omit<SdrAuditLog, "id" | "createdAt">) {
   }));
 }
 
+/**
+ * Mescla leads vindos do backend (sync com Cloudia) no store local.
+ * Dedup por `externalId` quando presente; senão por `id`. Quem já existe não é sobrescrito
+ * pra preservar edições da SDR no localStorage.
+ *
+ * Retorna a quantidade de leads efetivamente adicionados (excluindo duplicatas).
+ */
+export function mergeSdrLeadsFromBackend(incoming: SdrLead[]): number {
+  if (incoming.length === 0) return 0;
+  ensureInit();
+
+  const existingExternalIds = new Set(
+    memoryState.leads.filter((l) => l.externalId != null).map((l) => l.externalId!),
+  );
+  const existingIds = new Set(memoryState.leads.map((l) => l.id));
+
+  const toAdd: SdrLead[] = [];
+  for (const lead of incoming) {
+    if (lead.externalId != null && existingExternalIds.has(lead.externalId)) continue;
+    if (existingIds.has(lead.id)) continue;
+    toAdd.push(normalizeLead(lead));
+  }
+
+  if (toAdd.length === 0) return 0;
+
+  const auditEntry: SdrAuditLog = {
+    id: makeId("audit"),
+    action: "sdr_lead.synced_batch",
+    entityType: "SdrLead",
+    entityId: "batch",
+    summary: `Sincronizou ${toAdd.length} lead(s) da Cloudia via backfill`,
+    afterJson: JSON.stringify({ count: toAdd.length }),
+    createdAt: nowIso(),
+  };
+
+  memoryState = {
+    ...memoryState,
+    leads: [...toAdd, ...memoryState.leads],
+    auditLogs: [auditEntry, ...memoryState.auditLogs],
+  };
+  persist(memoryState);
+  emit();
+  return toAdd.length;
+}
+
 // ---------------------------------------------------------------------------
 // Mutations — Consultas
 // ---------------------------------------------------------------------------
