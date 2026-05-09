@@ -17,8 +17,10 @@ import {
   CloudiaLegendBanner,
 } from "@/components/sdr/CloudiaField";
 import { LeadReviewSheet } from "@/components/sdr/LeadReviewSheet";
+import { SyncFilterSheet } from "@/components/sdr/SyncFilterSheet";
 import { mergeSdrLeadsFromBackend, useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
-import { sdrLeadFromBackend, sdrService } from "@/services/sdr";
+import { sdrLeadFromBackend, sdrService, type SdrSyncFilters } from "@/services/sdr";
+import { useClinic } from "@/hooks/useClinic";
 import type { SdrLead, SdrCloudiaFieldKey } from "@/types/sdr";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
@@ -28,39 +30,62 @@ type FilterOrigem = "todas" | "cloudia" | "manual";
 export default function CadastroGeralPage() {
   const ready = useIsClient();
   const { leads } = useSdrStore();
+  const { unitId: contextUnitId } = useClinic();
   const [search, setSearch] = useState("");
   const [filterTipo, setFilterTipo] = useState<FilterTipo>("todos");
   const [filterOrigem, setFilterOrigem] = useState<FilterOrigem>("todas");
   const [reviewLeadId, setReviewLeadId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [syncSheetOpen, setSyncSheetOpen] = useState(false);
+  const [lastSyncInfo, setLastSyncInfo] = useState<{
+    unitId?: number;
+    from?: string;
+    to?: string;
+    shiftStart?: string;
+    shiftEnd?: string;
+  } | null>(null);
 
   /**
-   * Dispara backfill no backend (POST /api/sdr/leads/sync-from-cloudia) e mergia
-   * os novos leads no localStorage. Idempotente — pode rodar várias vezes.
+   * Executa a sync com filtros vindos da SyncFilterSheet (unidade obrigatória,
+   * intervalo de datas, preset de turno). Mergia os leads vindos do backend
+   * no store local (zustand+localStorage) — dedupe por id.
    */
-  const handleSync = async () => {
+  const handleSyncWithFilters = async (filters: SdrSyncFilters) => {
     if (syncing) return;
     setSyncing(true);
-    const t = toast.loading("Sincronizando leads da Cloudia…");
+    const desc =
+      `Unidade ${filters.unitId} · ` +
+      (filters.shift === "morning"
+        ? "08:00–12:00"
+        : filters.shift === "overnight"
+          ? "20:00–07:50"
+          : filters.shift === "custom"
+            ? `${filters.timeStart}–${filters.timeEnd}`
+            : "todo o dia");
+    const t = toast.loading(`Sincronizando Cloudia · ${desc}…`);
     try {
-      const summary = await sdrService.syncFromCloudia();
+      const summary = await sdrService.syncFromCloudia(filters);
       const localLeads = summary.items.map(sdrLeadFromBackend);
       const added = mergeSdrLeadsFromBackend(localLeads);
 
-      if (summary.created === 0 && summary.skipped === 0 && summary.failed === 0) {
-        toast.info("Nenhum lead novo da Cloudia.", { id: t });
+      setLastSyncInfo({
+        unitId: summary.unitId,
+        from: summary.from,
+        to: summary.to,
+        shiftStart: summary.shiftStart,
+        shiftEnd: summary.shiftEnd,
+      });
+
+      if (summary.created === 0) {
+        toast.info("Nenhum lead nessa janela.", { id: t });
       } else {
-        const parts: string[] = [];
-        if (summary.created > 0) parts.push(`${summary.created} novo(s)`);
-        if (summary.skipped > 0) parts.push(`${summary.skipped} já sincronizado(s)`);
-        if (summary.failed > 0) parts.push(`${summary.failed} com erro`);
         toast.success(
-          `Sincronização concluída. ${parts.join(" · ")}${added > 0 ? ` · ${added} adicionado(s) à fila de revisão` : ""}.`,
+          `${summary.created} lead(s) na janela · ${added} novo(s) na revisão.`,
           { id: t },
         );
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Erro desconhecido";
       toast.error(`Falha na sincronização: ${msg}`, { id: t });
     } finally {
       setSyncing(false);
@@ -110,9 +135,9 @@ export default function CadastroGeralPage() {
             </div>
             <button
               type="button"
-              onClick={handleSync}
+              onClick={() => setSyncSheetOpen(true)}
               disabled={syncing}
-              title="Busca leads que já estão no backend (vindos do webhook Cloudia) e ainda não estão na sua fila de revisão"
+              title="Escolha unidade, intervalo de datas e turno antes de sincronizar"
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-semibold transition-colors",
                 syncing
@@ -128,7 +153,7 @@ export default function CadastroGeralPage() {
               ) : (
                 <>
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Sincronizar Cloudia
+                  Sincronizar Cloudia…
                 </>
               )}
             </button>
@@ -137,6 +162,24 @@ export default function CadastroGeralPage() {
       />
 
       <CloudiaLegendBanner className="mb-5" />
+
+      {lastSyncInfo && (
+        <div className="mb-4 rounded-md border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-2.5 text-[12px] text-emerald-100">
+          <span className="font-semibold">Última sincronização: </span>
+          Unidade <code className="rounded bg-white/[0.04] px-1 text-[11px]">{lastSyncInfo.unitId}</code>{" "}
+          · {lastSyncInfo.from && new Date(lastSyncInfo.from).toLocaleString()} →{" "}
+          {lastSyncInfo.to && new Date(lastSyncInfo.to).toLocaleString()}
+          {lastSyncInfo.shiftStart && (
+            <>
+              {" "}
+              · turno{" "}
+              <code className="rounded bg-white/[0.04] px-1 text-[11px]">
+                {lastSyncInfo.shiftStart}–{lastSyncInfo.shiftEnd}
+              </code>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
@@ -223,6 +266,14 @@ export default function CadastroGeralPage() {
           onClose={() => setReviewLeadId(null)}
         />
       )}
+
+      {/* Modal de filtros de sincronização */}
+      <SyncFilterSheet
+        open={syncSheetOpen}
+        onClose={() => setSyncSheetOpen(false)}
+        onSubmit={handleSyncWithFilters}
+        defaultUnitId={contextUnitId ?? undefined}
+      />
     </div>
   );
 }
