@@ -1,0 +1,41 @@
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+.next/
+.vercel/
+*.local
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+
+# External projects (have their own repos / will be moved to legacy/)

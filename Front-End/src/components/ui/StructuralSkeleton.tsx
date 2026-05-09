@@ -5,7 +5,13 @@ import { cn } from "@/lib/utils";
  * Evitam "flash" de conteúdo e dão sensação de carregamento ordenado.
  */
 
-export function Shimmer({ className }: { className?: string }) {
+export function Shimmer({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       className={cn(
@@ -14,6 +20,7 @@ export function Shimmer({ className }: { className?: string }) {
         "before:bg-gradient-to-r before:from-transparent before:via-white/[0.06] before:to-transparent",
         className,
       )}
+      style={style}
     />
   );
 }
