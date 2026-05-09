@@ -127,20 +127,35 @@ export function Topbar() {
             </span>
           </div>
 
-          <div
+          <button
+            onClick={() => navigate("/perfil")}
+            title="Meu perfil"
             className={cn(
-              "relative h-8 w-8 shrink-0 select-none rounded-md",
+              "relative h-8 w-8 shrink-0 select-none rounded-md overflow-hidden",
               "bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]",
               "grid place-items-center",
               "text-[11px] font-semibold tracking-wide text-slate-100",
+              "transition hover:ring-white/[0.18]",
             )}
           >
-            {initials}
+            {user?.photoUrl ? (
+              <img
+                src={user.photoUrl}
+                alt={user?.name ?? "avatar"}
+                referrerPolicy="no-referrer"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              initials
+            )}
             <span
               aria-label="online"
               className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[#0a0a0d]"
             />
-          </div>
+          </button>
 
           <button
             onClick={logout}

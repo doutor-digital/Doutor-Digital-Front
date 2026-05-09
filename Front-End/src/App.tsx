@@ -65,6 +65,7 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
 const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
 const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
+const PerfilPage       = lazy(() => import("@/pages/PerfilPage"));
 
 // ─── Aceite de convite legado (mantido por compat — para tokens já enviados antes da migração)
 const CadastroPublicLayout  = lazy(() => import("@/components/cadastro/CadastroPublicLayout"));
@@ -205,9 +206,10 @@ export default function App() {
           <Route path="/sdr/listas"          element={<SdrListasDominioPage />}  />
           <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
 
-          {/* Integrações + Chef (auditoria global) */}
+          {/* Integrações + Chef (auditoria global) + Perfil */}
           <Route path="/integracoes"        element={<IntegracoesPage />}     />
           <Route path="/chef/audit-logs"    element={<ChefAuditPage />}       />
+          <Route path="/perfil"             element={<PerfilPage />}          />
 
           {/* Insights ── CAPI mockada + analytics agregadas */}
           <Route path="/insights"               element={<InsightsHubPage />}     />
