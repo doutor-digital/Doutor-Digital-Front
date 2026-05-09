@@ -7,8 +7,14 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./index.css";
 import { initThemeEarly } from "./hooks/useTheme";
+import { clearChunkReloadFlag } from "./lib/lazyWithRetry";
 
 initThemeEarly();
+
+// Se chegamos até aqui, o JS principal carregou — não precisamos mais da flag
+// de "tentei recarregar pra resolver chunk ausente". Limpar libera o retry pra
+// uma próxima vez que o usuário receber chunks do build novo enquanto navega.
+clearChunkReloadFlag();
 
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   registerSW({ immediate: true });
