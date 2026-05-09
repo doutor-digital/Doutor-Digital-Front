@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Gauge, Lock, Mail } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +8,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth";
+import { GoogleSignInButton } from "@/components/google/GoogleSignInButton";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -56,6 +57,29 @@ export default function LoginPage() {
     setLoading(false);
   }
 }
+
+const handleGoogleCredential = useCallback(async (idToken: string) => {
+  setLoading(true);
+  try {
+    const data = await authService.googleLogin(idToken);
+    login(
+      {
+        name: data.userName,
+        email: data.email,
+        role: data.role,
+      },
+      data.accessToken
+    );
+    setContext(data.selectedUnit.clinicId, data.selectedUnit.id);
+    toast.success("Login realizado com sucesso!");
+    navigate("/select-unit");
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || "Falha ao entrar com Google";
+    toast.error(msg);
+  } finally {
+    setLoading(false);
+  }
+}, [login, setContext, navigate]);
 
 return (
   <div className="min-h-screen grid lg:grid-cols-2 bg-white">
@@ -203,6 +227,16 @@ return (
         >
           Entrar no painel
         </Button>
+
+        <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-slate-600">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          ou
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleSignInButton onCredential={handleGoogleCredential} />
+        </div>
       </form>
     </div>
   </div>

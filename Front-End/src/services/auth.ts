@@ -53,6 +53,14 @@ export const authService = {
     return data;
   },
 
+  async googleLogin(idToken: string): Promise<LoginResponse> {
+    const { data } = await api.post<LoginResponse>(
+      "/api/auth/google",
+      { idToken }
+    );
+    return data;
+  },
+
   async forgotPassword(payload: ForgotPasswordRequest): Promise<SimpleMessageResponse> {
     const { data } = await api.post<SimpleMessageResponse>(
       "/api/auth/forgot-password",
