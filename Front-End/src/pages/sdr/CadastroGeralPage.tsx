@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   CheckCircle2,
   Eye,
   Filter,
+  Loader2,
+  RefreshCw,
   Search,
   Sparkles,
   XCircle,
@@ -14,7 +17,8 @@ import {
   CloudiaLegendBanner,
 } from "@/components/sdr/CloudiaField";
 import { LeadReviewSheet } from "@/components/sdr/LeadReviewSheet";
-import { useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
+import { mergeSdrLeadsFromBackend, useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
+import { sdrLeadFromBackend, sdrService } from "@/services/sdr";
 import type { SdrLead, SdrCloudiaFieldKey } from "@/types/sdr";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
@@ -28,6 +32,40 @@ export default function CadastroGeralPage() {
   const [filterTipo, setFilterTipo] = useState<FilterTipo>("todos");
   const [filterOrigem, setFilterOrigem] = useState<FilterOrigem>("todas");
   const [reviewLeadId, setReviewLeadId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  /**
+   * Dispara backfill no backend (POST /api/sdr/leads/sync-from-cloudia) e mergia
+   * os novos leads no localStorage. Idempotente — pode rodar várias vezes.
+   */
+  const handleSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    const t = toast.loading("Sincronizando leads da Cloudia…");
+    try {
+      const summary = await sdrService.syncFromCloudia();
+      const localLeads = summary.items.map(sdrLeadFromBackend);
+      const added = mergeSdrLeadsFromBackend(localLeads);
+
+      if (summary.created === 0 && summary.skipped === 0 && summary.failed === 0) {
+        toast.info("Nenhum lead novo da Cloudia.", { id: t });
+      } else {
+        const parts: string[] = [];
+        if (summary.created > 0) parts.push(`${summary.created} novo(s)`);
+        if (summary.skipped > 0) parts.push(`${summary.skipped} já sincronizado(s)`);
+        if (summary.failed > 0) parts.push(`${summary.failed} com erro`);
+        toast.success(
+          `Sincronização concluída. ${parts.join(" · ")}${added > 0 ? ` · ${added} adicionado(s) à fila de revisão` : ""}.`,
+          { id: t },
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      toast.error(`Falha na sincronização: ${msg}`, { id: t });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Esta página é a etapa de REVISÃO: só mostra leads pendentes de revisão.
   // Quem já foi aprovado/rejeitado vai para /sdr/leads-aprovados (bento).
@@ -63,11 +101,37 @@ export default function CadastroGeralPage() {
         title="Revisar leads"
         description="Cada linha é um lead que chegou na sua unidade e precisa da sua revisão antes de virar lead oficial. Clique em Revisar para aprovar ou rejeitar."
         actions={
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
-            <span>
-              {formatNumber(totalCloudia)} via Cloudia · {formatNumber(pendingLeads.length)} pendentes
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-400">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+              <span>
+                {formatNumber(totalCloudia)} via Cloudia · {formatNumber(pendingLeads.length)} pendentes
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={syncing}
+              title="Busca leads que já estão no backend (vindos do webhook Cloudia) e ainda não estão na sua fila de revisão"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-semibold transition-colors",
+                syncing
+                  ? "cursor-not-allowed border-white/[0.08] bg-white/[0.02] text-slate-500"
+                  : "border-emerald-400/30 bg-emerald-400/15 text-emerald-200 hover:border-emerald-400/50 hover:bg-emerald-400/25",
+              )}
+            >
+              {syncing ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Sincronizando…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Sincronizar Cloudia
+                </>
+              )}
+            </button>
           </div>
         }
       />
