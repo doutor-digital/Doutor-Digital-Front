@@ -24,6 +24,11 @@ export default defineConfig({
           /^\/logs\//,
           /^\/users\//,
         ],
+        // SW novo assume imediatamente após instalar, evitando 404 em assets
+        // de hash antigo após deploys consecutivos.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
       manifest: {
         name: "Doutor Digital · Insights",
