@@ -64,6 +64,17 @@ const SignupCadastroPage    = lazy(() => import("@/pages/cadastro/SignupCadastro
 const DashboardCadastroPage = lazy(() => import("@/pages/cadastro/DashboardCadastroPage"));
 const AceitarConvitePage    = lazy(() => import("@/pages/cadastro/AceitarConvitePage"));
 
+// ─── SDR Unificado (/sdr/*) — pages dentro do DashboardLayout principal ────
+const PainelSdrPage          = lazy(() => import("@/pages/sdr/PainelSdrPage"));
+const CadastroGeralPage      = lazy(() => import("@/pages/sdr/CadastroGeralPage"));
+const SdrConsultasPage       = lazy(() => import("@/pages/sdr/ConsultasPage"));
+const SdrTratamentosPage     = lazy(() => import("@/pages/sdr/TratamentosPage"));
+const SdrTarefasPage         = lazy(() => import("@/pages/sdr/TarefasPage"));
+const SdrAgendaPage          = lazy(() => import("@/pages/sdr/AgendaPage"));
+const SdrMetasPage           = lazy(() => import("@/pages/sdr/MetasPage"));
+const SdrRelatoriosPage      = lazy(() => import("@/pages/sdr/RelatoriosPage"));
+const SdrListasDominioPage   = lazy(() => import("@/pages/sdr/ListasDominioPage"));
+
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
 
 function RouteLoader() {
@@ -218,6 +229,17 @@ export default function App() {
           <Route path="/contacts/new"      element={<ContactFormPage />}  />
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />
           <Route path="/contacts/:id"      element={<ContactDetailPage />} />
+
+          {/* SDR Unificado — substitui o sistema separado /cadastro/* dentro do dashboard principal */}
+          <Route path="/sdr"                element={<PainelSdrPage />}        />
+          <Route path="/sdr/cadastro-geral" element={<CadastroGeralPage />}    />
+          <Route path="/sdr/consultas"      element={<SdrConsultasPage />}     />
+          <Route path="/sdr/tratamentos"    element={<SdrTratamentosPage />}   />
+          <Route path="/sdr/tarefas"        element={<SdrTarefasPage />}       />
+          <Route path="/sdr/agenda"         element={<SdrAgendaPage />}        />
+          <Route path="/sdr/metas"          element={<SdrMetasPage />}         />
+          <Route path="/sdr/listas"         element={<SdrListasDominioPage />} />
+          <Route path="/sdr/relatorios"     element={<SdrRelatoriosPage />}    />
 
           {/* Insights ── CAPI mockada + analytics agregadas */}
           <Route path="/insights"               element={<InsightsHubPage />}     />

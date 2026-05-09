@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\douto\\\\Doutor-Digital-Front\" -Directory -Force)",
+      "Bash(Select-Object Name)",
+      "Bash(ConvertTo-Json)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(npm run *)"
+    ]
+  }
+}
