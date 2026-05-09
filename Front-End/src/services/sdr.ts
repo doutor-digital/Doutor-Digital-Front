@@ -18,6 +18,35 @@ export interface SdrSyncSummary {
   failed: number;
   /** Os SdrLead recém-criados — pra mergiar imediatamente no localStorage. */
   items: SdrLeadResponseDto[];
+  /** Eco da janela usada (pra UI confirmar). */
+  from?: string;
+  to?: string;
+  unitId?: number;
+  shiftStart?: string;
+  shiftEnd?: string;
+}
+
+/**
+ * Filtros enviados ao backend pra restringir a sincronização.
+ *
+ * Presets de turno:
+ *  - "morning":   08:00 - 12:00 (turno manhã)
+ *  - "overnight": 20:00 - 07:50 (atravessa meia-noite)
+ *  - "custom":    usa timeStart/timeEnd
+ *  - undefined:   sem filtro de horário
+ */
+export interface SdrSyncFilters {
+  unitId?: number;
+  /** ISO (UTC). Default: últimos 30 dias. */
+  from?: string;
+  /** ISO (UTC). Default: agora. */
+  to?: string;
+  shift?: "morning" | "overnight" | "custom";
+  /** "HH:mm" em horário Brasília. Usado quando shift = "custom". */
+  timeStart?: string;
+  /** "HH:mm" em horário Brasília. Se < timeStart, atravessa meia-noite. */
+  timeEnd?: string;
+  limit?: number;
 }
 
 export interface SdrLeadResponseDto {
@@ -58,11 +87,17 @@ export interface SdrLeadResponseDto {
 
 export const sdrService = {
   /**
-   * Dispara backfill no backend: copia leads da tabela legada que ainda não estão
-   * em sdr_leads. Idempotente — pode chamar quantas vezes quiser.
+   * Dispara backfill no backend: lê leads da tabela `leads` (gravados pelo
+   * webhook Cloudia) que casam com os filtros e devolve o snapshot.
+   * Idempotente — pode chamar quantas vezes quiser.
+   *
+   * Sem filtros, traz os últimos 30 dias do tenant inteiro.
    */
-  async syncFromCloudia(): Promise<SdrSyncSummary> {
-    const r = await api.post<SdrSyncSummary>("/api/sdr/leads/sync-from-cloudia");
+  async syncFromCloudia(filters: SdrSyncFilters = {}): Promise<SdrSyncSummary> {
+    const r = await api.post<SdrSyncSummary>(
+      "/api/sdr/leads/sync-from-cloudia",
+      filters,
+    );
     return r.data;
   },
 };
