@@ -143,13 +143,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Cadastra · SDR",
+    label: "Central de Cadastros",
     items: [
       {
-        label: "cadastra.ai (Unificado)",
+        label: "Cadastros · SDR",
         icon: ClipboardPlus,
         basePaths: ["/sdr"],
-        badge: "Cloudia",
         children: [
           { to: "/sdr",                  label: "Painel SDR",            icon: Sparkles,       end: true },
           { to: "/sdr/cadastro-geral",   label: "Revisar leads",         icon: Users,          badge: "Novo" },
@@ -162,18 +161,6 @@ const navGroups: NavGroup[] = [
           { to: "/sdr/auditoria",        label: "Auditoria",              icon: FileSearch },
           { to: "/sdr/listas",           label: "Listas de domínio",      icon: BookOpen },
           { to: "/sdr/relatorios",       label: "Relatórios",             icon: FileBarChart },
-        ],
-      },
-      {
-        label: "Sistema legado",
-        icon: Plug2,
-        basePaths: ["/cadastro"],
-        children: [
-          { to: "/cadastro",               label: "Painel cadastra.ai (legado)", icon: ClipboardPlus, end: true },
-          { to: "/cadastro/leads",         label: "Leads (legado)",              icon: Users },
-          { to: "/cadastro/importados",    label: "Importados",                  icon: UploadCloud },
-          { to: "/cadastro/empresa/criar", label: "Nova empresa",                icon: Building2 },
-          { to: "/cadastro/integracoes",   label: "Integrações Kommo/Cloudia",   icon: Plug2 },
         ],
       },
     ],
