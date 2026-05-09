@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { Loader2 } from "lucide-react";
+import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
@@ -54,6 +55,14 @@ const LeadsMapPage        = lazy(() => import("@/pages/LeadsMapPage"));
 const QualityScorePage    = lazy(() => import("@/pages/QualityScorePage"));
 
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
+
+// ─── cadastra.ai (subdomínio /cadastro/*) ─────────────────────────────────
+const CadastroLayout        = lazy(() => import("@/components/cadastro/CadastroLayout"));
+const CadastroPublicLayout  = lazy(() => import("@/components/cadastro/CadastroPublicLayout"));
+const LoginCadastroPage     = lazy(() => import("@/pages/cadastro/LoginCadastroPage"));
+const SignupCadastroPage    = lazy(() => import("@/pages/cadastro/SignupCadastroPage"));
+const DashboardCadastroPage = lazy(() => import("@/pages/cadastro/DashboardCadastroPage"));
+const AceitarConvitePage    = lazy(() => import("@/pages/cadastro/AceitarConvitePage"));
 
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
 
@@ -108,6 +117,61 @@ export default function App() {
 
         {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
         <Route path="/logs" element={<LogsPage />} />
+
+        {/* cadastra.ai — rotas públicas (login, signup, aceitar convite) */}
+        <Route element={<CadastroPublicLayout />}>
+          <Route path="/cadastro/login"  element={<LoginCadastroPage />} />
+          <Route path="/cadastro/signup" element={<SignupCadastroPage />} />
+          <Route path="/cadastro/aceitar-convite/:token" element={<AceitarConvitePage />} />
+        </Route>
+
+        {/* cadastra.ai — área protegida (dashboard interno + sub-views por search params) */}
+        <Route
+          element={
+            <CadastroLayout />
+          }
+        >
+          <Route
+            path="/cadastro"
+            element={
+              <RequireCadastraAuth>
+                <DashboardCadastroPage />
+              </RequireCadastraAuth>
+            }
+          />
+          <Route
+            path="/cadastro/leads"
+            element={
+              <RequireCadastraAuth>
+                <DashboardCadastroPage />
+              </RequireCadastraAuth>
+            }
+          />
+          <Route
+            path="/cadastro/importados"
+            element={
+              <RequireCadastraAuth>
+                <DashboardCadastroPage />
+              </RequireCadastraAuth>
+            }
+          />
+          <Route
+            path="/cadastro/integracoes"
+            element={
+              <RequireCadastraAuth>
+                <DashboardCadastroPage />
+              </RequireCadastraAuth>
+            }
+          />
+          <Route
+            path="/cadastro/empresa/criar"
+            element={
+              <RequireCadastraAuth>
+                <DashboardCadastroPage />
+              </RequireCadastraAuth>
+            }
+          />
+        </Route>
 
         {/* Seleção de unidade — requer login, mas não clínica */}
         <Route

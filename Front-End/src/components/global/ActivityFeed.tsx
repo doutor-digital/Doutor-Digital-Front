@@ -197,8 +197,8 @@ export function ActivityFeed() {
               {items.map((it) => {
                 const meta = KIND_META[it.kind];
                 const Icon = meta.icon;
-                const Wrapper = it.to ? Link : "div";
-                const wrapperProps = it.to ? { to: it.to } : ({} as Record<string, never>);
+                const Wrapper = (it.to ? Link : "div") as React.ElementType;
+                const wrapperProps: Record<string, unknown> = it.to ? { to: it.to } : {};
                 return (
                   <li key={it.id}>
                     <Wrapper
