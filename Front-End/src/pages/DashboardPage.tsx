@@ -17,7 +17,6 @@ import {
 import { Button } from "@/components/ui/Button";
 import { webhooksService } from "@/services/webhooks";
 import { contactsService } from "@/services/contacts";
-import { metricsService } from "@/services/metrics";
 import { unitsService } from "@/services/units";
 import { assignmentsService } from "@/services/assignments";
 import { useClinic } from "@/hooks/useClinic";
@@ -173,12 +172,6 @@ export default function DashboardPage() {
     enabled: !!evolucaoClinicId,
   });
 
-  const resumoLive = useQuery({
-    queryKey: ["live-resumo", unitId],
-    queryFn: () => metricsService.resumo(unitId || undefined),
-    refetchInterval: 30_000,
-  });
-
   const ativos = useQuery({
     queryKey: ["active", unitId],
     queryFn: () =>
@@ -328,15 +321,6 @@ export default function DashboardPage() {
       title: "Meta ideal distante",
       detail: `Faltam ${faltamIdeal} consultas para atingir a meta ideal`,
       time: "1 h atrás",
-    });
-  }
-  if (resumoLive.data?.tempoMedio && resumoLive.data.tempoMedio > 60) {
-    alerts.push({
-      id: "queue-long",
-      severity: "info",
-      title: "Leads aguardando há mais de 1 hora",
-      detail: "Recomendamos prioridade no atendimento",
-      time: "15 min atrás",
     });
   }
 

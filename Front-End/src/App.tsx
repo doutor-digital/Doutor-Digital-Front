@@ -2,12 +2,8 @@ import { ReactElement, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
-<<<<<<< HEAD
 import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
-=======
-import { Loader2 } from "lucide-react";
->>>>>>> 9eaf965 (feat: update sidebar labels and remove legacy system links; enhance IntegracoesPage with provider management and Cloudia connection modal)
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
@@ -26,7 +22,6 @@ const LeadReviewPage   = lazy(() => import("@/pages/LeadReviewPage"));
 const FunnelPage       = lazy(() => import("@/pages/FunnelPage"));
 const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
 const EvolutionPage    = lazy(() => import("@/pages/EvolutionPage"));
-const LiveMetricsPage  = lazy(() => import("@/pages/LiveMetricsPage"));
 const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
@@ -174,7 +169,6 @@ export default function App() {
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/sources"           element={<SourcesPage />}      />
           <Route path="/evolution"         element={<EvolutionPage />}    />
-          <Route path="/live"              element={<LiveMetricsPage />}  />
           <Route path="/analytics"         element={<AnalyticsPage />}    />
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/attendants"        element={<AttendantsPage />}   />

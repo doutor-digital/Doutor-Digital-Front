@@ -94,9 +94,8 @@ const navGroups: NavGroup[] = [
       {
         label: "Performance",
         icon: Gauge,
-        basePaths: ["/live", "/analytics", "/evolution"],
+        basePaths: ["/analytics", "/evolution"],
         children: [
-          { to: "/live", label: "Ao vivo", icon: Radio },
           { to: "/analytics", label: "Analytics", icon: BarChart3 },
           { to: "/evolution", label: "Evolução", icon: LineChart },
         ],
@@ -138,7 +137,6 @@ const navGroups: NavGroup[] = [
         children: [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
           { to: "/amanheceu", label: "Amanheceu", icon: Sunrise, badge: "Novo" },
-          { to: "/live", label: "Ao vivo (por unidade)", icon: Radio },
         ],
       },
     ],

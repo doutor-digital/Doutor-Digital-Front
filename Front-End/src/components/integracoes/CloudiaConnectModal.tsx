@@ -15,77 +15,171 @@ interface Props {
 
 /**
  * Mapeia o campo do payload Cloudia → o campo no nosso sistema.
- * Esta tabela serve de DOCUMENTAÇÃO viva pro usuário que está
- * configurando o webhook: ele vê exatamente onde cada coisa aparece.
+ * Esta tabela é a especificação que você passa pra Cloudia.
  *
- * Origem do mapping: backend `CloudiaAdapter` + `Models.Lead`.
+ * Origem do mapping: backend `LeadController · POST /webhooks/cloudia` →
+ * `LeadService.SaveLeadAsync` + `StageWebhookDispatcher` (gatilhos por etapa).
  */
 const FIELD_MAPPING: Array<{
+  group: string;
   cloudia: string;
   label: string;
+  type: string;
   location: string;
+  required?: boolean;
 }> = [
-  {
-    cloudia: "data.name",
-    label: "Nome",
-    location: "Revisar leads · coluna Nome",
-  },
-  {
-    cloudia: "data.phone",
-    label: "Telefone",
-    location: "Revisar leads · coluna Telefone (E.164)",
-  },
-  {
-    cloudia: "data.clinic_id",
-    label: "Clínica / Tenant",
-    location: "Lead.TenantId (filtro de unidade)",
-  },
-  {
-    cloudia: "data.source",
-    label: "Origem",
-    location: "Revisar leads · coluna Origem",
-  },
-  {
-    cloudia: "data.tags[]",
-    label: "Tags",
-    location: "Lead.Tags + filtro 'Resgate:*'",
-  },
-  {
-    cloudia: "data.stage / status",
-    label: "Situação",
-    location: "Lead.CurrentStage · funil",
-  },
-  {
-    cloudia: "data.assigned_user",
-    label: "Atendente",
-    location: "Lead.Attendant.Name · 'Responsável'",
-  },
-  {
-    cloudia: "data.observation",
-    label: "Observação",
-    location: "Revisar leads · coluna Observação",
-  },
-  {
-    cloudia: "data.appointment_at",
-    label: "Agendamento",
-    location: "Lead.HasAppointment · 'Agendou consulta'",
-  },
-  {
-    cloudia: "createdAt",
-    label: "Data Origem",
-    location: "Lead.CreatedAt",
-  },
-  {
-    cloudia: "updatedAt",
-    label: "Data Modificação",
-    location: "Lead.UpdatedAt",
-  },
-  {
-    cloudia: "event_type",
-    label: "Tipo do evento",
-    location: "Audit log · CUSTOMER_CREATED/UPDATED",
-  },
+  // ─── Identificação (sempre vêm) ────────────────────────────────────
+  { group: "Identificação", cloudia: "type",                  label: "Tipo do evento",          type: "string",   location: "audit_logs · CUSTOMER_CREATED / UPDATED / STAGE / TAGS / ASSIGNED", required: true },
+  { group: "Identificação", cloudia: "data.id",               label: "ID do contato",           type: "int",      location: "Lead.ExternalId · chave de idempotência", required: true },
+  { group: "Identificação", cloudia: "data.clinic_id",        label: "Clínica / Tenant",        type: "int",      location: "Lead.TenantId · filtro de unidade", required: true },
+  { group: "Identificação", cloudia: "data.name",             label: "Nome",                    type: "string",   location: "Lead.Name · coluna Nome", required: true },
+  { group: "Identificação", cloudia: "data.phone",            label: "Telefone",                type: "E.164",    location: "Lead.Phone (normalizado)", required: true },
+  { group: "Identificação", cloudia: "data.email",            label: "Email",                   type: "string",   location: "Lead.Email" },
+  { group: "Identificação", cloudia: "data.cpf",              label: "CPF",                     type: "string",   location: "Lead.Cpf" },
+  { group: "Identificação", cloudia: "data.gender",           label: "Gênero",                  type: "string",   location: "Lead.Gender" },
+
+  // ─── Atribuição (origem dos leads) ─────────────────────────────────
+  { group: "Atribuição",    cloudia: "data.source",           label: "Origem",                  type: "string",   location: "Lead.Source (Facebook, Instagram, Google…)" },
+  { group: "Atribuição",    cloudia: "data.last_ad_id",       label: "Anúncio",                 type: "string",   location: "Lead.LastAdId" },
+  { group: "Atribuição",    cloudia: "data.idfacebookapp",    label: "Pixel Meta",              type: "string",   location: "Lead.IdFacebookApp" },
+  { group: "Atribuição",    cloudia: "data.id_channel_integration", label: "Canal",            type: "int",      location: "Lead.IdChannelIntegration" },
+  { group: "Atribuição",    cloudia: "data.tags[]",           label: "Tags",                    type: "array",    location: "Lead.Tags · 'Resgate:*' classifica como recuperação" },
+
+  // ─── Estado / Funil ────────────────────────────────────────────────
+  { group: "Funil",         cloudia: "data.stage",            label: "Etapa atual",             type: "string",   location: "Lead.CurrentStage · gatilho do dispatcher", required: true },
+  { group: "Funil",         cloudia: "data.id_stage",         label: "ID da etapa",             type: "int",      location: "Lead.CurrentStageId" },
+  { group: "Funil",         cloudia: "data.assigned_user",    label: "Atendente",               type: "string",   location: "Lead.Attendant.Name · 'Responsável'" },
+  { group: "Funil",         cloudia: "data.has_health_insurance_plan", label: "Plano de saúde", type: "bool",     location: "Lead.HasHealthInsurancePlan" },
+  { group: "Funil",         cloudia: "data.observations",     label: "Observação",              type: "string",   location: "Lead.Observations · coluna Observação" },
+  { group: "Funil",         cloudia: "data.conversationState", label: "Estado da conversa",     type: "string",   location: "Lead.ConversationState" },
+
+  // ─── Consulta (gatilhos: 04/05/06/07) ──────────────────────────────
+  { group: "Consulta",      cloudia: "stage = 04_AGENDADO_SEM_PAGAMENTO", label: "Agendou (paga no dia)", type: "trigger", location: "Cria Consultation · paid_in_advance=false" },
+  { group: "Consulta",      cloudia: "stage = 05_AGENDADO_COM_PAGAMENTO", label: "Agendou (já pagou)",    type: "trigger", location: "Cria Consultation · paid_in_advance=true" },
+  { group: "Consulta",      cloudia: "stage = 06_NAO_COMPARECEU",        label: "Faltou",                 type: "trigger", location: "Consultation.Status = 'faltou'" },
+  { group: "Consulta",      cloudia: "stage = 07_COMPARECEU_CONSULTA",   label: "Compareceu",             type: "trigger", location: "Consultation.Status = 'realizada'" },
+  { group: "Consulta",      cloudia: "data.appointment_at",   label: "Data do agendamento",     type: "datetime", location: "Consultation.ScheduledAt" },
+
+  // ─── Tratamento (gatilhos: 09/17) ──────────────────────────────────
+  { group: "Tratamento",    cloudia: "stage = 09_TRATAMENTO_FECHADO",    label: "Fechou tratamento",      type: "trigger", location: "Cria Treatment · status='aguardando_dados' (SDR preenche depois)" },
+  { group: "Tratamento",    cloudia: "stage = 17_NAO_DEU_CONTINUIDADE",  label: "Perdeu",                 type: "trigger", location: "Treatment.ClosedAsLost = true · pede motivo" },
+  { group: "Tratamento",    cloudia: "(SDR preenche)",        label: "Tipo do tratamento",      type: "string",   location: "Treatment.TreatmentType" },
+  { group: "Tratamento",    cloudia: "(SDR preenche)",        label: "Duração (meses)",         type: "int",      location: "Treatment.DurationMonths" },
+  { group: "Tratamento",    cloudia: "(SDR preenche)",        label: "Valor total",             type: "decimal",  location: "Treatment.TotalValue" },
+
+  // ─── Pagamentos (parcelas — preenchidas pela SDR) ──────────────────
+  { group: "Pagamentos",    cloudia: "(SDR preenche)",        label: "Parcela N · valor",       type: "decimal",  location: "TreatmentInstallment[N].Amount" },
+  { group: "Pagamentos",    cloudia: "(SDR preenche)",        label: "Parcela N · forma",       type: "enum",     location: "TreatmentInstallment[N].PaymentMethod (pix/dinheiro/débito/crédito/boleto)" },
+  { group: "Pagamentos",    cloudia: "(SDR preenche)",        label: "Parcela N · vencimento",  type: "date",     location: "TreatmentInstallment[N].DueDate" },
+  { group: "Pagamentos",    cloudia: "(SDR preenche)",        label: "Parcela N · pago em",     type: "datetime", location: "TreatmentInstallment[N].PaidAt" },
+
+  // ─── Auditoria ─────────────────────────────────────────────────────
+  { group: "Auditoria",     cloudia: "data.created_at",       label: "Data origem",             type: "datetime", location: "Lead.CreatedAt" },
+  { group: "Auditoria",     cloudia: "data.last_updated_at",  label: "Data modificação",        type: "datetime", location: "Lead.UpdatedAt · idempotência" },
 ];
+
+/** Payload de exemplo que você cola pro time da Cloudia validar. */
+const EXAMPLE_PAYLOAD = {
+  type: "CUSTOMER_STAGE_CHANGED",
+  data: {
+    id: 12345,
+    clinic_id: 8020,
+    name: "Maria da Silva",
+    phone: "+5563999990000",
+    email: "maria@example.com",
+    source: "Facebook Ads",
+    stage: "04_AGENDADO_SEM_PAGAMENTO",
+    id_stage: 4,
+    assigned_user: "Adriele",
+    tags: ["Hérnia inguinal"],
+    has_health_insurance_plan: false,
+    observations: "Cliente prefere atendimento de manhã.",
+    appointment_at: "2026-05-15T09:00:00-03:00",
+    created_at: "2026-05-09T14:30:00-03:00",
+    last_updated_at: "2026-05-09T15:10:00-03:00",
+  },
+};
+
+const STAGE_LIST = [
+  ["01_ENTRADA_LEAD",          "Cria/atualiza Lead"],
+  ["02_LEAD_SEM_RESPOSTA",     "Só atualiza etapa"],
+  ["03_LEAD_QUENTE_QUALIFICADO","Só atualiza etapa"],
+  ["04_AGENDADO_SEM_PAGAMENTO","Cria Consulta · paga no dia"],
+  ["05_AGENDADO_COM_PAGAMENTO","Cria Consulta · pago antecipado"],
+  ["06_NAO_COMPARECEU",        "Marca Consulta como 'faltou'"],
+  ["07_COMPARECEU_CONSULTA",   "Marca Consulta como 'realizada'"],
+  ["09_TRATAMENTO_FECHADO",    "Cria Tratamento · aguardando dados da SDR"],
+  ["12_CANCELAMENTO",          "Só atualiza etapa"],
+  ["13_ALTA_SATISFEITO",       "Só atualiza etapa"],
+  ["14_ALTA_INSATISFEITO",     "Só atualiza etapa"],
+  ["15_NAO_PERTURBAR",         "Só atualiza etapa"],
+  ["16_ENCAMINHADO",           "Só atualiza etapa"],
+  ["17_NAO_DEU_CONTINUIDADE",  "Marca Tratamento como perdido"],
+];
+
+/**
+ * Monta a especificação completa em markdown.
+ * Use o botão "Copiar especificação" e cole no WhatsApp/Slack/email da Cloudia.
+ */
+function buildSpecMarkdown(): string {
+  const groups = Array.from(new Set(FIELD_MAPPING.map((r) => r.group)));
+  const tableFor = (g: string) => {
+    const rows = FIELD_MAPPING.filter((r) => r.group === g);
+    const lines = [
+      `### ${g}`,
+      "",
+      "| Campo | Tipo | Obrigatório | Onde aparece |",
+      "|---|---|---|---|",
+      ...rows.map(
+        (r) =>
+          `| \`${r.cloudia}\` | ${r.type} | ${r.required ? "✅" : "—"} | ${r.label} · ${r.location} |`,
+      ),
+      "",
+    ];
+    return lines.join("\n");
+  };
+
+  const stageTable = [
+    "### Etapas (data.stage) → Ação no sistema",
+    "",
+    "| Etapa | Ação |",
+    "|---|---|",
+    ...STAGE_LIST.map(([s, a]) => `| \`${s}\` | ${a} |`),
+    "",
+  ].join("\n");
+
+  return [
+    "# Integração Cloudia → Doutor Digital",
+    "",
+    "Especificação do webhook que recebe leads/eventos da Cloudia e mapeia para o sistema.",
+    "",
+    "## Endpoint",
+    "",
+    "```",
+    "POST https://doutor-digital-dash-production.up.railway.app/webhooks/cloudia",
+    "Content-Type: application/json",
+    "```",
+    "",
+    "Idempotência: a chave é `(provider, contact_id, stage, occurred_at)`. Webhook duplicado é absorvido.",
+    "",
+    "## Campos do payload",
+    "",
+    ...groups.map(tableFor),
+    stageTable,
+    "## Payload de exemplo",
+    "",
+    "```json",
+    JSON.stringify(EXAMPLE_PAYLOAD, null, 2),
+    "```",
+    "",
+    "## Resposta",
+    "",
+    "- `200 OK` → `{ status: 'queued', envelopeId: 123 }` — evento enfileirado",
+    "- `200 OK` → `{ status: 'duplicate' }` — evento já recebido (sem ação)",
+    "- `400 Bad Request` → payload inválido",
+    "",
+  ].join("\n");
+}
 
 type Tab = "webhook" | "apikey" | "campos";
 
@@ -278,43 +372,120 @@ export function CloudiaConnectModal({ open, onClose, onConnected }: Props) {
 
           {tab === "campos" && (
             <>
-              <p className="text-[13px] text-slate-300">
-                A Cloudia envia este payload (extrato dos campos principais).
-                A coluna direita mostra <strong>onde aparece</strong> no nosso sistema.
-              </p>
-              <div className="overflow-hidden rounded-md border border-white/[0.06]">
-                <table className="w-full text-[12px]">
-                  <thead className="bg-white/[0.02] text-[10px] uppercase tracking-widest text-slate-500">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Campo Cloudia</th>
-                      <th className="px-3 py-2 text-left">→</th>
-                      <th className="px-3 py-2 text-left">Onde aparece</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
-                    {FIELD_MAPPING.map((row) => (
-                      <tr key={row.cloudia} className="hover:bg-white/[0.02]">
-                        <td className="px-3 py-2 font-mono text-[11px] text-cyan-200">
-                          {row.cloudia}
-                        </td>
-                        <td className="px-3 py-2 text-slate-600">→</td>
-                        <td className="px-3 py-2">
-                          <span className="text-slate-200">{row.label}</span>
-                          <span className="ml-2 text-[10.5px] text-slate-500">
-                            ({row.location})
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[13px] text-slate-300">
+                  Especificação completa pra você passar para a Cloudia. Cada
+                  linha = um campo do payload + onde ele aparece no sistema.
+                </p>
+                <Button
+                  onClick={() => copy(buildSpecMarkdown())}
+                  className="shrink-0 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Copiar especificação
+                </Button>
+              </div>
+
+              <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
+                {/* Tabela agrupada */}
+                {Array.from(new Set(FIELD_MAPPING.map((r) => r.group))).map(
+                  (group) => (
+                    <section
+                      key={group}
+                      className="rounded-md border border-white/[0.06] overflow-hidden"
+                    >
+                      <header className="flex items-center gap-2 bg-white/[0.03] px-3 py-1.5 text-[10px] uppercase tracking-widest text-slate-400">
+                        {group}
+                      </header>
+                      <table className="w-full text-[12px]">
+                        <thead className="bg-white/[0.01] text-[10px] uppercase tracking-widest text-slate-500">
+                          <tr>
+                            <th className="px-3 py-1.5 text-left w-[36%]">
+                              Campo no payload
+                            </th>
+                            <th className="px-3 py-1.5 text-left w-[16%]">Tipo</th>
+                            <th className="px-3 py-1.5 text-left">
+                              Aparece em
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.04]">
+                          {FIELD_MAPPING.filter((r) => r.group === group).map(
+                            (row, i) => (
+                              <tr key={`${group}-${i}`} className="hover:bg-white/[0.02]">
+                                <td className="px-3 py-1.5">
+                                  <code className="font-mono text-[11px] text-cyan-200">
+                                    {row.cloudia}
+                                  </code>
+                                  {row.required && (
+                                    <span className="ml-1.5 rounded-full bg-rose-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase text-rose-300 ring-1 ring-inset ring-rose-400/20">
+                                      req
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-1.5 text-slate-400 font-mono text-[10.5px]">
+                                  {row.type}
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <span className="text-slate-200">{row.label}</span>
+                                  <span className="ml-2 text-[10.5px] text-slate-500">
+                                    {row.location}
+                                  </span>
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                    </section>
+                  ),
+                )}
+
+                {/* Lista de etapas → ações */}
+                <section className="rounded-md border border-white/[0.06] overflow-hidden">
+                  <header className="bg-white/[0.03] px-3 py-1.5 text-[10px] uppercase tracking-widest text-slate-400">
+                    Etapas (data.stage) → Ação no sistema
+                  </header>
+                  <table className="w-full text-[12px]">
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {STAGE_LIST.map(([stage, action]) => (
+                        <tr key={stage} className="hover:bg-white/[0.02]">
+                          <td className="px-3 py-1.5 font-mono text-[11px] text-cyan-200 w-[40%]">
+                            {stage}
+                          </td>
+                          <td className="px-3 py-1.5 text-slate-300">{action}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+
+                {/* Payload de exemplo */}
+                <section className="rounded-md border border-white/[0.06] overflow-hidden">
+                  <header className="flex items-center justify-between bg-white/[0.03] px-3 py-1.5">
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400">
+                      Payload de exemplo (POST {webhookUrl})
+                    </span>
+                    <button
+                      onClick={() =>
+                        copy(JSON.stringify(EXAMPLE_PAYLOAD, null, 2))
+                      }
+                      className="text-[11px] text-slate-400 hover:text-slate-200"
+                    >
+                      <Copy className="inline-block h-3 w-3 mr-1" /> copiar JSON
+                    </button>
+                  </header>
+                  <pre className="bg-black/30 px-3 py-3 text-[11px] text-slate-300 font-mono leading-relaxed overflow-x-auto">
+{JSON.stringify(EXAMPLE_PAYLOAD, null, 2)}
+                  </pre>
+                </section>
               </div>
 
               <p className="text-[11.5px] text-slate-500">
-                Backend: <code>LeadController · POST /webhooks/cloudia</code> chama{" "}
-                <code>LeadService.SaveLeadAsync</code> que persiste em{" "}
-                <code>Models.Lead</code>. A tela de revisão lê via{" "}
-                <code>POST /api/sdr/leads/sync-from-cloudia</code>.
+                Backend: <code>LeadController · POST /webhooks/cloudia</code> →
+                enfileira em <code>webhook_envelopes</code> (idempotência por{" "}
+                <code>provider + contact_id + stage + occurred_at</code>) →{" "}
+                <code>StageWebhookDispatcher</code> roteia por etapa.
               </p>
             </>
           )}
