@@ -19,7 +19,6 @@ const LeadDetailPage   = lazy(() => import("@/pages/LeadDetailPage"));
 const FunnelPage       = lazy(() => import("@/pages/FunnelPage"));
 const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
 const EvolutionPage    = lazy(() => import("@/pages/EvolutionPage"));
-const LiveMetricsPage  = lazy(() => import("@/pages/LiveMetricsPage"));
 const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
@@ -164,7 +163,6 @@ export default function App() {
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/sources"           element={<SourcesPage />}      />
           <Route path="/evolution"         element={<EvolutionPage />}    />
-          <Route path="/live"              element={<LiveMetricsPage />}  />
           <Route path="/analytics"         element={<AnalyticsPage />}    />
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/attendants"        element={<AttendantsPage />}   />
