@@ -268,6 +268,8 @@ export const webhooksService = {
     dateFrom: string;
     dateTo: string;
     unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
   }): Promise<DashboardOverview> {
     const { data } = await api.get<DashboardOverview>("/webhooks/dashboard-overview", {
       params: cleanParams({
@@ -275,6 +277,8 @@ export const webhooksService = {
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
         unitId: toInt(params.unitId),
+        attendantId: toInt(params.attendantId),
+        source: params.source && params.source.length > 0 ? params.source : undefined,
       }),
     });
     return data;
@@ -303,6 +307,9 @@ export const webhooksService = {
     dateTo: string;
     groupBy?: GroupByGranularity;
     compare?: CompareMode;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
   }): Promise<DashboardEvolutionResponse> {
     const { data } = await api.get<DashboardEvolutionResponse>("/webhooks/evolution-range", {
       params: cleanParams({
@@ -311,9 +318,22 @@ export const webhooksService = {
         dateTo: params.dateTo,
         groupBy: params.groupBy ?? "day",
         compare: params.compare ?? "none",
+        unitId: toInt(params.unitId),
+        attendantId: toInt(params.attendantId),
+        source: params.source && params.source.length > 0 ? params.source : undefined,
       }),
     });
     return data;
+  },
+
+  async distinctSources(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<string[]> {
+    const { data } = await api.get<string[]>("/webhooks/sources", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+      }),
+    });
+    return Array.isArray(data) ? data : [];
   },
 
   async syncHealth(): Promise<unknown> {

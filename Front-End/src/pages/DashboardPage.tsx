@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/Button";
 import { webhooksService } from "@/services/webhooks";
 import { contactsService } from "@/services/contacts";
 import { metricsService } from "@/services/metrics";
+import { unitsService } from "@/services/units";
+import { assignmentsService } from "@/services/assignments";
 import { useClinic } from "@/hooks/useClinic";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -97,16 +99,58 @@ export default function DashboardPage() {
     user?.name?.trim() || user?.email?.split("@")[0] || "Doutor";
   const firstName = fullName.split(" ")[0];
 
-  const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
-  const [period] = useState<string>("Hoje");
+  const [filters, setFilters] = useState<DashboardFiltersState>(() => ({
+    ...defaultFilters(),
+    unitId: unitId ? Number(unitId) : null,
+  }));
+
+  // Se o usuário trocar a unidade pelo seletor global (useClinic), sincroniza.
+  useEffect(() => {
+    setFilters((prev) =>
+      prev.unitId === (unitId ? Number(unitId) : null)
+        ? prev
+        : { ...prev, unitId: unitId ? Number(unitId) : null },
+    );
+  }, [unitId]);
+
+  /* ----- Listas para os selects de filtro ----- */
+  const unitsList = useQuery({
+    queryKey: ["units", tenantId],
+    queryFn: () => unitsService.list(),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
+
+  const attendantsList = useQuery({
+    queryKey: ["attendants"],
+    queryFn: () => assignmentsService.listAttendants(),
+    staleTime: 60_000,
+  });
+
+  const sourcesList = useQuery({
+    queryKey: ["sources", tenantId, filters.unitId],
+    queryFn: () =>
+      webhooksService.distinctSources({
+        clinicId: tenantId ?? undefined,
+        unitId: filters.unitId ?? undefined,
+      }),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
 
   /* ----- Queries ----- */
   const overviewClinicId = tenantId ?? unitId ?? undefined;
+  const filterUnitId = filters.unitId ?? undefined;
+  const filterAttendantId = filters.attendantId ?? undefined;
+  const filterSource = filters.source ?? undefined;
+
   const overview = useQuery({
     queryKey: [
       "dashboard-overview",
       overviewClinicId,
-      unitId,
+      filterUnitId,
+      filterAttendantId,
+      filterSource,
       filters.startDate,
       filters.endDate,
     ],
@@ -115,17 +159,22 @@ export default function DashboardPage() {
         clinicId: overviewClinicId,
         dateFrom: filters.startDate,
         dateTo: filters.endDate,
-        unitId: unitId || undefined,
+        unitId: filterUnitId,
+        attendantId: filterAttendantId,
+        source: filterSource,
       }),
     enabled: !!overviewClinicId,
     placeholderData: (prev) => prev,
   });
 
-  const evolucaoClinicId = unitId ?? tenantId ?? undefined;
+  const evolucaoClinicId = tenantId ?? unitId ?? undefined;
   const evolucao = useQuery({
     queryKey: [
       "evolution-range",
       evolucaoClinicId,
+      filterUnitId,
+      filterAttendantId,
+      filterSource,
       filters.startDate,
       filters.endDate,
       filters.granularity,
@@ -138,6 +187,9 @@ export default function DashboardPage() {
         dateTo: filters.endDate,
         groupBy: filters.granularity,
         compare: filters.compare,
+        unitId: filterUnitId,
+        attendantId: filterAttendantId,
+        source: filterSource,
       }),
     enabled: !!evolucaoClinicId,
   });
@@ -193,6 +245,30 @@ export default function DashboardPage() {
       })),
     [evolucao.data],
   );
+
+  // Série de comparação (período anterior / mesmo período/ano), quando ativada.
+  const evoComparisonSeries = useMemo(() => {
+    const cmp = evolucao.data?.comparison;
+    if (!cmp || cmp.length === 0) return undefined;
+    // Alinha pelos buckets da série atual usando o índice — assim os pontos
+    // ficam lado a lado mesmo que as datas sejam diferentes.
+    return cmp.map((p, i) => ({
+      label: p.label,
+      compareV: p.count,
+      currentLabel: evolucao.data?.current?.[i]?.label,
+    }));
+  }, [evolucao.data]);
+
+  // Série combinada para plotar atual + comparação no mesmo gráfico.
+  const evoCombinedSeries = useMemo(() => {
+    if (!evoComparisonSeries) return evoSeries.map((p) => ({ ...p, compareV: undefined as number | undefined }));
+    const len = Math.max(evoSeries.length, evoComparisonSeries.length);
+    return Array.from({ length: len }, (_, i) => ({
+      label: evoSeries[i]?.label ?? evoComparisonSeries[i]?.label ?? "",
+      v: evoSeries[i]?.v ?? 0,
+      compareV: evoComparisonSeries[i]?.compareV,
+    }));
+  }, [evoSeries, evoComparisonSeries]);
 
   // Para os outros KPIs (em atendimento / fila / conversão), criamos uma
   // série derivada mantendo o "shape" da curva de leads — substitua aqui
@@ -324,22 +400,23 @@ export default function DashboardPage() {
               <IconImg src={ICONS.calendarCheck} className="h-4 w-4" /> Relatório
             </Button>
           </Link>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[12.5px] text-slate-200 transition hover:bg-white/[0.04]"
-          >
-            <IconImg src={ICONS.calendar} className="h-3.5 w-3.5" />
-            Período: {period}
-            <IconImg src={ICONS.chevronDown} className="h-3.5 w-3.5" />
-          </button>
         </div>
       </div>
 
-      {/* ---- Filtros (mantidos do código original) ---- */}
+      {/* ---- Filtros ---- */}
       <DashboardFilters
         value={filters}
         onChange={setFilters}
         onSearch={handleSearch}
+        units={(unitsList.data ?? []).map((u) => ({
+          id: u.id,
+          label: u.name || `Unidade ${u.id}`,
+        }))}
+        attendants={(attendantsList.data ?? []).map((a) => ({
+          id: a.id,
+          label: a.name || a.email || `Atendente ${a.id}`,
+        }))}
+        sources={sourcesList.data ?? []}
       />
 
       {/* ---- Linha de mini KPIs (6 colunas) ---- */}
@@ -417,13 +494,14 @@ export default function DashboardPage() {
         <ChartKpi
           label="Total de leads"
           value={formatNumber(total)}
-          data={evoSeries}
+          data={evoCombinedSeries}
           stroke="#38bdf8"
           chip="bg-sky-500/10 text-sky-300 ring-sky-500/25"
           icon={<IconImg src={ICONS.userPlus} className="h-4 w-4" />}
           delta={change !== null ? `${Math.abs(change).toFixed(1)}%` : "—"}
           deltaUp={changeUp}
           loading={overviewLoading || evolucao.isLoading}
+          showComparison={filters.compare !== "none"}
         />
         <ChartKpi
           label="Em atendimento"
@@ -757,13 +835,14 @@ function GoalCard({
 interface ChartKpiProps {
   label: string;
   value: string;
-  data: { label: string; v: number }[];
+  data: { label: string; v: number; compareV?: number }[];
   stroke: string;
   chip: string;
   icon: React.ReactNode;
   delta: string;
   deltaUp: boolean;
   loading?: boolean;
+  showComparison?: boolean;
 }
 function ChartKpi({
   label,
@@ -775,8 +854,12 @@ function ChartKpi({
   delta,
   deltaUp,
   loading,
+  showComparison,
 }: ChartKpiProps) {
   const gradId = `grad-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  const cmpGradId = `grad-cmp-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  const hasComparison =
+    showComparison && data.some((p) => typeof p.compareV === "number");
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.015] p-5 transition hover:border-white/[0.1] hover:bg-white/[0.025]">
@@ -813,6 +896,12 @@ function ChartKpi({
                   <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
                   <stop offset="100%" stopColor={stroke} stopOpacity={0} />
                 </linearGradient>
+                {hasComparison && (
+                  <linearGradient id={cmpGradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#94a3b8" stopOpacity={0} />
+                  </linearGradient>
+                )}
               </defs>
               <Tooltip
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
@@ -825,8 +914,20 @@ function ChartKpi({
                   padding: "4px 8px",
                 }}
                 labelStyle={{ display: "none" }}
-                formatter={(val) => [val ?? "—", label]}
+                formatter={(val, name) => [val ?? "—", name === "compareV" ? "Comparação" : label]}
               />
+              {hasComparison && (
+                <Area
+                  type="monotone"
+                  dataKey="compareV"
+                  stroke="#94a3b8"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 3"
+                  fill={`url(#${cmpGradId})`}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="v"
