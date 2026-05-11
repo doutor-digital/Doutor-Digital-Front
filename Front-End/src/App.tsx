@@ -16,6 +16,7 @@ const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
 const LeadsPage        = lazy(() => import("@/pages/LeadsPage"));
 const LeadDetailPage   = lazy(() => import("@/pages/LeadDetailPage"));
+const LeadReviewPage   = lazy(() => import("@/pages/LeadReviewPage"));
 const FunnelPage       = lazy(() => import("@/pages/FunnelPage"));
 const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
 const EvolutionPage    = lazy(() => import("@/pages/EvolutionPage"));
@@ -196,6 +197,7 @@ export default function App() {
           <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/leads"             element={<LeadsPage />}        />
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
+          <Route path="/leads/:id/revisar" element={<LeadReviewPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/sources"           element={<SourcesPage />}      />

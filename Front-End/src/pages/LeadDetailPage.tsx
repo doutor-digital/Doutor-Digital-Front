@@ -326,6 +326,12 @@ export default function LeadDetailPage() {
             </Button>
           )}
           <Link
+            to={`/leads/${l.id}/revisar`}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-950 bg-emerald-500 hover:bg-emerald-400 px-3 py-1.5 rounded-md transition shadow-[0_4px_14px_-4px_rgba(16,185,129,0.35)]"
+          >
+            <Pencil className="h-3.5 w-3.5" /> Revisar lead
+          </Link>
+          <Link
             to={`/leads/${l.id}/journey`}
             className="flex items-center gap-1.5 text-[11px] text-slate-300 hover:text-emerald-300 bg-white/[0.02] hover:bg-emerald-500/[0.06] border border-white/[0.08] hover:border-emerald-500/30 px-3 py-1.5 rounded-md transition"
           >
