@@ -9,10 +9,10 @@ import {
   Phone,
   ShieldCheck,
   UserCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { authService, type MeResponse } from "@/services/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 
 export default function PerfilPage() {
   const { user } = useAuth();

@@ -6,7 +6,7 @@ import {
   ShieldAlert,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import {
   auditService,

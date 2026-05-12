@@ -13,7 +13,7 @@ import {
   TrendingUp,
   XCircle,
   AlertTriangle,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";

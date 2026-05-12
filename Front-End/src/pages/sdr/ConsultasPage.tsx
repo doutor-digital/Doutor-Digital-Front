@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Search, XCircle } from "lucide-react";
+import { CheckCircle2, Search, XCircle } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   CloudiaCell,

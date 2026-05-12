@@ -15,7 +15,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CloudiaInlineBadge, CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
 import { useIsClient, useSdrCounts, useSdrStore } from "@/lib/sdr/sdr-store";

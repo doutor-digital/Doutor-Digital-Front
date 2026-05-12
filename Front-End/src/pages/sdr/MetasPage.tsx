@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Award, Sparkles, Target, TrendingUp } from "lucide-react";
+import { Award, Sparkles, Target, TrendingUp } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CloudiaLegendBanner, CloudiaInlineBadge } from "@/components/sdr/CloudiaField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2, ShieldCheck, Building2, AlertTriangle } from "lucide-react";
+import { Loader2, ShieldCheck, Building2, AlertTriangle } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { invitationsService, type InvitationInfo } from "@/services/invitations";

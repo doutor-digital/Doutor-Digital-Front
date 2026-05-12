@@ -13,7 +13,7 @@ import {
   UploadCloud,
   Users,
   XCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CloudiaInlineBadge } from "@/components/sdr/CloudiaField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";

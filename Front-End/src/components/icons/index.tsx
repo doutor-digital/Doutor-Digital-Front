@@ -128,6 +128,11 @@ import {
   TagIcon,
   TrashIcon,
   TrophyIcon,
+  BookOpenIcon,
+  HandThumbDownIcon,
+  HandThumbUpIcon,
+  PrinterIcon,
+  ShieldExclamationIcon,
   UserCircleIcon,
   UserIcon,
   UserPlusIcon,
@@ -340,6 +345,18 @@ export const CloudDownload = CloudArrowUpIcon;
 export const Percent = CurrencyDollarIcon;
 export const CalendarCheck2 = CalendarDaysIcon;
 export const ClipboardListIcon = ClipboardDocumentListIcon;
+export const BookOpen = BookOpenIcon;
+export const ChefHat = SparklesIcon;
+export const FileSearch = MagnifyingGlassIcon;
+export const ShieldAlert = ShieldExclamationIcon;
+export const Stethoscope = HeartIcon;
+export const UserPen = PencilIcon;
+export const ThumbsUp = HandThumbUpIcon;
+export const ThumbsDown = HandThumbDownIcon;
+export const UserCircle = UserCircleIcon;
+export const Edit3 = PencilIcon;
+export const Printer = PrinterIcon;
+export const Circle = StopCircleIcon;
 
 // Alguns nomes que aparecem mas correspondem direto a algo já exportado por nome —
 // também re-exporto pro caso de uso em outros arquivos.

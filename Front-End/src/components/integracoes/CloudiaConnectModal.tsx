@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, Eye, EyeOff, Save, Webhook, X, ArrowRight } from "lucide-react";
+import { Copy, Eye, EyeOff, Save, Webhook, X, ArrowRight } from "@/components/icons";
 import { Link } from "react-router-dom";
 import { configurationService } from "@/services/configuration";
 import { Button } from "@/components/ui/Button";
