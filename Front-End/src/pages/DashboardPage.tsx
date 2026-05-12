@@ -28,45 +28,24 @@ import {
   defaultFilters,
 } from "@/components/filters/DashboardFilters";
 import { SnapshotButton } from "@/components/global/SnapshotButton";
-
-/* ============================================================
- * Ícones — cole abaixo as URLs das imagens (copiadas da internet).
- * Cada chave é referenciada via <IconImg src={ICONS.xxx} ... />.
- * ========================================================== */
-
-const ICONS = {
-  alertCircle: "",
-  alertTriangle: "",
-  calendar: "",
-  calendarCheck: "",
-  checkCircle: "",
-  chevronDown: "",
-  clipboardList: "",
-  clock: "https://cdn-icons-png.flaticon.com/512/5772/5772632.png",
-  cloudDownload: "https://cdn-icons-png.flaticon.com/512/4911/4911643.png",
-  headset: "https://cdn-icons-png.flaticon.com/512/3576/3576867.png",
-  info: "",
-  messageCircle: "",
-  percent: "https://png.pngtree.com/png-clipart/20230805/original/pngtree-rounded-vector-icon-of-ecofriendly-sales-funnel-in-flat-green-color-vector-picture-image_9728714.png",
-  phone: "",
-  target: "",
-  userPlus: "https://cdn-icons-png.flaticon.com/512/12774/12774902.png",
-  webhook: "https://i.sstatic.net/S3SNU.jpg",
-} as const;
-
-function IconImg({
-  src,
-  className,
-  alt = "",
-}: {
-  src: string;
-  className?: string;
-  alt?: string;
-}) {
-  return (
-    <img src={src} alt={alt} className={cn("object-contain", className)} />
-  );
-}
+import {
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  CalendarCheck,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  CloudDownload,
+  Headset,
+  Info,
+  MessageCircle,
+  Percent,
+  Phone as PhoneIcon,
+  Target,
+  UserPlus,
+  Webhook,
+} from "@/components/icons";
 
 /* ============================================================
  * Helpers
@@ -397,7 +376,7 @@ export default function DashboardPage() {
           </Link>
           <Link to="/reports">
             <Button size="sm" className="gap-2">
-              <IconImg src={ICONS.calendarCheck} className="h-4 w-4" /> Relatório
+              <CalendarCheck className="h-4 w-4" /> Relatório
             </Button>
           </Link>
         </div>
@@ -422,13 +401,13 @@ export default function DashboardPage() {
       {/* ---- Linha de mini KPIs (6 colunas) ---- */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
         <MiniKpi
-          icon={<IconImg src={ICONS.userPlus} className="h-20 w-20" />}
+          icon={<UserPlus className="h-20 w-20" />}
           tone="sky"
           value={overviewLoading ? "…" : formatNumber(total)}
           label="leads no total"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.webhook} className="h-20 w-20" />}
+          icon={<Webhook className="h-20 w-20" />}
           tone="violet"
           value={
             contatosCounts.isLoading ? "…" : formatNumber(webhookCount)
@@ -436,7 +415,7 @@ export default function DashboardPage() {
           label="webhook"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.cloudDownload} className="h-20 w-20" />}
+          icon={<CloudDownload className="h-20 w-20" />}
           tone="cyan"
           value={
             contatosCounts.isLoading ? "…" : formatNumber(importedCount)
@@ -444,19 +423,19 @@ export default function DashboardPage() {
           label="importados"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.clock} className="h-20 w-20" />}
+          icon={<Clock className="h-20 w-20" />}
           tone="amber"
           value={overviewLoading ? "…" : formatNumber(inQueue)}
           label="na fila"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.headset} className="h-20 w-20" />}
+          icon={<Headset className="h-20 w-20" />}
           tone="emerald"
           value={overviewLoading ? "…" : formatNumber(inService)}
           label="em atendimento"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.percent} className="h-20 w-20" />}
+          icon={<Percent className="h-20 w-20" />}
           tone="fuchsia"
           value={overviewLoading ? "…" : formatPercent(conversao)}
           label="de conversão"
@@ -497,7 +476,7 @@ export default function DashboardPage() {
           data={evoCombinedSeries}
           stroke="#38bdf8"
           chip="bg-sky-500/10 text-sky-300 ring-sky-500/25"
-          icon={<IconImg src={ICONS.userPlus} className="h-4 w-4" />}
+          icon={<UserPlus className="h-4 w-4" />}
           delta={change !== null ? `${Math.abs(change).toFixed(1)}%` : "—"}
           deltaUp={changeUp}
           loading={overviewLoading || evolucao.isLoading}
@@ -509,7 +488,7 @@ export default function DashboardPage() {
           data={evoServiceSeries}
           stroke="#34d399"
           chip="bg-emerald-500/10 text-emerald-300 ring-emerald-500/25"
-          icon={<IconImg src={ICONS.headset} className="h-4 w-4" />}
+          icon={<Headset className="h-4 w-4" />}
           delta="8.3%"
           deltaUp
           loading={overviewLoading}
@@ -520,7 +499,7 @@ export default function DashboardPage() {
           data={evoQueueSeries}
           stroke="#fbbf24"
           chip="bg-amber-500/10 text-amber-300 ring-amber-500/25"
-          icon={<IconImg src={ICONS.clock} className="h-4 w-4" />}
+          icon={<Clock className="h-4 w-4" />}
           delta="33.3%"
           deltaUp={false}
           loading={overviewLoading}
@@ -531,7 +510,7 @@ export default function DashboardPage() {
           data={evoConvSeries}
           stroke="#e879f9"
           chip="bg-fuchsia-500/10 text-fuchsia-300 ring-fuchsia-500/25"
-          icon={<IconImg src={ICONS.percent} className="h-4 w-4" />}
+          icon={<Percent className="h-4 w-4" />}
           delta="0.6 p.p."
           deltaUp
           loading={overviewLoading}
@@ -796,7 +775,7 @@ function GoalCard({
             palette.icon,
           )}
         >
-          <IconImg src={ICONS.target} className="h-5 w-5" />
+          <Target className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
@@ -868,7 +847,7 @@ function ChartKpi({
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             {label}
           </p>
-          <IconImg src={ICONS.info} className="h-3 w-3" />
+          <Info className="h-3 w-3" />
         </div>
         <div
           className={cn(
@@ -1001,27 +980,27 @@ function activityIcon(kind: ActivityKind): {
   switch (kind) {
     case "call":
       return {
-        icon: <IconImg src={ICONS.phone} className="h-4 w-4" />,
+        icon: <PhoneIcon className="h-4 w-4" />,
         bg: TONES.sky,
       };
     case "form":
       return {
-        icon: <IconImg src={ICONS.clipboardList} className="h-4 w-4" />,
+        icon: <ClipboardList className="h-4 w-4" />,
         bg: TONES.indigo,
       };
     case "converted":
       return {
-        icon: <IconImg src={ICONS.checkCircle} className="h-4 w-4" />,
+        icon: <CheckCircle2 className="h-4 w-4" />,
         bg: TONES.emerald,
       };
     case "scheduled":
       return {
-        icon: <IconImg src={ICONS.calendarCheck} className="h-4 w-4" />,
+        icon: <CalendarCheck className="h-4 w-4" />,
         bg: TONES.amber,
       };
     default:
       return {
-        icon: <IconImg src={ICONS.messageCircle} className="h-4 w-4" />,
+        icon: <MessageCircle className="h-4 w-4" />,
         bg: TONES.emerald,
       };
   }
@@ -1157,13 +1136,13 @@ const ALERT_PALETTE: Record<
 function alertIcon(severity: AlertSeverity): React.ReactNode {
   switch (severity) {
     case "danger":
-      return <IconImg src={ICONS.alertTriangle} className="h-4 w-4" />;
+      return <AlertTriangle className="h-4 w-4" />;
     case "warn":
-      return <IconImg src={ICONS.alertCircle} className="h-4 w-4" />;
+      return <AlertCircle className="h-4 w-4" />;
     case "info":
-      return <IconImg src={ICONS.info} className="h-4 w-4" />;
+      return <Info className="h-4 w-4" />;
     case "violet":
-      return <IconImg src={ICONS.target} className="h-4 w-4" />;
+      return <Target className="h-4 w-4" />;
   }
 }
 
@@ -1172,7 +1151,7 @@ function AlertsPanel({ items }: { items: AlertItem[] }) {
     <section className="rounded-xl border border-white/[0.06] bg-white/[0.015]">
       <header className="flex items-center justify-between border-b border-white/[0.05] px-5 py-3.5">
         <div className="flex items-center gap-2">
-          <IconImg src={ICONS.alertTriangle} className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
             Alertas críticos
           </h3>

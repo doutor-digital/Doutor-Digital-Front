@@ -36,7 +36,7 @@ import {
   Route,
   MousePointerClick,
   Gauge,
-} from "lucide-react";
+} from "@/components/icons";
 import { useState, useRef } from "react";
 import { StageBadge, StateBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";

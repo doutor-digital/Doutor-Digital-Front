@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { UserPlus, CheckCircle2, AlertCircle, Pencil } from 'lucide-react'
+import { UserPlus, CheckCircle2, AlertCircle, Pencil } from "@/components/icons"
 import { CadastroFormShell } from './form-shell'
 import { TextInput, SelectInput, Segmented, ToggleSwitch } from './form-fields'
 import {

@@ -10,7 +10,7 @@ import {
   UserPlus,
   X,
   Zap,
-} from "lucide-react";
+} from "@/components/icons";
 import { Link } from "react-router-dom";
 import { useGlobalUI } from "@/hooks/useGlobalUI";
 import { useClinic } from "@/hooks/useClinic";

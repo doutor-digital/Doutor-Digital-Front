@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Building2, Menu, RefreshCw, Search } from "lucide-react";
+import { Bell, Building2, Menu, RefreshCw, Search } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { cn } from "@/lib/utils";

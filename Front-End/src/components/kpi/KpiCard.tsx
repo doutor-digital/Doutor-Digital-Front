@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "@/components/icons";
 import { cn, formatNumber } from "@/lib/utils";
 
 // ─── KpiCard (legado) — renderiza agora o visual canônico do Kpi ──────────────

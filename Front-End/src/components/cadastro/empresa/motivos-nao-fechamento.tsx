@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Loader2, AlertCircle, Palette, ShieldCheck } from 'lucide-react'
+import { Plus, Trash2, Loader2, AlertCircle, Palette, ShieldCheck } from "@/components/icons"
 import {
   motivosNaoFechamentoApi,
   type MotivoNaoFechamentoDto,

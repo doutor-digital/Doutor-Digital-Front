@@ -37,7 +37,7 @@ import {
   HelpCircle,
   X,
   Activity,
-} from 'lucide-react'
+} from "@/components/icons"
 import { cn } from '@/lib/utils'
 import {
   buildKommoWebhookUrl,

@@ -1,7 +1,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Trash2, Search, UserPlus, Users, RefreshCw, AlertTriangle, UploadCloud } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Trash2, Search, UserPlus, Users, RefreshCw, AlertTriangle, UploadCloud } from "@/components/icons"
 import { clearAllLocal, deleteLead, useCadastroStore } from '@/lib/cadastra/cadastro-store'
 import { leadsApi, type CreateLeadPayload, type LeadSummaryDto } from '@/lib/cadastra/api'
 import { useEmpresa } from '@/contexts/cadastra/empresa-context'

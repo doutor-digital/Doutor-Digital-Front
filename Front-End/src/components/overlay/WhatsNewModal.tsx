@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "@/components/icons";
 import { useShortcut } from "@/hooks/useShortcut";
 import { cn } from "@/lib/utils";
 

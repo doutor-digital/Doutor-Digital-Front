@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Wallet, Eye, Pencil, ClipboardCheck, HeartPulse } from 'lucide-react'
+import { ArrowLeft, Wallet, Eye, Pencil, ClipboardCheck, HeartPulse } from "@/components/icons"
 import { useCadastroStore } from '@/lib/cadastra/cadastro-store'
 import type { Consulta, Recebimento, Tratamento } from '@/types/cadastra'
 import { cn } from '@/lib/utils'

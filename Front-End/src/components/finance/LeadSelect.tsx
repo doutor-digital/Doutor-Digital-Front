@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, Loader2, Search, User, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Search, User, X } from "@/components/icons";
 import { webhooksService } from "@/services/webhooks";
 import { useClinic } from "@/hooks/useClinic";
 import { cn } from "@/lib/utils";

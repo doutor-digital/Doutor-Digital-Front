@@ -11,7 +11,7 @@ import {
   Sparkles,
   Search,
   Check,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn, formatNumber, stageLabel, truncate } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";

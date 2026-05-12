@@ -2,7 +2,7 @@ import { ReactElement, Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────

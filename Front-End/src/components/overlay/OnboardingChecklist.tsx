@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Check, ChevronDown, Rocket, X } from "lucide-react";
+import { Check, ChevronDown, Rocket, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type StepId = "unit" | "attendant" | "lead" | "report" | "integration";

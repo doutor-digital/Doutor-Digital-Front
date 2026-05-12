@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/icons";
 import { useShortcut } from "@/hooks/useShortcut";
 import { cn } from "@/lib/utils";
 

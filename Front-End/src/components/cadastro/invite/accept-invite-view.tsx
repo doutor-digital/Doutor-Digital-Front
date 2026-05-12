@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Building2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Building2 } from "@/components/icons"
 import { invitesApi, type InvitePreviewDto } from '@/lib/cadastra/api'
 import { useAuth } from '@/contexts/cadastra/auth-context'
 import { useGoogleAuth } from '@/hooks/cadastra/use-google-auth'

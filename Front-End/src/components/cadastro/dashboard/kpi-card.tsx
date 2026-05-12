@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion'
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from "@/components/icons"
 import { AnimatedNumber } from '@/cadastra-ui/animated-number'
 
 interface MiniSparklineProps {
@@ -89,7 +89,7 @@ export function KPICard({
           className="p-2 rounded-lg"
           style={{ backgroundColor: `${iconColor}15` }}
         >
-          <Icon size={18} style={{ color: iconColor }} />
+          <Icon className="h-[18px] w-[18px]" style={{ color: iconColor }} />
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function KPICard({
         <div className={`flex items-center gap-1 text-sm font-medium ${
           isPositive ? 'text-emerald-400' : isNeutral ? 'text-muted-foreground' : 'text-red-400'
         }`}>
-          <DeltaIcon size={14} />
+          <DeltaIcon className="h-3.5 w-3.5" />
           <span>{isPositive ? '+' : ''}{delta.toFixed(1)}%</span>
         </div>
         <span className="text-xs text-muted-foreground">{deltaLabel}</span>

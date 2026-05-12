@@ -20,7 +20,7 @@ import {
   Eye,
   EyeOff,
   Inbox,
-} from 'lucide-react'
+} from "@/components/icons"
 import { cn } from '@/lib/utils'
 import {
   cloudiaApi,

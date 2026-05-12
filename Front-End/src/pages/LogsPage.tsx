@@ -23,7 +23,7 @@ import {
   TriangleAlert,
   User as UserIcon,
   Zap,
-} from "lucide-react";
+} from "@/components/icons";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";

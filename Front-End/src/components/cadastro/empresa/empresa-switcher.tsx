@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, Check, ChevronsUpDown, Plus, Loader2 } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, Plus, Loader2 } from "@/components/icons"
 import { useEmpresa } from '@/contexts/cadastra/empresa-context'
 import { resolveAssetUrl } from '@/lib/cadastra/api'
 import { cn } from '@/lib/utils'

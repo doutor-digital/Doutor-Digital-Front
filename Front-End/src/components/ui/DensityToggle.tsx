@@ -1,4 +1,4 @@
-import { Rows3, Rows4 } from "lucide-react";
+import { Rows3, Rows4 } from "@/components/icons";
 import { useDensity, type Density } from "@/hooks/useDensity";
 import { cn } from "@/lib/utils";
 

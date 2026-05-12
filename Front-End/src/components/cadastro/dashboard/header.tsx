@@ -1,5 +1,5 @@
 
-import { Calendar, Filter, Infinity as InfinityIcon } from 'lucide-react'
+import { Calendar, Filter, Infinity as InfinityIcon } from "@/components/icons"
 import { cn } from '@/lib/utils'
 import type { DashboardFilters } from '@/types/cadastra'
 

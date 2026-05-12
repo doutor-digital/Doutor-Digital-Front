@@ -9,7 +9,7 @@ import { formatNumber, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
   TrendingUp, Target, BarChart2, Zap, Award, ArrowUpRight, ArrowDownRight, Minus,
-} from "lucide-react";
+} from "@/components/icons";
 
 /* ═══════════════════════════════════════════════════════════
    PAGE

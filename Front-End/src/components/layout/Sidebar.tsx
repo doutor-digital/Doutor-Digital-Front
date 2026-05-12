@@ -48,7 +48,7 @@ import {
   Users2,
   Wallet,
   Workflow,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { SavedViewsSection } from "./SavedViewsSection";
 

@@ -16,7 +16,7 @@ import {
   Plug2,
   Layers,
   type LucideIcon,
-} from 'lucide-react'
+} from "@/components/icons"
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/cadastra/auth-context'
 import { useStoreCounts, useIsClient } from '@/lib/cadastra/cadastro-store'

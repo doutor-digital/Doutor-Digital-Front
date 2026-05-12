@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Loader2, Plus, Trash2, Check, AlertCircle } from "lucide-react";
+import { X, Loader2, Plus, Trash2, Check, AlertCircle } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";

@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Building2, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Loader2, Building2, ArrowRight, ArrowLeft } from "@/components/icons"
 import { useAuth } from '@/contexts/cadastra/auth-context'
 import { useEmpresa } from '@/contexts/cadastra/empresa-context'
 import { empresasApi } from '@/lib/cadastra/api'

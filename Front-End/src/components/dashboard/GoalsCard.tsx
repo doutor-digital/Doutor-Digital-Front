@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Flame, Pencil, TrendingUp, X } from "lucide-react";
+import { Check, Flame, Pencil, TrendingUp, X } from "@/components/icons";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { Confetti } from "@/components/global/Confetti";
 import { useStreak, useRecordStreakOnGoal } from "@/hooks/useStreak";

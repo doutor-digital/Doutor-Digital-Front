@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from "@/components/icons";
 import { ACCENTS, useAccent, type Accent } from "@/hooks/useAccent";
 import { cn } from "@/lib/utils";
 

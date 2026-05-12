@@ -5,7 +5,7 @@ import {
   Contact as ContactIcon,
   DollarSign,
   MoreHorizontal,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 const TABS = [

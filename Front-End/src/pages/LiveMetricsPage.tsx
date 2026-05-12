@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Radio, RefreshCw, Timer, Users } from "lucide-react";
+import { Radio, RefreshCw, Timer, Users } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { KpiCard } from "@/components/kpi/KpiCard";

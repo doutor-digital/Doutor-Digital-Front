@@ -16,7 +16,7 @@ import {
   User2,
   UserCog,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";

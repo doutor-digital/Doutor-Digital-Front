@@ -40,7 +40,7 @@ import {
   Video,
   Wallet,
   Wifi,
-} from "lucide-react";
+} from "@/components/icons";
 import {
   Area,
   AreaChart,

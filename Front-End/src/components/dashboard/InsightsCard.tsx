@@ -6,7 +6,7 @@ import {
   Lightbulb,
   Minus,
   TrendingUp,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
 
 const INSIGHTS_ICON =

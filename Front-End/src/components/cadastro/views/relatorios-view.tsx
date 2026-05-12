@@ -15,7 +15,7 @@ import {
   Sparkles,
   Check,
   Loader2,
-} from 'lucide-react'
+} from "@/components/icons"
 import { toPng } from 'html-to-image'
 import { DashboardView } from '@/components/cadastro/dashboard/dashboard-view'
 import { useCadastroStore } from '@/lib/cadastra/cadastro-store'

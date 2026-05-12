@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from "@/components/icons"
 import { useAuth } from '@/contexts/cadastra/auth-context'
 import { useGoogleAuth } from '@/hooks/cadastra/use-google-auth'
 import { cn } from '@/lib/utils'
