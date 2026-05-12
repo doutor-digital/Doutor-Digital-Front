@@ -207,7 +207,7 @@ export default function RecentLeadsPage() {
               {items.map((lead) => (
                 <li key={lead.id}>
                   <Link
-                    to={`/leads/${lead.id}`}
+                    to={`/leads/${lead.id}/revisar`}
                     className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.04]"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold text-slate-300">

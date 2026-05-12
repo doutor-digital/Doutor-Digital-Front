@@ -201,12 +201,12 @@ export default function LeadsPage() {
                     clickable
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest("a")) return;
-                      navigate(`/leads/${l.id}`);
+                      navigate(`/leads/${l.id}/revisar`);
                     }}
                   >
                     <Td>
                       <Link
-                        to={`/leads/${l.id}`}
+                        to={`/leads/${l.id}/revisar`}
                         className="flex items-center gap-3 hover:text-slate-50 transition"
                       >
                         <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-100">

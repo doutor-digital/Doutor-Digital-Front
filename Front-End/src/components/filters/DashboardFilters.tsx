@@ -328,16 +328,16 @@ function FilterSelect({
   emptyLabel?: string;
 }) {
   return (
-    <label className="flex items-center gap-1.5">
-      <span className="text-slate-500">{icon}</span>
-      <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+        <span className="text-slate-500">{icon}</span>
         {label}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "ml-1 h-7 rounded-md border bg-white/[0.02] px-2 pr-7 text-[11.5px] font-medium",
+          "h-8 w-full min-w-0 truncate rounded-md border bg-white/[0.02] px-2.5 pr-8 text-[12px] font-medium",
           "text-slate-200 outline-none transition appearance-none",
           "border-white/[0.08] hover:border-white/[0.14] hover:bg-white/[0.04]",
           "focus:border-white/[0.2] focus:bg-white/[0.05]",
@@ -347,7 +347,7 @@ function FilterSelect({
           backgroundImage:
             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>\")",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "right 6px center",
+          backgroundPosition: "right 8px center",
         }}
       >
         <option value="">{emptyLabel}</option>
@@ -385,55 +385,17 @@ export function DashboardFilters({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-xl",
+        "flex flex-col gap-3 rounded-xl",
         "border border-white/[0.07] bg-gradient-to-b from-white/[0.02] to-white/[0.005]",
         "shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]",
         "px-4 py-3",
       )}
     >
-    <div className="flex flex-wrap items-center gap-2">
-      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-
-      <PeriodDropdown value={value} onChange={onChange} />
-
-      <div className="h-5 w-px bg-white/[0.05]" />
-
-      <div className="flex items-center gap-1.5">
-        <BarChart2 className="h-3.5 w-3.5 text-slate-500" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
-          Agrupar
-        </span>
-        <div className="ml-1 inline-flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06] gap-0.5">
-          {GRANULARITIES.map((g) => (
-            <FilterBtn
-              key={g.value}
-              active={isGranularity(g.value)}
-              onClick={() => onChange({ ...value, granularity: g.value })}
-            >
-              {g.label}
-            </FilterBtn>
-          ))}
-        </div>
-      </div>
-
-      <div className="h-5 w-px bg-white/[0.05]" />
-
-      <div className="flex items-center gap-1.5">
-        <GitCompare className="h-3.5 w-3.5 text-slate-500" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
-          Comparar
-        </span>
-        <div className="ml-1 inline-flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06] gap-0.5">
-          {COMPARE_MODES.map((c) => (
-            <FilterBtn
-              key={c.value}
-              active={isCompare(c.value)}
-              onClick={() => onChange({ ...value, compare: c.value })}
-            >
-              {c.label}
-            </FilterBtn>
-          ))}
-        </div>
+    {/* Linha 1: período + ações (sempre visível, com wrap suave) */}
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+        <PeriodDropdown value={value} onChange={onChange} />
       </div>
 
       <div className="ml-auto flex items-center gap-2">
@@ -460,8 +422,47 @@ export function DashboardFilters({
       </div>
     </div>
 
+    {/* Linha 2: granularidade + comparar (grid responsiva, sem cortar) */}
+    <div className="grid grid-cols-1 gap-3 border-t border-white/[0.04] pt-3 sm:grid-cols-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          <BarChart2 className="h-3.5 w-3.5 text-slate-500" />
+          Agrupar
+        </span>
+        <div className="inline-flex flex-wrap items-center gap-0.5 rounded-lg border border-white/[0.06] bg-white/[0.03] p-0.5">
+          {GRANULARITIES.map((g) => (
+            <FilterBtn
+              key={g.value}
+              active={isGranularity(g.value)}
+              onClick={() => onChange({ ...value, granularity: g.value })}
+            >
+              {g.label}
+            </FilterBtn>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          <GitCompare className="h-3.5 w-3.5 text-slate-500" />
+          Comparar
+        </span>
+        <div className="inline-flex flex-wrap items-center gap-0.5 rounded-lg border border-white/[0.06] bg-white/[0.03] p-0.5">
+          {COMPARE_MODES.map((c) => (
+            <FilterBtn
+              key={c.value}
+              active={isCompare(c.value)}
+              onClick={() => onChange({ ...value, compare: c.value })}
+            >
+              {c.label}
+            </FilterBtn>
+          ))}
+        </div>
+      </div>
+    </div>
+
     {hasAdvanced && (
-      <div className="flex flex-wrap items-center gap-4 border-t border-white/[0.04] pt-2">
+      <div className="grid grid-cols-1 gap-3 border-t border-white/[0.04] pt-3 sm:grid-cols-2 lg:grid-cols-3">
         {unitOptions.length > 0 && (
           <FilterSelect
             icon={<Building2 className="h-3.5 w-3.5" />}

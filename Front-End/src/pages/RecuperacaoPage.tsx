@@ -293,7 +293,7 @@ function RecoveryRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Link
-              to={`/leads/${lead.id}`}
+              to={`/leads/${lead.id}/revisar`}
               className="text-[13px] font-semibold text-slate-100 hover:text-emerald-300"
             >
               {lead.name || `Lead #${lead.id}`}

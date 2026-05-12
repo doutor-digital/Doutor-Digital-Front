@@ -9,11 +9,17 @@ import {
 } from "recharts";
 import {
   cn,
+  formatCurrency,
   formatNumber,
   formatPercent,
   truncate,
   formatDate,
 } from "@/lib/utils";
+import {
+  aggregateReviews,
+  listAllReviews,
+  type ReviewAggregates,
+} from "@/lib/leadReviewStore";
 import { Button } from "@/components/ui/Button";
 import { webhooksService } from "@/services/webhooks";
 import { contactsService } from "@/services/contacts";
@@ -36,13 +42,17 @@ import {
   ClipboardList,
   Clock,
   CloudDownload,
+  CreditCard,
   Headset,
   Info,
   MessageCircle,
   Percent,
   Phone as PhoneIcon,
   Target,
+  TrendingUp,
+  UserCog,
   UserPlus,
+  Wallet,
   Webhook,
 } from "@/components/icons";
 
@@ -90,6 +100,17 @@ export default function DashboardPage() {
         : { ...prev, unitId: unitId ? Number(unitId) : null },
     );
   }, [unitId]);
+
+  // Agregados das revisões locais (persistidas via localStorage no LeadReviewPage).
+  // Reage ao evento "lead-review:saved" pra refletir mudanças sem precisar de F5.
+  const [reviewAgg, setReviewAgg] = useState<ReviewAggregates>(() =>
+    aggregateReviews(listAllReviews()),
+  );
+  useEffect(() => {
+    const handler = () => setReviewAgg(aggregateReviews(listAllReviews()));
+    window.addEventListener("lead-review:saved", handler);
+    return () => window.removeEventListener("lead-review:saved", handler);
+  }, []);
 
   /* ----- Listas para os selects de filtro ----- */
   const unitsList = useQuery({
@@ -584,6 +605,9 @@ export default function DashboardPage() {
           </span>
         </div>
       </Link>
+
+      {/* ═════════════ VISÃO SDR (lê localStorage de leadReviewStore) ═════════════ */}
+      <SdrInsights agg={reviewAgg} />
 
       {/* ---- Atalhos: mudanças de etapa + conversão ---- */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -1211,5 +1235,443 @@ function AlertsPanel({ items }: { items: AlertItem[] }) {
         </button>
       </div>
     </section>
+  );
+}
+
+/* ============================================================
+ * Visão SDR — widgets ricos a partir das revisões locais
+ * ========================================================== */
+
+const NO_APPOINTMENT_LABELS: Record<string, string> = {
+  sem_interacao: "Sem interação",
+  sem_continuidade: "Sem continuidade",
+  plano_saude: "Plano de saúde",
+  terceiros: "Para terceiros",
+  sem_condicoes: "Sem condições",
+  vai_se_organizar: "Vai se organizar",
+  busca_laudo: "Busca laudo",
+  interesse_pilates: "Só pilates",
+  interesse_liberacao: "Só liberação",
+  mora_outra_cidade: "Mora +50km",
+  sem_interesse: "Sem interesse",
+  clicou_engano: "Clicou por engano",
+  outro_tratamento: "Outro tratamento",
+  outra_patologia: "Outra patologia",
+  em_viagem: "Em viagem",
+};
+
+const NO_CLOSE_LABELS: Record<string, string> = {
+  fechou_total: "Fechou total",
+  fechou_parcial: "Fechou parcial",
+  assinou_sem_entrada: "Sem entrada",
+  decide_familia: "Decide c/ família",
+  verifica_pagamento: "Verifica pagto.",
+  exame_imagem: "Exame imagem",
+  mora_fora: "Mora +50km",
+  outra_patologia: "Outra patologia",
+  sem_condicoes: "Sem condições",
+};
+
+const RESCUE_TYPE_LABELS: Record<string, string> = {
+  mensagem: "Mensagem",
+  ligacao: "Ligação",
+  disparo_massa: "Disparo em massa",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  pix: "PIX",
+  dinheiro: "Dinheiro",
+  cartao_credito: "Crédito",
+  cartao_debito: "Débito",
+  boleto: "Boleto",
+  transferencia: "Transferência",
+  outro: "Outro",
+};
+
+function SdrInsights({ agg }: { agg: ReviewAggregates }) {
+  const topNoAppointment = Object.entries(agg.noAppointmentReasons)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const topNoClose = Object.entries(agg.noCloseReasons)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const topMethods = Object.entries(agg.byMethod)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const totalCadResg = agg.cadastros + agg.resgates;
+  const totalReceitas = agg.expectedConsultaTotal + agg.expectedTratamentoTotal;
+  const totalAdiantado = agg.advanceConsultaTotal + agg.advanceTratamentoTotal;
+  const pctAdiantado =
+    totalReceitas > 0 ? (totalAdiantado / totalReceitas) * 100 : 0;
+
+  // Estado "vazio": ainda não há revisões locais — convida o usuário a começar.
+  if (agg.total === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              Visão SDR
+            </p>
+            <p className="mt-1 text-[13px] text-slate-300">
+              Comece a revisar leads para ver receita prevista, motivos e respondáveis aqui.
+            </p>
+          </div>
+          <Link
+            to="/leads"
+            className="rounded-md bg-emerald-500 px-4 py-1.5 text-[12px] font-semibold text-emerald-950 transition hover:bg-emerald-400"
+          >
+            Revisar leads
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <section className="space-y-3">
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-emerald-300">
+            Visão SDR · financeiro
+          </p>
+          <h2 className="mt-0.5 text-[16px] font-semibold tracking-tight text-slate-100">
+            Recebimentos, fluxo de cadastro e motivos
+          </h2>
+        </div>
+        <span className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10.5px] font-medium text-slate-400 ring-1 ring-inset ring-white/[0.06]">
+          {formatNumber(agg.total)} lead{agg.total === 1 ? "" : "s"} revisado
+          {agg.total === 1 ? "" : "s"}
+        </span>
+      </header>
+
+      {/* Linha 1: 4 KPIs financeiros (link com /finance) */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <FinanceKpi
+          tone="emerald"
+          icon={<Wallet className="h-4 w-4" />}
+          label="Recebimento previsto"
+          value={formatCurrency(totalReceitas)}
+          sub={`Consulta + tratamento`}
+          to="/finance"
+        />
+        <FinanceKpi
+          tone="amber"
+          icon={<TrendingUp className="h-4 w-4" />}
+          label="Adiantamentos"
+          value={formatCurrency(totalAdiantado)}
+          sub={`${formatPercent(pctAdiantado)} do previsto`}
+          to="/finance"
+        />
+        <FinanceKpi
+          tone="violet"
+          icon={<CreditCard className="h-4 w-4" />}
+          label="Recebimento de consulta"
+          value={formatCurrency(agg.expectedConsultaTotal)}
+          sub={`${formatNumber(agg.attendedCount)} comparecimentos`}
+          to="/finance"
+        />
+        <FinanceKpi
+          tone="cyan"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          label="Recebimento de tratamento"
+          value={formatCurrency(agg.expectedTratamentoTotal)}
+          sub={`${formatNumber(agg.closedCount)} tratamentos fechados`}
+          to="/finance"
+        />
+      </div>
+
+      {/* Linha 2: 2 cards — Cadastro × Resgate + Top métodos */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card className="bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent">
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              Cadastro × Resgate
+            </h3>
+            <UserPlus className="h-3.5 w-3.5 text-slate-500" />
+          </header>
+
+          {/* Mini-bar comparativa */}
+          <div className="mb-3 flex h-2.5 w-full overflow-hidden rounded-full bg-white/[0.04]">
+            {totalCadResg > 0 ? (
+              <>
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-emerald-300 transition-all"
+                  style={{ width: `${(agg.cadastros / totalCadResg) * 100}%` }}
+                />
+                <div
+                  className="bg-gradient-to-r from-violet-500 to-violet-300 transition-all"
+                  style={{ width: `${(agg.resgates / totalCadResg) * 100}%` }}
+                />
+              </>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Legend
+              color="emerald"
+              label="Cadastros"
+              value={formatNumber(agg.cadastros)}
+              pct={totalCadResg ? (agg.cadastros / totalCadResg) * 100 : 0}
+            />
+            <Legend
+              color="violet"
+              label="Resgates"
+              value={formatNumber(agg.resgates)}
+              pct={totalCadResg ? (agg.resgates / totalCadResg) * 100 : 0}
+            />
+          </div>
+
+          {agg.resgates > 0 && (
+            <div className="mt-4 space-y-1.5 border-t border-white/[0.05] pt-3">
+              <p className="text-[10.5px] font-medium uppercase tracking-wider text-slate-500">
+                Resgates por tipo
+              </p>
+              {Object.entries(agg.rescueTypes)
+                .sort((a, b) => b[1] - a[1])
+                .map(([k, v]) => (
+                  <BarRow
+                    key={k}
+                    label={RESCUE_TYPE_LABELS[k] ?? k}
+                    value={v}
+                    total={agg.resgates}
+                    tone="violet"
+                  />
+                ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              Formas de pagamento (preview)
+            </h3>
+            <Wallet className="h-3.5 w-3.5 text-slate-500" />
+          </header>
+          {topMethods.length === 0 ? (
+            <p className="py-6 text-center text-[11.5px] italic text-slate-500">
+              Ainda sem recebimentos preenchidos
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {topMethods.map(([m, v]) => (
+                <div key={m} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-0.5 flex items-center justify-between gap-2">
+                      <span className="text-[12px] font-medium text-slate-200">
+                        {PAYMENT_METHOD_LABELS[m] ?? m}
+                      </span>
+                      <span className="tabular-nums text-[12px] font-semibold text-emerald-300">
+                        {formatCurrency(v)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.04]">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (v / (topMethods[0][1] || 1)) * 100,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Linha 3: Semáforo de motivos */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              Top motivos · não agendou
+            </h3>
+            <UserCog className="h-3.5 w-3.5 text-slate-500" />
+          </header>
+          {topNoAppointment.length === 0 ? (
+            <p className="py-6 text-center text-[11.5px] italic text-slate-500">
+              Sem motivos registrados
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {topNoAppointment.map(([k, v]) => (
+                <BarRow
+                  key={k}
+                  label={NO_APPOINTMENT_LABELS[k] ?? k}
+                  value={v}
+                  total={topNoAppointment[0][1]}
+                  tone="amber"
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              Top motivos · não fechou
+            </h3>
+            <AlertCircle className="h-3.5 w-3.5 text-slate-500" />
+          </header>
+          {topNoClose.length === 0 ? (
+            <p className="py-6 text-center text-[11.5px] italic text-slate-500">
+              Sem motivos registrados
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {topNoClose.map(([k, v]) => (
+                <BarRow
+                  key={k}
+                  label={NO_CLOSE_LABELS[k] ?? k}
+                  value={v}
+                  total={topNoClose[0][1]}
+                  tone="rose"
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-white/[0.06] bg-white/[0.015] p-5",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FinanceKpi({
+  tone,
+  icon,
+  label,
+  value,
+  sub,
+  to,
+}: {
+  tone: ChipTone;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  to?: string;
+}) {
+  const body = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-80">
+          {label}
+        </p>
+        <span
+          className={cn(
+            "grid h-7 w-7 place-items-center rounded-md ring-1 ring-inset",
+            TONES[tone],
+          )}
+        >
+          {icon}
+        </span>
+      </div>
+      <p className="mt-2 text-[22px] font-bold tabular-nums leading-none text-slate-50">
+        {value}
+      </p>
+      <p className="mt-1.5 text-[10.5px] text-slate-500">{sub}</p>
+    </>
+  );
+  const cls = cn(
+    "rounded-xl border p-4 transition",
+    "border-white/[0.06] bg-gradient-to-br from-white/[0.025] via-white/[0.01] to-transparent",
+    to && "hover:border-white/[0.14] hover:from-white/[0.04]",
+  );
+  return to ? (
+    <Link to={to} className={cn(cls, "block")}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
+  );
+}
+
+function Legend({
+  color,
+  label,
+  value,
+  pct,
+}: {
+  color: "emerald" | "violet";
+  label: string;
+  value: string;
+  pct: number;
+}) {
+  const dot =
+    color === "emerald"
+      ? "bg-gradient-to-r from-emerald-500 to-emerald-300"
+      : "bg-gradient-to-r from-violet-500 to-violet-300";
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span className={cn("h-2 w-2 rounded-full", dot)} />
+        <span className="text-[10.5px] font-medium uppercase tracking-wider text-slate-500">
+          {label}
+        </span>
+      </div>
+      <p className="mt-1 text-[18px] font-bold tabular-nums text-slate-100">
+        {value}
+        <span className="ml-1.5 text-[11px] font-medium text-slate-500">
+          {pct.toFixed(0)}%
+        </span>
+      </p>
+    </div>
+  );
+}
+
+function BarRow({
+  label,
+  value,
+  total,
+  tone,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: "amber" | "rose" | "violet" | "emerald";
+}) {
+  const fill = {
+    amber: "bg-gradient-to-r from-amber-500 to-amber-300",
+    rose: "bg-gradient-to-r from-rose-500 to-rose-300",
+    violet: "bg-gradient-to-r from-violet-500 to-violet-300",
+    emerald: "bg-gradient-to-r from-emerald-500 to-emerald-300",
+  }[tone];
+  const pct = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div>
+      <div className="mb-0.5 flex items-center justify-between gap-2 text-[12px]">
+        <span className="truncate text-slate-300">{label}</span>
+        <span className="shrink-0 tabular-nums text-slate-500">{value}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.04]">
+        <div className={cn("h-full", fill)} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
   );
 }

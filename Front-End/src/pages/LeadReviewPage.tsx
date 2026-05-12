@@ -26,6 +26,11 @@ import { webhooksService } from "@/services/webhooks";
 import { assignmentsService } from "@/services/assignments";
 import { unitsService } from "@/services/units";
 import { cn } from "@/lib/utils";
+import {
+  loadReview,
+  saveReview,
+  type LeadReviewLocal,
+} from "@/lib/leadReviewStore";
 import type {
   LeadDetail,
   LeadPaymentReceipt,
@@ -183,20 +188,48 @@ const EMPTY_RECEIPT: ReceiptDraft = {
   isAdvance: false,
 };
 
-function leadToDraft(l: LeadDetail): DraftState {
-  // Filtra receipts por kind e slot, preenchendo 2 (consulta) / 6 (tratamento)
+function localReceiptToDraft(r: { amount: number | null; method: string | null; receivedAt: string | null; isAdvance: boolean }): ReceiptDraft {
+  return {
+    amount: r.amount != null ? String(r.amount) : "",
+    method: r.method ?? "",
+    receivedAt: r.receivedAt ?? "",
+    isAdvance: !!r.isAdvance,
+  };
+}
+
+function pickStr<T extends string | null | undefined>(local: T, back: T): string {
+  // Prioriza local; cai pro back apenas se local for null/undefined
+  if (local !== null && local !== undefined) return String(local);
+  if (back !== null && back !== undefined) return String(back);
+  return "";
+}
+
+function pickYn(local: boolean | null | undefined, back: boolean | null | undefined): "" | "yes" | "no" {
+  const v = local !== null && local !== undefined ? local : back;
+  if (v === true) return "yes";
+  if (v === false) return "no";
+  return "";
+}
+
+function leadToDraft(l: LeadDetail, local: LeadReviewLocal | null): DraftState {
+  // Receipts: prioriza local; cai pro back se local não tiver
   const consultaSlots: ReceiptDraft[] = Array.from({ length: 2 }, (_, i) => {
     const slot = i + 1;
+    const lr = local?.consultationReceipts?.[i];
+    if (lr) return localReceiptToDraft(lr);
     const r = l.paymentReceipts?.find((x) => x.kind === "consulta" && x.slot === slot);
     return r ? receiptToDraft(r) : { ...EMPTY_RECEIPT };
   });
   const tratamentoSlots: ReceiptDraft[] = Array.from({ length: 6 }, (_, i) => {
     const slot = i + 1;
+    const lr = local?.treatmentReceipts?.[i];
+    if (lr) return localReceiptToDraft(lr);
     const r = l.paymentReceipts?.find((x) => x.kind === "tratamento" && x.slot === slot);
     return r ? receiptToDraft(r) : { ...EMPTY_RECEIPT };
   });
 
   return {
+    // ── Core (vem só do back, mas localmente carregado quando ainda não salvou)
     name: l.name ?? "",
     phone: l.phone ?? "",
     email: l.email ?? "",
@@ -204,33 +237,45 @@ function leadToDraft(l: LeadDetail): DraftState {
     source: l.source ?? "",
     unitId: l.unitId != null ? String(l.unitId) : "",
     attendantId: l.attendantId != null ? String(l.attendantId) : "",
-
-    leadType: (l.leadType as DraftState["leadType"]) ?? "",
-    rescueType: (l.rescueType as DraftState["rescueType"]) ?? "",
-    hadInteraction:
-      l.hadInteraction == null ? "" : l.hadInteraction ? "yes" : "no",
-    scheduledConsultation:
-      l.scheduledConsultation == null ? "" : l.scheduledConsultation ? "yes" : "no",
-    hasPayment: l.hasPayment == null ? "" : l.hasPayment ? "yes" : "no",
-    appointmentScheduledAt: l.appointmentScheduledAt
-      ? l.appointmentScheduledAt.slice(0, 16)
-      : "",
-    noAppointmentReason: l.noAppointmentReason ?? "",
-    noAppointmentCity: l.noAppointmentCity ?? "",
-
-    consultationValue: l.consultationValue != null ? String(l.consultationValue) : "",
-    consultationReceipts: consultaSlots,
-    indicatedTreatment: l.indicatedTreatment ?? "",
-    treatmentBudget: l.treatmentBudget != null ? String(l.treatmentBudget) : "",
-    closedTreatment:
-      l.closedTreatment == null ? "" : l.closedTreatment ? "yes" : "no",
-    noCloseReason: l.noCloseReason ?? "",
-
-    treatmentPlanCategory: l.treatmentPlanCategory ?? "",
-    treatmentPlanValue: l.treatmentPlanValue != null ? String(l.treatmentPlanValue) : "",
-    treatmentReceipts: tratamentoSlots,
-
     observations: l.observations ?? "",
+
+    // ── Extras (prioriza local sobre back)
+    leadType: pickStr(local?.leadType, l.leadType) as DraftState["leadType"],
+    rescueType: pickStr(local?.rescueType, l.rescueType) as DraftState["rescueType"],
+    hadInteraction: pickYn(local?.hadInteraction, l.hadInteraction),
+    scheduledConsultation: pickYn(local?.scheduledConsultation, l.scheduledConsultation),
+    hasPayment: pickYn(local?.hasPaymentAdvance, l.hasPayment),
+    appointmentScheduledAt:
+      local?.appointmentScheduledAt ??
+      (l.appointmentScheduledAt ? l.appointmentScheduledAt.slice(0, 16) : ""),
+    noAppointmentReason: local?.noAppointmentReason ?? l.noAppointmentReason ?? "",
+    noAppointmentCity: local?.noAppointmentCity ?? l.noAppointmentCity ?? "",
+
+    consultationValue:
+      local?.consultationValue != null
+        ? String(local.consultationValue)
+        : l.consultationValue != null
+        ? String(l.consultationValue)
+        : "",
+    consultationReceipts: consultaSlots,
+    indicatedTreatment: local?.indicatedTreatment ?? l.indicatedTreatment ?? "",
+    treatmentBudget:
+      local?.treatmentBudget != null
+        ? String(local.treatmentBudget)
+        : l.treatmentBudget != null
+        ? String(l.treatmentBudget)
+        : "",
+    closedTreatment: pickYn(local?.closedTreatment, l.closedTreatment),
+    noCloseReason: local?.noCloseReason ?? l.noCloseReason ?? "",
+
+    treatmentPlanCategory: local?.treatmentPlanCategory ?? l.treatmentPlanCategory ?? "",
+    treatmentPlanValue:
+      local?.treatmentPlanValue != null
+        ? String(local.treatmentPlanValue)
+        : l.treatmentPlanValue != null
+        ? String(l.treatmentPlanValue)
+        : "",
+    treatmentReceipts: tratamentoSlots,
   };
 }
 
@@ -249,8 +294,12 @@ function ynToBool(v: "" | "yes" | "no"): boolean | null {
   return null;
 }
 
-function buildPayload(draft: DraftState): Record<string, unknown> {
-  const payload: Record<string, unknown> = {
+/**
+ * Payload pro back: APENAS campos que o backend já entende hoje
+ * (sem leadType/rescueType/receipts/etc — esses ficam só no localStorage).
+ */
+function buildBackPayload(draft: DraftState): Record<string, unknown> {
+  return {
     name: draft.name.trim(),
     phone: draft.phone.trim() || null,
     email: draft.email.trim() || null,
@@ -258,12 +307,28 @@ function buildPayload(draft: DraftState): Record<string, unknown> {
     source: draft.source.trim(),
     unitId: draft.unitId ? Number(draft.unitId) : null,
     attendantId: draft.attendantId ? Number(draft.attendantId) : null,
+    observations: draft.observations.trim() || null,
+  };
+}
 
-    leadType: draft.leadType || null,
-    rescueType: draft.leadType === "resgate" ? draft.rescueType || null : null,
+/**
+ * Snapshot dos campos extras pro localStorage.
+ */
+function buildLocalPayload(draft: DraftState): Omit<LeadReviewLocal, "leadId" | "updatedAt"> {
+  const mapReceipt = (r: ReceiptDraft) => ({
+    amount: r.amount ? Number(r.amount) : null,
+    method: r.method || null,
+    receivedAt: r.receivedAt || null,
+    isAdvance: r.isAdvance,
+  });
+  return {
+    leadType: (draft.leadType || null) as LeadReviewLocal["leadType"],
+    rescueType: (draft.leadType === "resgate"
+      ? draft.rescueType || null
+      : null) as LeadReviewLocal["rescueType"],
     hadInteraction: ynToBool(draft.hadInteraction),
     scheduledConsultation: ynToBool(draft.scheduledConsultation),
-    hasPayment: ynToBool(draft.hasPayment) ?? undefined,
+    hasPaymentAdvance: ynToBool(draft.hasPayment),
     appointmentScheduledAt:
       draft.appointmentScheduledAt && draft.scheduledConsultation === "yes"
         ? draft.appointmentScheduledAt
@@ -274,58 +339,20 @@ function buildPayload(draft: DraftState): Record<string, unknown> {
       draft.noAppointmentReason === "mora_outra_cidade"
         ? draft.noAppointmentCity.trim() || null
         : null,
-
     consultationValue: draft.consultationValue ? Number(draft.consultationValue) : null,
+    consultationReceipts: draft.consultationReceipts.map(mapReceipt),
     indicatedTreatment: draft.indicatedTreatment.trim() || null,
     treatmentBudget: draft.treatmentBudget ? Number(draft.treatmentBudget) : null,
     closedTreatment: ynToBool(draft.closedTreatment),
     noCloseReason: draft.closedTreatment === "no" ? draft.noCloseReason || null : null,
-
     treatmentPlanCategory:
       draft.closedTreatment === "yes" ? draft.treatmentPlanCategory || null : null,
     treatmentPlanValue:
       draft.closedTreatment === "yes" && draft.treatmentPlanValue
         ? Number(draft.treatmentPlanValue)
         : null,
-
-    observations: draft.observations.trim() || null,
+    treatmentReceipts: draft.treatmentReceipts.map(mapReceipt),
   };
-
-  // Receipts (envia sempre, back filtra linhas vazias)
-  const receipts: Array<{
-    kind: "consulta" | "tratamento";
-    slot: number;
-    amount: number | null;
-    method: string | null;
-    receivedAt: string | null;
-    isAdvance: boolean;
-  }> = [];
-
-  draft.consultationReceipts.forEach((r, i) => {
-    receipts.push({
-      kind: "consulta",
-      slot: i + 1,
-      amount: r.amount ? Number(r.amount) : null,
-      method: r.method || null,
-      receivedAt: r.receivedAt || null,
-      isAdvance: r.isAdvance,
-    });
-  });
-  if (draft.closedTreatment === "yes") {
-    draft.treatmentReceipts.forEach((r, i) => {
-      receipts.push({
-        kind: "tratamento",
-        slot: i + 1,
-        amount: r.amount ? Number(r.amount) : null,
-        method: r.method || null,
-        receivedAt: r.receivedAt || null,
-        isAdvance: r.isAdvance,
-      });
-    });
-  }
-  payload.paymentReceipts = receipts;
-
-  return payload;
 }
 
 // ─── Subcomponentes ──────────────────────────────────────────────────────────
@@ -510,23 +537,33 @@ export default function LeadReviewPage() {
 
   useEffect(() => {
     if (leadQ.data && draft === null) {
-      setDraft(leadToDraft(leadQ.data));
+      const local = loadReview(leadQ.data.id);
+      setDraft(leadToDraft(leadQ.data, local));
     }
   }, [leadQ.data, draft]);
 
   const save = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      webhooksService.patchLead(id!, payload),
+    mutationFn: async (currentDraft: DraftState) => {
+      // 1) Persiste TODO o formulário em localStorage (síncrono, nunca falha).
+      if (leadQ.data) {
+        saveReview(leadQ.data.id, buildLocalPayload(currentDraft));
+      }
+      // 2) Envia ao back só os campos que ele já entende (name/phone/email/cpf/source/...).
+      //    Se o back falhar, o local fica preservado e o usuário pode tentar de novo.
+      return webhooksService.patchLead(id!, buildBackPayload(currentDraft));
+    },
     onSuccess: () => {
       toast.success("Lead atualizado");
       qc.invalidateQueries({ queryKey: ["lead-detail", id] });
-      navigate(`/leads/${id}`);
+      navigate(`/leads/${id}/revisar`);
     },
     onError: (err: unknown) => {
       const msg =
         (err as { response?: { data?: { title?: string } } })?.response?.data?.title ??
-        "Não foi possível salvar";
-      toast.error(msg);
+        "Campos extras salvos localmente; falha ao sincronizar dados básicos";
+      toast.warning(msg, {
+        description: "Você pode tentar salvar de novo — os campos estendidos já estão preservados.",
+      });
     },
   });
 
@@ -559,7 +596,7 @@ export default function LeadReviewPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft) return;
-    save.mutate(buildPayload(draft));
+    save.mutate(draft);
   }
 
   if (leadQ.isLoading || !draft) {
