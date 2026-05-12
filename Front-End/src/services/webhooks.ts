@@ -19,6 +19,8 @@ import type {
   OvernightLeadsDto,
   RecentLeadsResponse,
   RecoveryLead,
+  RecoveryAttempt,
+  CreateRecoveryAttempt,
   StageChangesSummary,
   StageCount,
   TimeSeriesPoint,
@@ -371,14 +373,52 @@ export const webhooksService = {
     return data;
   },
 
-  async recoveryQueue(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<RecoveryLead[]> {
+  async recoveryQueue(params: {
+    clinicId?: number | string;
+    unitId?: number | string;
+    dateFrom?: string;
+    dateTo?: string;
+    attendantId?: number | string;
+    attempts?: "with" | "without";
+  } = {}): Promise<RecoveryLead[]> {
     const { data } = await api.get<RecoveryLead[]>("/webhooks/recuperacao", {
       params: cleanParams({
         clinicId: toInt(params.clinicId),
         unitId: toInt(params.unitId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        attendantId: toInt(params.attendantId),
+        attempts: params.attempts,
       }),
     });
     return asArray<RecoveryLead>(data);
+  },
+
+  async listRecoveryAttempts(leadId: number | string): Promise<RecoveryAttempt[]> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para /webhooks/{id}/recovery-attempts");
+    const { data } = await api.get<RecoveryAttempt[]>(`/webhooks/${id}/recovery-attempts`);
+    return asArray<RecoveryAttempt>(data);
+  },
+
+  async createRecoveryAttempt(
+    leadId: number | string,
+    payload: CreateRecoveryAttempt,
+  ): Promise<RecoveryAttempt> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para POST /webhooks/{id}/recovery-attempts");
+    const { data } = await api.post<RecoveryAttempt>(
+      `/webhooks/${id}/recovery-attempts`,
+      payload,
+    );
+    return data;
+  },
+
+  async markRecovered(leadId: number | string, notes?: string): Promise<RecoveryAttempt> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para POST /webhooks/{id}/mark-recovered");
+    const { data } = await api.post<RecoveryAttempt>(`/webhooks/${id}/mark-recovered`, { notes });
+    return data;
   },
 
   async conversionAnalytics(params: {

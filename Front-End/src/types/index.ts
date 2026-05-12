@@ -713,8 +713,39 @@ export interface RecoveryLead {
   unitName?: string | null;
   source?: string | null;
   campaign?: string | null;
+  attendantId?: number | null;
+  attendantName?: string | null;
   attendanceStatusAt?: string | null;
   updatedAt: string;
+  attemptsCount: number;
+  lastAttemptAt?: string | null;
+  lastAttemptOutcome?: string | null;
+}
+
+export type RecoveryMethod = "whatsapp" | "call" | "email" | "visit" | "other";
+export type RecoveryOutcome =
+  | "no_answer"
+  | "scheduled"
+  | "recovered"
+  | "lost"
+  | "follow_up";
+
+export interface RecoveryAttempt {
+  id: number;
+  leadId: number;
+  method: RecoveryMethod | string;
+  outcome: RecoveryOutcome | string;
+  notes?: string | null;
+  attendantId?: number | null;
+  attendantName?: string | null;
+  createdByUserId?: number | null;
+  createdAt: string;
+}
+
+export interface CreateRecoveryAttempt {
+  method: RecoveryMethod;
+  outcome: RecoveryOutcome;
+  notes?: string;
 }
 
 /* ─── Mudanças de etapa (feed cross-lead) ─────────────────────── */
