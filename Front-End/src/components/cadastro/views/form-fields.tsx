@@ -11,7 +11,7 @@ import {
   type TextareaHTMLAttributes,
   type ReactNode,
 } from 'react'
-import { Search, Check, X, ChevronDown } from 'lucide-react'
+import { Search, Check, X, ChevronDown } from "@/components/icons"
 import { cn } from '@/lib/utils'
 
 interface FieldShellProps {

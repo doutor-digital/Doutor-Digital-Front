@@ -16,7 +16,7 @@ import {
   Send,
   ImagePlus,
   ImageOff,
-} from 'lucide-react'
+} from "@/components/icons"
 import {
   empresasApi,
   resolveAssetUrl,

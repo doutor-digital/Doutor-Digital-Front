@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/icons";
 import { useNavigate } from "react-router-dom";
 import { analyticsService } from "@/services/analytics";
 import { useClinic } from "@/hooks/useClinic";

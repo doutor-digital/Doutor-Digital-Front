@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
   BarChart2,
+  Building2,
   Calendar,
   ChevronDown,
   GitCompare,
   RotateCcw,
   Search,
   SlidersHorizontal,
-} from "lucide-react";
+  Tag,
+  UserCog,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -21,12 +24,23 @@ export interface DashboardFiltersState {
   endDate: string;
   granularity: Granularity;
   compare: CompareMode;
+  unitId?: number | null;
+  attendantId?: number | null;
+  source?: string | null;
+}
+
+export interface FilterOption {
+  id: number | string;
+  label: string;
 }
 
 interface Props {
   value: DashboardFiltersState;
   onChange: (f: DashboardFiltersState) => void;
   onSearch: () => void;
+  units?: FilterOption[];
+  attendants?: FilterOption[];
+  sources?: string[];
 }
 
 // ─── Dados ────────────────────────────────────────────────────────────────────
@@ -67,7 +81,16 @@ function endOfMonth(o: number) { const d = new Date(); d.setMonth(d.getMonth() +
 function startOfQuarter() { const m = new Date().getMonth(); const d = new Date(new Date().getFullYear(), Math.floor(m / 3) * 3, 1); return d.toISOString().slice(0, 10); }
 
 export function defaultFilters(): DashboardFiltersState {
-  return { preset: "30d", startDate: offsetDay(-29), endDate: today(), granularity: "day", compare: "none" };
+  return {
+    preset: "30d",
+    startDate: offsetDay(-29),
+    endDate: today(),
+    granularity: "day",
+    compare: "none",
+    unitId: null,
+    attendantId: null,
+    source: null,
+  };
 }
 
 // ─── Subcomponentes ───────────────────────────────────────────────────────────
@@ -289,19 +312,86 @@ function PeriodDropdown({
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export function DashboardFilters({ value, onChange, onSearch }: Props) {
+function FilterSelect({
+  icon,
+  label,
+  value,
+  onChange,
+  options,
+  emptyLabel = "Todos",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; label: string }[];
+  emptyLabel?: string;
+}) {
+  return (
+    <label className="flex items-center gap-1.5">
+      <span className="text-slate-500">{icon}</span>
+      <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "ml-1 h-7 rounded-md border bg-white/[0.02] px-2 pr-7 text-[11.5px] font-medium",
+          "text-slate-200 outline-none transition appearance-none",
+          "border-white/[0.08] hover:border-white/[0.14] hover:bg-white/[0.04]",
+          "focus:border-white/[0.2] focus:bg-white/[0.05]",
+          "[color-scheme:dark]",
+        )}
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 6px center",
+        }}
+      >
+        <option value="">{emptyLabel}</option>
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function DashboardFilters({
+  value,
+  onChange,
+  onSearch,
+  units = [],
+  attendants = [],
+  sources = [],
+}: Props) {
   const isGranularity = (v: string) => value.granularity === v;
   const isCompare = (v: string) => value.compare === v;
+
+  const unitOptions = units.map((u) => ({ id: String(u.id), label: u.label }));
+  const attendantOptions = attendants.map((a) => ({
+    id: String(a.id),
+    label: a.label,
+  }));
+  const sourceOptions = sources.map((s) => ({ id: s, label: s }));
+
+  const hasAdvanced =
+    unitOptions.length > 0 || attendantOptions.length > 0 || sourceOptions.length > 0;
 
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-xl",
+        "flex flex-col gap-2 rounded-xl",
         "border border-white/[0.07] bg-gradient-to-b from-white/[0.02] to-white/[0.005]",
         "shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]",
         "px-4 py-3",
       )}
     >
+    <div className="flex flex-wrap items-center gap-2">
       <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-slate-500" />
 
       <PeriodDropdown value={value} onChange={onChange} />
@@ -368,6 +458,46 @@ export function DashboardFilters({ value, onChange, onSearch }: Props) {
           Buscar
         </button>
       </div>
+    </div>
+
+    {hasAdvanced && (
+      <div className="flex flex-wrap items-center gap-4 border-t border-white/[0.04] pt-2">
+        {unitOptions.length > 0 && (
+          <FilterSelect
+            icon={<Building2 className="h-3.5 w-3.5" />}
+            label="Unidade"
+            value={value.unitId != null ? String(value.unitId) : ""}
+            onChange={(v) =>
+              onChange({ ...value, unitId: v ? Number(v) : null })
+            }
+            options={unitOptions}
+            emptyLabel="Todas"
+          />
+        )}
+        {attendantOptions.length > 0 && (
+          <FilterSelect
+            icon={<UserCog className="h-3.5 w-3.5" />}
+            label="Atendente"
+            value={value.attendantId != null ? String(value.attendantId) : ""}
+            onChange={(v) =>
+              onChange({ ...value, attendantId: v ? Number(v) : null })
+            }
+            options={attendantOptions}
+            emptyLabel="Todos"
+          />
+        )}
+        {sourceOptions.length > 0 && (
+          <FilterSelect
+            icon={<Tag className="h-3.5 w-3.5" />}
+            label="Origem"
+            value={value.source ?? ""}
+            onChange={(v) => onChange({ ...value, source: v || null })}
+            options={sourceOptions}
+            emptyLabel="Todas"
+          />
+        )}
+      </div>
+    )}
     </div>
   );
 }

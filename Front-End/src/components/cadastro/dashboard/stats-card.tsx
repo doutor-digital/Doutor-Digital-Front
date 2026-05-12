@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Minus } from "@/components/icons"
 import { AnimatedNumber } from '@/cadastra-ui/animated-number'
 import { cn } from '@/lib/utils'
 

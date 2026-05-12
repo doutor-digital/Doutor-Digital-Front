@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, MessageCircle, Search, Sparkles } from "lucide-react";
+import { LogOut, MessageCircle, Search, Sparkles } from "@/components/icons";
 import { useNavigate } from "react-router-dom";
 import { unitsService } from "@/services/units";
 import { useClinic } from "@/hooks/useClinic";

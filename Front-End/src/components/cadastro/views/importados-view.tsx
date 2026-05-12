@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, AlertCircle, Filter, RotateCcw, Search, Trash2, AlertTriangle, Loader2 } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Filter, RotateCcw, Search, Trash2, AlertTriangle, Loader2 } from "@/components/icons"
 import { empresasApi, leadsApi, type EmpresaDto, type LeadSummaryDto, type FonteFiltro } from '@/lib/cadastra/api'
 import { cn } from '@/lib/utils'
 

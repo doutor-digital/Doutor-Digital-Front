@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Activity, AlertTriangle, CheckCircle2, Layers, RefreshCw, Send, Sparkles, Zap,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useClinic } from "@/hooks/useClinic";

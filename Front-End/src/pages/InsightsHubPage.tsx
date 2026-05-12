@@ -4,7 +4,7 @@ import {
   AlertCircle, ArrowUpRight, Award, Brain, CalendarRange, Eye, Flame,
   Layers, Map as MapIcon, Network, Send, Tag, Timer,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useClinic } from "@/hooks/useClinic";
 import { insightsService } from "@/services/insights";

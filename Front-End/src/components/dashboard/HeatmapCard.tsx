@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Activity } from "lucide-react";
+import { Activity } from "@/components/icons";
 import { ActivityHeatmap, type HeatmapCell } from "@/components/ui/ActivityHeatmap";
 
 interface HeatmapCardProps {

@@ -25,7 +25,7 @@ import {
   TrendingDown,
   TrendingUp,
   XCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";

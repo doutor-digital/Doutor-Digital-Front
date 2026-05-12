@@ -6,6 +6,7 @@ import type {
   CompareMode,
   ConversionAnalytics,
   DashboardEvolutionResponse,
+  DashboardLeadListItem,
   DashboardOverview,
   GroupByGranularity,
   Lead,
@@ -19,6 +20,8 @@ import type {
   OvernightLeadsDto,
   RecentLeadsResponse,
   RecoveryLead,
+  RecoveryAttempt,
+  CreateRecoveryAttempt,
   StageChangesSummary,
   StageCount,
   TimeSeriesPoint,
@@ -268,6 +271,8 @@ export const webhooksService = {
     dateFrom: string;
     dateTo: string;
     unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
   }): Promise<DashboardOverview> {
     const { data } = await api.get<DashboardOverview>("/webhooks/dashboard-overview", {
       params: cleanParams({
@@ -275,6 +280,8 @@ export const webhooksService = {
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
         unitId: toInt(params.unitId),
+        attendantId: toInt(params.attendantId),
+        source: params.source && params.source.length > 0 ? params.source : undefined,
       }),
     });
     return data;
@@ -303,6 +310,9 @@ export const webhooksService = {
     dateTo: string;
     groupBy?: GroupByGranularity;
     compare?: CompareMode;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
   }): Promise<DashboardEvolutionResponse> {
     const { data } = await api.get<DashboardEvolutionResponse>("/webhooks/evolution-range", {
       params: cleanParams({
@@ -311,9 +321,70 @@ export const webhooksService = {
         dateTo: params.dateTo,
         groupBy: params.groupBy ?? "day",
         compare: params.compare ?? "none",
+        unitId: toInt(params.unitId),
+        attendantId: toInt(params.attendantId),
+        source: params.source && params.source.length > 0 ? params.source : undefined,
       }),
     });
     return data;
+  },
+
+  async dashboardScheduledLeads(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
+  }): Promise<DashboardLeadListItem[]> {
+    const { data } = await api.get<DashboardLeadListItem[]>(
+      "/webhooks/dashboard/scheduled",
+      {
+        params: cleanParams({
+          clinicId: toInt(params.clinicId),
+          dateFrom: params.dateFrom,
+          dateTo: params.dateTo,
+          unitId: toInt(params.unitId),
+          attendantId: toInt(params.attendantId),
+          source: params.source && params.source.length > 0 ? params.source : undefined,
+        }),
+      },
+    );
+    return asArray<DashboardLeadListItem>(data);
+  },
+
+  async dashboardAttendedLeads(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
+  }): Promise<DashboardLeadListItem[]> {
+    const { data } = await api.get<DashboardLeadListItem[]>(
+      "/webhooks/dashboard/attended",
+      {
+        params: cleanParams({
+          clinicId: toInt(params.clinicId),
+          dateFrom: params.dateFrom,
+          dateTo: params.dateTo,
+          unitId: toInt(params.unitId),
+          attendantId: toInt(params.attendantId),
+          source: params.source && params.source.length > 0 ? params.source : undefined,
+        }),
+      },
+    );
+    return asArray<DashboardLeadListItem>(data);
+  },
+
+  async distinctSources(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<string[]> {
+    const { data } = await api.get<string[]>("/webhooks/sources", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+      }),
+    });
+    return Array.isArray(data) ? data : [];
   },
 
   async syncHealth(): Promise<unknown> {
@@ -351,14 +422,52 @@ export const webhooksService = {
     return data;
   },
 
-  async recoveryQueue(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<RecoveryLead[]> {
+  async recoveryQueue(params: {
+    clinicId?: number | string;
+    unitId?: number | string;
+    dateFrom?: string;
+    dateTo?: string;
+    attendantId?: number | string;
+    attempts?: "with" | "without";
+  } = {}): Promise<RecoveryLead[]> {
     const { data } = await api.get<RecoveryLead[]>("/webhooks/recuperacao", {
       params: cleanParams({
         clinicId: toInt(params.clinicId),
         unitId: toInt(params.unitId),
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        attendantId: toInt(params.attendantId),
+        attempts: params.attempts,
       }),
     });
     return asArray<RecoveryLead>(data);
+  },
+
+  async listRecoveryAttempts(leadId: number | string): Promise<RecoveryAttempt[]> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para /webhooks/{id}/recovery-attempts");
+    const { data } = await api.get<RecoveryAttempt[]>(`/webhooks/${id}/recovery-attempts`);
+    return asArray<RecoveryAttempt>(data);
+  },
+
+  async createRecoveryAttempt(
+    leadId: number | string,
+    payload: CreateRecoveryAttempt,
+  ): Promise<RecoveryAttempt> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para POST /webhooks/{id}/recovery-attempts");
+    const { data } = await api.post<RecoveryAttempt>(
+      `/webhooks/${id}/recovery-attempts`,
+      payload,
+    );
+    return data;
+  },
+
+  async markRecovered(leadId: number | string, notes?: string): Promise<RecoveryAttempt> {
+    const id = toInt(leadId);
+    if (!id) throw new Error("id inválido para POST /webhooks/{id}/mark-recovered");
+    const { data } = await api.post<RecoveryAttempt>(`/webhooks/${id}/mark-recovered`, { notes });
+    return data;
   },
 
   async conversionAnalytics(params: {

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Layers, X } from "lucide-react";
+import { AlertCircle, Layers, X } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useClinic } from "@/hooks/useClinic";

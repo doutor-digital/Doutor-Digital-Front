@@ -5,7 +5,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-} from "lucide-react";
+} from "@/components/icons";
 import {
   Area,
   AreaChart,

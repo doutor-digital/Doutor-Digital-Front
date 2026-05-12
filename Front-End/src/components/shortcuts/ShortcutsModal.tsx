@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Keyboard } from "lucide-react";
+import { X, Keyboard } from "@/components/icons";
 import { useShortcut } from "@/hooks/useShortcut";
 import { Kbd } from "@/components/command/CommandPalette";
 import { cn } from "@/lib/utils";

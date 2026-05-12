@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCommandPalette } from "@/hooks/useCommandPalette";

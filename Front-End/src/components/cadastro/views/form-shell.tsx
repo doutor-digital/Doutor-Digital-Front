@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, type LucideIcon } from "@/components/icons"
 
 interface CadastroFormShellProps {
   title: string

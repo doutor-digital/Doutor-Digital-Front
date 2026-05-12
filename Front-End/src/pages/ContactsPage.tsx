@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Ban, CalendarCheck, CalendarX, ChevronRight, Clock3, Copy, FileText, FileUp,
   MessageSquare, Pencil, Phone, Search, Trash2, Upload, UserPlus, X,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";

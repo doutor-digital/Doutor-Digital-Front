@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react";
+import { Calendar } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 export function todayIso(offset = 0) {

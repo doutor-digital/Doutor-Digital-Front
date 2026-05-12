@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "@/components/icons";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { cn, formatNumber } from "@/lib/utils";
 

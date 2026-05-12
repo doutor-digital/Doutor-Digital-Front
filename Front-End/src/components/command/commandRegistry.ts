@@ -3,7 +3,7 @@ import {
   DollarSign, FileBarChart, Filter, LayoutDashboard, LineChart, ListChecks,
   Moon, RefreshCw, Radio, UserPlus, Users2, Workflow,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 
 export type CommandItem = {
   id: string;

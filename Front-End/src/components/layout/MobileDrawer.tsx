@@ -20,7 +20,7 @@ import {
   Users2,
   Workflow,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 

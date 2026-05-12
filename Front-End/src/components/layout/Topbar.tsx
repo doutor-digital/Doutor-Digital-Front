@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, ChevronDown, LogOut, RefreshCw, Search } from "lucide-react";
+import { Building2, ChevronDown, LogOut, RefreshCw, Search } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { useQueryClient } from "@tanstack/react-query";

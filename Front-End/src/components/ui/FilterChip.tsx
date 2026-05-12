@@ -1,4 +1,4 @@
-import { X as XIcon } from "lucide-react";
+import { X as XIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 export function FilterChip({

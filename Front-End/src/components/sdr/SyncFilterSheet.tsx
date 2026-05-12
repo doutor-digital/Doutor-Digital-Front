@@ -10,7 +10,7 @@ import {
   Settings2,
   X,
   Info,
-} from "lucide-react";
+} from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { unitsService } from "@/services/units";

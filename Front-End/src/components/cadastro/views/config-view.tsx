@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Plus, Trash2, RotateCcw, Settings2, Pencil, Check, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, RotateCcw, Settings2, Pencil, Check, X } from "@/components/icons"
 import {
   useConfig,
   useIsClient,

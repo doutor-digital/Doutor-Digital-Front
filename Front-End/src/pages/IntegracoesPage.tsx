@@ -11,7 +11,7 @@ import {
   UserPlus,
   ShieldAlert,
   Plug,
-} from "lucide-react";
+} from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { configurationService } from "@/services/configuration";

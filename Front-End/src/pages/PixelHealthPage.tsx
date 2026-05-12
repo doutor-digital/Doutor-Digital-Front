@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Eye, Info, Mail, Phone, Wifi } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, Info, Mail, Phone, Wifi } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useClinic } from "@/hooks/useClinic";

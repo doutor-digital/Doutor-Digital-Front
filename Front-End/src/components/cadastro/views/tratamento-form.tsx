@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HeartPulse, Pencil, CheckCircle2, AlertCircle, User as UserIcon, Phone, UserCog, Wallet, ArrowRight, ClipboardPlus, UserPlus } from 'lucide-react'
+import { HeartPulse, Pencil, CheckCircle2, AlertCircle, User as UserIcon, Phone, UserCog, Wallet, ArrowRight, ClipboardPlus, UserPlus } from "@/components/icons"
 import { CadastroFormShell } from './form-shell'
 import { TextInput, SelectInput, SearchSelect } from './form-fields'
 import { RecebimentosEditor, type RecebimentoInput } from './recebimentos-editor'

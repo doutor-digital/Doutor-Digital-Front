@@ -4,7 +4,7 @@ import {
   AlertTriangle, Bot, Camera, Eye, EyeOff, Gauge, KeyRound, Link as LinkIcon,
   Loader2, Lock, Mail, MessageSquare, Phone, Save, ShieldCheck, Sparkles,
   Thermometer, Trash2, User as UserIcon, Webhook, X,
-} from "lucide-react";
+} from "@/components/icons";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";

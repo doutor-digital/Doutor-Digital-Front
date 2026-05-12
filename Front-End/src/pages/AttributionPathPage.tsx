@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Network, Route as RouteIcon, Trophy } from "lucide-react";
+import { Network, Route as RouteIcon, Trophy } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useClinic } from "@/hooks/useClinic";

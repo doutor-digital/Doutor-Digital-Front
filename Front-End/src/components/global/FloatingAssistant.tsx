@@ -9,7 +9,7 @@ import {
   Send,
   Sparkles,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCommandPalette } from "@/hooks/useCommandPalette";
 import { useGlobalUI } from "@/hooks/useGlobalUI";

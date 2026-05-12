@@ -17,7 +17,7 @@ import {
   Trash2,
   Pencil,
   Sparkles,
-} from 'lucide-react'
+} from "@/components/icons"
 import {
   auditApi,
   empresasApi,

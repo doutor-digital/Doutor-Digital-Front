@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /**

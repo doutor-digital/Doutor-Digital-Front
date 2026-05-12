@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Mail, Calendar, Clock, Shield, LogOut, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Mail, Calendar, Clock, Shield, LogOut, Copy, Check } from "@/components/icons"
 import { useAuth } from '@/contexts/cadastra/auth-context'
 import { AvatarCircle } from '@/cadastra-ui/avatar-circle'
 import { cn } from '@/lib/utils'

@@ -1,4 +1,4 @@
-import { BookOpen, CreditCard, MapPin, RotateCcw, Sparkles } from "lucide-react";
+import { BookOpen, CreditCard, MapPin, RotateCcw, Sparkles } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   CLOUDIA_FORMAS_PAGAMENTO,

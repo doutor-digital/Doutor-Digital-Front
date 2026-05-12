@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowLeft, ArrowRight, GitBranch, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, GitBranch, RefreshCw } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";

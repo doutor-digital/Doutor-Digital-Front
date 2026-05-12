@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2 } from "@/components/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

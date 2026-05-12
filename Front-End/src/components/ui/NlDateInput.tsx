@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calendar, Sparkles } from "lucide-react";
+import { Calendar, Sparkles } from "@/components/icons";
 import { parseNaturalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Trash2 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
 import {

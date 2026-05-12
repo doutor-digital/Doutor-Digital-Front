@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -17,6 +17,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { webhooksService } from "@/services/webhooks";
 import { contactsService } from "@/services/contacts";
+import { unitsService } from "@/services/units";
+import { assignmentsService } from "@/services/assignments";
 import { useClinic } from "@/hooks/useClinic";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -25,45 +27,24 @@ import {
   defaultFilters,
 } from "@/components/filters/DashboardFilters";
 import { SnapshotButton } from "@/components/global/SnapshotButton";
-
-/* ============================================================
- * Ícones — cole abaixo as URLs das imagens (copiadas da internet).
- * Cada chave é referenciada via <IconImg src={ICONS.xxx} ... />.
- * ========================================================== */
-
-const ICONS = {
-  alertCircle: "",
-  alertTriangle: "",
-  calendar: "",
-  calendarCheck: "",
-  checkCircle: "",
-  chevronDown: "",
-  clipboardList: "",
-  clock: "https://cdn-icons-png.flaticon.com/512/5772/5772632.png",
-  cloudDownload: "https://cdn-icons-png.flaticon.com/512/4911/4911643.png",
-  headset: "https://cdn-icons-png.flaticon.com/512/3576/3576867.png",
-  info: "",
-  messageCircle: "",
-  percent: "https://png.pngtree.com/png-clipart/20230805/original/pngtree-rounded-vector-icon-of-ecofriendly-sales-funnel-in-flat-green-color-vector-picture-image_9728714.png",
-  phone: "",
-  target: "",
-  userPlus: "https://cdn-icons-png.flaticon.com/512/12774/12774902.png",
-  webhook: "https://i.sstatic.net/S3SNU.jpg",
-} as const;
-
-function IconImg({
-  src,
-  className,
-  alt = "",
-}: {
-  src: string;
-  className?: string;
-  alt?: string;
-}) {
-  return (
-    <img src={src} alt={alt} className={cn("object-contain", className)} />
-  );
-}
+import {
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  CalendarCheck,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  CloudDownload,
+  Headset,
+  Info,
+  MessageCircle,
+  Percent,
+  Phone as PhoneIcon,
+  Target,
+  UserPlus,
+  Webhook,
+} from "@/components/icons";
 
 /* ============================================================
  * Helpers
@@ -96,16 +77,58 @@ export default function DashboardPage() {
     user?.name?.trim() || user?.email?.split("@")[0] || "Doutor";
   const firstName = fullName.split(" ")[0];
 
-  const [filters, setFilters] = useState<DashboardFiltersState>(defaultFilters);
-  const [period] = useState<string>("Hoje");
+  const [filters, setFilters] = useState<DashboardFiltersState>(() => ({
+    ...defaultFilters(),
+    unitId: unitId ? Number(unitId) : null,
+  }));
+
+  // Se o usuário trocar a unidade pelo seletor global (useClinic), sincroniza.
+  useEffect(() => {
+    setFilters((prev) =>
+      prev.unitId === (unitId ? Number(unitId) : null)
+        ? prev
+        : { ...prev, unitId: unitId ? Number(unitId) : null },
+    );
+  }, [unitId]);
+
+  /* ----- Listas para os selects de filtro ----- */
+  const unitsList = useQuery({
+    queryKey: ["units", tenantId],
+    queryFn: () => unitsService.list(),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
+
+  const attendantsList = useQuery({
+    queryKey: ["attendants"],
+    queryFn: () => assignmentsService.listAttendants(),
+    staleTime: 60_000,
+  });
+
+  const sourcesList = useQuery({
+    queryKey: ["sources", tenantId, filters.unitId],
+    queryFn: () =>
+      webhooksService.distinctSources({
+        clinicId: tenantId ?? undefined,
+        unitId: filters.unitId ?? undefined,
+      }),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
 
   /* ----- Queries ----- */
   const overviewClinicId = tenantId ?? unitId ?? undefined;
+  const filterUnitId = filters.unitId ?? undefined;
+  const filterAttendantId = filters.attendantId ?? undefined;
+  const filterSource = filters.source ?? undefined;
+
   const overview = useQuery({
     queryKey: [
       "dashboard-overview",
       overviewClinicId,
-      unitId,
+      filterUnitId,
+      filterAttendantId,
+      filterSource,
       filters.startDate,
       filters.endDate,
     ],
@@ -114,17 +137,22 @@ export default function DashboardPage() {
         clinicId: overviewClinicId,
         dateFrom: filters.startDate,
         dateTo: filters.endDate,
-        unitId: unitId || undefined,
+        unitId: filterUnitId,
+        attendantId: filterAttendantId,
+        source: filterSource,
       }),
     enabled: !!overviewClinicId,
     placeholderData: (prev) => prev,
   });
 
-  const evolucaoClinicId = unitId ?? tenantId ?? undefined;
+  const evolucaoClinicId = tenantId ?? unitId ?? undefined;
   const evolucao = useQuery({
     queryKey: [
       "evolution-range",
       evolucaoClinicId,
+      filterUnitId,
+      filterAttendantId,
+      filterSource,
       filters.startDate,
       filters.endDate,
       filters.granularity,
@@ -137,6 +165,9 @@ export default function DashboardPage() {
         dateTo: filters.endDate,
         groupBy: filters.granularity,
         compare: filters.compare,
+        unitId: filterUnitId,
+        attendantId: filterAttendantId,
+        source: filterSource,
       }),
     enabled: !!evolucaoClinicId,
   });
@@ -186,6 +217,30 @@ export default function DashboardPage() {
       })),
     [evolucao.data],
   );
+
+  // Série de comparação (período anterior / mesmo período/ano), quando ativada.
+  const evoComparisonSeries = useMemo(() => {
+    const cmp = evolucao.data?.comparison;
+    if (!cmp || cmp.length === 0) return undefined;
+    // Alinha pelos buckets da série atual usando o índice — assim os pontos
+    // ficam lado a lado mesmo que as datas sejam diferentes.
+    return cmp.map((p, i) => ({
+      label: p.label,
+      compareV: p.count,
+      currentLabel: evolucao.data?.current?.[i]?.label,
+    }));
+  }, [evolucao.data]);
+
+  // Série combinada para plotar atual + comparação no mesmo gráfico.
+  const evoCombinedSeries = useMemo(() => {
+    if (!evoComparisonSeries) return evoSeries.map((p) => ({ ...p, compareV: undefined as number | undefined }));
+    const len = Math.max(evoSeries.length, evoComparisonSeries.length);
+    return Array.from({ length: len }, (_, i) => ({
+      label: evoSeries[i]?.label ?? evoComparisonSeries[i]?.label ?? "",
+      v: evoSeries[i]?.v ?? 0,
+      compareV: evoComparisonSeries[i]?.compareV,
+    }));
+  }, [evoSeries, evoComparisonSeries]);
 
   // Para os outros KPIs (em atendimento / fila / conversão), criamos uma
   // série derivada mantendo o "shape" da curva de leads — substitua aqui
@@ -305,37 +360,38 @@ export default function DashboardPage() {
           </Link>
           <Link to="/reports">
             <Button size="sm" className="gap-2">
-              <IconImg src={ICONS.calendarCheck} className="h-4 w-4" /> Relatório
+              <CalendarCheck className="h-4 w-4" /> Relatório
             </Button>
           </Link>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[12.5px] text-slate-200 transition hover:bg-white/[0.04]"
-          >
-            <IconImg src={ICONS.calendar} className="h-3.5 w-3.5" />
-            Período: {period}
-            <IconImg src={ICONS.chevronDown} className="h-3.5 w-3.5" />
-          </button>
         </div>
       </div>
 
-      {/* ---- Filtros (mantidos do código original) ---- */}
+      {/* ---- Filtros ---- */}
       <DashboardFilters
         value={filters}
         onChange={setFilters}
         onSearch={handleSearch}
+        units={(unitsList.data ?? []).map((u) => ({
+          id: u.id,
+          label: u.name || `Unidade ${u.id}`,
+        }))}
+        attendants={(attendantsList.data ?? []).map((a) => ({
+          id: a.id,
+          label: a.name || a.email || `Atendente ${a.id}`,
+        }))}
+        sources={sourcesList.data ?? []}
       />
 
       {/* ---- Linha de mini KPIs (6 colunas) ---- */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
         <MiniKpi
-          icon={<IconImg src={ICONS.userPlus} className="h-20 w-20" />}
+          icon={<UserPlus className="h-20 w-20" />}
           tone="sky"
           value={overviewLoading ? "…" : formatNumber(total)}
           label="leads no total"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.webhook} className="h-20 w-20" />}
+          icon={<Webhook className="h-20 w-20" />}
           tone="violet"
           value={
             contatosCounts.isLoading ? "…" : formatNumber(webhookCount)
@@ -343,7 +399,7 @@ export default function DashboardPage() {
           label="webhook"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.cloudDownload} className="h-20 w-20" />}
+          icon={<CloudDownload className="h-20 w-20" />}
           tone="cyan"
           value={
             contatosCounts.isLoading ? "…" : formatNumber(importedCount)
@@ -351,19 +407,19 @@ export default function DashboardPage() {
           label="importados"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.clock} className="h-20 w-20" />}
+          icon={<Clock className="h-20 w-20" />}
           tone="amber"
           value={overviewLoading ? "…" : formatNumber(inQueue)}
           label="na fila"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.headset} className="h-20 w-20" />}
+          icon={<Headset className="h-20 w-20" />}
           tone="emerald"
           value={overviewLoading ? "…" : formatNumber(inService)}
           label="em atendimento"
         />
         <MiniKpi
-          icon={<IconImg src={ICONS.percent} className="h-20 w-20" />}
+          icon={<Percent className="h-20 w-20" />}
           tone="fuchsia"
           value={overviewLoading ? "…" : formatPercent(conversao)}
           label="de conversão"
@@ -401,13 +457,14 @@ export default function DashboardPage() {
         <ChartKpi
           label="Total de leads"
           value={formatNumber(total)}
-          data={evoSeries}
+          data={evoCombinedSeries}
           stroke="#38bdf8"
           chip="bg-sky-500/10 text-sky-300 ring-sky-500/25"
-          icon={<IconImg src={ICONS.userPlus} className="h-4 w-4" />}
+          icon={<UserPlus className="h-4 w-4" />}
           delta={change !== null ? `${Math.abs(change).toFixed(1)}%` : "—"}
           deltaUp={changeUp}
           loading={overviewLoading || evolucao.isLoading}
+          showComparison={filters.compare !== "none"}
         />
         <ChartKpi
           label="Em atendimento"
@@ -415,7 +472,7 @@ export default function DashboardPage() {
           data={evoServiceSeries}
           stroke="#34d399"
           chip="bg-emerald-500/10 text-emerald-300 ring-emerald-500/25"
-          icon={<IconImg src={ICONS.headset} className="h-4 w-4" />}
+          icon={<Headset className="h-4 w-4" />}
           delta="8.3%"
           deltaUp
           loading={overviewLoading}
@@ -426,7 +483,7 @@ export default function DashboardPage() {
           data={evoQueueSeries}
           stroke="#fbbf24"
           chip="bg-amber-500/10 text-amber-300 ring-amber-500/25"
-          icon={<IconImg src={ICONS.clock} className="h-4 w-4" />}
+          icon={<Clock className="h-4 w-4" />}
           delta="33.3%"
           deltaUp={false}
           loading={overviewLoading}
@@ -437,7 +494,7 @@ export default function DashboardPage() {
           data={evoConvSeries}
           stroke="#e879f9"
           chip="bg-fuchsia-500/10 text-fuchsia-300 ring-fuchsia-500/25"
-          icon={<IconImg src={ICONS.percent} className="h-4 w-4" />}
+          icon={<Percent className="h-4 w-4" />}
           delta="0.6 p.p."
           deltaUp
           loading={overviewLoading}
@@ -450,11 +507,13 @@ export default function DashboardPage() {
           tone="amber"
           value={overviewLoading ? "…" : formatNumber(consultasAgendadas)}
           label="consultas agendadas"
+          to={`/dashboard/agendadas?from=${filters.startDate}&to=${filters.endDate}`}
         />
         <FunnelKpi
           tone="emerald"
           value={overviewLoading ? "…" : formatNumber(compareceuCount)}
           label="compareceram"
+          to={`/dashboard/compareceram?from=${filters.startDate}&to=${filters.endDate}`}
         />
         <FunnelKpi
           tone="rose"
@@ -579,22 +638,33 @@ interface FunnelKpiProps {
   tone: ChipTone;
   value: string;
   label: string;
+  to?: string;
 }
 
-function FunnelKpi({ tone, value, label }: FunnelKpiProps) {
-  return (
-    <div
-      className={cn(
-        "rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 ring-1 ring-inset",
-        TONES[tone],
-      )}
-    >
+function FunnelKpi({ tone, value, label, to }: FunnelKpiProps) {
+  const body = (
+    <>
       <div className="text-[18px] font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-[10.5px] uppercase tracking-wider opacity-80">
         {label}
       </div>
-    </div>
+    </>
   );
+  const cls = cn(
+    "rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 ring-1 ring-inset",
+    TONES[tone],
+  );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={cn(cls, "block transition hover:bg-white/[0.04] hover:scale-[1.01]")}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={cls}>{body}</div>;
 }
 
 /* ============================================================
@@ -702,7 +772,7 @@ function GoalCard({
             palette.icon,
           )}
         >
-          <IconImg src={ICONS.target} className="h-5 w-5" />
+          <Target className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
@@ -741,13 +811,14 @@ function GoalCard({
 interface ChartKpiProps {
   label: string;
   value: string;
-  data: { label: string; v: number }[];
+  data: { label: string; v: number; compareV?: number }[];
   stroke: string;
   chip: string;
   icon: React.ReactNode;
   delta: string;
   deltaUp: boolean;
   loading?: boolean;
+  showComparison?: boolean;
 }
 function ChartKpi({
   label,
@@ -759,8 +830,12 @@ function ChartKpi({
   delta,
   deltaUp,
   loading,
+  showComparison,
 }: ChartKpiProps) {
   const gradId = `grad-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  const cmpGradId = `grad-cmp-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  const hasComparison =
+    showComparison && data.some((p) => typeof p.compareV === "number");
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.015] p-5 transition hover:border-white/[0.1] hover:bg-white/[0.025]">
@@ -769,7 +844,7 @@ function ChartKpi({
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             {label}
           </p>
-          <IconImg src={ICONS.info} className="h-3 w-3" />
+          <Info className="h-3 w-3" />
         </div>
         <div
           className={cn(
@@ -797,6 +872,12 @@ function ChartKpi({
                   <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
                   <stop offset="100%" stopColor={stroke} stopOpacity={0} />
                 </linearGradient>
+                {hasComparison && (
+                  <linearGradient id={cmpGradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#94a3b8" stopOpacity={0} />
+                  </linearGradient>
+                )}
               </defs>
               <Tooltip
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
@@ -809,8 +890,20 @@ function ChartKpi({
                   padding: "4px 8px",
                 }}
                 labelStyle={{ display: "none" }}
-                formatter={(val) => [val ?? "—", label]}
+                formatter={(val, name) => [val ?? "—", name === "compareV" ? "Comparação" : label]}
               />
+              {hasComparison && (
+                <Area
+                  type="monotone"
+                  dataKey="compareV"
+                  stroke="#94a3b8"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 3"
+                  fill={`url(#${cmpGradId})`}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="v"
@@ -884,27 +977,27 @@ function activityIcon(kind: ActivityKind): {
   switch (kind) {
     case "call":
       return {
-        icon: <IconImg src={ICONS.phone} className="h-4 w-4" />,
+        icon: <PhoneIcon className="h-4 w-4" />,
         bg: TONES.sky,
       };
     case "form":
       return {
-        icon: <IconImg src={ICONS.clipboardList} className="h-4 w-4" />,
+        icon: <ClipboardList className="h-4 w-4" />,
         bg: TONES.indigo,
       };
     case "converted":
       return {
-        icon: <IconImg src={ICONS.checkCircle} className="h-4 w-4" />,
+        icon: <CheckCircle2 className="h-4 w-4" />,
         bg: TONES.emerald,
       };
     case "scheduled":
       return {
-        icon: <IconImg src={ICONS.calendarCheck} className="h-4 w-4" />,
+        icon: <CalendarCheck className="h-4 w-4" />,
         bg: TONES.amber,
       };
     default:
       return {
-        icon: <IconImg src={ICONS.messageCircle} className="h-4 w-4" />,
+        icon: <MessageCircle className="h-4 w-4" />,
         bg: TONES.emerald,
       };
   }
@@ -1040,13 +1133,13 @@ const ALERT_PALETTE: Record<
 function alertIcon(severity: AlertSeverity): React.ReactNode {
   switch (severity) {
     case "danger":
-      return <IconImg src={ICONS.alertTriangle} className="h-4 w-4" />;
+      return <AlertTriangle className="h-4 w-4" />;
     case "warn":
-      return <IconImg src={ICONS.alertCircle} className="h-4 w-4" />;
+      return <AlertCircle className="h-4 w-4" />;
     case "info":
-      return <IconImg src={ICONS.info} className="h-4 w-4" />;
+      return <Info className="h-4 w-4" />;
     case "violet":
-      return <IconImg src={ICONS.target} className="h-4 w-4" />;
+      return <Target className="h-4 w-4" />;
   }
 }
 
@@ -1055,7 +1148,7 @@ function AlertsPanel({ items }: { items: AlertItem[] }) {
     <section className="rounded-xl border border-white/[0.06] bg-white/[0.015]">
       <header className="flex items-center justify-between border-b border-white/[0.05] px-5 py-3.5">
         <div className="flex items-center gap-2">
-          <IconImg src={ICONS.alertTriangle} className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-300">
             Alertas críticos
           </h3>

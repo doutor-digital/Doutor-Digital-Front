@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   CloudiaCell,

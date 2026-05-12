@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle, Bell, Clock3, Pause, Play, RefreshCw, Timer, User,
-} from "lucide-react";
+} from "@/components/icons";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";

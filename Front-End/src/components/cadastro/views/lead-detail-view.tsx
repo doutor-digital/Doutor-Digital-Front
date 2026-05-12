@@ -19,7 +19,7 @@ import {
   StickyNote,
   MessageCircle,
   Plug2,
-} from 'lucide-react'
+} from "@/components/icons"
 import {
   isBackendNotImplemented,
   kommoApi,

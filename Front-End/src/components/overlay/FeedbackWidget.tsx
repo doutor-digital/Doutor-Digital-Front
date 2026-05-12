@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Frown, MessageSquareText, Send, Smile, X, Meh } from "lucide-react";
+import { Frown, MessageSquareText, Send, Smile, X, Meh } from "@/components/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

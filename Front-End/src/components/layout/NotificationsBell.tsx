@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, CheckCheck, Clock3, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, Clock3, ExternalLink } from "@/components/icons";
 import { webhooksService } from "@/services/webhooks";
 import { useClinic } from "@/hooks/useClinic";
 import { cn } from "@/lib/utils";

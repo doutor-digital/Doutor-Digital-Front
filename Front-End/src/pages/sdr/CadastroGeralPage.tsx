@@ -9,7 +9,7 @@ import {
   Search,
   Sparkles,
   XCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   CloudiaCell,

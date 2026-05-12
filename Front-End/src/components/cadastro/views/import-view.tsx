@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-} from 'lucide-react'
+} from "@/components/icons"
 import { parseCSV, csvToObjects, buildCsv, downloadFile } from '@/lib/cadastra/csv'
 import { useConfig } from '@/lib/cadastra/config-store'
 import { cn } from '@/lib/utils'

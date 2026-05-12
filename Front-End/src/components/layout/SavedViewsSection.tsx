@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bookmark, X } from "lucide-react";
+import { Bookmark, X } from "@/components/icons";
 import { useSavedViews } from "@/hooks/useSavedViews";
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Bot, Sparkles, UserPen } from "lucide-react";
+import { Bot, Sparkles, UserPen } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type CloudiaProvenance = {

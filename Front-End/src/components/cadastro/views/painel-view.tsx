@@ -21,7 +21,7 @@ import {
   CalendarRange,
   Download,
   CheckCircle2,
-} from 'lucide-react'
+} from "@/components/icons"
 import {
   auditApi,
   empresasApi,

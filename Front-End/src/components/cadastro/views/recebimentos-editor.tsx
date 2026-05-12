@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Wallet } from 'lucide-react'
+import { Plus, Trash2, Wallet } from "@/components/icons"
 import { TextInput, SelectInput } from './form-fields'
 import { useConfig } from '@/lib/cadastra/config-store'
 import { cn } from '@/lib/utils'

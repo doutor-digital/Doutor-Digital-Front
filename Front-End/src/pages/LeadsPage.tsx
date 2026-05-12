@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Download, Filter, Search, X } from "lucide-react";
+import { Download, Filter, Search, X } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/Input";

@@ -10,7 +10,7 @@ import {
   Wallet,
   Clock,
   Search,
-} from "lucide-react";
+} from "@/components/icons";
 import {
   Bar,
   BarChart,

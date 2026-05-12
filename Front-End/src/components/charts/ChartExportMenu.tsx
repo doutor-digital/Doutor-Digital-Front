@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileImage, FileSpreadsheet, FileText, MoreVertical } from "lucide-react";
+import { FileImage, FileSpreadsheet, FileText, MoreVertical } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /**

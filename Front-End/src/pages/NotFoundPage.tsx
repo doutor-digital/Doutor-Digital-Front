@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Ghost } from "lucide-react";
+import { Ghost } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 
 export default function NotFoundPage() {

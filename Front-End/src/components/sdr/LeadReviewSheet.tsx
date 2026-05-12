@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Loader2, Save, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { CheckCircle2, Loader2, Save, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "@/components/icons";
 import { CloudiaFieldShell } from "@/components/sdr/CloudiaField";
 import { reviewSdrLead, upsertSdrLead } from "@/lib/sdr/sdr-store";
 import type { SdrCloudiaFieldKey, SdrLead } from "@/types/sdr";

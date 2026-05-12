@@ -14,7 +14,7 @@ import {
   Sparkles,
   Trash2,
   XCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";
 import type { SdrAuditLog } from "@/types/sdr";
