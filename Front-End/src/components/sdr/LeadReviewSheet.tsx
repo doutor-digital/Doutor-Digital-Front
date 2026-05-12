@@ -12,6 +12,11 @@ type Props = {
   onClose: () => void;
   /** Quem está executando a revisão. Se null, registra audit log sem userId. */
   actor?: { id?: string; name?: string; email?: string };
+  /**
+   * "sheet" (default) renderiza como painel lateral com overlay.
+   * "page" renderiza inline (sem fixed/overlay) — pra uso dentro de uma rota dedicada.
+   */
+  mode?: "sheet" | "page";
 };
 
 type ReviewPhase =
@@ -30,7 +35,7 @@ type ReviewPhase =
  * A SDR pode editar qualquer campo (mesmo os auto-preenchidos), e ao salvar
  * o flag "vindo da Cloudia" é mantido — apenas registramos que ela revisou.
  */
-export function LeadReviewSheet({ lead, onClose, actor }: Props) {
+export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props) {
   const [draft, setDraft] = useState<SdrLead>(lead);
   const [phase, setPhase] = useState<ReviewPhase>("idle");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -99,13 +104,23 @@ export function LeadReviewSheet({ lead, onClose, actor }: Props) {
 
   const isAlreadyReviewed = lead.status === "aprovado" || lead.status === "rejeitado";
 
+  const isPage = mode === "page";
+
   return (
-    <div className="fixed inset-0 z-40">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-white/[0.08] bg-[#0a0a0d] shadow-2xl">
+    <div className={isPage ? "" : "fixed inset-0 z-40"}>
+      {!isPage && (
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={cn(
+          isPage
+            ? "mx-auto flex w-full max-w-3xl flex-col rounded-xl border border-white/[0.08] bg-[#0a0a0d] shadow-2xl"
+            : "absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-white/[0.08] bg-[#0a0a0d] shadow-2xl",
+        )}
+      >
         <header className="flex items-start justify-between border-b border-white/[0.06] px-5 py-4">
           <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">

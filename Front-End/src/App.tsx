@@ -69,6 +69,7 @@ const AceitarConvitePage    = lazy(() => import("@/pages/cadastro/AceitarConvite
 // ─── SDR Unificado (/sdr/*) — pages dentro do DashboardLayout principal ────
 const PainelSdrPage          = lazy(() => import("@/pages/sdr/PainelSdrPage"));
 const CadastroGeralPage      = lazy(() => import("@/pages/sdr/CadastroGeralPage"));
+const RevisarLeadSdrPage     = lazy(() => import("@/pages/sdr/RevisarLeadSdrPage"));
 const SdrLeadsAprovadosPage  = lazy(() => import("@/pages/sdr/LeadsAprovadosPage"));
 const SdrConsultasPage       = lazy(() => import("@/pages/sdr/ConsultasPage"));
 const SdrTratamentosPage     = lazy(() => import("@/pages/sdr/TratamentosPage"));
@@ -189,8 +190,9 @@ export default function App() {
 
           {/* SDR Unificado — substitui o sistema separado /cadastro/* dentro do dashboard principal */}
           <Route path="/sdr"                 element={<PainelSdrPage />}         />
-          <Route path="/sdr/cadastro-geral"  element={<CadastroGeralPage />}     />
-          <Route path="/sdr/leads-aprovados" element={<SdrLeadsAprovadosPage />} />
+          <Route path="/sdr/cadastro-geral"     element={<CadastroGeralPage />}     />
+          <Route path="/sdr/cadastro-geral/:id" element={<RevisarLeadSdrPage />}    />
+          <Route path="/sdr/leads-aprovados"    element={<SdrLeadsAprovadosPage />} />
           <Route path="/sdr/consultas"       element={<SdrConsultasPage />}      />
           <Route path="/sdr/tratamentos"     element={<SdrTratamentosPage />}    />
           <Route path="/sdr/tarefas"         element={<SdrTarefasPage />}        />
