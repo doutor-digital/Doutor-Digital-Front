@@ -523,11 +523,13 @@ export default function DashboardPage() {
           tone="amber"
           value={overviewLoading ? "…" : formatNumber(consultasAgendadas)}
           label="consultas agendadas"
+          to={`/dashboard/agendadas?from=${filters.startDate}&to=${filters.endDate}`}
         />
         <FunnelKpi
           tone="emerald"
           value={overviewLoading ? "…" : formatNumber(compareceuCount)}
           label="compareceram"
+          to={`/dashboard/compareceram?from=${filters.startDate}&to=${filters.endDate}`}
         />
         <FunnelKpi
           tone="rose"
@@ -652,22 +654,33 @@ interface FunnelKpiProps {
   tone: ChipTone;
   value: string;
   label: string;
+  to?: string;
 }
 
-function FunnelKpi({ tone, value, label }: FunnelKpiProps) {
-  return (
-    <div
-      className={cn(
-        "rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 ring-1 ring-inset",
-        TONES[tone],
-      )}
-    >
+function FunnelKpi({ tone, value, label, to }: FunnelKpiProps) {
+  const body = (
+    <>
       <div className="text-[18px] font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-[10.5px] uppercase tracking-wider opacity-80">
         {label}
       </div>
-    </div>
+    </>
   );
+  const cls = cn(
+    "rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 ring-1 ring-inset",
+    TONES[tone],
+  );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={cn(cls, "block transition hover:bg-white/[0.04] hover:scale-[1.01]")}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={cls}>{body}</div>;
 }
 
 /* ============================================================

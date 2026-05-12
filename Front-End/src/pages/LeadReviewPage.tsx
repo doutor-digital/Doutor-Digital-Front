@@ -5,16 +5,18 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Building2,
-  Check,
+  Calendar,
+  CheckCircle2,
+  CreditCard,
   FileText,
   Hash,
   Mail,
   Phone,
   Save,
-  Tag,
   Target,
   User2,
   UserCog,
+  Wallet,
   X,
 } from "@/components/icons";
 import { Input } from "@/components/ui/Input";
@@ -24,98 +26,309 @@ import { webhooksService } from "@/services/webhooks";
 import { assignmentsService } from "@/services/assignments";
 import { unitsService } from "@/services/units";
 import { cn } from "@/lib/utils";
-import type { LeadDetail } from "@/types";
+import type {
+  LeadDetail,
+  LeadPaymentReceipt,
+  NoAppointmentReason,
+  NoCloseReason,
+  PaymentMethod,
+  TreatmentPlanCategory,
+} from "@/types";
 
-const STAGE_OPTIONS = [
-  { value: "01_NOVO_LEAD", label: "01 — Novo lead" },
-  { value: "02_EM_ATENDIMENTO", label: "02 — Em atendimento" },
-  { value: "03_AGENDADO_SEM_PAGAMENTO", label: "03 — Agendado (sem pagamento)" },
-  { value: "04_AGENDADO_COM_PAGAMENTO", label: "04 — Agendado (com pagamento)" },
-  { value: "05_COMPARECEU", label: "05 — Compareceu" },
-  { value: "07_FALTOU", label: "07 — Faltou" },
-  { value: "08_NAO_FECHOU_TRATAMENTO", label: "08 — Não fechou tratamento" },
-  { value: "09_FECHOU_TRATAMENTO", label: "09 — Fechou tratamento" },
-  { value: "10_EM_TRATAMENTO", label: "10 — Em tratamento" },
+// ─── Enums com labels ────────────────────────────────────────────────────────
+
+const LEAD_TYPE_OPTIONS = [
+  { value: "cadastro", label: "Cadastro" },
+  { value: "resgate", label: "Resgate" },
+] as const;
+
+const RESCUE_TYPE_OPTIONS = [
+  { value: "mensagem", label: "Mensagem" },
+  { value: "ligacao", label: "Ligação" },
+  { value: "disparo_massa", label: "Disparo em massa" },
+] as const;
+
+const NO_APPOINTMENT_REASONS: { value: NoAppointmentReason; label: string }[] = [
+  { value: "sem_interacao", label: "Sem interação" },
+  { value: "sem_continuidade", label: "Não deu continuidade ao atendimento" },
+  { value: "plano_saude", label: "Atendimento por plano de saúde" },
+  { value: "terceiros", label: "Atendimento para terceiros" },
+  { value: "sem_condicoes", label: "Sem condições financeiras" },
+  { value: "vai_se_organizar", label: "Vai se organizar financeiramente" },
+  { value: "busca_laudo", label: "Busca apenas laudo médico" },
+  { value: "interesse_pilates", label: "Interesse apenas em pilates" },
+  { value: "interesse_liberacao", label: "Interesse apenas em liberação miofascial" },
+  { value: "mora_outra_cidade", label: "Mora +50km" },
+  { value: "sem_interesse", label: "Sem interesse" },
+  { value: "clicou_engano", label: "Clicou por engano" },
+  { value: "outro_tratamento", label: "Busca outro tipo de tratamento" },
+  { value: "outra_patologia", label: "Outra patologia" },
+  { value: "em_viagem", label: "Em viagem no momento" },
 ];
 
+const NO_CLOSE_REASONS: { value: NoCloseReason; label: string }[] = [
+  { value: "fechou_total", label: "Fechou tratamento (total)" },
+  { value: "fechou_parcial", label: "Fechou tratamento (parcial)" },
+  { value: "assinou_sem_entrada", label: "Assinou contrato, sem entrada" },
+  { value: "decide_familia", label: "Vai decidir com familiares" },
+  { value: "verifica_pagamento", label: "Vai verificar a melhor forma de pagamento" },
+  { value: "exame_imagem", label: "Solicitado exame de imagem" },
+  { value: "mora_fora", label: "Mora fora +50km" },
+  { value: "outra_patologia", label: "Outra patologia" },
+  { value: "sem_condicoes", label: "Sem condições financeiras" },
+];
+
+const TREATMENT_PLAN_GROUPS: {
+  group: string;
+  options: { value: TreatmentPlanCategory; label: string }[];
+}[] = [
+  {
+    group: "Tratamento",
+    options: [
+      { value: "tratamento_pontual", label: "Tratamento pontual" },
+      { value: "clinico_mensal", label: "Clínico — mensal" },
+      { value: "clinico_semestral", label: "Clínico — semestral" },
+      { value: "essencial_mensal", label: "Essencial — mensal" },
+      { value: "essencial_semestral", label: "Essencial — semestral" },
+      { value: "essencial_anual", label: "Essencial — anual" },
+    ],
+  },
+  {
+    group: "Pilates",
+    options: [
+      { value: "pilates_mensal", label: "Pilates — mensal" },
+      { value: "pilates_semestral", label: "Pilates — semestral" },
+      { value: "pilates_anual", label: "Pilates — anual" },
+    ],
+  },
+  {
+    group: "Musculação clínica 3x",
+    options: [
+      { value: "musculacao_clinica_mensal", label: "Musculação clínica — mensal" },
+      { value: "musculacao_clinica_semestral", label: "Musculação clínica — semestral" },
+      { value: "musculacao_clinica_anual", label: "Musculação clínica — anual" },
+    ],
+  },
+  {
+    group: "Procedimentos",
+    options: [
+      { value: "liberacao_parcial_individual", label: "Liberação parcial individual" },
+      { value: "liberacao_total_individual", label: "Liberação total individual" },
+      { value: "sessao_fisioterapia", label: "Sessão de fisioterapia" },
+    ],
+  },
+];
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "pix", label: "PIX" },
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "cartao_credito", label: "Cartão de crédito" },
+  { value: "cartao_debito", label: "Cartão de débito" },
+  { value: "boleto", label: "Boleto" },
+  { value: "transferencia", label: "Transferência" },
+  { value: "outro", label: "Outro" },
+];
+
+// ─── Draft state ─────────────────────────────────────────────────────────────
+
 interface DraftState {
+  // Identificação
   name: string;
   phone: string;
   email: string;
   cpf: string;
-  gender: string;
+
+  // Atribuição
   source: string;
-  channel: string;
-  campaign: string;
-  ad: string;
-  currentStage: string;
-  observations: string;
-  tags: string[];
   unitId: string;
   attendantId: string;
-  hasAppointment: boolean;
-  hasPayment: boolean;
-  hasHealthInsurancePlan: boolean;
+
+  // Cadastro geral
+  leadType: "" | "cadastro" | "resgate";
+  rescueType: "" | "mensagem" | "ligacao" | "disparo_massa";
+  hadInteraction: "" | "yes" | "no";
+  scheduledConsultation: "" | "yes" | "no";
+  hasPayment: "" | "yes" | "no";
+  appointmentScheduledAt: string;
+  noAppointmentReason: string;
+  noAppointmentCity: string;
+
+  // Consulta comparecida
+  consultationValue: string;
+  consultationReceipts: ReceiptDraft[];
+  indicatedTreatment: string;
+  treatmentBudget: string;
+  closedTreatment: "" | "yes" | "no";
+  noCloseReason: string;
+
+  // Tratamentos fechados
+  treatmentPlanCategory: string;
+  treatmentPlanValue: string;
+  treatmentReceipts: ReceiptDraft[];
+
+  observations: string;
 }
 
+interface ReceiptDraft {
+  amount: string;
+  method: string;
+  receivedAt: string;
+  isAdvance: boolean;
+}
+
+const EMPTY_RECEIPT: ReceiptDraft = {
+  amount: "",
+  method: "",
+  receivedAt: "",
+  isAdvance: false,
+};
+
 function leadToDraft(l: LeadDetail): DraftState {
+  // Filtra receipts por kind e slot, preenchendo 2 (consulta) / 6 (tratamento)
+  const consultaSlots: ReceiptDraft[] = Array.from({ length: 2 }, (_, i) => {
+    const slot = i + 1;
+    const r = l.paymentReceipts?.find((x) => x.kind === "consulta" && x.slot === slot);
+    return r ? receiptToDraft(r) : { ...EMPTY_RECEIPT };
+  });
+  const tratamentoSlots: ReceiptDraft[] = Array.from({ length: 6 }, (_, i) => {
+    const slot = i + 1;
+    const r = l.paymentReceipts?.find((x) => x.kind === "tratamento" && x.slot === slot);
+    return r ? receiptToDraft(r) : { ...EMPTY_RECEIPT };
+  });
+
   return {
     name: l.name ?? "",
     phone: l.phone ?? "",
     email: l.email ?? "",
     cpf: l.cpf ?? "",
-    gender: l.gender ?? "",
     source: l.source ?? "",
-    channel: l.channel ?? "",
-    campaign: l.campaign ?? "",
-    ad: l.ad ?? "",
-    currentStage: l.currentStage ?? "",
-    observations: l.observations ?? "",
-    tags: Array.isArray(l.tags) ? [...l.tags] : [],
     unitId: l.unitId != null ? String(l.unitId) : "",
     attendantId: l.attendantId != null ? String(l.attendantId) : "",
-    hasAppointment: !!l.hasAppointment,
-    hasPayment: !!l.hasPayment,
-    hasHealthInsurancePlan: !!l.hasHealthInsurancePlan,
+
+    leadType: (l.leadType as DraftState["leadType"]) ?? "",
+    rescueType: (l.rescueType as DraftState["rescueType"]) ?? "",
+    hadInteraction:
+      l.hadInteraction == null ? "" : l.hadInteraction ? "yes" : "no",
+    scheduledConsultation:
+      l.scheduledConsultation == null ? "" : l.scheduledConsultation ? "yes" : "no",
+    hasPayment: l.hasPayment == null ? "" : l.hasPayment ? "yes" : "no",
+    appointmentScheduledAt: l.appointmentScheduledAt
+      ? l.appointmentScheduledAt.slice(0, 16)
+      : "",
+    noAppointmentReason: l.noAppointmentReason ?? "",
+    noAppointmentCity: l.noAppointmentCity ?? "",
+
+    consultationValue: l.consultationValue != null ? String(l.consultationValue) : "",
+    consultationReceipts: consultaSlots,
+    indicatedTreatment: l.indicatedTreatment ?? "",
+    treatmentBudget: l.treatmentBudget != null ? String(l.treatmentBudget) : "",
+    closedTreatment:
+      l.closedTreatment == null ? "" : l.closedTreatment ? "yes" : "no",
+    noCloseReason: l.noCloseReason ?? "",
+
+    treatmentPlanCategory: l.treatmentPlanCategory ?? "",
+    treatmentPlanValue: l.treatmentPlanValue != null ? String(l.treatmentPlanValue) : "",
+    treatmentReceipts: tratamentoSlots,
+
+    observations: l.observations ?? "",
   };
 }
 
-function diffDraft(
-  original: DraftState,
-  draft: DraftState,
-): Record<string, unknown> {
-  const patch: Record<string, unknown> = {};
-  if (draft.name !== original.name) patch.name = draft.name.trim();
-  if (draft.phone !== original.phone) patch.phone = draft.phone.trim() || null;
-  if (draft.email !== original.email) patch.email = draft.email.trim() || null;
-  if (draft.cpf !== original.cpf) patch.cpf = draft.cpf.trim() || null;
-  if (draft.gender !== original.gender) patch.gender = draft.gender || null;
-  if (draft.source !== original.source) patch.source = draft.source.trim();
-  if (draft.channel !== original.channel) patch.channel = draft.channel.trim();
-  if (draft.campaign !== original.campaign) patch.campaign = draft.campaign.trim();
-  if (draft.ad !== original.ad) patch.ad = draft.ad.trim() || null;
-  if (draft.currentStage !== original.currentStage)
-    patch.currentStage = draft.currentStage;
-  if (draft.observations !== original.observations)
-    patch.observations = draft.observations.trim() || null;
-  if (
-    draft.tags.length !== original.tags.length ||
-    draft.tags.some((t, i) => t !== original.tags[i])
-  ) {
-    patch.tags = draft.tags;
-  }
-  if (draft.unitId !== original.unitId)
-    patch.unitId = draft.unitId ? Number(draft.unitId) : null;
-  if (draft.attendantId !== original.attendantId)
-    patch.attendantId = draft.attendantId ? Number(draft.attendantId) : null;
-  if (draft.hasAppointment !== original.hasAppointment)
-    patch.hasAppointment = draft.hasAppointment;
-  if (draft.hasPayment !== original.hasPayment)
-    patch.hasPayment = draft.hasPayment;
-  if (draft.hasHealthInsurancePlan !== original.hasHealthInsurancePlan)
-    patch.hasHealthInsurancePlan = draft.hasHealthInsurancePlan;
-  return patch;
+function receiptToDraft(r: LeadPaymentReceipt): ReceiptDraft {
+  return {
+    amount: r.amount != null ? String(r.amount) : "",
+    method: (r.method as string) ?? "",
+    receivedAt: r.receivedAt ? r.receivedAt.slice(0, 10) : "",
+    isAdvance: !!r.isAdvance,
+  };
 }
+
+function ynToBool(v: "" | "yes" | "no"): boolean | null {
+  if (v === "yes") return true;
+  if (v === "no") return false;
+  return null;
+}
+
+function buildPayload(draft: DraftState): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    name: draft.name.trim(),
+    phone: draft.phone.trim() || null,
+    email: draft.email.trim() || null,
+    cpf: draft.cpf.trim() || null,
+    source: draft.source.trim(),
+    unitId: draft.unitId ? Number(draft.unitId) : null,
+    attendantId: draft.attendantId ? Number(draft.attendantId) : null,
+
+    leadType: draft.leadType || null,
+    rescueType: draft.leadType === "resgate" ? draft.rescueType || null : null,
+    hadInteraction: ynToBool(draft.hadInteraction),
+    scheduledConsultation: ynToBool(draft.scheduledConsultation),
+    hasPayment: ynToBool(draft.hasPayment) ?? undefined,
+    appointmentScheduledAt:
+      draft.appointmentScheduledAt && draft.scheduledConsultation === "yes"
+        ? draft.appointmentScheduledAt
+        : null,
+    noAppointmentReason:
+      draft.scheduledConsultation === "no" ? draft.noAppointmentReason || null : null,
+    noAppointmentCity:
+      draft.noAppointmentReason === "mora_outra_cidade"
+        ? draft.noAppointmentCity.trim() || null
+        : null,
+
+    consultationValue: draft.consultationValue ? Number(draft.consultationValue) : null,
+    indicatedTreatment: draft.indicatedTreatment.trim() || null,
+    treatmentBudget: draft.treatmentBudget ? Number(draft.treatmentBudget) : null,
+    closedTreatment: ynToBool(draft.closedTreatment),
+    noCloseReason: draft.closedTreatment === "no" ? draft.noCloseReason || null : null,
+
+    treatmentPlanCategory:
+      draft.closedTreatment === "yes" ? draft.treatmentPlanCategory || null : null,
+    treatmentPlanValue:
+      draft.closedTreatment === "yes" && draft.treatmentPlanValue
+        ? Number(draft.treatmentPlanValue)
+        : null,
+
+    observations: draft.observations.trim() || null,
+  };
+
+  // Receipts (envia sempre, back filtra linhas vazias)
+  const receipts: Array<{
+    kind: "consulta" | "tratamento";
+    slot: number;
+    amount: number | null;
+    method: string | null;
+    receivedAt: string | null;
+    isAdvance: boolean;
+  }> = [];
+
+  draft.consultationReceipts.forEach((r, i) => {
+    receipts.push({
+      kind: "consulta",
+      slot: i + 1,
+      amount: r.amount ? Number(r.amount) : null,
+      method: r.method || null,
+      receivedAt: r.receivedAt || null,
+      isAdvance: r.isAdvance,
+    });
+  });
+  if (draft.closedTreatment === "yes") {
+    draft.treatmentReceipts.forEach((r, i) => {
+      receipts.push({
+        kind: "tratamento",
+        slot: i + 1,
+        amount: r.amount ? Number(r.amount) : null,
+        method: r.method || null,
+        receivedAt: r.receivedAt || null,
+        isAdvance: r.isAdvance,
+      });
+    });
+  }
+  payload.paymentReceipts = receipts;
+
+  return payload;
+}
+
+// ─── Subcomponentes ──────────────────────────────────────────────────────────
 
 function Section({
   title,
@@ -152,15 +365,18 @@ function Field({
   label,
   hint,
   children,
+  required,
 }: {
   label: string;
   hint?: string;
   children: React.ReactNode;
+  required?: boolean;
 }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
         {label}
+        {required && <span className="ml-0.5 text-rose-400">*</span>}
       </span>
       {children}
       {hint && <span className="mt-1 block text-[11px] text-slate-500">{hint}</span>}
@@ -168,44 +384,105 @@ function Field({
   );
 }
 
-function CheckboxField({
-  checked,
+function YesNoToggle({
+  value,
   onChange,
-  label,
-  description,
 }: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-  description?: string;
+  value: "" | "yes" | "no";
+  onChange: (v: "" | "yes" | "no") => void;
 }) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer group">
-      <span
-        className={cn(
-          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition",
-          checked
-            ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
-            : "border-white/[0.1] bg-white/[0.02] group-hover:border-white/[0.18]",
-        )}
-      >
-        {checked && <Check className="h-3 w-3" />}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="sr-only"
-      />
-      <span className="min-w-0">
-        <span className="block text-[13px] font-medium text-slate-200">{label}</span>
-        {description && (
-          <span className="mt-0.5 block text-[11.5px] text-slate-500">{description}</span>
-        )}
-      </span>
-    </label>
+    <div className="inline-flex items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
+      {(["yes", "no"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(value === v ? "" : v)}
+          className={cn(
+            "rounded-md px-3 py-1 text-[12px] font-medium transition",
+            value === v
+              ? v === "yes"
+                ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30"
+                : "bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-500/30"
+              : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200",
+          )}
+        >
+          {v === "yes" ? "Sim" : "Não"}
+        </button>
+      ))}
+    </div>
   );
 }
+
+function ReceiptRow({
+  index,
+  receipt,
+  onChange,
+}: {
+  index: number;
+  receipt: ReceiptDraft;
+  onChange: (r: ReceiptDraft) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-2 rounded-md border border-white/[0.05] bg-white/[0.01] p-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+      <div className="absolute -mt-2 ml-1 text-[9px] font-bold uppercase tracking-wider text-slate-600">
+        #{index + 1}
+      </div>
+      <div>
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+          Valor
+        </span>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          icon={<Wallet className="h-3.5 w-3.5" />}
+          value={receipt.amount}
+          onChange={(e) => onChange({ ...receipt, amount: e.target.value })}
+          placeholder="0,00"
+        />
+      </div>
+      <div>
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+          Forma de pagamento
+        </span>
+        <Select
+          value={receipt.method}
+          onChange={(e) => onChange({ ...receipt, method: e.target.value })}
+        >
+          <option value="">—</option>
+          {PAYMENT_METHODS.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div>
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+          Data
+        </span>
+        <Input
+          type="date"
+          icon={<Calendar className="h-3.5 w-3.5" />}
+          value={receipt.receivedAt}
+          onChange={(e) => onChange({ ...receipt, receivedAt: e.target.value })}
+        />
+      </div>
+      <label className="flex items-center gap-2 self-end pb-2 text-[11.5px] text-slate-300">
+        <input
+          type="checkbox"
+          checked={receipt.isAdvance}
+          onChange={(e) => onChange({ ...receipt, isAdvance: e.target.checked })}
+          className="h-3.5 w-3.5 accent-amber-500"
+        />
+        Adiantado
+      </label>
+    </div>
+  );
+}
+
+// ─── Página ──────────────────────────────────────────────────────────────────
 
 export default function LeadReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -230,29 +507,16 @@ export default function LeadReviewPage() {
   });
 
   const [draft, setDraft] = useState<DraftState | null>(null);
-  const [tagInput, setTagInput] = useState("");
 
-  // Carrega o lead no draft uma vez por id (e quando a query terminar).
   useEffect(() => {
     if (leadQ.data && draft === null) {
       setDraft(leadToDraft(leadQ.data));
     }
   }, [leadQ.data, draft]);
 
-  const original = useMemo(
-    () => (leadQ.data ? leadToDraft(leadQ.data) : null),
-    [leadQ.data],
-  );
-
-  const dirtyPatch = useMemo(
-    () => (original && draft ? diffDraft(original, draft) : {}),
-    [original, draft],
-  );
-  const isDirty = Object.keys(dirtyPatch).length > 0;
-
   const save = useMutation({
-    mutationFn: (patch: Record<string, unknown>) =>
-      webhooksService.patchLead(id!, patch),
+    mutationFn: (payload: Record<string, unknown>) =>
+      webhooksService.patchLead(id!, payload),
     onSuccess: () => {
       toast.success("Lead atualizado");
       qc.invalidateQueries({ queryKey: ["lead-detail", id] });
@@ -260,50 +524,42 @@ export default function LeadReviewPage() {
     },
     onError: (err: unknown) => {
       const msg =
-        (err as { response?: { data?: { title?: string; error?: string } } })
-          ?.response?.data?.title ??
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ??
+        (err as { response?: { data?: { title?: string } } })?.response?.data?.title ??
         "Não foi possível salvar";
       toast.error(msg);
     },
   });
 
   function update<K extends keyof DraftState>(key: K, value: DraftState[K]) {
-    setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setDraft((p) => (p ? { ...p, [key]: value } : p));
   }
 
-  function addTag() {
-    const t = tagInput.trim();
-    if (!t || !draft) return;
-    if (draft.tags.includes(t)) {
-      setTagInput("");
-      return;
-    }
-    update("tags", [...draft.tags, t]);
-    setTagInput("");
+  function updateReceipt(
+    bucket: "consultationReceipts" | "treatmentReceipts",
+    i: number,
+    value: ReceiptDraft,
+  ) {
+    setDraft((p) => {
+      if (!p) return p;
+      const arr = [...p[bucket]];
+      arr[i] = value;
+      return { ...p, [bucket]: arr };
+    });
   }
 
-  function removeTag(t: string) {
-    if (!draft) return;
-    update(
-      "tags",
-      draft.tags.filter((x) => x !== t),
-    );
-  }
+  const advanceConsultaCount = useMemo(
+    () => draft?.consultationReceipts.filter((r) => r.isAdvance && r.amount).length ?? 0,
+    [draft],
+  );
+  const advanceTratamentoCount = useMemo(
+    () => draft?.treatmentReceipts.filter((r) => r.isAdvance && r.amount).length ?? 0,
+    [draft],
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isDirty) {
-      toast.info("Nada para salvar");
-      return;
-    }
-    save.mutate(dirtyPatch);
-  }
-
-  function handleCancel() {
-    if (isDirty && !confirm("Descartar alterações?")) return;
-    navigate(`/leads/${id}`);
+    if (!draft) return;
+    save.mutate(buildPayload(draft));
   }
 
   if (leadQ.isLoading || !draft) {
@@ -319,14 +575,11 @@ export default function LeadReviewPage() {
     return (
       <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.04] p-6">
         <h2 className="text-[14px] font-semibold text-rose-200">Lead não encontrado</h2>
-        <p className="mt-1 text-[12px] text-slate-400">
-          Verifique o link ou volte para a lista.
-        </p>
         <Link
           to="/leads"
           className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-medium text-sky-400 hover:text-sky-300"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar para leads
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
         </Link>
       </div>
     );
@@ -336,6 +589,7 @@ export default function LeadReviewPage() {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-5 pb-24">
+      {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Link
@@ -351,29 +605,21 @@ export default function LeadReviewPage() {
             {l.name || "Sem nome"} · #{l.id}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {isDirty && (
-            <span className="rounded-md bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-300 ring-1 ring-inset ring-amber-500/30">
-              {Object.keys(dirtyPatch).length} alteração
-              {Object.keys(dirtyPatch).length === 1 ? "" : "es"} pendente
-              {Object.keys(dirtyPatch).length === 1 ? "" : "s"}
-            </span>
-          )}
-        </div>
       </div>
 
+      {/* ═══════ CADASTRO GERAL ═══════ */}
       <Section
-        title="Identificação"
-        description="Dados básicos de contato do lead."
+        title="Cadastro geral"
+        description="Dados básicos do lead, tipo (cadastro/resgate) e situação do agendamento."
         icon={<User2 className="h-4 w-4" />}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Nome">
+          <Field label="Nome" required>
             <Input
               icon={<User2 className="h-3.5 w-3.5" />}
               value={draft.name}
               onChange={(e) => update("name", e.target.value)}
-              placeholder="Nome do lead"
+              required
             />
           </Field>
           <Field label="Telefone">
@@ -390,7 +636,6 @@ export default function LeadReviewPage() {
               type="email"
               value={draft.email}
               onChange={(e) => update("email", e.target.value)}
-              placeholder="email@exemplo.com"
             />
           </Field>
           <Field label="CPF">
@@ -398,29 +643,16 @@ export default function LeadReviewPage() {
               icon={<Hash className="h-3.5 w-3.5" />}
               value={draft.cpf}
               onChange={(e) => update("cpf", e.target.value)}
-              placeholder="000.000.000-00"
             />
           </Field>
-          <Field label="Gênero">
-            <Select
-              value={draft.gender}
-              onChange={(e) => update("gender", e.target.value)}
-            >
-              <option value="">Não informado</option>
-              <option value="M">Masculino</option>
-              <option value="F">Feminino</option>
-              <option value="O">Outro</option>
-            </Select>
+          <Field label="Origem">
+            <Input
+              icon={<Target className="h-3.5 w-3.5" />}
+              value={draft.source}
+              onChange={(e) => update("source", e.target.value)}
+              placeholder="META, GOOGLE..."
+            />
           </Field>
-        </div>
-      </Section>
-
-      <Section
-        title="Atendimento"
-        description="Unidade responsável e atendente atribuído."
-        icon={<UserCog className="h-4 w-4" />}
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Unidade">
             <Select
               value={draft.unitId}
@@ -434,12 +666,47 @@ export default function LeadReviewPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Atendente">
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Tipo">
+            <Select
+              value={draft.leadType}
+              onChange={(e) =>
+                update("leadType", e.target.value as DraftState["leadType"])
+              }
+            >
+              <option value="">—</option>
+              {LEAD_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {draft.leadType === "resgate" && (
+            <Field label="Tipo de resgate">
+              <Select
+                value={draft.rescueType}
+                onChange={(e) =>
+                  update("rescueType", e.target.value as DraftState["rescueType"])
+                }
+              >
+                <option value="">—</option>
+                {RESCUE_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          <Field label="Nome do responsável">
             <Select
               value={draft.attendantId}
               onChange={(e) => update("attendantId", e.target.value)}
             >
-              <option value="">— Sem atendente —</option>
+              <option value="">— Sem responsável —</option>
               {(attendantsQ.data ?? []).map((a) => (
                 <option key={a.id} value={String(a.id)}>
                   {a.name || a.email || `Atendente ${a.id}`}
@@ -447,150 +714,246 @@ export default function LeadReviewPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Etapa atual" hint="Move o lead para a etapa selecionada.">
-            <Select
-              value={draft.currentStage}
-              onChange={(e) => update("currentStage", e.target.value)}
-            >
-              {STAGE_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-              {/* Mostra a etapa atual mesmo que não esteja na lista padrão */}
-              {!STAGE_OPTIONS.some((s) => s.value === draft.currentStage) &&
-                draft.currentStage && (
-                  <option value={draft.currentStage}>{draft.currentStage}</option>
-                )}
-            </Select>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 rounded-lg border border-white/[0.05] bg-white/[0.015] p-3 sm:grid-cols-3">
+          <Field label="Interação">
+            <YesNoToggle
+              value={draft.hadInteraction}
+              onChange={(v) => update("hadInteraction", v)}
+            />
+          </Field>
+          <Field label="Agendou consulta">
+            <YesNoToggle
+              value={draft.scheduledConsultation}
+              onChange={(v) => update("scheduledConsultation", v)}
+            />
+          </Field>
+          <Field label="Pagamento antecipado">
+            <YesNoToggle
+              value={draft.hasPayment}
+              onChange={(v) => update("hasPayment", v)}
+            />
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 rounded-lg border border-white/[0.05] bg-white/[0.015] p-3 sm:grid-cols-3">
-          <CheckboxField
-            checked={draft.hasAppointment}
-            onChange={(v) => update("hasAppointment", v)}
-            label="Tem consulta agendada"
-          />
-          <CheckboxField
-            checked={draft.hasPayment}
-            onChange={(v) => update("hasPayment", v)}
-            label="Pagamento confirmado"
-          />
-          <CheckboxField
-            checked={draft.hasHealthInsurancePlan}
-            onChange={(v) => update("hasHealthInsurancePlan", v)}
-            label="Possui plano de saúde"
-          />
-        </div>
+        {draft.scheduledConsultation === "yes" && (
+          <Field label="Data do agendamento">
+            <Input
+              type="datetime-local"
+              icon={<Calendar className="h-3.5 w-3.5" />}
+              value={draft.appointmentScheduledAt}
+              onChange={(e) => update("appointmentScheduledAt", e.target.value)}
+            />
+          </Field>
+        )}
+
+        {draft.scheduledConsultation === "no" && (
+          <>
+            <Field label="Motivo de não agendamento">
+              <Select
+                value={draft.noAppointmentReason}
+                onChange={(e) => update("noAppointmentReason", e.target.value)}
+              >
+                <option value="">— Selecionar motivo —</option>
+                {NO_APPOINTMENT_REASONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            {draft.noAppointmentReason === "mora_outra_cidade" && (
+              <Field label="Cidade" hint="Especifique a cidade onde o lead mora">
+                <Input
+                  icon={<Building2 className="h-3.5 w-3.5" />}
+                  value={draft.noAppointmentCity}
+                  onChange={(e) => update("noAppointmentCity", e.target.value)}
+                  placeholder="Ex: Campinas"
+                />
+              </Field>
+            )}
+          </>
+        )}
       </Section>
 
+      {/* ═══════ CONSULTA COMPARECIDA ═══════ */}
       <Section
-        title="Origem e atribuição"
-        description="De onde o lead chegou: origem, canal e campanha."
-        icon={<Target className="h-4 w-4" />}
+        title="Consulta comparecida"
+        description="Valor, recebimentos da consulta, tratamento indicado e desfecho."
+        icon={<CheckCircle2 className="h-4 w-4" />}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Origem (source)">
-            <Input
-              icon={<Target className="h-3.5 w-3.5" />}
-              value={draft.source}
-              onChange={(e) => update("source", e.target.value)}
-              placeholder="META, GOOGLE, ORGANIC..."
-            />
+          <Field label="Nome do paciente" hint="Geralmente o mesmo do lead">
+            <Input value={draft.name} disabled className="opacity-70" />
           </Field>
-          <Field label="Canal">
+          <Field label="Valor da consulta">
             <Input
-              icon={<Building2 className="h-3.5 w-3.5" />}
-              value={draft.channel}
-              onChange={(e) => update("channel", e.target.value)}
-              placeholder="whatsapp, instagram..."
-            />
-          </Field>
-          <Field label="Campanha">
-            <Input
-              value={draft.campaign}
-              onChange={(e) => update("campaign", e.target.value)}
-              placeholder="nome da campanha"
-            />
-          </Field>
-          <Field label="Anúncio (ad)">
-            <Input
-              value={draft.ad}
-              onChange={(e) => update("ad", e.target.value)}
-              placeholder="identificador do criativo"
+              type="number"
+              step="0.01"
+              min="0"
+              icon={<Wallet className="h-3.5 w-3.5" />}
+              value={draft.consultationValue}
+              onChange={(e) => update("consultationValue", e.target.value)}
+              placeholder="0,00"
             />
           </Field>
         </div>
-      </Section>
 
-      <Section
-        title="Tags e observações"
-        description="Anotações livres e marcadores para segmentação."
-        icon={<FileText className="h-4 w-4" />}
-      >
-        <Field label="Tags">
-          <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.02] px-2 py-2">
-            {draft.tags.length === 0 && (
-              <span className="text-[11.5px] text-slate-600 italic px-1">
-                Nenhuma tag
+        <div>
+          <p className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            <span>Recebimentos da consulta (2 linhas)</span>
+            {advanceConsultaCount > 0 && (
+              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300 ring-1 ring-inset ring-amber-500/25">
+                {advanceConsultaCount} adiantado{advanceConsultaCount === 1 ? "" : "s"} → financeiro
               </span>
             )}
-            {draft.tags.map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2 py-0.5 text-[11.5px] font-medium text-sky-300 ring-1 ring-inset ring-sky-500/25"
-              >
-                <Tag className="h-3 w-3" />
-                {t}
-                <button
-                  type="button"
-                  onClick={() => removeTag(t)}
-                  className="ml-0.5 text-sky-300/70 hover:text-sky-200"
-                  aria-label={`Remover tag ${t}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
+          </p>
+          <div className="space-y-2">
+            {draft.consultationReceipts.map((r, i) => (
+              <ReceiptRow
+                key={i}
+                index={i}
+                receipt={r}
+                onChange={(nr) => updateReceipt("consultationReceipts", i, nr)}
+              />
             ))}
-            <input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-                if (
-                  e.key === "Backspace" &&
-                  tagInput === "" &&
-                  draft.tags.length > 0
-                ) {
-                  removeTag(draft.tags[draft.tags.length - 1]);
-                }
-              }}
-              placeholder={draft.tags.length === 0 ? "Digite e Enter…" : "+ tag"}
-              className="flex-1 min-w-[120px] bg-transparent text-[12.5px] text-slate-100 outline-none placeholder:text-slate-600"
-            />
           </div>
-        </Field>
+        </div>
 
-        <Field label="Observações">
-          <textarea
-            value={draft.observations}
-            onChange={(e) => update("observations", e.target.value)}
-            rows={4}
-            placeholder="Notas, contexto, próximo passo…"
-            className={cn(
-              "w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2",
-              "text-[13px] text-slate-100 placeholder:text-slate-600 resize-none",
-              "focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.03] transition",
-            )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Tratamento indicado">
+            <Input
+              value={draft.indicatedTreatment}
+              onChange={(e) => update("indicatedTreatment", e.target.value)}
+              placeholder="O que foi indicado pelo profissional"
+            />
+          </Field>
+          <Field label="Orçamento">
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              icon={<Wallet className="h-3.5 w-3.5" />}
+              value={draft.treatmentBudget}
+              onChange={(e) => update("treatmentBudget", e.target.value)}
+              placeholder="0,00"
+            />
+          </Field>
+        </div>
+
+        <Field label="Fechou tratamento">
+          <YesNoToggle
+            value={draft.closedTreatment}
+            onChange={(v) => update("closedTreatment", v)}
           />
         </Field>
+
+        {draft.closedTreatment === "no" && (
+          <Field
+            label="Motivo de não fechamento (semáforo)"
+            hint="Categoria do desfecho pós-consulta"
+          >
+            <Select
+              value={draft.noCloseReason}
+              onChange={(e) => update("noCloseReason", e.target.value)}
+            >
+              <option value="">— Selecionar motivo —</option>
+              {NO_CLOSE_REASONS.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
       </Section>
 
-      {/* ---- Barra de ações fixa no rodapé ---- */}
+      {/* ═══════ TRATAMENTOS FECHADOS ═══════ */}
+      {draft.closedTreatment === "yes" && (
+        <Section
+          title="Tratamento fechado"
+          description="Plano contratado, valor e 6 linhas de recebimento."
+          icon={<CreditCard className="h-4 w-4" />}
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nome do paciente">
+              <Input value={draft.name} disabled className="opacity-70" />
+            </Field>
+            <Field label="Valor do plano/atendimento">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                icon={<Wallet className="h-3.5 w-3.5" />}
+                value={draft.treatmentPlanValue}
+                onChange={(e) => update("treatmentPlanValue", e.target.value)}
+                placeholder="0,00"
+              />
+            </Field>
+          </div>
+
+          <Field label="Plano de tratamento">
+            <Select
+              value={draft.treatmentPlanCategory}
+              onChange={(e) => update("treatmentPlanCategory", e.target.value)}
+            >
+              <option value="">— Selecionar plano —</option>
+              {TREATMENT_PLAN_GROUPS.map((g) => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.options.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Select>
+          </Field>
+
+          <div>
+            <p className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+              <span>Recebimentos do tratamento (6 linhas)</span>
+              {advanceTratamentoCount > 0 && (
+                <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300 ring-1 ring-inset ring-amber-500/25">
+                  {advanceTratamentoCount} adiantado{advanceTratamentoCount === 1 ? "" : "s"} → financeiro
+                </span>
+              )}
+            </p>
+            <div className="space-y-2">
+              {draft.treatmentReceipts.map((r, i) => (
+                <ReceiptRow
+                  key={i}
+                  index={i}
+                  receipt={r}
+                  onChange={(nr) => updateReceipt("treatmentReceipts", i, nr)}
+                />
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ═══════ OBSERVAÇÕES ═══════ */}
+      <Section
+        title="Observações"
+        description="Notas livres, contexto extra."
+        icon={<FileText className="h-4 w-4" />}
+      >
+        <textarea
+          value={draft.observations}
+          onChange={(e) => update("observations", e.target.value)}
+          rows={4}
+          placeholder="Notas, próximos passos…"
+          className={cn(
+            "w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2",
+            "text-[13px] text-slate-100 placeholder:text-slate-600 resize-none",
+            "focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.03] transition",
+          )}
+        />
+      </Section>
+
+      {/* ─── Barra de ações ─── */}
       <div
         className={cn(
           "fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06]",
@@ -599,29 +962,27 @@ export default function LeadReviewPage() {
       >
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3">
           <span className="text-[11.5px] text-slate-500">
-            {isDirty
-              ? `${Object.keys(dirtyPatch).length} campo${
-                  Object.keys(dirtyPatch).length === 1 ? "" : "s"
-                } alterado${Object.keys(dirtyPatch).length === 1 ? "" : "s"}`
-              : "Sem alterações"}
+            {draft.leadType === "resgate" && (
+              <span className="mr-2 inline-flex items-center gap-1 rounded-md bg-violet-500/10 px-2 py-0.5 font-medium text-violet-300 ring-1 ring-inset ring-violet-500/25">
+                <UserCog className="h-3 w-3" /> Resgate
+              </span>
+            )}
+            {draft.closedTreatment === "yes" && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/25">
+                <CheckCircle2 className="h-3 w-3" /> Tratamento fechado
+              </span>
+            )}
           </span>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!isDirty || save.isPending}
-              className="gap-2"
-            >
+            <Link to={`/leads/${id}`}>
+              <Button type="button" variant="outline" size="sm">
+                <X className="mr-1 h-3.5 w-3.5" />
+                Cancelar
+              </Button>
+            </Link>
+            <Button type="submit" size="sm" disabled={save.isPending} className="gap-2">
               <Save className="h-3.5 w-3.5" />
-              {save.isPending ? "Salvando…" : "Salvar alterações"}
+              {save.isPending ? "Salvando…" : "Salvar"}
             </Button>
           </div>
         </div>

@@ -13,6 +13,7 @@ const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
 const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
+const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
 const LeadsPage        = lazy(() => import("@/pages/LeadsPage"));
 const LeadDetailPage   = lazy(() => import("@/pages/LeadDetailPage"));
@@ -195,6 +196,8 @@ export default function App() {
           }
         >
           <Route index path="/"            element={<DashboardPage />}   />
+          <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
+          <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />
           <Route path="/leads"             element={<LeadsPage />}        />
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
           <Route path="/leads/:id/revisar" element={<LeadReviewPage />}   />

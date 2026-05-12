@@ -6,6 +6,7 @@ import type {
   CompareMode,
   ConversionAnalytics,
   DashboardEvolutionResponse,
+  DashboardLeadListItem,
   DashboardOverview,
   GroupByGranularity,
   Lead,
@@ -326,6 +327,54 @@ export const webhooksService = {
       }),
     });
     return data;
+  },
+
+  async dashboardScheduledLeads(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
+  }): Promise<DashboardLeadListItem[]> {
+    const { data } = await api.get<DashboardLeadListItem[]>(
+      "/webhooks/dashboard/scheduled",
+      {
+        params: cleanParams({
+          clinicId: toInt(params.clinicId),
+          dateFrom: params.dateFrom,
+          dateTo: params.dateTo,
+          unitId: toInt(params.unitId),
+          attendantId: toInt(params.attendantId),
+          source: params.source && params.source.length > 0 ? params.source : undefined,
+        }),
+      },
+    );
+    return asArray<DashboardLeadListItem>(data);
+  },
+
+  async dashboardAttendedLeads(params: {
+    clinicId?: number | string;
+    dateFrom: string;
+    dateTo: string;
+    unitId?: number | string;
+    attendantId?: number | string;
+    source?: string;
+  }): Promise<DashboardLeadListItem[]> {
+    const { data } = await api.get<DashboardLeadListItem[]>(
+      "/webhooks/dashboard/attended",
+      {
+        params: cleanParams({
+          clinicId: toInt(params.clinicId),
+          dateFrom: params.dateFrom,
+          dateTo: params.dateTo,
+          unitId: toInt(params.unitId),
+          attendantId: toInt(params.attendantId),
+          source: params.source && params.source.length > 0 ? params.source : undefined,
+        }),
+      },
+    );
+    return asArray<DashboardLeadListItem>(data);
   },
 
   async distinctSources(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<string[]> {

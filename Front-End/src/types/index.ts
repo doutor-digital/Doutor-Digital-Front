@@ -848,6 +848,72 @@ export interface DashboardEvolutionResponse {
   comparison_date_to: string | null;
 }
 
+export type LeadType = "cadastro" | "resgate";
+export type RescueType = "mensagem" | "ligacao" | "disparo_massa";
+export type PaymentMethod =
+  | "pix"
+  | "dinheiro"
+  | "cartao_credito"
+  | "cartao_debito"
+  | "boleto"
+  | "transferencia"
+  | "outro";
+
+export type NoAppointmentReason =
+  | "sem_interacao"
+  | "sem_continuidade"
+  | "plano_saude"
+  | "terceiros"
+  | "sem_condicoes"
+  | "vai_se_organizar"
+  | "busca_laudo"
+  | "interesse_pilates"
+  | "interesse_liberacao"
+  | "mora_outra_cidade"
+  | "sem_interesse"
+  | "clicou_engano"
+  | "outro_tratamento"
+  | "outra_patologia"
+  | "em_viagem";
+
+export type NoCloseReason =
+  | "fechou_total"
+  | "fechou_parcial"
+  | "assinou_sem_entrada"
+  | "decide_familia"
+  | "verifica_pagamento"
+  | "exame_imagem"
+  | "mora_fora"
+  | "outra_patologia"
+  | "sem_condicoes";
+
+export type TreatmentPlanCategory =
+  | "tratamento_pontual"
+  | "clinico_mensal"
+  | "clinico_semestral"
+  | "essencial_mensal"
+  | "essencial_semestral"
+  | "essencial_anual"
+  | "pilates_mensal"
+  | "pilates_semestral"
+  | "pilates_anual"
+  | "musculacao_clinica_mensal"
+  | "musculacao_clinica_semestral"
+  | "musculacao_clinica_anual"
+  | "liberacao_parcial_individual"
+  | "liberacao_total_individual"
+  | "sessao_fisioterapia";
+
+export interface LeadPaymentReceipt {
+  id?: number;
+  kind: "consulta" | "tratamento";
+  slot: number;
+  amount?: number | null;
+  method?: PaymentMethod | string | null;
+  receivedAt?: string | null;
+  isAdvance: boolean;
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;
@@ -894,6 +960,42 @@ export interface LeadDetail {
   conversations: LeadConversationDto[];
   assignments: LeadAssignmentDto[];
   payments: LeadPaymentDto[];
+
+  // Revisão comercial
+  leadType?: LeadType | string | null;
+  rescueType?: RescueType | string | null;
+  hadInteraction?: boolean | null;
+  scheduledConsultation?: boolean | null;
+  appointmentScheduledAt?: string | null;
+  noAppointmentReason?: NoAppointmentReason | string | null;
+  noAppointmentCity?: string | null;
+  noCloseReason?: NoCloseReason | string | null;
+  consultationValue?: number | null;
+  closedTreatment?: boolean | null;
+  indicatedTreatment?: string | null;
+  treatmentBudget?: number | null;
+  treatmentPlanCategory?: TreatmentPlanCategory | string | null;
+  treatmentPlanValue?: number | null;
+  paymentReceipts: LeadPaymentReceipt[];
+}
+
+export interface DashboardLeadListItem {
+  id: number;
+  name: string;
+  phone?: string | null;
+  unitId?: number | null;
+  unitName?: string | null;
+  attendantId?: number | null;
+  attendantName?: string | null;
+  source?: string | null;
+  campaign?: string | null;
+  currentStage: string;
+  attendanceStatus?: string | null;
+  appointmentScheduledAt?: string | null;
+  attendanceStatusAt?: string | null;
+  createdAt: string;
+  consultationValue?: number | null;
+  closedTreatment?: boolean | null;
 }
 
 /* ─── Relatórios (Daily + Monthly resumo) ─── */

@@ -85,7 +85,7 @@ export default defineConfig({
           react: ["react", "react-dom", "react-router-dom"],
           query: ["@tanstack/react-query"],
           charts: ["recharts"],
-          icons: ["lucide-react"],
+          icons: ["@heroicons/react"],
         },
       },
     },
