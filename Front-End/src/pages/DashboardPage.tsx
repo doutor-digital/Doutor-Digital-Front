@@ -4,8 +4,12 @@ import { Link } from "react-router-dom";
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
 } from "recharts";
 import {
   cn,
@@ -403,47 +407,92 @@ export default function DashboardPage() {
         sources={sourcesList.data ?? []}
       />
 
-      {/* ---- Linha de mini KPIs (6 colunas) ---- */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
-        <MiniKpi
-          icon={<UserPlus className="h-20 w-20" />}
-          tone="sky"
-          value={overviewLoading ? "…" : formatNumber(total)}
-          label="leads no total"
-        />
-        <MiniKpi
-          icon={<Webhook className="h-20 w-20" />}
-          tone="violet"
-          value={
-            contatosCounts.isLoading ? "…" : formatNumber(webhookCount)
-          }
-          label="webhook"
-        />
-        <MiniKpi
-          icon={<CloudDownload className="h-20 w-20" />}
-          tone="cyan"
-          value={
-            contatosCounts.isLoading ? "…" : formatNumber(importedCount)
-          }
-          label="importados"
-        />
-        <MiniKpi
-          icon={<Clock className="h-20 w-20" />}
-          tone="amber"
-          value={overviewLoading ? "…" : formatNumber(inQueue)}
-          label="na fila"
-        />
-        <MiniKpi
-          icon={<Headset className="h-20 w-20" />}
-          tone="emerald"
-          value={overviewLoading ? "…" : formatNumber(inService)}
-          label="em atendimento"
-        />
-        <MiniKpi
-          icon={<Percent className="h-20 w-20" />}
-          tone="fuchsia"
-          value={overviewLoading ? "…" : formatPercent(conversao)}
-          label="de conversão"
+      {/* ════════════ HERO estilo Kommo — donuts + cards de dados ════════════ */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_minmax(210px,250px)]">
+        {/* 3 donuts (rings) com gradiente da marca */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <DonutKpi
+            value={overviewLoading ? "…" : formatNumber(total)}
+            label="Leads no período"
+            percent={conversao}
+            delta={
+              change !== null
+                ? `${change >= 0 ? "+" : "−"}${Math.abs(change).toFixed(1)}%`
+                : "—"
+            }
+            deltaUp={changeUp}
+            gradId="donut-blue"
+            from="#0086f7"
+            to="#66b9ff"
+          />
+          <DonutKpi
+            value={overviewLoading ? "…" : formatNumber(consultasNum)}
+            label="Consultas"
+            percent={comparecimentoRate}
+            delta={formatPercent(comparecimentoRate)}
+            deltaUp
+            gradId="donut-amber"
+            from="#ffb500"
+            to="#ffd666"
+          />
+          <DonutKpi
+            value={overviewLoading ? "…" : formatNumber(fechouCount)}
+            label="Fechamentos"
+            percent={fechamentoRate}
+            delta={formatPercent(fechamentoRate)}
+            deltaUp
+            gradId="donut-cyan"
+            from="#008eff"
+            to="#22d3ee"
+          />
+        </div>
+
+        {/* coluna direita — 2 cards "Data" com mini-barras */}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-1">
+          <DataBarCard
+            title="Em atendimento"
+            tag="agora"
+            value={overviewLoading ? "…" : formatNumber(inService)}
+            series={evoServiceSeries}
+            from="#0086f7"
+            to="#22d3ee"
+          />
+          <DataBarCard
+            title="Na fila"
+            tag="agora"
+            value={overviewLoading ? "…" : formatNumber(inQueue)}
+            series={evoQueueSeries}
+            from="#ffb500"
+            to="#ffd666"
+          />
+        </div>
+      </div>
+
+      {/* ════════════ Cards A/B (sparkline) + gráfico de barras ════════════ */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(280px,1fr)_1.6fr]">
+        <div className="grid grid-cols-1 gap-3">
+          <SparkStatCard
+            badge="A"
+            value={overviewLoading ? "…" : formatNumber(compareceuCount)}
+            label="Compareceram"
+            data={evoServiceSeries}
+            from="#0086f7"
+            to="#66b9ff"
+          />
+          <SparkStatCard
+            badge="B"
+            value={overviewLoading ? "…" : formatNumber(consultasAgendadas)}
+            label="Consultas agendadas"
+            data={evoSeries}
+            from="#ffb500"
+            to="#ffd666"
+          />
+        </div>
+        <BigBarChart
+          title="Evolução de leads"
+          highlight={formatPercent(conversao)}
+          data={evoSeries}
+          loading={evolucao.isLoading}
         />
       </div>
 
@@ -470,55 +519,6 @@ export default function DashboardPage() {
               ? `Faltam ${faltamIdeal} consultas para atingir a meta ideal`
               : "Meta ideal atingida 🎉"
           }
-        />
-      </div>
-
-      {/* ---- KPIs grandes com sparkline ---- */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <ChartKpi
-          label="Total de leads"
-          value={formatNumber(total)}
-          data={evoCombinedSeries}
-          stroke="#38bdf8"
-          chip="bg-sky-500/10 text-sky-300 ring-sky-500/25"
-          icon={<UserPlus className="h-4 w-4" />}
-          delta={change !== null ? `${Math.abs(change).toFixed(1)}%` : "—"}
-          deltaUp={changeUp}
-          loading={overviewLoading || evolucao.isLoading}
-          showComparison={filters.compare !== "none"}
-        />
-        <ChartKpi
-          label="Em atendimento"
-          value={formatNumber(inService)}
-          data={evoServiceSeries}
-          stroke="#34d399"
-          chip="bg-emerald-500/10 text-emerald-300 ring-emerald-500/25"
-          icon={<Headset className="h-4 w-4" />}
-          delta="8.3%"
-          deltaUp
-          loading={overviewLoading}
-        />
-        <ChartKpi
-          label="Na fila"
-          value={formatNumber(inQueue)}
-          data={evoQueueSeries}
-          stroke="#fbbf24"
-          chip="bg-amber-500/10 text-amber-300 ring-amber-500/25"
-          icon={<Clock className="h-4 w-4" />}
-          delta="33.3%"
-          deltaUp={false}
-          loading={overviewLoading}
-        />
-        <ChartKpi
-          label="Taxa de conversão"
-          value={formatPercent(conversao)}
-          data={evoConvSeries}
-          stroke="#e879f9"
-          chip="bg-fuchsia-500/10 text-fuchsia-300 ring-fuchsia-500/25"
-          icon={<Percent className="h-4 w-4" />}
-          delta="0.6 p.p."
-          deltaUp
-          loading={overviewLoading}
         />
       </div>
 
@@ -694,6 +694,250 @@ function FunnelKpi({ tone, value, label, to }: FunnelKpiProps) {
 /* ============================================================
  * Sub-componentes
  * ========================================================== */
+
+type SparkPoint = { label: string; v: number };
+
+/* ---- Donut (ring) KPI — estilo Kommo, com gradiente da marca ---- */
+interface DonutKpiProps {
+  value: string;
+  label: string;
+  percent: number; // 0-100 → preenchimento do anel
+  delta: string;
+  deltaUp: boolean;
+  gradId: string;
+  from: string;
+  to: string;
+}
+function DonutKpi({
+  value,
+  label,
+  percent,
+  delta,
+  deltaUp,
+  gradId,
+  from,
+  to,
+}: DonutKpiProps) {
+  const pct = Math.max(0, Math.min(100, percent ?? 0));
+  const size = 148;
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - pct / 100);
+
+  return (
+    <div className="flex flex-col items-center rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-5 transition hover:border-white/[0.1] hover:bg-white/[0.03]">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={from} />
+              <stop offset="100%" stopColor={to} />
+            </linearGradient>
+          </defs>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset .6s ease" }}
+          />
+        </svg>
+        <div className="absolute inset-0 grid place-items-center">
+          <span className="text-[30px] font-bold tabular-nums text-slate-50">
+            {value}
+          </span>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold tabular-nums">
+        <span className={cn(deltaUp ? "text-emerald-400" : "text-rose-400")}>
+          {deltaUp ? "▲" : "▼"} {delta}
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ---- Card "Data" lateral — mini-barras horizontais ---- */
+interface DataBarCardProps {
+  title: string;
+  tag: string;
+  value: string;
+  series: SparkPoint[];
+  from: string;
+  to: string;
+}
+function DataBarCard({ title, tag, value, series, from, to }: DataBarCardProps) {
+  const bars = (series ?? []).slice(-3).map((p) => p.v);
+  const safeBars = bars.length ? bars : [0.5, 0.3, 0.7];
+  const max = Math.max(1, ...safeBars);
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[12px] font-semibold text-slate-200">{title}</p>
+        <span className="text-[10px] uppercase tracking-wider text-slate-500">
+          {tag}
+        </span>
+      </div>
+      <p className="mt-1 text-[22px] font-bold tabular-nums text-slate-50">
+        {value}
+      </p>
+      <div className="mt-2.5 space-y-1.5">
+        {safeBars.map((b, i) => (
+          <div key={i} className="h-1.5 rounded-full bg-white/[0.05]">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(8, (b / max) * 100)}%`,
+                background: `linear-gradient(90deg, ${from}, ${to})`,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Card com selo (A/B) + número + sparkline ---- */
+interface SparkStatCardProps {
+  badge: string;
+  value: string;
+  label: string;
+  data: SparkPoint[];
+  from: string;
+  to: string;
+}
+function SparkStatCard({
+  badge,
+  value,
+  label,
+  data,
+  from,
+  to,
+}: SparkStatCardProps) {
+  const gid = `spark-${badge}`;
+  return (
+    <div className="flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 transition hover:border-white/[0.1] hover:bg-white/[0.03]">
+      <div
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-[18px] font-bold text-white shadow-lg"
+        style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+      >
+        {badge}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[26px] font-bold leading-none tabular-nums text-slate-50">
+          {value}
+        </p>
+        <p className="mt-1 truncate text-[11.5px] text-slate-400">{label}</p>
+      </div>
+      <div className="h-12 w-24 shrink-0 sm:w-28">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={to} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={to} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="v"
+              stroke={from}
+              strokeWidth={2}
+              fill={`url(#${gid})`}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Gráfico de barras grande (evolução) ---- */
+interface BigBarChartProps {
+  title: string;
+  highlight: string;
+  data: SparkPoint[];
+  loading?: boolean;
+}
+function BigBarChart({ title, highlight, data, loading }: BigBarChartProps) {
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-5 py-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-semibold text-slate-200">{title}</p>
+        <span className="rounded-md bg-white/[0.04] px-2.5 py-1 text-[12px] font-semibold tabular-nums text-slate-200 ring-1 ring-inset ring-white/[0.08]">
+          {highlight}
+        </span>
+      </div>
+      <div className="mt-3 h-[230px]">
+        {loading ? (
+          <div className="grid h-full place-items-center text-[12px] text-slate-500">
+            Carregando…
+          </div>
+        ) : data.length === 0 ? (
+          <div className="grid h-full place-items-center text-[12px] text-slate-500">
+            Sem dados no período
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+              <defs>
+                <linearGradient id="bar-blue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#33a1ff" />
+                  <stop offset="100%" stopColor="#0086f7" />
+                </linearGradient>
+                <linearGradient id="bar-cyan" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" />
+                  <stop offset="100%" stopColor="#008eff" />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: "rgb(148 163 184)" }}
+                axisLine={false}
+                tickLine={false}
+                interval="preserveStartEnd"
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                contentStyle={{
+                  background: "#0f172a",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10,
+                  fontSize: 12,
+                }}
+                labelStyle={{ color: "#cbd5e1" }}
+              />
+              <Bar dataKey="v" radius={[4, 4, 0, 0]} maxBarSize={26}>
+                {data.map((_, i) => (
+                  <Cell key={i} fill={i % 2 === 0 ? "url(#bar-blue)" : "url(#bar-cyan)"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type ChipTone =
   | "sky"
