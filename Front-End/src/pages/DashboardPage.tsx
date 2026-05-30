@@ -4,6 +4,7 @@ import { Cog, Loader2 } from "@/components/icons";
 import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
+import { stageLabel } from "@/lib/stageLabels";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 const nf = (n?: number | null) =>
@@ -129,13 +130,17 @@ function ConcentricDonut({
 function DarkCard({
   children,
   className = "",
+  accent,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Cor da borda superior sólida do card. */
+  accent?: string;
 }) {
   return (
     <div
       className={`relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
+      style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
     >
       {children}
     </div>
@@ -147,6 +152,7 @@ function MetricCard({
   value,
   range,
   valueClass = "text-violet-400",
+  accent = "#a78bfa",
   children,
   className = "",
 }: {
@@ -154,11 +160,12 @@ function MetricCard({
   value: string | number;
   range?: string;
   valueClass?: string;
+  accent?: string;
   children?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <DarkCard className={className}>
+    <DarkCard className={className} accent={accent}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
         {label}
       </p>
@@ -240,11 +247,34 @@ export default function DashboardPage() {
   const ongoing = ov?.consultas_agendadas ?? 0;
   const unanswered = Math.max(0, (ov?.total_leads ?? 0) - (ov?.consultas ?? 0));
   const wonLeads = ov?.fechou ?? 0;
-  const activeLeads = Math.max(
-    0,
-    (ov?.consultas ?? 0) - (ov?.fechou ?? 0) - (ov?.nao_fechou ?? 0),
-  );
+  // Usa o novo campo leads_ativos do backend (puxa da Kommo via CurrentStage canonicalizado).
+  // Fallback: total - fechou - nao_fechou - faltou para overviews antigos.
+  const activeLeads =
+    ov?.leads_ativos ??
+    Math.max(
+      0,
+      (ov?.total_leads ?? 0) - (ov?.fechou ?? 0) - (ov?.nao_fechou ?? 0) - (ov?.faltou ?? 0),
+    );
+  const comPagamento = ov?.com_pagamento ?? 0;
+  const semPagamento = ov?.sem_pagamento ?? 0;
   const tasks = ov?.faltou ?? 0;
+
+  // Etapas com nome amigável (traduz códigos LeadStages.* e CanonicalStages.*).
+  const etapasComNome = useMemo(() => {
+    const arr = ov?.etapas ?? [];
+    return [...arr]
+      .filter((e) => (e.quantidade ?? 0) > 0)
+      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
+      .slice(0, 8)
+      .map((e) => ({
+        label: stageLabel(e.etapa),
+        value: e.quantidade ?? 0,
+      }));
+  }, [ov]);
+  const etapasMax = useMemo(
+    () => Math.max(1, ...etapasComNome.map((e) => e.value)),
+    [etapasComNome],
+  );
 
   const isLoading = overview.isLoading && !ov;
 
@@ -349,7 +379,7 @@ export default function DashboardPage() {
             {/* ─── GRID PRINCIPAL ─────────────────────────────────────── */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* INCOMING MESSAGES (col 1, span 2 rows) */}
-              <DarkCard className="lg:row-span-2">
+              <DarkCard className="lg:row-span-2" accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Mensagens recebidas
                 </p>
@@ -400,9 +430,10 @@ export default function DashboardPage() {
 
               {/* ONGOING CONVERSATIONS */}
               <MetricCard
-                label="Conversas em andamento"
+                label="Consultas agendadas"
                 value={nf(ongoing)}
                 range={rangeLabel}
+                accent="#a78bfa"
               />
 
               {/* UNANSWERED CONVERSATIONS */}
@@ -410,10 +441,11 @@ export default function DashboardPage() {
                 label="Sem resposta"
                 value={nf(unanswered)}
                 range={rangeLabel}
+                accent="#f472b6"
               />
 
               {/* LEAD SOURCES (col 4, span 2 rows) */}
-              <DarkCard className="lg:row-span-2">
+              <DarkCard className="lg:row-span-2" accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Origens de leads
                 </p>
@@ -449,29 +481,43 @@ export default function DashboardPage() {
                 </div>
               </DarkCard>
 
-              {/* MEDIAN REPLY TIME */}
+              {/* CONSULTAS AGENDADAS COM PAGAMENTO */}
               <MetricCard
-                label="Tempo médio de resposta"
-                value={ov?.comparecimento_rate != null ? `${Math.round(ov.comparecimento_rate)}%` : "—"}
+                label="Agendadas com pagamento"
+                value={nf(comPagamento)}
                 range={rangeLabel}
+                accent="#34d399"
+                valueClass="text-emerald-400"
               />
 
-              {/* LONGEST AWAITING REPLY */}
+              {/* CONSULTAS AGENDADAS SEM PAGAMENTO */}
               <MetricCard
-                label="Maior tempo de espera"
-                value={ov?.fechamento_rate != null ? `${Math.round(ov.fechamento_rate)}%` : "—"}
+                label="Agendadas sem pagamento"
+                value={nf(semPagamento)}
                 range={rangeLabel}
+                accent="#fbbf24"
+                valueClass="text-amber-400"
               />
             </div>
 
             {/* ─── SEGUNDA FILEIRA: Won / Active / Tasks ─────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard label="Leads ganhos" value={nf(wonLeads)} />
-              <MetricCard label="Leads ativos" value={nf(activeLeads)} />
-              <DarkCard>
+              <MetricCard
+                label="Leads ganhos"
+                value={nf(wonLeads)}
+                accent="#34d399"
+                valueClass="text-emerald-400"
+              />
+              <MetricCard
+                label="Leads ativos"
+                value={nf(activeLeads)}
+                accent="#60a5fa"
+                valueClass="text-sky-400"
+              />
+              <DarkCard accent="#a78bfa">
                 <div className="flex items-start justify-between">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                    Tarefas
+                    Faltas
                   </p>
                   <Cog className="h-3.5 w-3.5 text-white/40" />
                 </div>
@@ -481,6 +527,39 @@ export default function DashboardPage() {
                 <div className="mt-3 h-px w-1/3 bg-white/10" />
               </DarkCard>
             </div>
+
+            {/* ─── TERCEIRA FILEIRA: Etapas do funil (nomes traduzidos) ── */}
+            {etapasComNome.length > 0 && (
+              <DarkCard className="mt-4" accent="#a78bfa">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                    Etapas do funil
+                  </p>
+                  <span className="text-[11px] text-white/40">{rangeLabel}</span>
+                </div>
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {etapasComNome.map((e) => {
+                    const ratio = e.value / etapasMax;
+                    return (
+                      <li key={e.label}>
+                        <div className="flex items-center justify-between text-[12px] text-white/80">
+                          <span className="truncate">{e.label}</span>
+                          <span className="font-semibold text-violet-300">
+                            {nf(e.value)}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className="h-full rounded-full bg-violet-400"
+                            style={{ width: `${Math.max(4, ratio * 100)}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </DarkCard>
+            )}
           </>
         )}
       </div>

@@ -728,6 +728,7 @@ export interface DashboardOverview {
   faltou: number;
   nao_fechou: number;
   fechou: number;
+  leads_ativos?: number;
   comparecimento_rate: number;
   fechamento_rate: number;
   states: LeadsCountDto;
