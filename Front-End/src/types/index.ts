@@ -162,7 +162,47 @@ export interface Unit {
   logo_url?: string | null;
   name?: string | null;
   leadsCount?: number;
+
+  // ─── Cadastro / multi-tenant (webhook por unidade) ──────────────
+  slug?: string | null;
+  email?: string | null;
+  cnpj?: string | null;
+  phone?: string | null;
+  addressLine?: string | null;
+  city?: string | null;
+  state?: string | null;
+  photoUrl?: string | null;
+  responsibleName?: string | null;
+  isActive?: boolean;
+  kommoSubdomain?: string | null;
+  kommoAccountId?: string | null;
+  /** URL pronta do webhook da Kommo para esta unidade. */
+  webhookUrl?: string | null;
+  /** Contagem de leads vinda do backend (UnitDto). */
+  leadCount?: number;
+  totalLeads?: number;
+  createdAt?: string;
+  updatedAt?: string | null;
 }
+
+export interface CreateUnitInput {
+  name: string;
+  email?: string;
+  cnpj?: string;
+  phone?: string;
+  addressLine?: string;
+  city?: string;
+  state?: string;
+  photoUrl?: string;
+  responsibleName?: string;
+  kommoSubdomain?: string;
+  kommoAccountId?: string;
+  slug?: string;
+}
+
+export type UpdateUnitInput = Partial<
+  Omit<CreateUnitInput, "slug"> & { isActive: boolean }
+>;
 
 export interface LiveMetrics {
   atendentes?: Array<{
