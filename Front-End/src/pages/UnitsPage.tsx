@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { unitsService } from "@/services/units";
 import type { Unit } from "@/types";
 import {
@@ -142,8 +141,8 @@ export default function UnitsPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+    <>
+      <div className="mx-auto max-w-7xl space-y-6">
         {banner && (
           <div
             className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${
@@ -431,6 +430,6 @@ export default function UnitsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

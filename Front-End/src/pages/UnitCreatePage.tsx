@@ -1,6 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { unitsService } from "@/services/units";
 import type { CreateUnitInput } from "@/types";
 import {
@@ -147,8 +146,7 @@ export default function UnitCreatePage() {
   const previewUrl = photoUrl || DEFAULT_PHOTO;
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto max-w-3xl space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
@@ -417,7 +415,6 @@ export default function UnitCreatePage() {
             {saving ? "Criando…" : "Criar unidade"}
           </button>
         </div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

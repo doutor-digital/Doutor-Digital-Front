@@ -37,7 +37,7 @@ const STEPS: Array<{ id: StepId; title: string; description: string; to: string 
   { id: "attendant",   title: "Adicione atendentes",            description: "Atribua leads pra quem realmente conversa com eles.", to: "/attendants" },
   { id: "lead",        title: "Revise seus leads",              description: "Veja como sua base está organizada hoje.", to: "/leads" },
   { id: "report",      title: "Gere o primeiro relatório",      description: "Diário ou mensal — em PDF ou WhatsApp.", to: "/reports" },
-  { id: "integration", title: "Configure integrações",          description: "Meta webhook, tokens Cloudia e mais.", to: "/settings" },
+  { id: "integration", title: "Configure integrações",          description: "Webhook do Kommo, Meta e mais.", to: "/integracoes" },
 ];
 
 export function OnboardingChecklist() {
