@@ -179,6 +179,8 @@ export interface Unit {
   isActive?: boolean;
   kommoSubdomain?: string | null;
   kommoAccountId?: string | null;
+  /** True quando a unidade tem um access token Kommo salvo (não retorna o token). */
+  hasKommoToken?: boolean;
   /** URL pronta do webhook da Kommo para esta unidade. */
   webhookUrl?: string | null;
   /** Contagem de leads vinda do backend (UnitDto). */

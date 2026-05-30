@@ -41,6 +41,33 @@ export const unitsService = {
     return data.url;
   },
 
+  /**
+   * Puxa leads/contatos existentes da Kommo via REST e ingere pelo mesmo
+   * pipeline do webhook (idempotente). Aceita o token via body ou usa o
+   * que ja esteja salvo na unidade.
+   */
+  async syncFromKommo(
+    unitId: number | string,
+    opts: { accessToken?: string; persistToken?: boolean; maxLeads?: number } = {},
+  ): Promise<{
+    success: boolean;
+    error?: string | null;
+    pagesFetched: number;
+    leadsFetched: number;
+    contactsFetched: number;
+    leadsPersisted: number;
+    durationMs: number;
+  }> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("id inválido para sync");
+    const { data } = await api.post(`/units/${id}/sync-from-kommo`, {
+      accessToken: opts.accessToken,
+      persistToken: opts.persistToken ?? true,
+      maxLeads: opts.maxLeads,
+    });
+    return data;
+  },
+
   /** Atualiza os dados de uma unidade (por Id interno). */
   async update(id: number | string, input: UpdateUnitInput): Promise<Unit> {
     const unitId = toInt(id);

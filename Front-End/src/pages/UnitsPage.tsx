@@ -18,6 +18,7 @@ import {
   UserRound,
   X,
   Loader2,
+  RefreshCw,
 } from "@/components/icons";
 
 const DEFAULT_PHOTO =
@@ -44,6 +45,17 @@ export default function UnitsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Unit | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState<number | string | null>(null);
+
+  const [syncTarget, setSyncTarget] = useState<Unit | null>(null);
+  const [syncToken, setSyncToken] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    leadsFetched: number;
+    leadsPersisted: number;
+    contactsFetched: number;
+    pagesFetched: number;
+    durationMs: number;
+  } | null>(null);
 
   const flash = useCallback((b: Banner, ttl = 4000) => {
     setBanner(b);
@@ -122,6 +134,60 @@ export default function UnitsPage() {
       flash({ type: "error", message: apiMessage(error, "Erro ao remover unidade") });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const openSync = (unit: Unit) => {
+    setSyncTarget(unit);
+    setSyncToken("");
+    setSyncResult(null);
+  };
+
+  const closeSync = () => {
+    if (syncing) return;
+    setSyncTarget(null);
+    setSyncToken("");
+    setSyncResult(null);
+  };
+
+  const runSync = async () => {
+    if (!syncTarget) return;
+    const hasToken = syncTarget.hasKommoToken === true;
+    if (!hasToken && !syncToken.trim()) {
+      flash({ type: "error", message: "Informe um access token da Kommo." });
+      return;
+    }
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await unitsService.syncFromKommo(syncTarget.id, {
+        accessToken: syncToken.trim() || undefined,
+        persistToken: true,
+      });
+      if (res.success) {
+        setSyncResult({
+          leadsFetched: res.leadsFetched,
+          leadsPersisted: res.leadsPersisted,
+          contactsFetched: res.contactsFetched,
+          pagesFetched: res.pagesFetched,
+          durationMs: res.durationMs,
+        });
+        flash({
+          type: "success",
+          message: `Sincronizado: ${res.leadsPersisted} leads salvos.`,
+        }, 6000);
+        // Atualiza a lista pra contagem de leads aparecer
+        loadUnits();
+      } else {
+        flash({
+          type: "error",
+          message: res.error || "Falha ao sincronizar.",
+        });
+      }
+    } catch (error) {
+      flash({ type: "error", message: apiMessage(error, "Erro ao sincronizar com a Kommo.") });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -298,6 +364,13 @@ export default function UnitsPage() {
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <button
+                        onClick={() => openSync(unit)}
+                        title="Sincronizar leads da Kommo"
+                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-300"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => setDeleteTarget(unit)}
                         title="Remover"
                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
@@ -430,6 +503,124 @@ export default function UnitsPage() {
           </div>
         </div>
       )}
+
+      {/* Sync from Kommo modal */}
+      {syncTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={closeSync}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f1117] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  Sincronizar com Kommo
+                </h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Vai puxar até 5.000 leads existentes (com nome, etapa,
+                  telefone e email) da conta{" "}
+                  <code className="rounded bg-white/5 px-1 text-[11px]">
+                    {syncTarget.kommoSubdomain ?? "—"}
+                  </code>{" "}
+                  e gravar nessa unidade. É seguro rodar várias vezes — usa
+                  o ExternalId, então não duplica.
+                </p>
+              </div>
+              <button
+                onClick={closeSync}
+                disabled={syncing}
+                className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {syncResult ? (
+              <div className="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-4">
+                <p className="text-sm font-semibold text-emerald-300">
+                  ✓ Sincronização concluída
+                </p>
+                <ul className="mt-3 space-y-1 text-sm text-slate-300">
+                  <li>Páginas baixadas: <strong>{syncResult.pagesFetched}</strong></li>
+                  <li>Leads buscados: <strong>{syncResult.leadsFetched}</strong></li>
+                  <li>Contatos buscados: <strong>{syncResult.contactsFetched}</strong></li>
+                  <li>Leads gravados: <strong className="text-emerald-300">{syncResult.leadsPersisted}</strong></li>
+                  <li className="text-slate-500">Duração: {(syncResult.durationMs / 1000).toFixed(2)}s</li>
+                </ul>
+                <button
+                  onClick={closeSync}
+                  className="mt-4 w-full rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400"
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-5 space-y-4">
+                  {syncTarget.hasKommoToken && (
+                    <div className="flex items-start gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-3 text-xs text-emerald-300">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Token salvo para esta unidade. Deixe o campo vazio
+                        para usá-lo, ou cole um novo para substituir.
+                      </span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelClass}>
+                      Access token de longa duração da Kommo
+                      {!syncTarget.hasKommoToken && " *"}
+                    </label>
+                    <textarea
+                      className={`${inputClass} h-24 resize-none font-mono text-xs`}
+                      value={syncToken}
+                      onChange={(e) => setSyncToken(e.target.value)}
+                      placeholder="eyJ0eXAiOi..."
+                    />
+                    <p className="mt-1.5 text-[11px] text-slate-500">
+                      Pegue em <strong>Kommo → Perfil → Integrações → API</strong>{" "}
+                      → "Criar token de longa duração". O token é salvo
+                      criptografado por unidade.
+                    </p>
+                  </div>
+
+                  {!syncTarget.kommoSubdomain && (
+                    <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-xs text-amber-300">
+                      ⚠️ Esta unidade não tem <code>KommoSubdomain</code>{" "}
+                      configurado. Edite a unidade e preencha (ex.:{" "}
+                      <code>minhaclinica.kommo.com</code>) antes de sincronizar.
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    onClick={closeSync}
+                    disabled={syncing}
+                    className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={runSync}
+                    disabled={syncing || !syncTarget.kommoSubdomain}
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 hover:bg-brand-400 disabled:opacity-50"
+                  >
+                    {syncing && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {syncing ? "Sincronizando…" : "Sincronizar agora"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
+
+const labelClass = "mb-1.5 block text-xs font-medium text-slate-400";
