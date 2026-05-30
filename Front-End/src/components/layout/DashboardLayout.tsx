@@ -17,11 +17,6 @@ import {
 } from "@/components/overlay/WhatsNewModal";
 
 // Lazy: overlays não-críticos
-const OnboardingChecklist = lazy(() =>
-  import("@/components/overlay/OnboardingChecklist").then((m) => ({
-    default: m.OnboardingChecklist,
-  })),
-);
 const FeedbackWidget = lazy(() =>
   import("@/components/overlay/FeedbackWidget").then((m) => ({
     default: m.FeedbackWidget,
@@ -80,7 +75,6 @@ export default function DashboardLayout() {
 
       {/* Lazy: overlays não-críticos (não bloqueiam a primeira renderização) */}
       <Suspense fallback={null}>
-        <OnboardingChecklist />
         <FeedbackWidget mailto="doutordigitalconsultoria@gmail.com" />
       </Suspense>
     </div>
