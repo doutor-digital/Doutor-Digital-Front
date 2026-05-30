@@ -718,57 +718,25 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* ─── 2. CARDS DE TOTAIS — grid assimétrica amoCRM ────── */}
+            {/* ─── Hero: grid assimétrica amoCRM (1 card por métrica) ─── */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* ── Total Leads (col 1, span 2 rows) — INCOMING MESSAGES ── */}
+              {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
               <DarkCard className="lg:row-span-2" accent="#34d399">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-users-alt" style={{ color: "#34d399" }} />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Total de Leads
                 </p>
-                <p className="mt-3 text-right text-5xl font-bold leading-none text-emerald-400">
+                <p className="mt-4 text-right text-6xl font-bold leading-none text-emerald-400">
                   {nf(funnelLeads.total)}
                 </p>
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                <div className="mt-4 h-px w-full bg-white/10" />
-                {/* Desdobramento Lead → Interação → Agendado → Consulta → Tratamento + No-show */}
+                <div className="mt-5 h-px w-full bg-white/10" />
                 <ul className="mt-4 space-y-3">
-                  {[
-                    { lbl: "Interações",  val: funnelLeads.interacoes,  icon: "fi-rr-comment",         color: "#22d3ee" },
-                    { lbl: "Agendados",   val: funnelLeads.agendados,   icon: "fi-rr-calendar-clock",  color: "#a78bfa" },
-                    { lbl: "Consultas",   val: funnelLeads.consultas,   icon: "fi-rr-stethoscope",     color: "#60a5fa" },
-                    { lbl: "Tratamentos", val: funnelLeads.tratamentos, icon: "fi-rr-tooth",           color: "#34d399" },
-                    { lbl: "No-show",     val: funnelLeads.no_show,     icon: "fi-rr-cross-circle",    color: "#f87171" },
-                  ].map((r) => {
-                    const ratio = funnelLeads.total > 0 ? r.val / funnelLeads.total : 0;
-                    return (
-                      <li key={r.lbl}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
-                          <span className="flex items-center gap-2">
-                            <Fi name={r.icon} className="text-xs" style={{ color: r.color }} />
-                            <span className="truncate">{r.lbl}</span>
-                          </span>
-                          <span className="flex items-baseline gap-1.5">
-                            <span className="font-semibold tabular-nums" style={{ color: r.color }}>{nf(r.val)}</span>
-                            <span className="text-[10px] text-white/40 tabular-nums">{pctStr(r.val, funnelLeads.total)}</span>
-                          </span>
-                        </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, ratio * 100)}%`, background: r.color }} />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <div className="mt-4 h-px w-full bg-white/10" />
-                <p className="mt-3 text-[10px] uppercase tracking-wider text-white/40">Por canal</p>
-                <ul className="mt-2 space-y-2.5">
                   {channels.length === 0 && <li className="text-xs text-white/40">Sem dados</li>}
                   {channels.map((c) => {
                     const ratio = c.value / channelMax;
                     return (
                       <li key={c.name}>
-                        <div className="flex items-center justify-between text-[11px] text-white/80">
+                        <div className="flex items-center justify-between text-[12px] text-white/80">
                           <span className="flex items-center gap-2">
                             <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} />
                             <span className="truncate">{c.name}</span>
@@ -784,92 +752,25 @@ export default function DashboardPage() {
                 </ul>
               </DarkCard>
 
-              {/* ── Total Cadastro ── */}
+              {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-user-add" style={{ color: "#a78bfa" }} />
-                  Total Cadastro
-                </p>
-                <p className="mt-3 text-right text-5xl font-bold leading-none text-violet-400">
-                  {nf(funnelCadastro.total)}
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-violet-400">{nf(funnelCadastro.total)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                <div className="mt-4 h-px w-full bg-white/10" />
-                <ul className="mt-4 space-y-3">
-                  {[
-                    { lbl: "Interações",  val: funnelCadastro.interacoes,  icon: "fi-rr-comment",        color: "#22d3ee" },
-                    { lbl: "Agendados",   val: funnelCadastro.agendados,   icon: "fi-rr-calendar-clock", color: "#a78bfa" },
-                    { lbl: "Consultas",   val: funnelCadastro.consultas,   icon: "fi-rr-stethoscope",    color: "#60a5fa" },
-                    { lbl: "Tratamentos", val: funnelCadastro.tratamentos, icon: "fi-rr-tooth",          color: "#34d399" },
-                    { lbl: "No-show",     val: funnelCadastro.no_show,     icon: "fi-rr-cross-circle",   color: "#f87171" },
-                  ].map((r) => {
-                    const ratio = funnelCadastro.total > 0 ? r.val / funnelCadastro.total : 0;
-                    return (
-                      <li key={r.lbl}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
-                          <span className="flex items-center gap-2">
-                            <Fi name={r.icon} className="text-xs" style={{ color: r.color }} />
-                            <span className="truncate">{r.lbl}</span>
-                          </span>
-                          <span className="flex items-baseline gap-1.5">
-                            <span className="font-semibold tabular-nums" style={{ color: r.color }}>{nf(r.val)}</span>
-                            <span className="text-[10px] text-white/40 tabular-nums">{pctStr(r.val, funnelCadastro.total)}</span>
-                          </span>
-                        </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, ratio * 100)}%`, background: r.color }} />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
               </DarkCard>
 
-              {/* ── Total Resgate ── */}
+              {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-rotate-right" style={{ color: "#fbbf24" }} />
-                  Total Resgate
-                </p>
-                <p className="mt-3 text-right text-5xl font-bold leading-none text-amber-400">
-                  {nf(funnelResgate.total)}
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-amber-400">{nf(funnelResgate.total)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                <div className="mt-4 h-px w-full bg-white/10" />
-                <ul className="mt-4 space-y-3">
-                  {[
-                    { lbl: "Interações",  val: funnelResgate.interacoes,  icon: "fi-rr-comment",        color: "#22d3ee" },
-                    { lbl: "Agendados",   val: funnelResgate.agendados,   icon: "fi-rr-calendar-clock", color: "#a78bfa" },
-                    { lbl: "Consultas",   val: funnelResgate.consultas,   icon: "fi-rr-stethoscope",    color: "#60a5fa" },
-                    { lbl: "Tratamentos", val: funnelResgate.tratamentos, icon: "fi-rr-tooth",          color: "#34d399" },
-                    { lbl: "No-show",     val: funnelResgate.no_show,     icon: "fi-rr-cross-circle",   color: "#f87171" },
-                  ].map((r) => {
-                    const ratio = funnelResgate.total > 0 ? r.val / funnelResgate.total : 0;
-                    return (
-                      <li key={r.lbl}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
-                          <span className="flex items-center gap-2">
-                            <Fi name={r.icon} className="text-xs" style={{ color: r.color }} />
-                            <span className="truncate">{r.lbl}</span>
-                          </span>
-                          <span className="flex items-baseline gap-1.5">
-                            <span className="font-semibold tabular-nums" style={{ color: r.color }}>{nf(r.val)}</span>
-                            <span className="text-[10px] text-white/40 tabular-nums">{pctStr(r.val, funnelResgate.total)}</span>
-                          </span>
-                        </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, ratio * 100)}%`, background: r.color }} />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
               </DarkCard>
 
-              {/* ── Origens de Leads (col 4, span 2 rows) — LEAD SOURCES ── */}
+              {/* Col 4 (tall): Origens de Leads — ConcentricDonut */}
               <DarkCard className="lg:row-span-2" accent="#22d3ee">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-marker" style={{ color: "#22d3ee" }} />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Origens de Leads
                 </p>
                 <div className="mt-4 flex items-center justify-between gap-3">
@@ -889,236 +790,99 @@ export default function DashboardPage() {
                     />
                   </div>
                 </div>
-                {/* Total embaixo do donut */}
-                <div className="mt-4 h-px w-full bg-white/10" />
-                <p className="mt-3 text-[10px] uppercase tracking-wider text-white/40">Total de leads</p>
-                <p className="mt-1 text-3xl font-bold leading-none text-cyan-300">{nf(funnelLeads.total)}</p>
               </DarkCard>
 
-              {/* ── Row 2 col 2: Agendados (mini) ── */}
-              <DarkCard accent="#a78bfa">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-calendar-clock" style={{ color: "#a78bfa" }} />
-                  Agendados
-                </p>
-                <p className="mt-3 text-5xl font-bold leading-none text-violet-400">
-                  {nf(funnelLeads.agendados)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">
-                  {pctStr(funnelLeads.agendados, funnelLeads.total)} do total
-                </p>
+              {/* Col 2 row 2: Agendados */}
+              <DarkCard accent="#60a5fa">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-sky-400">{nf(funnelLeads.agendados)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
 
-              {/* ── Row 2 col 3: No-show (KPI primeira linha) ── */}
+              {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-cross-circle" style={{ color: "#f87171" }} />
-                  No-show
-                </p>
-                <p className="mt-3 text-5xl font-bold leading-none text-red-400">
-                  {nf(funnelLeads.no_show)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">
-                  {pctStr(funnelLeads.no_show, funnelLeads.agendados)} dos agendados
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-red-400">{nf(funnelLeads.no_show)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
             </div>
 
-            {/* ─── 2b. WON / ACTIVE / TASKS — fileira estilo Kommo ─── */}
+            {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-tooth" style={{ color: "#34d399" }} />
-                  Tratamentos
-                </p>
-                <p className="mt-3 text-5xl font-bold leading-none text-emerald-400">
-                  {nf(funnelLeads.tratamentos)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">
-                  {pctStr(funnelLeads.tratamentos, funnelLeads.total)} dos leads
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-emerald-400">{nf(funnelLeads.tratamentos)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#60a5fa">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-stethoscope" style={{ color: "#60a5fa" }} />
-                  Consultas
-                </p>
-                <p className="mt-3 text-5xl font-bold leading-none text-sky-400">
-                  {nf(funnelLeads.consultas)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">
-                  {pctStr(funnelLeads.consultas, funnelLeads.agendados)} dos agendados
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-sky-400">{nf(funnelLeads.consultas)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#22d3ee">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-comment" style={{ color: "#22d3ee" }} />
-                  Interações
-                </p>
-                <p className="mt-3 text-5xl font-bold leading-none text-cyan-300">
-                  {nf(funnelLeads.interacoes)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">
-                  {pctStr(funnelLeads.interacoes, funnelLeads.total)} responderam
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Interações</p>
+                <p className="mt-4 text-5xl font-bold leading-none text-cyan-300">{nf(funnelLeads.interacoes)}</p>
+                <div className="mt-4 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
             </div>
 
-            {/* ─── 3. TABELAS POR ORIGEM ─────────────────────────────── */}
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {/* Origem dos Leads */}
-              <DarkCard accent="#34d399">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-marker" style={{ color: "#34d399" }} />
-                  Origem dos Leads
-                </p>
-                <div className="mt-4 overflow-hidden rounded-lg ring-1 ring-white/5">
-                  <table className="w-full text-[12px]">
-                    <thead className="bg-white/5 text-[10px] uppercase tracking-wider text-white/50">
-                      <tr><th className="px-3 py-2 text-left">Origem</th><th className="px-3 py-2 text-right">Qtd</th><th className="px-3 py-2 text-right">Agendados</th><th className="px-3 py-2 text-right">%</th></tr>
-                    </thead>
-                    <tbody>
-                      {origensLeadsRows.length === 0 && <tr><td colSpan={4} className="px-3 py-4 text-center text-white/40">Sem dados</td></tr>}
-                      {origensLeadsRows.map((r) => {
-                        const v2 = agendadosByOrigem.get(r.origem) ?? 0;
-                        return (
-                          <tr key={r.origem} className="border-t border-white/5">
-                            <td className="px-3 py-2 flex items-center gap-2 text-white/85"><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: channelColor(r.origem) }} /><span className="truncate">{r.origem}</span></td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/90">{nf(r.quantidade)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/75">{nf(v2)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/60">{pctStr(v2, r.quantidade)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </DarkCard>
-
-              {/* Origem das Consultas */}
-              <DarkCard accent="#60a5fa">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-stethoscope" style={{ color: "#60a5fa" }} />
-                  Origem das Consultas
-                </p>
-                <div className="mt-4 overflow-hidden rounded-lg ring-1 ring-white/5">
-                  <table className="w-full text-[12px]">
-                    <thead className="bg-white/5 text-[10px] uppercase tracking-wider text-white/50">
-                      <tr><th className="px-3 py-2 text-left">Origem</th><th className="px-3 py-2 text-right">Qtd</th><th className="px-3 py-2 text-right">Compareceram</th><th className="px-3 py-2 text-right">%</th></tr>
-                    </thead>
-                    <tbody>
-                      {origensConsultasRows.length === 0 && <tr><td colSpan={4} className="px-3 py-4 text-center text-white/40">Sem dados</td></tr>}
-                      {origensConsultasRows.map((r) => {
-                        const v2 = compareceuByOrigem.get(r.origem) ?? 0;
-                        return (
-                          <tr key={r.origem} className="border-t border-white/5">
-                            <td className="px-3 py-2 flex items-center gap-2 text-white/85"><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: channelColor(r.origem) }} /><span className="truncate">{r.origem}</span></td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/90">{nf(r.quantidade)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/75">{nf(v2)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/60">{pctStr(v2, r.quantidade)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </DarkCard>
-
-              {/* Origem dos Tratamentos */}
-              <DarkCard accent="#fbbf24">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-tooth" style={{ color: "#fbbf24" }} />
-                  Origem dos Tratamentos
-                </p>
-                <div className="mt-4 overflow-hidden rounded-lg ring-1 ring-white/5">
-                  <table className="w-full text-[12px]">
-                    <thead className="bg-white/5 text-[10px] uppercase tracking-wider text-white/50">
-                      <tr><th className="px-3 py-2 text-left">Origem</th><th className="px-3 py-2 text-right">Qtd</th><th className="px-3 py-2 text-right">%</th></tr>
-                    </thead>
-                    <tbody>
-                      {origensTratamentosRows.length === 0 && <tr><td colSpan={3} className="px-3 py-4 text-center text-white/40">Sem dados</td></tr>}
-                      {(() => {
-                        const tot = origensTratamentosRows.reduce((s, r) => s + r.quantidade, 0);
-                        return origensTratamentosRows.map((r) => (
-                          <tr key={r.origem} className="border-t border-white/5">
-                            <td className="px-3 py-2 flex items-center gap-2 text-white/85"><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: channelColor(r.origem) }} /><span className="truncate">{r.origem}</span></td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/90">{nf(r.quantidade)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-white/60">{pctStr(r.quantidade, tot)}</td>
-                          </tr>
-                        ));
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </DarkCard>
-            </div>
-
-            {/* ─── 4. ROSCAS POR SEMANA (concêntricas — estilo Kommo) ── */}
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {[
-                { title: "Leads por semana", icon: "fi-rr-calendar-day", accent: "#34d399", data: leadsWeekRings },
-                { title: "Consultas por semana", icon: "fi-rr-stethoscope", accent: "#60a5fa", data: consultasWeekRings },
-                { title: "Tratamentos por semana", icon: "fi-rr-tooth", accent: "#fbbf24", data: tratamentosWeekRings },
-              ].map((d) => {
-                const total = d.data.reduce((s, x) => s + x.value, 0);
-                return (
-                  <DarkCard key={d.title} accent={d.accent}>
-                    <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                      <Fi name={d.icon} style={{ color: d.accent }} />
-                      {d.title}
-                    </p>
-                    <div className="mt-4 flex items-center gap-3">
-                      <div className="shrink-0">
-                        {d.data.length === 0 ? (
-                          <div className="flex h-[200px] w-[200px] items-center justify-center text-xs text-white/40">Sem dados</div>
-                        ) : (
-                          <div className="relative">
-                            <ConcentricDonut data={d.data} size={200} />
-                            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-2xl font-bold" style={{ color: d.accent }}>{nf(total)}</span>
-                              <span className="text-[9px] uppercase tracking-wider text-white/40">Total</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <ul className="min-w-0 flex-1 space-y-1 text-[11px]">
-                        {d.data.length === 0 && <li className="text-white/40">Sem dados</li>}
-                        {d.data.map((w) => (
-                          <li key={w.name} className="flex items-center justify-between gap-2">
-                            <span className="flex items-center gap-2 truncate" style={{ color: w.color }}>
-                              <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: w.color }} />
-                              <span className="truncate uppercase tracking-wide">{w.name}</span>
-                            </span>
-                            <span className="tabular-nums text-white/85">{nf(w.value)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </DarkCard>
-                );
-              })}
-            </div>
-
-            {/* ─── 5. BARRAS — Total Leads por Dia da Semana ────────── */}
+            {/* ─── Funil de conversão (horizontal, 1 card só) ────────── */}
             <DarkCard className="mt-4" accent="#a78bfa">
               <div className="flex items-center justify-between">
-                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  <Fi name="fi-rr-chart-histogram" style={{ color: "#a78bfa" }} />
-                  Total de Leads por dia da semana
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Funil de conversão
                 </p>
                 <span className="text-[11px] text-white/40">{rangeLabel}</span>
               </div>
-              <div className="mt-4 h-72">
+              <div className="mt-5 space-y-3">
+                {[
+                  { lbl: "Leads",       val: funnelLeads.total,       color: "#34d399", base: funnelLeads.total },
+                  { lbl: "Interações",  val: funnelLeads.interacoes,  color: "#22d3ee", base: funnelLeads.total },
+                  { lbl: "Agendados",   val: funnelLeads.agendados,   color: "#60a5fa", base: funnelLeads.interacoes || funnelLeads.total },
+                  { lbl: "Consultas",   val: funnelLeads.consultas,   color: "#a78bfa", base: funnelLeads.agendados },
+                  { lbl: "Tratamentos", val: funnelLeads.tratamentos, color: "#fbbf24", base: funnelLeads.consultas },
+                ].map((s, i) => {
+                  const ratio = funnelLeads.total > 0 ? s.val / funnelLeads.total : 0;
+                  return (
+                    <div key={s.lbl} className="flex items-center gap-3">
+                      <span className="w-24 shrink-0 text-[12px] text-white/80">{s.lbl}</span>
+                      <div className="relative h-7 flex-1 overflow-hidden rounded-md bg-white/5">
+                        <div
+                          className="h-full rounded-md transition-all"
+                          style={{ width: `${Math.max(2, ratio * 100)}%`, background: s.color, opacity: 0.85 }}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-semibold text-white">
+                          {nf(s.val)}
+                        </span>
+                      </div>
+                      <span className="w-20 shrink-0 text-right text-[11px] text-white/50 tabular-nums">
+                        {i === 0 ? "100%" : pctStr(s.val, s.base)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </DarkCard>
+
+            {/* ─── Tendência: barras por dia da semana ────────────────── */}
+            <DarkCard className="mt-4" accent="#34d399">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Leads por dia da semana
+                </p>
+                <span className="text-[11px] text-white/40">{rangeLabel}</span>
+              </div>
+              <div className="mt-4 h-60">
                 <ResponsiveContainer>
                   <BarChart data={weekdayBars} margin={{ top: 12, right: 16, left: 0, bottom: 4 }}>
                     <XAxis dataKey="nome" stroke="rgba(255,255,255,0.4)" tick={{ fontSize: 11, fill: "rgba(255,255,255,0.6)" }} axisLine={false} tickLine={false} />
                     <YAxis stroke="rgba(255,255,255,0.4)" tick={{ fontSize: 11, fill: "rgba(255,255,255,0.5)" }} axisLine={false} tickLine={false} width={32} />
-                    <Tooltip cursor={{ fill: "rgba(167,139,250,0.1)" }} contentStyle={{ background: "#0a1a36", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                    <Tooltip cursor={{ fill: "rgba(52,211,153,0.1)" }} contentStyle={{ background: "#0a1a36", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#fff", fontSize: 12 }} />
                     <Bar dataKey="qtd" radius={[6, 6, 0, 0]}>
                       {weekdayBars.map((_, i) => (
                         <Cell key={i} fill={i === 0 || i === 6 ? "#a78bfa" : "#34d399"} />
