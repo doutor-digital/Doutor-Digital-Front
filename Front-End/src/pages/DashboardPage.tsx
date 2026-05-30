@@ -226,6 +226,15 @@ export default function DashboardPage() {
     retry: false,
   });
 
+  // Custom fields da Kommo (definições) — usados pra montar filtros dinâmicos.
+  const customFields = useQuery({
+    queryKey: ["dash-amo", "kommo-custom-fields", unitId],
+    queryFn: () => unitsService.kommoCustomFields(unitId!),
+    enabled: unitId != null,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
   // Map<status_id, status_name> a partir de todos os pipelines.
   const stageNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -597,10 +606,48 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Aviso quando pipelines da Kommo não carregam */}
+            {/* Custom fields da Kommo (definições) ─ resumo */}
+            {(customFields.data?.length ?? 0) > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-white/60">
+                    Campos customizados da Kommo
+                  </label>
+                  <span className="text-[10px] text-white/40">
+                    {customFields.data!.length} campo(s) detectado(s)
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {customFields.data!.map((f) => (
+                    <span
+                      key={f.id}
+                      title={`type=${f.type}${f.code ? ` · code=${f.code}` : ""}`}
+                      className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] text-cyan-200"
+                    >
+                      {f.name}
+                      {f.enums.length > 0 && (
+                        <span className="ml-1 opacity-60">
+                          ({f.enums.length} opç.)
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-white/40">
+                  Sincronizados nos leads via REST sync. Filtros por campo customizado virão na próxima iteração.
+                </p>
+              </div>
+            )}
+
+            {/* Avisos quando endpoints da Kommo não carregam */}
             {unitId != null && pipelines.isError && (
               <p className="mt-3 text-[11px] text-amber-300/80">
                 Não consegui carregar os nomes das etapas da Kommo (verifique o subdomain/token da unidade). Usando códigos brutos.
+              </p>
+            )}
+            {unitId != null && customFields.isError && (
+              <p className="mt-2 text-[11px] text-amber-300/80">
+                Não consegui carregar os custom fields da Kommo (verifique o subdomain/token da unidade).
               </p>
             )}
           </DarkCard>

@@ -22,6 +22,22 @@ export interface KommoPipeline {
   statuses: KommoPipelineStatus[];
 }
 
+export interface KommoCustomFieldEnum {
+  id: number;
+  value: string;
+  code?: string | null;
+}
+
+export interface KommoCustomField {
+  id: number;
+  name: string;
+  /** "text" | "select" | "multiselect" | "date" | "numeric" | "checkbox" | … */
+  type: string;
+  code?: string | null;
+  is_api_only: boolean;
+  enums: KommoCustomFieldEnum[];
+}
+
 export const unitsService = {
   async list(): Promise<Unit[]> {
     const { data } = await api.get<Unit[]>("/units");
@@ -34,6 +50,14 @@ export const unitsService = {
     if (!id) return [];
     const { data } = await api.get<KommoPipeline[]>(`/units/${id}/kommo-pipelines`);
     return asArray<KommoPipeline>(data);
+  },
+
+  /** Lista as definições de custom fields da Kommo (texto/select/multiselect/etc.). */
+  async kommoCustomFields(unitId: number | string): Promise<KommoCustomField[]> {
+    const id = toInt(unitId);
+    if (!id) return [];
+    const { data } = await api.get<KommoCustomField[]>(`/units/${id}/kommo-custom-fields`);
+    return asArray<KommoCustomField>(data);
   },
 
   /** Busca uma unidade pelo seu Id interno (não clinicId). */
