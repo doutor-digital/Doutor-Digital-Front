@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Building2, Menu, RefreshCw, Search } from "@/components/icons";
+import {
+  Bell,
+  Building2,
+  Menu,
+  RefreshCw,
+  RotateCcw,
+  Search,
+} from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { cn } from "@/lib/utils";
@@ -12,11 +19,40 @@ export function MobileTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { tenantId, unitId } = useClinic();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   async function handleRefresh() {
     setRefreshing(true);
     await qc.invalidateQueries();
     setTimeout(() => setRefreshing(false), 700);
+  }
+
+  async function handleClearCache() {
+    if (clearing) return;
+    const ok = window.confirm(
+      "Limpar cache e recarregar?\n\nVocê continua logado.",
+    );
+    if (!ok) return;
+
+    setClearing(true);
+    try {
+      if ("caches" in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      qc.clear();
+      const url = new URL(window.location.href);
+      url.searchParams.set("_cb", Date.now().toString());
+      window.location.replace(url.toString());
+    } catch (err) {
+      console.error("Falha ao limpar cache:", err);
+      setClearing(false);
+      alert("Não foi possível limpar o cache.");
+    }
   }
 
   const initials = (user?.name ?? "U")
@@ -80,6 +116,21 @@ export function MobileTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             className={cn(
               "h-[18px] w-[18px] text-slate-300",
               refreshing && "animate-spin",
+            )}
+          />
+        </button>
+
+        <button
+          onClick={handleClearCache}
+          disabled={clearing}
+          className="h-9 w-9 grid place-items-center rounded-full hover:bg-amber-500/10 transition disabled:opacity-50"
+          aria-label="Limpar cache"
+          title="Limpar cache (PWA) e recarregar"
+        >
+          <RotateCcw
+            className={cn(
+              "h-[18px] w-[18px] text-slate-300",
+              clearing && "animate-spin text-amber-300",
             )}
           />
         </button>

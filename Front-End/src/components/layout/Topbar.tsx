@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, RefreshCw, Search } from "@/components/icons";
+import { LogOut, RefreshCw, RotateCcw, Search } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -14,11 +14,52 @@ export function Topbar() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   async function handleRefresh() {
     setRefreshing(true);
     await qc.invalidateQueries();
     setTimeout(() => setRefreshing(false), 700);
+  }
+
+  /**
+   * Limpa cache do PWA agressivamente e recarrega a página. Útil quando
+   * o service worker está servindo bundle antigo após um deploy.
+   * Não mexe em localStorage/cookies pra manter o usuário logado.
+   */
+  async function handleClearCache() {
+    if (clearing) return;
+    const ok = window.confirm(
+      "Limpar cache do app e recarregar?\n\nIsso desregistra o service worker e busca a versão mais recente do servidor. Você continua logado.",
+    );
+    if (!ok) return;
+
+    setClearing(true);
+    try {
+      // 1) Limpa caches da Cache API (PWA / workbox)
+      if ("caches" in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+
+      // 2) Desregistra todos os service workers
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+
+      // 3) Limpa cache do React Query (em memória)
+      qc.clear();
+
+      // 4) Reload com cache-busting na URL pra forçar fetch novo do HTML
+      const url = new URL(window.location.href);
+      url.searchParams.set("_cb", Date.now().toString());
+      window.location.replace(url.toString());
+    } catch (err) {
+      console.error("Falha ao limpar cache:", err);
+      setClearing(false);
+      alert("Não foi possível limpar o cache. Tente fechar e reabrir o navegador.");
+    }
   }
 
   const initials = (user?.name ?? "C")
@@ -80,6 +121,25 @@ export function Topbar() {
             className={cn(
               "h-3.5 w-3.5",
               refreshing && "animate-spin text-emerald-300",
+            )}
+          />
+        </button>
+
+        <button
+          onClick={handleClearCache}
+          disabled={clearing}
+          title="Limpar cache (PWA) e recarregar"
+          aria-label="Limpar cache e recarregar"
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-md",
+            "text-slate-500 transition hover:bg-amber-500/10 hover:text-amber-300",
+            "active:scale-95 disabled:opacity-50",
+          )}
+        >
+          <RotateCcw
+            className={cn(
+              "h-3.5 w-3.5",
+              clearing && "animate-spin text-amber-300",
             )}
           />
         </button>
