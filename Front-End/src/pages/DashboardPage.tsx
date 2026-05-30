@@ -1,21 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  LabelList,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { CalendarDays, Filter, Loader2 } from "@/components/icons";
+import { Cog, Loader2 } from "@/components/icons";
 import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
@@ -24,522 +9,478 @@ import { unitsService } from "@/services/units";
 const nf = (n?: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("pt-BR").format(n);
 
-const pct = (n?: number | null, digits = 1) =>
-  n == null ? "—" : `${n.toFixed(digits)}%`;
-
 function isoDaysAgo(days: number) {
   const d = new Date();
+  d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - days);
   return d.toISOString();
 }
+function isoStartOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+function isoEndOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}
+function fmtDateBr(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR");
+}
 
-// ─── Paleta (UX clean, pastel) ────────────────────────────────────────────
-const KPI_TONES = {
-  green: {
-    card: "bg-emerald-50 border-emerald-100",
-    label: "text-emerald-600",
-    value: "text-emerald-900",
-  },
-  yellow: {
-    card: "bg-amber-50 border-amber-100",
-    label: "text-amber-600",
-    value: "text-amber-900",
-  },
-  pink: {
-    card: "bg-rose-50 border-rose-100",
-    label: "text-rose-600",
-    value: "text-rose-900",
-  },
-  blue: {
-    card: "bg-sky-50 border-sky-100",
-    label: "text-sky-600",
-    value: "text-sky-900",
-  },
-} as const;
+// ─── Filtros (pílulas Today/Yesterday/Week/Month) ─────────────────────────
+type RangeKey = "today" | "yesterday" | "week" | "month" | "custom";
 
-const CHART_BLUE = "#2563eb";
-const CHART_BLUE_LIGHT = "#60a5fa";
-const PIE_COLORS = [
-  "#2563eb", "#1e3a8a", "#60a5fa", "#3b82f6", "#1d4ed8", "#93c5fd",
+const RANGES: Array<{ key: RangeKey; label: string }> = [
+  { key: "today", label: "Hoje" },
+  { key: "yesterday", label: "Ontem" },
+  { key: "week", label: "Semana" },
+  { key: "month", label: "Mês" },
 ];
 
-const PERIODS = [
-  { key: "7d", label: "Últimos 7 dias", days: 7, groupBy: "day" as const },
-  { key: "30d", label: "Últimos 30 dias", days: 30, groupBy: "day" as const },
-  { key: "90d", label: "Últimos 90 dias", days: 90, groupBy: "week" as const },
-  { key: "1y", label: "Últimos 12 meses", days: 365, groupBy: "month" as const },
-];
-type PeriodKey = (typeof PERIODS)[number]["key"];
+function computeRange(key: RangeKey): { from: string; to: string } {
+  const now = new Date();
+  if (key === "today") return { from: isoStartOfDay(now), to: isoEndOfDay(now) };
+  if (key === "yesterday") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 1);
+    return { from: isoStartOfDay(d), to: isoEndOfDay(d) };
+  }
+  if (key === "week") return { from: isoDaysAgo(6), to: isoEndOfDay(now) };
+  if (key === "month") return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
+  return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
+}
 
-// ─── Tooltip clean ────────────────────────────────────────────────────────
-type TooltipPayloadItem = { color?: string; name?: string; value?: number | string };
-function ChartTooltip({ active, payload, label }: {
-  active?: boolean; payload?: TooltipPayloadItem[]; label?: string;
+// ─── Cores por canal (matching amoCRM) ────────────────────────────────────
+const CHANNEL_COLORS: Record<string, string> = {
+  instagram: "#e1306c",
+  whatsapp: "#25d366",
+  facebook: "#1877f2",
+  messenger: "#0084ff",
+  twilio: "#f22f46",
+  telegram: "#26a5e4",
+  site: "#a78bfa",
+  organic: "#22d3ee",
+  google: "#fbbf24",
+  email: "#94a3b8",
+};
+function channelColor(name: string) {
+  const k = (name || "").toLowerCase();
+  for (const key of Object.keys(CHANNEL_COLORS)) {
+    if (k.includes(key)) return CHANNEL_COLORS[key];
+  }
+  // fallback determinístico
+  const palette = ["#a78bfa", "#22d3ee", "#34d399", "#f472b6", "#fbbf24", "#60a5fa"];
+  let h = 0;
+  for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
+
+// ─── Donut concêntrico (LEAD SOURCES) ─────────────────────────────────────
+function ConcentricDonut({
+  data,
+  size = 240,
+}: {
+  data: Array<{ name: string; value: number; color: string }>;
+  size?: number;
 }) {
-  if (!active || !payload?.length) return null;
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const center = size / 2;
+  const ringGap = 6;
+  const ringWidth = 10;
+  const innerRadius = 36;
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-      {label && <p className="mb-1 font-semibold text-slate-700">{label}</p>}
-      {payload.map((p, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-slate-500">{p.name}:</span>
-          <span className="font-semibold text-slate-900">
-            {typeof p.value === "number" ? nf(p.value) : p.value}
-          </span>
-        </div>
-      ))}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {data.map((d, i) => {
+        const r = innerRadius + i * (ringWidth + ringGap);
+        const circ = 2 * Math.PI * r;
+        const ratio = Math.min(1, d.value / max);
+        const dash = ratio * circ;
+        return (
+          <g key={i} transform={`rotate(-90 ${center} ${center})`}>
+            <circle
+              cx={center}
+              cy={center}
+              r={r}
+              fill="none"
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth={ringWidth}
+            />
+            <circle
+              cx={center}
+              cy={center}
+              r={r}
+              fill="none"
+              stroke={d.color}
+              strokeWidth={ringWidth}
+              strokeLinecap="round"
+              strokeDasharray={`${dash} ${circ - dash}`}
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ─── Card escuro (base navy) ──────────────────────────────────────────────
+function DarkCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
+    >
+      {children}
     </div>
   );
 }
 
-// ─── Filtro (estilo input claro) ─────────────────────────────────────────
-function FilterSelect({
-  label, value, onChange, options,
+function MetricCard({
+  label,
+  value,
+  range,
+  valueClass = "text-violet-400",
+  children,
+  className = "",
 }: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: Array<{ value: string; label: string }>;
+  value: string | number;
+  range?: string;
+  valueClass?: string;
+  children?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[11px] font-medium text-white/80">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="min-w-[140px] cursor-pointer rounded-md border border-white/30 bg-white/95 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm outline-none transition focus:border-white focus:ring-2 focus:ring-white/40"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-// ─── KPI Card (pastel, limpo) ─────────────────────────────────────────────
-function KpiCard({
-  label, value, tone,
-}: {
-  label: string; value: string | number; tone: keyof typeof KPI_TONES;
-}) {
-  const t = KPI_TONES[tone];
-  return (
-    <div className={`rounded-xl border ${t.card} p-4 transition hover:shadow-md`}>
-      <p className={`text-[12px] italic ${t.label}`}>{label}</p>
-      <p className={`mt-2 text-2xl font-bold ${t.value}`}>{value}</p>
-    </div>
-  );
-}
-
-// ─── Card branco com título ──────────────────────────────────────────────
-function Card({
-  title, subtitle, children, className = "",
-}: {
-  title: string; subtitle?: string; children: React.ReactNode; className?: string;
-}) {
-  return (
-    <div className={`flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>}
-      </div>
-      <div className="min-h-0 flex-1">{children}</div>
-    </div>
-  );
-}
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex h-full items-center justify-center text-xs text-slate-400">
-      {message}
-    </div>
+    <DarkCard className={className}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        {label}
+      </p>
+      <p className={`mt-3 text-5xl font-bold leading-none ${valueClass}`}>
+        {value}
+      </p>
+      <div className="mt-3 h-px w-1/3 bg-white/10" />
+      {range && (
+        <p className="mt-3 text-[11px] text-white/40">{range}</p>
+      )}
+      {children}
+    </DarkCard>
   );
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
-  const [period, setPeriod] = useState<PeriodKey>("90d");
-  const [source, setSource] = useState("");
-  const [unitFilter, setUnitFilter] = useState<string>(unitId ? String(unitId) : "");
+  const [rangeKey, setRangeKey] = useState<RangeKey>("month");
 
-  const periodCfg = PERIODS.find((p) => p.key === period)!;
-  const dateFrom = useMemo(() => isoDaysAgo(periodCfg.days), [periodCfg.days]);
-  const dateTo = useMemo(() => new Date().toISOString(), [periodCfg.days]);
-
-  const activeUnitId = unitFilter ? Number(unitFilter) : unitId ?? undefined;
-
-  const sources = useQuery({
-    queryKey: ["dash-v2", "sources", tenantId, activeUnitId],
-    queryFn: () => webhooksService.distinctSources({
-      clinicId: tenantId ?? undefined,
-      unitId: activeUnitId,
-    }),
-    enabled: tenantId != null,
-    staleTime: 5 * 60_000,
-  });
+  const range = useMemo(() => computeRange(rangeKey), [rangeKey]);
+  const rangeLabel = `${fmtDateBr(range.from)} - ${fmtDateBr(range.to)}`;
 
   const units = useQuery({
-    queryKey: ["dash-v2", "units"],
+    queryKey: ["dash-amo", "units"],
     queryFn: () => unitsService.list(),
     staleTime: 5 * 60_000,
   });
 
   const overview = useQuery({
-    queryKey: ["dash-v2", "overview", tenantId, activeUnitId, dateFrom, dateTo, source],
-    queryFn: () => webhooksService.dashboardOverview({
-      clinicId: tenantId ?? undefined,
-      unitId: activeUnitId,
-      dateFrom,
-      dateTo,
-      source: source || undefined,
-    }),
+    queryKey: ["dash-amo", "overview", tenantId, unitId, range.from, range.to],
+    queryFn: () =>
+      webhooksService.dashboardOverview({
+        clinicId: tenantId ?? undefined,
+        unitId: unitId ?? undefined,
+        dateFrom: range.from,
+        dateTo: range.to,
+      }),
     enabled: tenantId != null,
     staleTime: 60_000,
   });
 
-  const evolution = useQuery({
-    queryKey: ["dash-v2", "evo", tenantId, activeUnitId, dateFrom, dateTo, source],
-    queryFn: () => webhooksService.evolutionRange({
-      clinicId: tenantId ?? undefined,
-      unitId: activeUnitId,
-      dateFrom,
-      dateTo,
-      source: source || undefined,
-      groupBy: periodCfg.groupBy,
-    }),
-    enabled: tenantId != null,
-    staleTime: 60_000,
-  });
-
-  // ─── Derivados ────────────────────────────────────────────────────────
   const ov = overview.data;
 
-  const evoData = useMemo(() => {
-    const series = evolution.data?.series ?? [];
-    return series.map((p) => ({ periodo: p.periodo, total: p.total }));
-  }, [evolution.data]);
+  const agencyName = useMemo(() => {
+    if (!unitId) return "Todas as unidades";
+    const u = units.data?.find((x) => String(x.id) === String(unitId));
+    return u?.name ?? "Dashboard";
+  }, [unitId, units.data]);
 
-  const totalLeads = ov?.total_leads ?? 0;
-  const convertidos = ov?.fechou ?? 0;
-  const taxaConversao = ov?.conversao_rate ?? 0;
-  const mediaDia = totalLeads / Math.max(periodCfg.days, 1);
-
-  const unidadesData = useMemo(() => {
-    const list = units.data ?? [];
-    return [...list]
-      .filter((u) => u.isActive !== false)
-      .map((u) => ({
-        name: u.name ?? `Unidade ${u.clinicId}`,
-        value: u.leadCount ?? u.leadsCount ?? u.totalLeads ?? 0,
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [units.data]);
-
-  const origensData = useMemo(() => {
-    const arr = ov?.origens ?? [];
-    const filtered = arr.filter((o) => (o.quantidade ?? 0) > 0);
-    return [...filtered]
-      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
-      .slice(0, 6)
-      .map((o) => ({
-        name: o.origem ?? "—",
-        value: o.quantidade ?? 0,
-      }));
+  // ─── Canais (origens com cor + barra proporcional) ────────────────────
+  const channels = useMemo(() => {
+    const arr = (ov?.origens ?? []).filter((o) => (o.quantidade ?? 0) > 0);
+    const sorted = [...arr].sort(
+      (a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0),
+    );
+    const top = sorted.slice(0, 5);
+    const otherTotal = sorted.slice(5).reduce(
+      (s, o) => s + (o.quantidade ?? 0),
+      0,
+    );
+    const items = top.map((o) => ({
+      name: o.origem ?? "—",
+      value: o.quantidade ?? 0,
+      color: channelColor(o.origem ?? ""),
+    }));
+    if (otherTotal > 0) {
+      items.push({ name: "Other", value: otherTotal, color: "#64748b" });
+    }
+    return items;
   }, [ov]);
 
-  const origensTotal = useMemo(
-    () => origensData.reduce((s, o) => s + o.value, 0),
-    [origensData],
+  const channelMax = useMemo(
+    () => Math.max(1, ...channels.map((c) => c.value)),
+    [channels],
   );
 
-  const etapasData = useMemo(() => {
-    const arr = ov?.etapas ?? [];
-    return [...arr]
-      .filter((e) => (e.quantidade ?? 0) > 0)
-      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
-      .slice(0, 5)
-      .map((e) => ({
-        name: e.etapa.length > 16 ? e.etapa.slice(0, 16) + "…" : e.etapa,
-        fullName: e.etapa,
-        value: e.quantidade ?? 0,
-      }));
-  }, [ov]);
+  const totalLeads = ov?.total_leads ?? 0;
+  const ongoing = ov?.consultas_agendadas ?? 0;
+  const unanswered = Math.max(0, (ov?.total_leads ?? 0) - (ov?.consultas ?? 0));
+  const wonLeads = ov?.fechou ?? 0;
+  const activeLeads = Math.max(
+    0,
+    (ov?.consultas ?? 0) - (ov?.fechou ?? 0) - (ov?.nao_fechou ?? 0),
+  );
+  const tasks = ov?.faltou ?? 0;
 
   const isLoading = overview.isLoading && !ov;
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
-    // Fundo claro estendido por todo o conteúdo (sai do layout dark)
-    <div className="-m-4 min-h-[calc(100vh-4rem)] bg-gradient-to-br from-violet-50 via-slate-50 to-slate-100 p-4 lg:-m-6 lg:p-6">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200/50">
-          {/* ─── HEADER ─────────────────────────────────────────────── */}
-          <div className="relative bg-gradient-to-br from-violet-600 via-violet-500 to-indigo-500 px-6 py-5 sm:px-8 sm:py-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold leading-tight text-white sm:text-[28px]">
-                  Dashboard de Leads
-                </h1>
-                <p className="mt-0.5 text-xs text-violet-100/80">
-                  Visão geral do funil · Kommo CRM
-                </p>
-              </div>
+    <div
+      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white"
+      style={{
+        background:
+          "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
+      }}
+    >
+      {/* Padrão pontilhado sutil */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      />
 
-              <div className="flex flex-wrap items-end gap-3">
-                <FilterSelect
-                  label="Período"
-                  value={period}
-                  onChange={(v) => setPeriod(v as PeriodKey)}
-                  options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
-                />
-                <FilterSelect
-                  label="Unidade"
-                  value={unitFilter}
-                  onChange={setUnitFilter}
-                  options={[
-                    { value: "", label: "Todas" },
-                    ...(units.data ?? []).map((u) => ({
-                      value: String(u.id),
-                      label: u.name ?? `Unidade ${u.clinicId}`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Origem"
-                  value={source}
-                  onChange={setSource}
-                  options={[
-                    { value: "", label: "Todas" },
-                    ...(sources.data ?? []).map((s) => ({ value: s, label: s })),
-                  ]}
-                />
-              </div>
-            </div>
+      <div className="relative mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
+        {/* ─── HEADER: Título ─────────────────────────────────────────── */}
+        <h1 className="text-center text-4xl font-bold tracking-tight sm:text-5xl">
+          {agencyName}
+        </h1>
+
+        {/* ─── FILTROS ─────────────────────────────────────────────────── */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          {/* Pílulas centralizadas */}
+          <div className="mx-auto flex flex-wrap items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur">
+            {RANGES.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                onClick={() => setRangeKey(r.key)}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                  rangeKey === r.key
+                    ? "bg-white text-slate-900"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+            <span className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900">
+              {rangeLabel}
+            </span>
           </div>
 
-          {/* ─── CORPO ──────────────────────────────────────────────── */}
-          <div className="space-y-5 bg-slate-50/50 p-5 sm:space-y-6 sm:p-7">
-            {/* TOP: KPIs (esquerda) + Linha (direita) */}
-            <div className="grid gap-5 lg:grid-cols-12 sm:gap-6">
-              {/* Painel de KPIs */}
-              <div className="lg:col-span-5">
-                <Card
-                  title="Informações Gerais"
-                  subtitle="Convertidos + Não convertidos = Total"
-                  className="h-full"
+          {/* All / Select user / Setup */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
+              <button
+                type="button"
+                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900"
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white/70 hover:text-white"
+              >
+                Selecionar usuário
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  className="opacity-70"
                 >
-                  {isLoading ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-100" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      <KpiCard tone="green" label="Total de leads" value={nf(totalLeads)} />
-                      <KpiCard tone="yellow" label="Convertidos" value={nf(convertidos)} />
-                      <KpiCard tone="pink" label="Taxa de conversão" value={pct(taxaConversao)} />
-                      <KpiCard tone="blue" label="Leads / dia" value={mediaDia.toFixed(1)} />
-                    </div>
-                  )}
-                </Card>
-              </div>
-
-              {/* Line chart */}
-              <div className="lg:col-span-7">
-                <Card title="Leads por Período" subtitle={periodCfg.label} className="h-full">
-                  <div className="h-64">
-                    {evolution.isLoading ? (
-                      <div className="flex h-full items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
-                      </div>
-                    ) : evoData.length === 0 ? (
-                      <EmptyChart message="Sem dados no período" />
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={evoData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                          <XAxis
-                            dataKey="periodo"
-                            tick={{ fill: "#64748b", fontSize: 11 }}
-                            tickLine={false}
-                            axisLine={{ stroke: "#cbd5e1" }}
-                          />
-                          <YAxis hide />
-                          <Tooltip content={<ChartTooltip />} />
-                          <Line
-                            type="linear"
-                            dataKey="total"
-                            stroke={CHART_BLUE}
-                            strokeWidth={2.5}
-                            dot={{ r: 5, fill: CHART_BLUE, stroke: "#fff", strokeWidth: 2 }}
-                            activeDot={{ r: 7 }}
-                            name="Leads"
-                          >
-                            <LabelList
-                              dataKey="total"
-                              position="top"
-                              offset={10}
-                              fill="#475569"
-                              fontSize={11}
-                              fontWeight={600}
-                              formatter={(v: number) => nf(v)}
-                            />
-                          </Line>
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                </Card>
-              </div>
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
-
-            {/* BOTTOM: 3 charts */}
-            <div className="grid gap-5 lg:grid-cols-3 sm:gap-6">
-              {/* Por Unidade */}
-              <Card title="Leads por Unidade" subtitle="Top 5">
-                <div className="h-64">
-                  {unidadesData.length === 0 ? (
-                    <EmptyChart message="Sem unidades com leads" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={unidadesData}
-                        layout="vertical"
-                        margin={{ top: 5, right: 60, left: 0, bottom: 5 }}
-                      >
-                        <XAxis type="number" hide />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          tick={{ fill: "#475569", fontSize: 11, fontWeight: 500 }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={90}
-                        />
-                        <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f1f5f9" }} />
-                        <Bar dataKey="value" fill={CHART_BLUE} radius={[0, 6, 6, 0]} barSize={22}>
-                          <LabelList
-                            dataKey="value"
-                            position="right"
-                            offset={8}
-                            fill="#1e293b"
-                            fontSize={11}
-                            fontWeight={600}
-                            formatter={(v: number) => nf(v)}
-                          />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-
-              {/* Por Origem */}
-              <Card title="Leads por Origem" subtitle="Distribuição">
-                <div className="h-64">
-                  {origensData.length === 0 ? (
-                    <EmptyChart message="Sem dados de origem" />
-                  ) : (
-                    <div className="flex h-full items-center gap-4">
-                      <div className="h-full flex-1">
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Pie
-                              data={origensData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius="90%"
-                              labelLine={false}
-                              label={(props) => {
-                                const v = (props as { value?: number }).value ?? 0;
-                                const pctVal = origensTotal > 0 ? Math.round((v / origensTotal) * 100) : 0;
-                                if (pctVal < 5) return "";
-                                return `${pctVal}%`;
-                              }}
-                            >
-                              {origensData.map((_, i) => (
-                                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="#fff" strokeWidth={2} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<ChartTooltip />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <ul className="space-y-1.5 text-[11px]">
-                        {origensData.map((o, i) => (
-                          <li key={o.name} className="flex items-center gap-2">
-                            <span
-                              className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                              style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                            />
-                            <span className="text-slate-600">{o.name}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Por Etapa */}
-              <Card title="Leads por Etapa" subtitle="Funil atual">
-                <div className="h-64">
-                  {etapasData.length === 0 ? (
-                    <EmptyChart message="Sem leads em etapas" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={etapasData}
-                        layout="vertical"
-                        margin={{ top: 5, right: 60, left: 0, bottom: 5 }}
-                      >
-                        <XAxis type="number" hide />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          tick={{ fill: "#475569", fontSize: 11, fontWeight: 500 }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={90}
-                        />
-                        <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f1f5f9" }} />
-                        <Bar dataKey="value" fill={CHART_BLUE_LIGHT} radius={[0, 6, 6, 0]} barSize={22}>
-                          <LabelList
-                            dataKey="value"
-                            position="right"
-                            offset={8}
-                            fill="#1e293b"
-                            fontSize={11}
-                            fontWeight={600}
-                            formatter={(v: number) => nf(v)}
-                          />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-            </div>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10"
+            >
+              <Cog className="h-3.5 w-3.5" />
+              Configurar
+            </button>
           </div>
         </div>
 
-        {/* Rodapé sutil */}
-        <p className="mt-4 text-center text-[11px] text-slate-500">
-          <CalendarDays className="-mt-0.5 mr-1 inline h-3 w-3" />
-          {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-          <span className="mx-2">·</span>
-          <Filter className="-mt-0.5 mr-1 inline h-3 w-3" />
-          {[periodCfg.label, unitFilter && (units.data?.find((u) => String(u.id) === unitFilter)?.name), source]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+        {/* ─── LOADING ─────────────────────────────────────────────────── */}
+        {isLoading ? (
+          <div className="mt-12 flex items-center justify-center">
+            <Loader2 className="h-7 w-7 animate-spin text-white/50" />
+          </div>
+        ) : (
+          <>
+            {/* ─── GRID PRINCIPAL ─────────────────────────────────────── */}
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* INCOMING MESSAGES (col 1, span 2 rows) */}
+              <DarkCard className="lg:row-span-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Mensagens recebidas
+                </p>
+                <p className="mt-3 text-right text-5xl font-bold leading-none text-emerald-400">
+                  {nf(totalLeads)}
+                </p>
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-full bg-white/10" />
+
+                {/* Canais */}
+                <ul className="mt-4 space-y-3">
+                  {channels.length === 0 && (
+                    <li className="text-xs text-white/40">Sem dados</li>
+                  )}
+                  {channels.map((c) => {
+                    const ratio = c.value / channelMax;
+                    return (
+                      <li key={c.name}>
+                        <div className="flex items-center justify-between text-[12px] text-white/80">
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ background: c.color }}
+                            />
+                            <span className="truncate">{c.name}</span>
+                          </span>
+                          <span
+                            className="font-semibold"
+                            style={{ color: c.color }}
+                          >
+                            {nf(c.value)}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.max(4, ratio * 100)}%`,
+                              background: c.color,
+                            }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </DarkCard>
+
+              {/* ONGOING CONVERSATIONS */}
+              <MetricCard
+                label="Conversas em andamento"
+                value={nf(ongoing)}
+                range={rangeLabel}
+              />
+
+              {/* UNANSWERED CONVERSATIONS */}
+              <MetricCard
+                label="Sem resposta"
+                value={nf(unanswered)}
+                range={rangeLabel}
+              />
+
+              {/* LEAD SOURCES (col 4, span 2 rows) */}
+              <DarkCard className="lg:row-span-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Origens de leads
+                </p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <ul className="flex-1 space-y-1.5 text-[11px]">
+                    {channels.length === 0 && (
+                      <li className="text-white/40">Sem dados</li>
+                    )}
+                    {channels.map((c) => (
+                      <li
+                        key={c.name}
+                        className="flex items-center gap-2 truncate"
+                        style={{ color: c.color }}
+                      >
+                        <span
+                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: c.color }}
+                        />
+                        <span className="truncate uppercase tracking-wide">
+                          {c.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="shrink-0">
+                    <ConcentricDonut
+                      data={channels.length ? channels : [
+                        { name: "—", value: 1, color: "#1e293b" },
+                      ]}
+                      size={200}
+                    />
+                  </div>
+                </div>
+              </DarkCard>
+
+              {/* MEDIAN REPLY TIME */}
+              <MetricCard
+                label="Tempo médio de resposta"
+                value={ov?.comparecimento_rate != null ? `${Math.round(ov.comparecimento_rate)}%` : "—"}
+                range={rangeLabel}
+              />
+
+              {/* LONGEST AWAITING REPLY */}
+              <MetricCard
+                label="Maior tempo de espera"
+                value={ov?.fechamento_rate != null ? `${Math.round(ov.fechamento_rate)}%` : "—"}
+                range={rangeLabel}
+              />
+            </div>
+
+            {/* ─── SEGUNDA FILEIRA: Won / Active / Tasks ─────────────── */}
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <MetricCard label="Leads ganhos" value={nf(wonLeads)} />
+              <MetricCard label="Leads ativos" value={nf(activeLeads)} />
+              <DarkCard>
+                <div className="flex items-start justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                    Tarefas
+                  </p>
+                  <Cog className="h-3.5 w-3.5 text-white/40" />
+                </div>
+                <p className="mt-3 text-5xl font-bold leading-none text-violet-400">
+                  {nf(tasks)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+              </DarkCard>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
