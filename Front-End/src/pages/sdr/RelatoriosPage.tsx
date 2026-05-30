@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
+import { SourceLegendBanner } from "@/components/sdr/SourceField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";
 import { analyzeDashboard, type AiAnalysisResponse, type AiInsight } from "@/services/sdr-ai";
 import { cn, formatCurrency, formatDate, formatNumber, formatPercent } from "@/lib/utils";
@@ -196,7 +196,7 @@ export default function RelatoriosPage() {
       </div>
 
       <div className="no-print">
-        <CloudiaLegendBanner className="mb-5" />
+        <SourceLegendBanner className="mb-5" />
       </div>
 
       {/* ─── PAINEL IA ──────────────────────────────────────────────── */}
@@ -479,7 +479,7 @@ function ResumoOrigemTable({
     <div className={cn("overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.015]", forPrint && "border-slate-300")}>
       <div className="border-b border-white/[0.04] bg-white/[0.02] px-4 py-2.5">
         <h3 className="text-[12px] font-semibold text-slate-200">Distribuição por origem</h3>
-        <p className="mt-0.5 text-[10.5px] text-slate-500">Origens vêm da Cloudia (data.origin) — auto-gerado.</p>
+        <p className="mt-0.5 text-[10.5px] text-slate-500">Origens vêm do Kommo (data.origin) — auto-gerado.</p>
       </div>
       <table className="w-full text-[12px]">
         <thead className="bg-white/[0.015] text-left">

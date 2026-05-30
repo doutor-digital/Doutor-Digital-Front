@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Award, Sparkles, Target, TrendingUp } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaLegendBanner, CloudiaInlineBadge } from "@/components/sdr/CloudiaField";
+import { SourceLegendBanner, SourceInlineBadge } from "@/components/sdr/SourceField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";
 import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ export default function MetasPage() {
   const mesAtual = new Date().toISOString().slice(0, 7);
   const metasMes = useMemo(() => metas.filter((m) => m.mes === mesAtual), [metas, mesAtual]);
 
-  // Quantos leads cada login recebeu (auto-contagem da Cloudia)
+  // Quantos leads cada login recebeu (auto-contagem do Kommo)
   const leadsPorLogin = useMemo(() => {
     const m = new Map<string, { cadastro: number; resgate: number }>();
     for (const l of leads) {
@@ -33,7 +33,7 @@ export default function MetasPage() {
         description={`Performance individual das secretárias — referência ${mesAtual}.`}
       />
 
-      <CloudiaLegendBanner className="mb-5" />
+      <SourceLegendBanner className="mb-5" />
 
       {ready && metasMes.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-16 text-center">
@@ -100,18 +100,18 @@ export default function MetasPage() {
                     <Pill tone="sky">
                       <span>Cadastro</span>
                       <span className="font-semibold tabular-nums">{realCadastro}</span>
-                      {auto.cadastro > 0 && <CloudiaInlineBadge />}
+                      {auto.cadastro > 0 && <SourceInlineBadge />}
                     </Pill>
                     <Pill tone="amber">
                       <span>Resgate</span>
                       <span className="font-semibold tabular-nums">{realResgate}</span>
-                      {auto.resgate > 0 && <CloudiaInlineBadge />}
+                      {auto.resgate > 0 && <SourceInlineBadge />}
                     </Pill>
                   </div>
 
                   <p className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-500">
                     <Sparkles className="h-2.5 w-2.5 text-emerald-300" />
-                    Real cadastro/resgate atualizado automaticamente conforme leads chegam pela Cloudia
+                    Real cadastro/resgate atualizado automaticamente conforme leads chegam pelo Kommo
                   </p>
                 </article>
               );

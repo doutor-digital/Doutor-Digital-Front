@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, Search, XCircle } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
-  CloudiaCell,
-  CloudiaColumnHeader,
-  CloudiaLegendBanner,
-} from "@/components/sdr/CloudiaField";
+  SourceCell,
+  SourceColumnHeader,
+  SourceLegendBanner,
+} from "@/components/sdr/SourceField";
 import { useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 
@@ -50,7 +50,7 @@ export default function ConsultasPage() {
         }
       />
 
-      <CloudiaLegendBanner className="mb-5" />
+      <SourceLegendBanner className="mb-5" />
 
       <div className="mb-4">
         <div className="relative max-w-xs">
@@ -70,21 +70,21 @@ export default function ConsultasPage() {
             <table className="w-full text-[12px]">
               <thead className="bg-white/[0.025] text-left">
                 <tr>
-                  <Th><CloudiaColumnHeader label="Paciente" origin="cloudia" /></Th>
-                  <Th><CloudiaColumnHeader label="Telefone" origin="cloudia" /></Th>
-                  <Th><CloudiaColumnHeader label="Origem" origin="cloudia" /></Th>
-                  <Th><CloudiaColumnHeader label="Data consulta" origin="manual" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="Valor consulta" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Pago?" origin="manual" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="1º recebimento" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Forma 1º" origin="manual" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="2º recebimento" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Forma 2º" origin="manual" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="Total recebido" origin="calculado" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="Falta receber" origin="calculado" /></Th>
-                  <Th><CloudiaColumnHeader label="Status" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Tratamento indicado" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Fechou?" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Paciente" origin="crm" /></Th>
+                  <Th><SourceColumnHeader label="Telefone" origin="crm" /></Th>
+                  <Th><SourceColumnHeader label="Origem" origin="crm" /></Th>
+                  <Th><SourceColumnHeader label="Data consulta" origin="manual" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Valor consulta" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Pago?" origin="manual" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="1º recebimento" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Forma 1º" origin="manual" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="2º recebimento" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Forma 2º" origin="manual" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Total recebido" origin="calculado" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Falta receber" origin="calculado" /></Th>
+                  <Th><SourceColumnHeader label="Status" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Tratamento indicado" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Fechou?" origin="manual" /></Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -100,17 +100,17 @@ export default function ConsultasPage() {
                   const falta = c.valorConsulta - totalRec;
                   return (
                     <tr key={c.id} className="hover:bg-white/[0.025]">
-                      <Td><CloudiaCell origin="cloudia">{lead?.nome ?? "—"}</CloudiaCell></Td>
+                      <Td><SourceCell origin="crm">{lead?.nome ?? "—"}</SourceCell></Td>
                       <Td>
-                        <CloudiaCell origin="cloudia" className="font-mono text-[11.5px]">
+                        <SourceCell origin="crm" className="font-mono text-[11.5px]">
                           {lead?.telefone ?? "—"}
-                        </CloudiaCell>
+                        </SourceCell>
                       </Td>
                       <Td>
                         {lead?.origem ? (
-                          <CloudiaCell origin="cloudia" className="text-[11.5px]">
+                          <SourceCell origin="crm" className="text-[11.5px]">
                             {lead.origem}
-                          </CloudiaCell>
+                          </SourceCell>
                         ) : (
                           <span className="text-slate-500">—</span>
                         )}

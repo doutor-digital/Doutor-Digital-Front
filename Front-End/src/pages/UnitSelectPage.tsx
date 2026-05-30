@@ -80,14 +80,14 @@ export default function UnitSelectPage() {
         {isEmpty ? (
           <div className="mx-auto mt-12 flex max-w-md flex-col items-center gap-6">
             <button
-              onClick={() => navigate("/units")}
+              onClick={() => navigate("/units/new")}
               className="group flex h-44 w-44 flex-col items-center justify-center gap-3 rounded-full border-2 border-dashed border-blue-200 bg-blue-50 text-blue-600 transition hover:border-blue-400 hover:bg-blue-100"
             >
               <Plus className="h-10 w-10 transition group-hover:scale-110" />
               <span className="text-sm font-semibold">Criar unidade</span>
             </button>
             <button
-              onClick={() => navigate("/units")}
+              onClick={() => navigate("/units/new")}
               className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-700"
             >
               Ir para gestão de unidades
@@ -137,7 +137,7 @@ export default function UnitSelectPage() {
 
               {/* Botão "+" pra criar mais unidades direto daqui */}
               <button
-                onClick={() => navigate("/units")}
+                onClick={() => navigate("/units/new")}
                 className="group flex flex-col items-center justify-start text-center transition-transform duration-200 hover:-translate-y-1"
               >
                 <div className="flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition group-hover:border-blue-400 group-hover:bg-blue-50 group-hover:text-blue-500 sm:h-40 sm:w-40">

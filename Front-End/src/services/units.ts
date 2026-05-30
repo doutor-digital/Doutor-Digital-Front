@@ -27,6 +27,20 @@ export const unitsService = {
     return data;
   },
 
+  /**
+   * Upload da foto/logo da unidade pra API. Retorna a URL absoluta
+   * já hospedada em /uploads/units/. Cola essa URL em `photoUrl`
+   * ao chamar `create`/`update`.
+   */
+  async uploadPhoto(file: File): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await api.post<{ url: string }>("/units/upload-photo", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.url;
+  },
+
   /** Atualiza os dados de uma unidade (por Id interno). */
   async update(id: number | string, input: UpdateUnitInput): Promise<Unit> {
     const unitId = toInt(id);

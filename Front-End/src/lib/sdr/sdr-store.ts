@@ -60,7 +60,7 @@ let initialized = false;
 function normalizeLead(lead: Partial<SdrLead> & Omit<SdrLead, "source" | "status">): SdrLead {
   const source: SdrLead["source"] = lead.source ?? (lead.externalId ? "cloudia" : "manual");
   const status: SdrLead["status"] =
-    lead.status ?? (source === "cloudia" ? "pendente_revisao" : "aprovado");
+    lead.status ?? (source === "crm" ? "pendente_revisao" : "aprovado");
   return { ...lead, source, status };
 }
 
@@ -281,7 +281,7 @@ export function mergeSdrLeadsFromBackend(incoming: SdrLead[]): number {
     action: "sdr_lead.synced_batch",
     entityType: "SdrLead",
     entityId: "batch",
-    summary: `Sincronizou ${toAdd.length} lead(s) da Cloudia via backfill`,
+    summary: `Sincronizou ${toAdd.length} lead(s) do Kommo via backfill`,
     afterJson: JSON.stringify({ count: toAdd.length }),
     createdAt: nowIso(),
   };
@@ -409,7 +409,7 @@ export function useSdrStore(): SdrState {
 
 export function useSdrCounts() {
   const s = useSdrStore();
-  const cloudiaCount = s.leads.filter((l) => l.cloudiaFields.length > 0).length;
+  const cloudiaCount = s.leads.filter((l) => l.sourceFields.length > 0).length;
   return {
     leads: s.leads.length,
     leadsCloudia: cloudiaCount,

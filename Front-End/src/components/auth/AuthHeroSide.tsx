@@ -36,7 +36,7 @@ export function AuthHeroSide() {
         </h2>
 
         <p className="text-sm text-slate-300 max-w-md leading-relaxed">
-          Centralize webhooks da Cloudia e da Meta, acompanhe a evolução por
+          Centralize webhooks do Kommo e da Meta, acompanhe a evolução por
           etapa e descubra quais campanhas realmente convertem.
         </p>
 

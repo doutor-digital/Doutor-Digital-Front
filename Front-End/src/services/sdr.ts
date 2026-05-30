@@ -69,14 +69,14 @@ export interface SdrLeadResponseDto {
   clinica?: string;
   dataOrigem: string;
   dataModificacao?: string;
-  source: "cloudia" | "manual" | "importado";
+  source: "crm" | "manual" | "importado";
   status: "pendente_revisao" | "aprovado" | "rejeitado";
   reviewedAt?: string;
   reviewedByUserId?: number;
   reviewedByName?: string;
   rejectionReason?: string;
-  cloudiaFields: string[];
-  cloudiaReceivedAt?: string;
+  sourceFields: string[];
+  sourceReceivedAt?: string;
   cloudiaWebhookEvent?: string;
   unitId?: number;
   attendantId?: number;
@@ -88,7 +88,7 @@ export interface SdrLeadResponseDto {
 export const sdrService = {
   /**
    * Dispara backfill no backend: lê leads da tabela `leads` (gravados pelo
-   * webhook Cloudia) que casam com os filtros e devolve o snapshot.
+   * webhook Kommo) que casam com os filtros e devolve o snapshot.
    * Idempotente — pode chamar quantas vezes quiser.
    *
    * Sem filtros, traz os últimos 30 dias do tenant inteiro.
@@ -134,10 +134,10 @@ export function sdrLeadFromBackend(dto: SdrLeadResponseDto): SdrLead {
     reviewedByUserId: dto.reviewedByUserId?.toString(),
     reviewedByName: dto.reviewedByName,
     rejectionReason: dto.rejectionReason,
-    cloudiaFields: (dto.cloudiaFields ?? []) as SdrLead["cloudiaFields"],
-    cloudiaProvenance: dto.cloudiaReceivedAt
+    sourceFields: (dto.sourceFields ?? []) as SdrLead["sourceFields"],
+    sourceProvenance: dto.sourceReceivedAt
       ? {
-          receivedAt: dto.cloudiaReceivedAt,
+          receivedAt: dto.sourceReceivedAt,
           webhookEvent: dto.cloudiaWebhookEvent,
           tenantId: dto.tenantId,
         }

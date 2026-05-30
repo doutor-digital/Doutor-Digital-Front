@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Bot, Sparkles, UserPen } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-type CloudiaProvenance = {
+type SourceProvenance = {
   receivedAt: string;
   webhookEvent?: string;
 };
@@ -10,23 +10,23 @@ type CloudiaProvenance = {
 type FieldShellProps = {
   label: string;
   hint?: string;
-  origin: "cloudia" | "manual";
-  provenance?: CloudiaProvenance;
+  origin: "crm" | "manual";
+  provenance?: SourceProvenance;
   required?: boolean;
   htmlFor?: string;
   children: ReactNode;
   className?: string;
 };
 
-function formatProvenanceTooltip(p?: CloudiaProvenance): string {
-  if (!p) return "Preenchido automaticamente via webhook Cloudia. Revise antes de salvar.";
+function formatProvenanceTooltip(p?: SourceProvenance): string {
+  if (!p) return "Preenchido automaticamente via webhook Kommo. Revise antes de salvar.";
   try {
     const dt = new Date(p.receivedAt);
     const fmt = dt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
     const evt = p.webhookEvent ? ` (${p.webhookEvent})` : "";
-    return `Preenchido automaticamente em ${fmt}${evt} via webhook Cloudia. Revise antes de salvar.`;
+    return `Preenchido automaticamente em ${fmt}${evt} via webhook Kommo. Revise antes de salvar.`;
   } catch {
-    return "Preenchido automaticamente via webhook Cloudia. Revise antes de salvar.";
+    return "Preenchido automaticamente via webhook Kommo. Revise antes de salvar.";
   }
 }
 
@@ -34,7 +34,7 @@ function formatProvenanceTooltip(p?: CloudiaProvenance): string {
  * Shell de campo com indicador visual de origem (Cloudia vs manual).
  * Cloudia: borda/halo emerald + badge sparkle; manual: cinza neutro.
  */
-export function CloudiaFieldShell({
+export function SourceFieldShell({
   label,
   hint,
   origin,
@@ -44,7 +44,7 @@ export function CloudiaFieldShell({
   children,
   className,
 }: FieldShellProps) {
-  const isCloudia = origin === "cloudia";
+  const isCloudia = origin === "crm";
   return (
     <div
       className={cn(
@@ -71,7 +71,7 @@ export function CloudiaFieldShell({
         {isCloudia ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
             <Sparkles className="h-2.5 w-2.5" />
-            Auto · Cloudia
+            Auto · CRM
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.03] px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-slate-500">
@@ -95,16 +95,16 @@ export function CloudiaFieldShell({
 /**
  * Versão compacta para células de tabela: pinta a célula com tom emerald se Cloudia.
  */
-export function CloudiaCell({
+export function SourceCell({
   origin,
   children,
   className,
 }: {
-  origin: "cloudia" | "manual";
+  origin: "crm" | "manual";
   children: ReactNode;
   className?: string;
 }) {
-  const isCloudia = origin === "cloudia";
+  const isCloudia = origin === "crm";
   return (
     <span
       className={cn(
@@ -122,21 +122,21 @@ export function CloudiaCell({
 }
 
 /**
- * Cabeçalho de coluna com indicador "Auto · Cloudia" / "Manual · SDR" para tabelas.
+ * Cabeçalho de coluna com indicador "Auto · CRM" / "Manual · SDR" para tabelas.
  */
-export function CloudiaColumnHeader({
+export function SourceColumnHeader({
   label,
   origin,
 }: {
   label: string;
-  origin: "cloudia" | "manual" | "calculado";
+  origin: "crm" | "manual" | "calculado";
 }) {
-  if (origin === "cloudia") {
+  if (origin === "crm") {
     return (
       <div className="flex flex-col gap-0.5">
         <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-300/80">
           <Sparkles className="h-2.5 w-2.5" />
-          Auto · Cloudia
+          Auto · CRM
         </span>
         <span className="text-[11px] font-medium text-slate-300">{label}</span>
       </div>
@@ -168,7 +168,7 @@ export function CloudiaColumnHeader({
  * Banner informativo no topo de cada página explicando como ler os indicadores.
  * Compacto, dispensável (tem botão fechar via prop opcional).
  */
-export function CloudiaLegendBanner({
+export function SourceLegendBanner({
   className,
   onDismiss,
 }: {
@@ -195,9 +195,9 @@ export function CloudiaLegendBanner({
             Os campos com{" "}
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] align-middle text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
               <Sparkles className="h-2.5 w-2.5" />
-              Auto · Cloudia
+              Auto · CRM
             </span>{" "}
-            foram preenchidos automaticamente pelo webhook da Cloudia quando o lead chegou.
+            foram preenchidos automaticamente pelo webhook do Kommo quando o lead chegou.
             Você só precisa{" "}
             <span className="font-semibold text-emerald-200">conferir</span> e salvar.
             Os demais campos (
@@ -223,17 +223,17 @@ export function CloudiaLegendBanner({
 }
 
 /**
- * Pequeno chip inline para mostrar que um valor específico veio da Cloudia.
- * Use dentro de tabelas, modais, listas — onde não há espaço para a CloudiaFieldShell completa.
+ * Pequeno chip inline para mostrar que um valor específico veio do Kommo.
+ * Use dentro de tabelas, modais, listas — onde não há espaço para a SourceFieldShell completa.
  */
-export function CloudiaInlineBadge({ className }: { className?: string }) {
+export function SourceInlineBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-emerald-300",
         className,
       )}
-      title="Preenchido automaticamente via webhook Cloudia"
+      title="Preenchido automaticamente via webhook Kommo"
     >
       <Sparkles className="h-2.5 w-2.5" />
       Cloudia

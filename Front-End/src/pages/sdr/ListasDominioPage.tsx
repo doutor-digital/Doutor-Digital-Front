@@ -2,11 +2,11 @@ import { BookOpen, CreditCard, MapPin, RotateCcw, Sparkles } from "@/components/
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   CLOUDIA_FORMAS_PAGAMENTO,
-  CLOUDIA_MOTIVOS_NAO_AGENDAMENTO,
-  CLOUDIA_ORIGENS,
-  CLOUDIA_RESGATE_ORIGENS,
+  LEAD_MOTIVOS_NAO_AGENDAMENTO,
+  LEAD_ORIGENS,
+  RESGATE_ORIGENS,
   CLOUDIA_RESGATE_TIPO,
-} from "@/lib/cadastra/cloudia-mapping";
+} from "@/lib/cadastra/lead-mapping";
 import { SDR_FORMAS_PAGAMENTO } from "@/types/sdr";
 import { MOTIVOS_NAO_FECHAMENTO_DEFAULT } from "@/types/cadastra";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 // envia um valor que não está na lista, o sistema joga em "Sem origem".
 
 export default function ListasDominioPage() {
-  const cadastroOrigens = CLOUDIA_ORIGENS.filter((o) => !CLOUDIA_RESGATE_ORIGENS.includes(o));
+  const cadastroOrigens = LEAD_ORIGENS.filter((o) => !RESGATE_ORIGENS.includes(o));
   const motivosNaoFechamento = MOTIVOS_NAO_FECHAMENTO_DEFAULT;
 
   return (
@@ -32,7 +32,7 @@ export default function ListasDominioPage() {
         <ReferenceCard
           icon={MapPin}
           title="Origens · Cadastro"
-          subtitle={`${cadastroOrigens.length} valores · vêm da Cloudia (data.origin)`}
+          subtitle={`${cadastroOrigens.length} valores · vêm do Kommo (data.origin)`}
           tone="emerald"
           items={cadastroOrigens.map((v) => ({ label: v }))}
           autoFromCloudia
@@ -40,9 +40,9 @@ export default function ListasDominioPage() {
         <ReferenceCard
           icon={RotateCcw}
           title="Origens · Resgate"
-          subtitle={`${CLOUDIA_RESGATE_ORIGENS.length} valores · classificam o lead automaticamente como "Resgate"`}
+          subtitle={`${RESGATE_ORIGENS.length} valores · classificam o lead automaticamente como "Resgate"`}
           tone="amber"
-          items={CLOUDIA_RESGATE_ORIGENS.map((v) => ({
+          items={RESGATE_ORIGENS.map((v) => ({
             label: v,
             sub: `→ Tipo: ${CLOUDIA_RESGATE_TIPO[v] ?? "—"}`,
           }))}
@@ -65,9 +65,9 @@ export default function ListasDominioPage() {
         <ReferenceCard
           icon={BookOpen}
           title="Motivos para não agendamento"
-          subtitle={`${CLOUDIA_MOTIVOS_NAO_AGENDAMENTO.length} valores · aparecem no dropdown de revisão`}
+          subtitle={`${LEAD_MOTIVOS_NAO_AGENDAMENTO.length} valores · aparecem no dropdown de revisão`}
           tone="slate"
-          items={CLOUDIA_MOTIVOS_NAO_AGENDAMENTO.map((v) => ({ label: v }))}
+          items={LEAD_MOTIVOS_NAO_AGENDAMENTO.map((v) => ({ label: v }))}
           fullWidth
         />
         <ReferenceCard
@@ -131,7 +131,7 @@ function ReferenceCard({
         {autoFromCloudia && (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
             <Sparkles className="h-2.5 w-2.5" />
-            Auto · Cloudia
+            Auto · CRM
           </span>
         )}
       </header>

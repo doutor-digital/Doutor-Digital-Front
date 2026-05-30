@@ -26,19 +26,19 @@ import {
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
-  CloudiaCell,
-  CloudiaColumnHeader,
-  CloudiaLegendBanner,
-} from "@/components/sdr/CloudiaField";
+  SourceCell,
+  SourceColumnHeader,
+  SourceLegendBanner,
+} from "@/components/sdr/SourceField";
 import { SyncFilterSheet } from "@/components/sdr/SyncFilterSheet";
 import { mergeSdrLeadsFromBackend, useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
 import { sdrLeadFromBackend, sdrService, type SdrSyncFilters } from "@/services/sdr";
 import { useClinic } from "@/hooks/useClinic";
-import type { SdrLead, SdrCloudiaFieldKey } from "@/types/sdr";
+import type { SdrLead, SdrSourceFieldKey } from "@/types/sdr";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
 type FilterTipo = "todos" | "Cadastro" | "Resgate";
-type FilterOrigem = "todas" | "cloudia" | "manual";
+type FilterOrigem = "todas" | "crm" | "manual";
 type ViewMode = "cards" | "tabela";
 
 export default function CadastroGeralPage() {
@@ -117,13 +117,13 @@ export default function CadastroGeralPage() {
       );
     }
     if (filterTipo !== "todos") r = r.filter((l) => l.tipo === filterTipo);
-    if (filterOrigem === "cloudia") r = r.filter((l) => l.cloudiaFields.length > 0);
-    if (filterOrigem === "manual") r = r.filter((l) => l.cloudiaFields.length === 0);
+    if (filterOrigem === "crm") r = r.filter((l) => l.sourceFields.length > 0);
+    if (filterOrigem === "manual") r = r.filter((l) => l.sourceFields.length === 0);
     return r;
   }, [pendingLeads, search, filterTipo, filterOrigem]);
 
   // KPIs do topo (sempre baseados no universo de leads pendentes, não nos filtrados)
-  const totalCloudia = pendingLeads.filter((l) => l.cloudiaFields.length > 0).length;
+  const totalCloudia = pendingLeads.filter((l) => l.sourceFields.length > 0).length;
   const totalManual = pendingLeads.length - totalCloudia;
   const totalResgate = pendingLeads.filter((l) => l.tipo === "Resgate").length;
   const totalCadastro = pendingLeads.filter((l) => l.tipo === "Cadastro").length;
@@ -212,7 +212,7 @@ export default function CadastroGeralPage() {
         />
       </div>
 
-      <CloudiaLegendBanner />
+      <SourceLegendBanner />
 
       {lastSyncInfo && (
         <div className="rounded-md border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-2.5 text-[12px] text-emerald-100">
@@ -254,7 +254,7 @@ export default function CadastroGeralPage() {
           label="Origem"
           options={[
             { value: "todas", label: "Todas" },
-            { value: "cloudia", label: "Auto · Cloudia" },
+            { value: "cloudia", label: "Auto · CRM" },
             { value: "manual", label: "Manual" },
           ]}
           value={filterOrigem}
@@ -426,8 +426,8 @@ function ViewToggleBtn({
 // ─── Card (visualização principal) ──────────────────────────────────────────
 
 function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
-  const isFromCloudia = (k: SdrCloudiaFieldKey): "cloudia" | "manual" =>
-    lead.cloudiaFields.includes(k) ? "cloudia" : "manual";
+  const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
+    lead.sourceFields.includes(k) ? "cloudia" : "manual";
   const isResgate = lead.tipo === "Resgate";
 
   return (
@@ -452,10 +452,10 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
           {lead.tipo}
           {isResgate && lead.tipoResgate && <span className="text-slate-400">· {lead.tipoResgate}</span>}
         </span>
-        {lead.cloudiaProvenance && (
+        {lead.sourceProvenance && (
           <span
             className="inline-flex items-center gap-1 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-emerald-300"
-            title={`Recebido em ${formatDate(lead.cloudiaProvenance.receivedAt)}`}
+            title={`Recebido em ${formatDate(lead.sourceProvenance.receivedAt)}`}
           >
             <Sparkles className="h-2.5 w-2.5" />
             Cloudia
@@ -464,15 +464,15 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
       </div>
 
       {/* Identidade */}
-      <CloudiaCell origin={isFromCloudia("nome")} className="!block">
+      <SourceCell origin={isFromSource("nome")} className="!block">
         <h3 className="truncate text-[14.5px] font-semibold text-slate-50">{lead.nome}</h3>
-      </CloudiaCell>
+      </SourceCell>
 
       <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-slate-400">
         <Phone className="h-3 w-3 shrink-0 text-slate-500" />
-        <CloudiaCell origin={isFromCloudia("telefone")}>
+        <SourceCell origin={isFromSource("telefone")}>
           <span className="font-mono tabular-nums">{lead.telefone}</span>
-        </CloudiaCell>
+        </SourceCell>
       </div>
 
       {/* Linha de metadados */}
@@ -480,21 +480,21 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
         {lead.origem && (
           <span className="inline-flex items-center gap-1">
             <Target className="h-3 w-3 text-slate-500" />
-            <CloudiaCell origin={isFromCloudia("origem")}>{lead.origem}</CloudiaCell>
+            <SourceCell origin={isFromSource("origem")}>{lead.origem}</SourceCell>
           </span>
         )}
         {lead.clinica && (
           <span className="inline-flex items-center gap-1">
             <Building2 className="h-3 w-3 text-slate-500" />
-            <CloudiaCell origin={isFromCloudia("clinica")}>{lead.clinica}</CloudiaCell>
+            <SourceCell origin={isFromSource("clinica")}>{lead.clinica}</SourceCell>
           </span>
         )}
         {lead.nomeResponsavel && (
           <span className="inline-flex items-center gap-1">
             <UserCog className="h-3 w-3 text-slate-500" />
-            <CloudiaCell origin={isFromCloudia("nomeResponsavel")}>
+            <SourceCell origin={isFromSource("nomeResponsavel")}>
               {lead.nomeResponsavel}
-            </CloudiaCell>
+            </SourceCell>
           </span>
         )}
       </div>
@@ -505,7 +505,7 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
           ok={lead.interacao}
           okLabel="Interagiu"
           noLabel="Sem interação"
-          cloudia={isFromCloudia("interacao") === "cloudia"}
+          cloudia={isFromSource("interacao") === "crm"}
         />
         <StatusPill
           ok={lead.agendouConsulta}
@@ -589,13 +589,13 @@ function TableView({ leads }: { leads: SdrLead[] }) {
         <table className="w-full text-[12px]">
           <thead className="bg-white/[0.025] text-left">
             <tr>
-              <Th><CloudiaColumnHeader label="Nome" origin="cloudia" /></Th>
-              <Th><CloudiaColumnHeader label="Telefone" origin="cloudia" /></Th>
-              <Th><CloudiaColumnHeader label="Tipo" origin="cloudia" /></Th>
-              <Th><CloudiaColumnHeader label="Origem" origin="cloudia" /></Th>
-              <Th><CloudiaColumnHeader label="Agendou" origin="manual" /></Th>
-              <Th><CloudiaColumnHeader label="Responsável" origin="cloudia" /></Th>
-              <Th><CloudiaColumnHeader label="Data origem" origin="cloudia" /></Th>
+              <Th><SourceColumnHeader label="Nome" origin="crm" /></Th>
+              <Th><SourceColumnHeader label="Telefone" origin="crm" /></Th>
+              <Th><SourceColumnHeader label="Tipo" origin="crm" /></Th>
+              <Th><SourceColumnHeader label="Origem" origin="crm" /></Th>
+              <Th><SourceColumnHeader label="Agendou" origin="manual" /></Th>
+              <Th><SourceColumnHeader label="Responsável" origin="crm" /></Th>
+              <Th><SourceColumnHeader label="Data origem" origin="crm" /></Th>
               <Th className="text-right pr-3"><span className="text-[11px] text-slate-500">Ação</span></Th>
             </tr>
           </thead>
@@ -623,17 +623,17 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 }
 
 function TableRow({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
-  const isFromCloudia = (k: SdrCloudiaFieldKey): "cloudia" | "manual" =>
-    lead.cloudiaFields.includes(k) ? "cloudia" : "manual";
+  const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
+    lead.sourceFields.includes(k) ? "cloudia" : "manual";
   return (
     <tr className="transition-colors hover:bg-white/[0.025]">
       <Td>
-        <CloudiaCell origin={isFromCloudia("nome")}>{lead.nome}</CloudiaCell>
+        <SourceCell origin={isFromSource("nome")}>{lead.nome}</SourceCell>
       </Td>
       <Td>
-        <CloudiaCell origin={isFromCloudia("telefone")}>
+        <SourceCell origin={isFromSource("telefone")}>
           <span className="font-mono text-[11.5px]">{lead.telefone}</span>
-        </CloudiaCell>
+        </SourceCell>
       </Td>
       <Td>
         <span
@@ -648,15 +648,15 @@ function TableRow({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
         </span>
       </Td>
       <Td>
-        <CloudiaCell origin={isFromCloudia("origem")} className="text-[11.5px]">
+        <SourceCell origin={isFromSource("origem")} className="text-[11.5px]">
           {lead.origem}
-        </CloudiaCell>
+        </SourceCell>
       </Td>
       <Td>
         <StatusPill ok={lead.agendouConsulta} okLabel="Sim" noLabel="Não" />
       </Td>
       <Td>
-        <CloudiaCell origin={isFromCloudia("nomeResponsavel")}>{lead.nomeResponsavel}</CloudiaCell>
+        <SourceCell origin={isFromSource("nomeResponsavel")}>{lead.nomeResponsavel}</SourceCell>
       </Td>
       <Td className="text-slate-400 tabular-nums">{formatDate(lead.dataOrigem)}</Td>
       <Td className="text-right">

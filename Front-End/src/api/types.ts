@@ -67,7 +67,7 @@ export interface SyncLeadDto {
  * OpenAPI: components.schemas.SetApiKeyRequest
  * LIMITAÇÃO: o contrato referencia este schema mas NÃO inlineia os
  * campos. Inferido a partir do comportamento do backend descrito na
- * issue original ("token de API da Cloudia no banco, com expiração
+ * issue original ("token de API do Kommo no banco, com expiração
  * configurável").
  * TODO backend: publicar o schema oficial.
  */

@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { Search } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
-  CloudiaCell,
-  CloudiaColumnHeader,
-  CloudiaLegendBanner,
-} from "@/components/sdr/CloudiaField";
+  SourceCell,
+  SourceColumnHeader,
+  SourceLegendBanner,
+} from "@/components/sdr/SourceField";
 import { useSdrStore, useIsClient } from "@/lib/sdr/sdr-store";
 import { SDR_TIPOS_TRATAMENTO } from "@/types/sdr";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -46,7 +46,7 @@ export default function TratamentosPage() {
         }
       />
 
-      <CloudiaLegendBanner className="mb-5" />
+      <SourceLegendBanner className="mb-5" />
 
       <div className="mb-4">
         <div className="relative max-w-xs">
@@ -66,20 +66,20 @@ export default function TratamentosPage() {
             <table className="w-full text-[12px]">
               <thead className="bg-white/[0.025] text-left">
                 <tr>
-                  <Th><CloudiaColumnHeader label="Paciente" origin="cloudia" /></Th>
-                  <Th><CloudiaColumnHeader label="Telefone" origin="cloudia" /></Th>
-                  <Th><CloudiaColumnHeader label="Origem" origin="cloudia" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="Valor" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Paciente" origin="crm" /></Th>
+                  <Th><SourceColumnHeader label="Telefone" origin="crm" /></Th>
+                  <Th><SourceColumnHeader label="Origem" origin="crm" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Valor" origin="manual" /></Th>
                   {[1, 2, 3, 4].map((n) => (
                     <Th key={n} className="text-right">
-                      <CloudiaColumnHeader label={`${n}º recebimento`} origin="manual" />
+                      <SourceColumnHeader label={`${n}º recebimento`} origin="manual" />
                     </Th>
                   ))}
-                  <Th className="text-right"><CloudiaColumnHeader label="Total recebido" origin="calculado" /></Th>
-                  <Th className="text-right"><CloudiaColumnHeader label="Falta" origin="calculado" /></Th>
-                  <Th><CloudiaColumnHeader label="Tipo" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Status" origin="manual" /></Th>
-                  <Th><CloudiaColumnHeader label="Descrição" origin="manual" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Total recebido" origin="calculado" /></Th>
+                  <Th className="text-right"><SourceColumnHeader label="Falta" origin="calculado" /></Th>
+                  <Th><SourceColumnHeader label="Tipo" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Status" origin="manual" /></Th>
+                  <Th><SourceColumnHeader label="Descrição" origin="manual" /></Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -95,15 +95,15 @@ export default function TratamentosPage() {
                   const falta = t.valor - totalRec;
                   return (
                     <tr key={t.id} className="hover:bg-white/[0.025]">
-                      <Td><CloudiaCell origin="cloudia">{lead?.nome ?? "—"}</CloudiaCell></Td>
+                      <Td><SourceCell origin="crm">{lead?.nome ?? "—"}</SourceCell></Td>
                       <Td>
-                        <CloudiaCell origin="cloudia" className="font-mono text-[11.5px]">
+                        <SourceCell origin="crm" className="font-mono text-[11.5px]">
                           {lead?.telefone ?? "—"}
-                        </CloudiaCell>
+                        </SourceCell>
                       </Td>
                       <Td>
                         {lead?.origem ? (
-                          <CloudiaCell origin="cloudia" className="text-[11.5px]">{lead.origem}</CloudiaCell>
+                          <SourceCell origin="crm" className="text-[11.5px]">{lead.origem}</SourceCell>
                         ) : (
                           <span className="text-slate-500">—</span>
                         )}

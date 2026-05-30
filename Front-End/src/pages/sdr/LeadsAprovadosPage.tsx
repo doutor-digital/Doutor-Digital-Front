@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaInlineBadge } from "@/components/sdr/CloudiaField";
+import { SourceInlineBadge } from "@/components/sdr/SourceField";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";
 import type { SdrLead } from "@/types/sdr";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -35,7 +35,7 @@ export default function LeadsAprovadosPage() {
   );
 
   const normais = useMemo(
-    () => aprovados.filter((l) => l.source === "manual" || l.source === "cloudia"),
+    () => aprovados.filter((l) => l.source === "manual" || l.source === "crm"),
     [aprovados],
   );
   const importados = useMemo(
@@ -59,7 +59,7 @@ export default function LeadsAprovadosPage() {
   // KPIs do bento
   const kpis = useMemo(() => {
     const total = aprovados.length;
-    const cloudiaPromoted = aprovados.filter((l) => l.source === "cloudia").length;
+    const sourcePromoted = aprovados.filter((l) => l.source === "crm").length;
     const manualEntries = aprovados.filter((l) => l.source === "manual").length;
     const importedEntries = aprovados.filter((l) => l.source === "importado").length;
     const withConsulta = aprovados.filter((l) =>
@@ -80,7 +80,7 @@ export default function LeadsAprovadosPage() {
       );
     return {
       total,
-      cloudiaPromoted,
+      sourcePromoted,
       manualEntries,
       importedEntries,
       withConsulta,
@@ -120,7 +120,7 @@ export default function LeadsAprovadosPage() {
           <BentoCell large tone="emerald" icon={Users} label="Total aprovados" value={formatNumber(kpis.total)} subtitle="leads no pipeline">
             <Sparkline values={Array.from({ length: 14 }, (_, i) => Math.max(0, Math.round(Math.sin(i / 2) * 4 + kpis.total / 14 + 2)))} />
           </BentoCell>
-          <BentoCell tone="sky" icon={Sparkles} label="Promovidos · Cloudia" value={formatNumber(kpis.cloudiaPromoted)} subtitle="passaram por revisão" />
+          <BentoCell tone="sky" icon={Sparkles} label="Promovidos · Cloudia" value={formatNumber(kpis.sourcePromoted)} subtitle="passaram por revisão" />
           <BentoCell tone="violet" icon={ClipboardCheck} label="Cadastros manuais" value={formatNumber(kpis.manualEntries)} subtitle="digitados pela SDR" />
           <BentoCell tone="amber" icon={UploadCloud} label="Importados" value={formatNumber(kpis.importedEntries)} subtitle="upload em massa" />
           <BentoCell large tone="emerald" icon={TrendingUp} label="Receita total" value={formatCurrency(kpis.receitaTotal)} subtitle={`${kpis.fechamentos} fechamentos · ${kpis.taxaFechamento.toFixed(1)}% conversão`}>
@@ -208,7 +208,7 @@ export default function LeadsAprovadosPage() {
 // ───────────────────────────────────────────────────────────────────────────
 
 function LeadCard({ lead }: { lead: SdrLead }) {
-  const isCloudiaPromoted = lead.source === "cloudia";
+  const isCloudiaPromoted = lead.source === "crm";
   const isImportado = lead.source === "importado";
   return (
     <article className="group relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 transition-colors hover:border-white/[0.12] hover:bg-white/[0.025]">
@@ -222,7 +222,7 @@ function LeadCard({ lead }: { lead: SdrLead }) {
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {isCloudiaPromoted && <CloudiaInlineBadge />}
+          {isCloudiaPromoted && <SourceInlineBadge />}
           {isImportado && (
             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-amber-300">
               <UploadCloud className="h-2.5 w-2.5" />

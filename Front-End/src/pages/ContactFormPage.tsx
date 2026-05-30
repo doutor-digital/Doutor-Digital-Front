@@ -132,7 +132,7 @@ export default function ContactFormPage() {
   const title = isEdit ? "Editar contato" : "Novo contato";
   const description = useMemo(() => {
     if (!isEdit) return "Cadastre manualmente um contato que ainda não veio pela integração.";
-    if (isLeadSource) return "Este contato é um lead da Cloudia e é somente leitura por aqui.";
+    if (isLeadSource) return "Este contato é um lead do Kommo e é somente leitura por aqui.";
     return "Atualize os campos abaixo. Só o que for alterado é salvo.";
   }, [isEdit, isLeadSource]);
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle2,
   RefreshCw,
@@ -21,14 +22,12 @@ import {
 } from "@/services/invitations";
 import { unitsService } from "@/services/units";
 import type { Unit } from "@/types";
-import type { CloudiaKeyStatusDto } from "@/api/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { CloudiaConnectModal } from "@/components/integracoes/CloudiaConnectModal";
 import { toast } from "sonner";
 
 type Category = "all" | "crm" | "ads" | "automation" | "webhook";
-type ProviderId = "cloudia" | "kommo" | "meta" | "google" | "n8n" | "webhook";
+type ProviderId = "kommo" | "meta" | "google" | "n8n" | "webhook";
 type ProviderStatus = "available" | "beta" | "coming-soon";
 
 interface Provider {
@@ -51,23 +50,12 @@ interface Provider {
 
 const PROVIDERS: Provider[] = [
   {
-    id: "cloudia",
-    name: "Cloudia",
-    category: "crm",
-    status: "available",
-    description:
-      "CRM principal — recebe leads via webhook em tempo real. Sem polling.",
-    logoUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-L72aOKqwGjo2c3mVSTj-Y0EAuUiOJNXDAQ&s",
-    tone: "cyan",
-  },
-  {
     id: "kommo",
     name: "Kommo",
     category: "crm",
     status: "available",
     description:
-      "Pipeline e mensagens (WhatsApp, Instagram). Sincroniza leads e tags.",
+      "CRM principal — recebe leads via webhook em tempo real, por unidade. Pipeline e mensagens (WhatsApp, Instagram).",
     logoUrl:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSlQHmQRY_KuFZVSs4YtikJ7j0S1Qdq0tB5w&s",
     tone: "fuchsia",
@@ -109,7 +97,7 @@ const PROVIDERS: Provider[] = [
     category: "webhook",
     status: "available",
     description:
-      "Endpoint público para Zapier, Make e outros. Aceita JSON com campos da Cloudia.",
+      "Endpoint público para Zapier, Make e outros. Aceita JSON.",
     tone: "emerald",
   },
 ];
@@ -123,17 +111,14 @@ const CATEGORY_LABEL: Record<Category, string> = {
 };
 
 export default function IntegracoesPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { unitId } = useClinic();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<Category>("all");
 
-  const [cloudiaStatus, setCloudiaStatus] = useState<CloudiaKeyStatusDto | null>(
-    null,
-  );
   const [statusLoading, setStatusLoading] = useState(false);
-  const [cloudiaModalOpen, setCloudiaModalOpen] = useState(false);
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [invitations, setInvitations] = useState<InvitationListItem[]>([]);
@@ -153,10 +138,9 @@ export default function IntegracoesPage() {
   async function loadStatus() {
     setStatusLoading(true);
     try {
-      const s = await configurationService.getCloudiaStatus();
-      setCloudiaStatus(s);
+      setUnits(await unitsService.list());
     } catch {
-      setCloudiaStatus(null);
+      setUnits([]);
     } finally {
       setStatusLoading(false);
     }
@@ -239,8 +223,10 @@ export default function IntegracoesPage() {
     soon?: boolean;
   } {
     if (p.status === "coming-soon") return { label: "Em breve", soon: true };
-    if (p.id === "cloudia") {
-      return cloudiaStatus?.configured
+    if (p.id === "kommo") {
+      // Considera "Conectado" se existir ao menos uma unidade com slug (= webhook gerado)
+      const hasWebhook = units.some((u) => u.slug);
+      return hasWebhook
         ? { label: "Conectado", connected: true }
         : { label: "Disponível" };
     }
@@ -320,8 +306,12 @@ export default function IntegracoesPage() {
               provider={p}
               status={st}
               onConnect={() => {
-                if (p.id === "cloudia") setCloudiaModalOpen(true);
-                else if (p.status === "coming-soon")
+                if (p.id === "kommo") {
+                  navigate("/units");
+                  toast.message(
+                    "Configure o webhook do Kommo na tela de Unidades.",
+                  );
+                } else if (p.status === "coming-soon")
                   toast.message("Em breve — fica de olho!");
                 else
                   toast.message(
@@ -474,11 +464,6 @@ export default function IntegracoesPage() {
         )}
       </section>
 
-      <CloudiaConnectModal
-        open={cloudiaModalOpen}
-        onClose={() => setCloudiaModalOpen(false)}
-        onConnected={loadStatus}
-      />
     </div>
   );
 }

@@ -309,7 +309,7 @@ function OrigemBadge({ origem }: { origem: ContactDetail["origem"] }) {
     return (
       <span className="inline-flex items-center gap-1 rounded bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-300 ring-1 ring-violet-500/20">
         <Webhook className="h-3 w-3" />
-        Webhook Cloudia
+        Webhook Kommo
       </span>
     );
   }
@@ -385,7 +385,7 @@ function humanizeKey(k: string): string {
 
 function originLabel(origem: ContactDetail["origem"]): string {
   if (origem === "import_csv") return "Contato importado via CSV";
-  if (origem === "webhook_cloudia") return "Contato vindo do webhook da Cloudia";
+  if (origem === "webhook_cloudia") return "Contato vindo do webhook do Kommo";
   return "Contato cadastrado manualmente";
 }
 

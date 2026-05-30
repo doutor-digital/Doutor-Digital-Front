@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CalendarRange, Clock, Plus, Trash2 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
+import { SourceLegendBanner } from "@/components/sdr/SourceField";
 import {
   addSdrEvento,
   deleteSdrEvento,
@@ -61,7 +61,7 @@ export default function AgendaPage() {
         }
       />
 
-      <CloudiaLegendBanner className="mb-5" />
+      <SourceLegendBanner className="mb-5" />
 
       {showForm && <NewEventoForm onClose={() => setShowForm(false)} />}
 

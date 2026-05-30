@@ -1006,7 +1006,7 @@ export function isBackendNotImplemented(error: unknown): boolean {
 // URL pública do webhook. CRÍTICO: Cloudia (e outras CRMs) limitam a URL a 100 chars.
 // Por isso preferimos a forma curta `/wh/{provider}/{shortCode}` quando o backend
 // já gerou o shortCode da empresa. O secret NUNCA vai na URL — é a chave de HMAC
-// que a Cloudia usa para assinar o payload (header x-cloudia-signature).
+// que a Cloudia usa para assinar o payload (header x-kommo-signature).
 type ShortProvider = 'c' /* cloudia */ | 'k' /* kommo */ | 'm' /* meta */ | 'g' /* google */ | 'n' /* n8n */ | 'w' /* webhook */
 
 function buildShortWebhook(empresa: { id: string; webhookShortCode?: string | null }, provider: ShortProvider, longTail: string): string {
@@ -1033,7 +1033,7 @@ export function buildKommoWebhookUrl(
 // para Cloudia, Kommo, Meta e N8N (em /api/webhooks/*). Onde a rota de status
 // ainda não existir, a UI captura 404 com isBackendNotImplemented().
 
-export type IntegrationProvider = 'cloudia' | 'kommo' | 'meta' | 'google' | 'n8n' | 'webhook'
+export type IntegrationProvider = 'crm' | 'kommo' | 'meta' | 'google' | 'n8n' | 'webhook'
 
 export interface IntegrationStatusDto {
   provider: IntegrationProvider
@@ -1054,10 +1054,10 @@ export interface IntegrationStatusDto {
 export interface CloudiaWebhookConfigDto {
   empresaId: string
   // Secret HMAC opcional. Se preenchido, o backend exige header
-  // x-cloudia-signature em cada requisição recebida.
+  // x-kommo-signature em cada requisição recebida.
   hasWebhookSecret: boolean
   webhookSecretSuffix?: string | null
-  // clinic_id da Cloudia que esta empresa "possui". Webhooks com clinic_id
+  // clinic_id do Kommo que esta empresa "possui". Webhooks com clinic_id
   // diferente são rejeitados (defesa em profundidade).
   cloudiaClinicId?: number | null
   lastReceivedAt?: string | null
@@ -1072,18 +1072,18 @@ export interface SaveCloudiaWebhookPayload {
 }
 
 // Tipos exatos do que a Cloudia manda (espelha CloudiaWebhookDto no backend).
-export type CloudiaEventType =
+export type LeadEventType =
   | 'CUSTOMER_CREATED'
   | 'CUSTOMER_UPDATED'
   | 'CUSTOMER_STAGE_UPDATED'
   | 'CUSTOMER_TAGS_UPDATED'
   | 'USER_ASSIGNED_TO_CUSTOMER'
 
-export interface CloudiaWebhookEventDto {
+export interface SourceWebhookEventDto {
   id: string
   empresaId: string
   receivedAt: string
-  eventType: CloudiaEventType
+  eventType: LeadEventType
   cloudiaClinicId?: number | null
   cloudiaCustomerId?: number | null
   status: 'processed' | 'rejected' | 'pending'
@@ -1100,13 +1100,13 @@ export const cloudiaApi = {
     api.put<CloudiaWebhookConfigDto>(`/api/cadastra/empresas/${empresaId}/cloudia/webhook-config`, data),
   // Histórico dos últimos eventos recebidos.
   history: (empresaId: string, params?: { status?: 'processed' | 'rejected' | 'pending'; limit?: number }) =>
-    api.get<CloudiaWebhookEventDto[]>(`/api/cadastra/empresas/${empresaId}/cloudia/webhook-events`, {
+    api.get<SourceWebhookEventDto[]>(`/api/cadastra/empresas/${empresaId}/cloudia/webhook-events`, {
       ...(params?.status ? { status: params.status } : {}),
       ...(params?.limit ? { limit: String(params.limit) } : {}),
     }),
   // Reprocessa um evento que falhou.
   retry: (empresaId: string, eventId: string) =>
-    api.post<CloudiaWebhookEventDto>(
+    api.post<SourceWebhookEventDto>(
       `/api/cadastra/empresas/${empresaId}/cloudia/webhook-events/${eventId}/retry`,
     ),
 }

@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   setAdminKey,
   setCloudiaBaseUrl,
-  setCloudiaBearerToken,
+  setSourceBearerToken,
 } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -26,10 +26,10 @@ export default function SettingsPage() {
   const [adminKey, setAdmin] = useState(localStorage.getItem("admin_key") ?? "");
   const [apiKey, setApiKey] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
-  const [cloudiaBearer, setCloudiaBearer] = useState(
+  const [sourceBearer, setSourceBearer] = useState(
     localStorage.getItem("cloudia_bearer_token") ?? ""
   );
-  const [cloudiaUrl, setCloudiaUrl] = useState(
+  const [sourceUrl, setCloudiaUrl] = useState(
     localStorage.getItem("cloudia_base_url") ?? ""
   );
 
@@ -79,8 +79,8 @@ export default function SettingsPage() {
   }
 
   function saveCloudiaLocalConfig() {
-    setCloudiaBearerToken(cloudiaBearer || null);
-    setCloudiaBaseUrl(cloudiaUrl || null);
+    setSourceBearerToken(sourceBearer || null);
+    setCloudiaBaseUrl(sourceUrl || null);
     toast.success("Configuração Cloudia local salva");
   }
   return (
@@ -124,20 +124,20 @@ export default function SettingsPage() {
             subtitle="Salvo no navegador; útil para testar e evitar 502 de URL incorreta"
           />
           <CardBody className="space-y-3">
-            <label className="label">Bearer token da Cloudia</label>
+            <label className="label">Bearer token do Kommo</label>
             <Input
               type="password"
               icon={<KeyRound className="h-4 w-4" />}
-              value={cloudiaBearer}
-              onChange={(e) => setCloudiaBearer(e.target.value)}
+              value={sourceBearer}
+              onChange={(e) => setSourceBearer(e.target.value)}
               placeholder="Bearer ..."
             />
 
-            <label className="label">URL base da Cloudia</label>
+            <label className="label">URL base do Kommo</label>
             <Input
               type="url"
               icon={<LinkIcon className="h-4 w-4" />}
-              value={cloudiaUrl}
+              value={sourceUrl}
               onChange={(e) => setCloudiaUrl(e.target.value)}
               placeholder="https://api.cloudia.com.br"
             />

@@ -1,5 +1,5 @@
 /**
- * Configuration API — chave de API da Cloudia armazenada no backend.
+ * Configuration API — chave de API do Kommo armazenada no backend.
  *
  * Todas as rotas aceitam header `X-Admin-Key` — já injetado pelo
  * interceptor em `@/lib/api`.

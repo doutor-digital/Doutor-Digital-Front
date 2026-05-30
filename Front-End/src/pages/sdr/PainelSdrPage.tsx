@@ -17,7 +17,7 @@ import {
   Wallet,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaInlineBadge, CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
+import { SourceInlineBadge, SourceLegendBanner } from "@/components/sdr/SourceField";
 import { useIsClient, useSdrCounts, useSdrStore } from "@/lib/sdr/sdr-store";
 import { computeAiMetrics } from "@/services/sdr-ai";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
@@ -42,7 +42,7 @@ export default function PainelSdrPage() {
       <PageHeader
         badge="Painel SDR · Visão consolidada"
         title="Visão geral do time de cadastro"
-        description="KPIs derivados das 8 seções da planilha (Cadastro, Consultas, Tratamentos, Tarefas, Agenda, Metas, Auditoria). Tudo alimentado em tempo real pelo webhook Cloudia + ações da SDR."
+        description="KPIs derivados das 8 seções da planilha (Cadastro, Consultas, Tratamentos, Tarefas, Agenda, Metas, Auditoria). Tudo alimentado em tempo real pelo webhook Kommo + ações da SDR."
         actions={
           <Link
             to="/sdr/relatorios"
@@ -54,7 +54,7 @@ export default function PainelSdrPage() {
         }
       />
 
-      <CloudiaLegendBanner className="mb-6" />
+      <SourceLegendBanner className="mb-6" />
 
       {/* ═══════════════════════════════════════════════════════════════
           SEÇÃO 1 · Cadastro Geral (Leads)
@@ -71,7 +71,7 @@ export default function PainelSdrPage() {
             <KpiCard
               label="Leads totais"
               value={formatNumber(m.totalLeads)}
-              sublabel={`${m.leadsCloudia} via Cloudia · ${m.totalLeads - m.leadsCloudia} manuais/importados`}
+              sublabel={`${m.leadsCloudia} via Kommo · ${m.totalLeads - m.leadsCloudia} manuais/importados`}
               icon={Users}
               tone="emerald"
               cloudia
@@ -408,7 +408,7 @@ export default function PainelSdrPage() {
               <h3 className="mt-1 text-[14px] font-semibold text-slate-100">Top 5 fontes de leads</h3>
             </div>
             <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-500">
-              <CloudiaInlineBadge />
+              <SourceInlineBadge />
               <span>Auto-gerado</span>
             </span>
           </div>
@@ -506,7 +506,7 @@ function KpiCard({
         <div className={cn("flex h-7 w-7 items-center justify-center rounded-md ring-1 ring-inset", t.ring, t.bg)}>
           <Icon className={cn("h-3.5 w-3.5", t.icon)} />
         </div>
-        {cloudia && <CloudiaInlineBadge />}
+        {cloudia && <SourceInlineBadge />}
       </div>
       <p className="mt-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{label}</p>
       <p className="mt-1 text-[18px] font-semibold tabular-nums text-slate-100 truncate">{value}</p>

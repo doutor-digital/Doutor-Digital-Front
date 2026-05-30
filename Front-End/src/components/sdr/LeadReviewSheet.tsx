@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Loader2, Save, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "@/components/icons";
-import { CloudiaFieldShell } from "@/components/sdr/CloudiaField";
+import { SourceFieldShell } from "@/components/sdr/SourceField";
 import { reviewSdrLead, upsertSdrLead } from "@/lib/sdr/sdr-store";
-import type { SdrCloudiaFieldKey, SdrLead } from "@/types/sdr";
-import { CLOUDIA_ORIGENS, CLOUDIA_MOTIVOS_NAO_AGENDAMENTO } from "@/lib/cadastra/cloudia-mapping";
+import type { SdrSourceFieldKey, SdrLead } from "@/types/sdr";
+import { LEAD_ORIGENS, LEAD_MOTIVOS_NAO_AGENDAMENTO } from "@/lib/cadastra/lead-mapping";
 import { cn, formatDate } from "@/lib/utils";
 
 type Props = {
@@ -30,10 +30,10 @@ type ReviewPhase =
 /**
  * Sheet lateral de revisão de lead.
  * Mostra todos os 19 campos da Seção 1 da planilha, com indicador visual claro
- * de quais vieram da Cloudia e quais são manuais.
+ * de quais vieram do Kommo e quais são manuais.
  *
  * A SDR pode editar qualquer campo (mesmo os auto-preenchidos), e ao salvar
- * o flag "vindo da Cloudia" é mantido — apenas registramos que ela revisou.
+ * o flag "vindo do Kommo" é mantido — apenas registramos que ela revisou.
  */
 export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props) {
   const [draft, setDraft] = useState<SdrLead>(lead);
@@ -54,8 +54,8 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, phase]);
 
-  const isFromCloudia = (k: SdrCloudiaFieldKey): "cloudia" | "manual" =>
-    draft.cloudiaFields.includes(k) ? "cloudia" : "manual";
+  const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
+    draft.sourceFields.includes(k) ? "cloudia" : "manual";
 
   const update = <K extends keyof SdrLead>(k: K, v: SdrLead[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
@@ -130,14 +130,14 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
               {draft.nome || "Sem nome"}
             </h2>
             <p className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-              {draft.cloudiaProvenance && (
+              {draft.sourceProvenance && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
                   <Sparkles className="h-2.5 w-2.5" />
-                  {draft.cloudiaProvenance.webhookEvent ?? "Cloudia"}
+                  {draft.sourceProvenance.webhookEvent ?? "Cloudia"}
                 </span>
               )}
-              {draft.cloudiaProvenance?.receivedAt && (
-                <span>Recebido em {formatDate(draft.cloudiaProvenance.receivedAt)}</span>
+              {draft.sourceProvenance?.receivedAt && (
+                <span>Recebido em {formatDate(draft.sourceProvenance.receivedAt)}</span>
               )}
             </p>
           </div>
@@ -152,20 +152,20 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {/* Bloco: Dados do lead (vêm da Cloudia) */}
+          {/* Bloco: Dados do lead (vêm do Kommo) */}
           <SectionHeader
             title="Dados do lead"
-            subtitle="Estes campos vêm direto da Cloudia. Confira e ajuste se necessário."
+            subtitle="Estes campos vêm direto do Kommo. Confira e ajuste se necessário."
             cloudia
           />
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <CloudiaFieldShell label="Nome do cliente" origin={isFromCloudia("nome")} required>
+            <SourceFieldShell label="Nome do cliente" origin={isFromSource("nome")} required>
               <Input value={draft.nome} onChange={(v) => update("nome", v)} />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Telefone" origin={isFromCloudia("telefone")} required>
+            </SourceFieldShell>
+            <SourceFieldShell label="Telefone" origin={isFromSource("telefone")} required>
               <Input value={draft.telefone} onChange={(v) => update("telefone", v)} mono />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Tipo (Cadastro / Resgate)" origin={isFromCloudia("tipo")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Tipo (Cadastro / Resgate)" origin={isFromSource("tipo")}>
               <Select
                 value={draft.tipo}
                 onChange={(v) => update("tipo", v as SdrLead["tipo"])}
@@ -174,43 +174,43 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
                   { value: "Resgate", label: "Resgate" },
                 ]}
               />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Origem do cadastro" origin={isFromCloudia("origem")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Origem do cadastro" origin={isFromSource("origem")}>
               <Select
                 value={draft.origem}
                 onChange={(v) => update("origem", v)}
-                options={CLOUDIA_ORIGENS.map((o) => ({ value: o, label: o }))}
+                options={LEAD_ORIGENS.map((o) => ({ value: o, label: o }))}
               />
-            </CloudiaFieldShell>
+            </SourceFieldShell>
             {draft.tipo === "Resgate" && (
-              <CloudiaFieldShell label="Tipo de resgate" origin={isFromCloudia("tipoResgate")}>
+              <SourceFieldShell label="Tipo de resgate" origin={isFromSource("tipoResgate")}>
                 <Input
                   value={draft.tipoResgate ?? ""}
                   onChange={(v) => update("tipoResgate", v || undefined)}
                 />
-              </CloudiaFieldShell>
+              </SourceFieldShell>
             )}
-            <CloudiaFieldShell label="Interação (cliente respondeu?)" origin={isFromCloudia("interacao")}>
+            <SourceFieldShell label="Interação (cliente respondeu?)" origin={isFromSource("interacao")}>
               <Toggle value={draft.interacao} onChange={(v) => update("interacao", v)} />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Situação (estágio Cloudia)" origin={isFromCloudia("situacao")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Situação (estágio Kommo)" origin={isFromSource("situacao")}>
               <Input
                 value={draft.situacao ?? ""}
                 onChange={(v) => update("situacao", v || undefined)}
               />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Clínica" origin={isFromCloudia("clinica")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Clínica" origin={isFromSource("clinica")}>
               <Input
                 value={draft.clinica ?? ""}
                 onChange={(v) => update("clinica", v || undefined)}
               />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Observação" origin={isFromCloudia("observacao")} className="md:col-span-2">
+            </SourceFieldShell>
+            <SourceFieldShell label="Observação" origin={isFromSource("observacao")} className="md:col-span-2">
               <Textarea
                 value={draft.observacao ?? ""}
                 onChange={(v) => update("observacao", v || undefined)}
               />
-            </CloudiaFieldShell>
+            </SourceFieldShell>
           </div>
 
           {/* Bloco: Agendamento (manual) */}
@@ -220,67 +220,67 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
             className="mt-7"
           />
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <CloudiaFieldShell label="Cliente agendou?" origin="manual">
+            <SourceFieldShell label="Cliente agendou?" origin="manual">
               <Toggle value={draft.agendouConsulta} onChange={(v) => update("agendouConsulta", v)} />
-            </CloudiaFieldShell>
+            </SourceFieldShell>
             {draft.agendouConsulta ? (
-              <CloudiaFieldShell label="Data do agendamento" origin={isFromCloudia("dataAgendamento")}>
+              <SourceFieldShell label="Data do agendamento" origin={isFromSource("dataAgendamento")}>
                 <Input
                   type="datetime-local"
                   value={toLocalInput(draft.dataAgendamento)}
                   onChange={(v) => update("dataAgendamento", fromLocalInput(v) || undefined)}
                 />
-              </CloudiaFieldShell>
+              </SourceFieldShell>
             ) : (
-              <CloudiaFieldShell label="Motivo para não agendamento" origin="manual">
+              <SourceFieldShell label="Motivo para não agendamento" origin="manual">
                 <Select
                   value={draft.motivoNaoAgendamento ?? ""}
                   onChange={(v) => update("motivoNaoAgendamento", v || undefined)}
                   options={[
                     { value: "", label: "Selecionar…" },
-                    ...CLOUDIA_MOTIVOS_NAO_AGENDAMENTO.map((m) => ({ value: m, label: m })),
+                    ...LEAD_MOTIVOS_NAO_AGENDAMENTO.map((m) => ({ value: m, label: m })),
                   ]}
                 />
-              </CloudiaFieldShell>
+              </SourceFieldShell>
             )}
           </div>
 
-          {/* Bloco: Responsável (vem da Cloudia) */}
+          {/* Bloco: Responsável (vem do Kommo) */}
           <SectionHeader
             title="Responsável & datas"
-            subtitle="Atribuído pela Cloudia via assigned_user_*."
+            subtitle="Atribuído pelo Kommo via assigned_user_*."
             className="mt-7"
             cloudia
           />
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <CloudiaFieldShell label="Nome responsável" origin={isFromCloudia("nomeResponsavel")}>
+            <SourceFieldShell label="Nome responsável" origin={isFromSource("nomeResponsavel")}>
               <Input
                 value={draft.nomeResponsavel}
                 onChange={(v) => update("nomeResponsavel", v)}
               />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Login (e-mail)" origin={isFromCloudia("login")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Login (e-mail)" origin={isFromSource("login")}>
               <Input
                 value={draft.login ?? ""}
                 onChange={(v) => update("login", v || undefined)}
               />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Data origem" origin={isFromCloudia("dataOrigem")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Data origem" origin={isFromSource("dataOrigem")}>
               <ReadOnlyValue value={formatDate(draft.dataOrigem)} />
-            </CloudiaFieldShell>
-            <CloudiaFieldShell label="Data modificação" origin={isFromCloudia("dataModificacao")}>
+            </SourceFieldShell>
+            <SourceFieldShell label="Data modificação" origin={isFromSource("dataModificacao")}>
               <ReadOnlyValue value={draft.dataModificacao ? formatDate(draft.dataModificacao) : "—"} />
-            </CloudiaFieldShell>
+            </SourceFieldShell>
           </div>
 
           {/* Resumo de provenance */}
           <div className="mt-6 rounded-lg border border-white/[0.05] bg-white/[0.015] p-3">
             <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Resumo</p>
             <p className="mt-1 text-[12px] text-slate-300">
-              <strong className="text-emerald-200">{draft.cloudiaFields.length}</strong> campo(s)
-              vieram da Cloudia.{" "}
+              <strong className="text-emerald-200">{draft.sourceFields.length}</strong> campo(s)
+              vieram do Kommo.{" "}
               <strong className="text-slate-200">
-                {15 - draft.cloudiaFields.length}
+                {15 - draft.sourceFields.length}
               </strong>{" "}
               precisa(m) de revisão/preenchimento manual.
             </p>

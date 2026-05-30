@@ -169,8 +169,11 @@ export interface Unit {
   cnpj?: string | null;
   phone?: string | null;
   addressLine?: string | null;
+  addressNumber?: string | null;
+  neighborhood?: string | null;
   city?: string | null;
   state?: string | null;
+  zipCode?: string | null;
   photoUrl?: string | null;
   responsibleName?: string | null;
   isActive?: boolean;
@@ -191,8 +194,11 @@ export interface CreateUnitInput {
   cnpj?: string;
   phone?: string;
   addressLine?: string;
+  addressNumber?: string;
+  neighborhood?: string;
   city?: string;
   state?: string;
+  zipCode?: string;
   photoUrl?: string;
   responsibleName?: string;
   kommoSubdomain?: string;

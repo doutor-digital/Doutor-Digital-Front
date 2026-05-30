@@ -73,7 +73,7 @@ function safePct(num: number, den: number): number {
 
 function computeMetrics(state: SdrState): AiMetrics {
   const leads = state.leads;
-  const leadsCloudia = leads.filter((l) => l.source === "cloudia").length;
+  const leadsCloudia = leads.filter((l) => l.source === "crm").length;
   const leadsAprovados = leads.filter((l) => l.status === "aprovado").length;
   const leadsPendentes = leads.filter((l) => l.status === "pendente_revisao").length;
   const leadsAgendados = leads.filter((l) => l.agendouConsulta).length;
@@ -150,7 +150,7 @@ function buildInsights(m: AiMetrics): AiInsight[] {
       tone: "neutral",
       title: "Sem leads no período",
       detail:
-        "Ainda não há leads no dashboard SDR. Ative o webhook Cloudia ou clique em Sincronizar Cloudia na tela de revisão para puxar leads existentes.",
+        "Ainda não há leads no dashboard SDR. Ative o webhook Kommo ou clique em Sincronizar Cloudia na tela de revisão para puxar leads existentes.",
     });
   } else if (m.leadsPendentesRevisao > 0) {
     const tone: AiInsightTone = m.leadsPendentesRevisao > 10 ? "alert" : "warning";
@@ -167,7 +167,7 @@ function buildInsights(m: AiMetrics): AiInsight[] {
     out.push({
       tone: "positive",
       title: "Fila de revisão zerada",
-      detail: "Toda a entrada da Cloudia foi revisada. Ótimo trabalho da equipe SDR.",
+      detail: "Toda a entrada do Kommo foi revisada. Ótimo trabalho da equipe SDR.",
     });
   }
 
@@ -236,7 +236,7 @@ function buildInsights(m: AiMetrics): AiInsight[] {
       title: top.origem === "Sem origem" ? "Muitos leads sem origem definida" : `Origem dominante: ${top.origem}`,
       detail:
         top.origem === "Sem origem"
-          ? `${top.pct.toFixed(0)}% dos leads estão sem origem. Configure tagging na Cloudia para melhorar atribuição.`
+          ? `${top.pct.toFixed(0)}% dos leads estão sem origem. Configure tagging no Kommo para melhorar atribuição.`
           : `${top.pct.toFixed(0)}% dos leads vêm de "${top.origem}". Boa concentração — explore como diversificar.`,
     });
   }
@@ -267,7 +267,7 @@ function buildRecommendations(m: AiMetrics): string[] {
   if (m.taxaFechamento < 30 && m.consultas >= 3)
     recs.push("Mapear top motivos de não fechamento e ajustar a apresentação do orçamento.");
   if (m.topOrigens[0]?.origem === "Sem origem" && m.topOrigens[0].pct >= 30)
-    recs.push("Padronizar a marcação de origem na Cloudia para melhorar atribuição e ROI.");
+    recs.push("Padronizar a marcação de origem no Kommo para melhorar atribuição e ROI.");
   if (m.metaConsolidada > 0 && m.realConsolidado < m.metaConsolidada * 0.5)
     recs.push("Time SDR está abaixo de 50% da meta consolidada do mês — verificar causa raiz.");
   if (recs.length === 0)
@@ -279,11 +279,11 @@ function buildRecommendations(m: AiMetrics): string[] {
 
 function buildSummary(m: AiMetrics): string {
   if (m.totalLeads === 0) {
-    return "Sem dados suficientes para análise. Ative o webhook Cloudia ou faça uma sincronização inicial.";
+    return "Sem dados suficientes para análise. Ative o webhook Kommo ou faça uma sincronização inicial.";
   }
   const partes: string[] = [];
   partes.push(`${m.totalLeads} lead(s) no dashboard`);
-  if (m.leadsCloudia > 0) partes.push(`${m.leadsCloudia} via Cloudia`);
+  if (m.leadsCloudia > 0) partes.push(`${m.leadsCloudia} via Kommo`);
   if (m.leadsPendentesRevisao > 0) partes.push(`${m.leadsPendentesRevisao} aguardando revisão`);
   partes.push(`taxa de agendamento de ${m.taxaAgendamento.toFixed(1)}%`);
   if (m.consultas > 0) partes.push(`${m.consultas} consulta(s) realizadas`);

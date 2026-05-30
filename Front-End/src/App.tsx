@@ -26,6 +26,7 @@ const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
+const UnitCreatePage   = lazy(() => import("@/pages/UnitCreatePage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const LogsPage         = lazy(() => import("@/pages/LogsPage"));
@@ -174,6 +175,7 @@ export default function App() {
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/attendants"        element={<AttendantsPage />}   />
           <Route path="/units"             element={<UnitsPage />}        />
+          <Route path="/units/new"         element={<UnitCreatePage />}   />
           <Route path="/reports"           element={<ReportsPage />}      />
           <Route path="/finance"           element={<FinancePage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />

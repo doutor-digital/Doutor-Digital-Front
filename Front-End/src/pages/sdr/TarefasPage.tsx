@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Circle, Plus, Trash2 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CloudiaLegendBanner } from "@/components/sdr/CloudiaField";
+import { SourceLegendBanner } from "@/components/sdr/SourceField";
 import {
   addSdrTarefa,
   deleteSdrTarefa,
@@ -69,7 +69,7 @@ export default function TarefasPage() {
         }
       />
 
-      <CloudiaLegendBanner className="mb-5" />
+      <SourceLegendBanner className="mb-5" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <FilterChip

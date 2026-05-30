@@ -1,14 +1,14 @@
 // Tipos do dashboard SDR unificado.
 // Espelha a estrutura da planilha que as secretárias preenchiam manualmente,
-// agora alimentada pelo webhook Cloudia em tempo real.
+// agora alimentada pelo webhook Kommo em tempo real.
 //
 // Convenções:
-// - `cloudiaFields` é um set de chaves indicando quais campos vieram do webhook.
+// - `sourceFields` é um set de chaves indicando quais campos vieram do webhook.
 //   Se a chave está no set, o campo foi auto-preenchido e a UI deve renderizá-lo
-//   com o indicador emerald (CloudiaFieldShell origin="cloudia").
-// - `cloudiaProvenance.receivedAt` é a hora do recebimento do webhook — tooltip.
+//   com o indicador emerald (SourceFieldShell origin="crm").
+// - `sourceProvenance.receivedAt` é a hora do recebimento do webhook — tooltip.
 
-export type CloudiaProvenance = {
+export type SourceProvenance = {
   receivedAt: string;
   webhookEvent?: string;
   tenantId?: string | number;
@@ -18,7 +18,7 @@ export type CloudiaProvenance = {
 // SEÇÃO 1 — Cadastro Geral (Leads)
 // ---------------------------------------------------------------------------
 // 19 campos da planilha, mais 4 derivados (Ano/Mês de createdAt, etc.).
-// Campos auto-preenchidos pela Cloudia: nome, telefone, origem, dataAgendamento
+// Campos auto-preenchidos pelo Kommo: nome, telefone, origem, dataAgendamento
 // (via stage), nomeResponsavel (assigned_user_name), login (assigned_user_email),
 // observacao, situacao, clinica, dataOrigem, dataModificacao, interacao.
 export interface SdrLead {
@@ -46,7 +46,7 @@ export interface SdrLead {
   dataModificacao?: string; // data.last_updated_at
 
   // Origem do registro (define se passa por revisão ou já entra aprovado)
-  source: "cloudia" | "manual" | "importado";
+  source: "crm" | "manual" | "importado";
 
   // Status no fluxo de revisão CRM
   status: "pendente_revisao" | "aprovado" | "rejeitado";
@@ -56,13 +56,13 @@ export interface SdrLead {
   rejectionReason?: string;
 
   // Provenance
-  cloudiaFields: SdrCloudiaFieldKey[];
-  cloudiaProvenance?: CloudiaProvenance;
+  sourceFields: SdrSourceFieldKey[];
+  sourceProvenance?: SourceProvenance;
 
   createdAt: string;
 }
 
-export type SdrCloudiaFieldKey =
+export type SdrSourceFieldKey =
   | "nome"
   | "telefone"
   | "origem"

@@ -29,9 +29,9 @@ api.interceptors.request.use((config) => {
   const adminKey = localStorage.getItem("admin_key");
   if (adminKey) config.headers["X-Admin-Key"] = adminKey;
 
-  const cloudiaBearerToken = localStorage.getItem("cloudia_bearer_token");
-  if (cloudiaBearerToken) {
-    config.headers["X-Cloudia-Bearer"] = cloudiaBearerToken;
+  const sourceBearerToken = localStorage.getItem("cloudia_bearer_token");
+  if (sourceBearerToken) {
+    config.headers["X-Cloudia-Bearer"] = sourceBearerToken;
   }
 
   const cloudiaBaseUrl = localStorage.getItem("cloudia_base_url");
@@ -83,7 +83,7 @@ export function setAdminKey(key: string | null) {
 }
 
 
-export function setCloudiaBearerToken(token: string | null) {
+export function setSourceBearerToken(token: string | null) {
   if (token) localStorage.setItem("cloudia_bearer_token", token);
   else localStorage.removeItem("cloudia_bearer_token");
 }

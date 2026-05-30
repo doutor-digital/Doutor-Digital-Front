@@ -1,4 +1,4 @@
-// Demo data para o dashboard SDR — simula leads que chegariam via webhook Cloudia.
+// Demo data para o dashboard SDR — simula leads que chegariam via webhook Kommo.
 // Esses dados aparecem se o localStorage estiver vazio. As SDRs podem usar para
 // treinar e ver como a UI fica preenchida.
 
@@ -48,7 +48,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
     clinica: "Doutor Hérnia · São Paulo",
     dataOrigem: diasAtras(0),
     dataModificacao: diasAtras(0),
-    cloudiaFields: [
+    sourceFields: [
       "nome",
       "telefone",
       "origem",
@@ -62,7 +62,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
       "dataOrigem",
       "dataModificacao",
     ],
-    cloudiaProvenance: {
+    sourceProvenance: {
       receivedAt: diasAtras(0),
       webhookEvent: "CUSTOMER_CREATED",
       tenantId: 789,
@@ -87,7 +87,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
     clinica: "Doutor Hérnia · São Paulo",
     dataOrigem: diasAtras(2),
     dataModificacao: diasAtras(1),
-    cloudiaFields: [
+    sourceFields: [
       "nome",
       "telefone",
       "origem",
@@ -101,7 +101,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
       "dataOrigem",
       "dataModificacao",
     ],
-    cloudiaProvenance: {
+    sourceProvenance: {
       receivedAt: diasAtras(2),
       webhookEvent: "CUSTOMER_CREATED",
       tenantId: 789,
@@ -126,7 +126,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
     clinica: "Doutor Hérnia · Rio de Janeiro",
     dataOrigem: diasAtras(5),
     dataModificacao: diasAtras(1),
-    cloudiaFields: [
+    sourceFields: [
       "nome",
       "telefone",
       "origem",
@@ -140,7 +140,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
       "dataOrigem",
       "dataModificacao",
     ],
-    cloudiaProvenance: {
+    sourceProvenance: {
       receivedAt: diasAtras(5),
       webhookEvent: "CUSTOMER_UPDATED",
       tenantId: 789,
@@ -164,7 +164,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
     clinica: "Doutor Hérnia · Belo Horizonte",
     dataOrigem: diasAtras(7),
     dataModificacao: diasAtras(3),
-    cloudiaFields: [
+    sourceFields: [
       "nome",
       "telefone",
       "origem",
@@ -177,7 +177,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
       "dataOrigem",
       "dataModificacao",
     ],
-    cloudiaProvenance: {
+    sourceProvenance: {
       receivedAt: diasAtras(7),
       webhookEvent: "CUSTOMER_CREATED",
       tenantId: 789,
@@ -202,7 +202,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
     clinica: "Doutor Hérnia · São Paulo",
     dataOrigem: diasAtras(10),
     dataModificacao: diasAtras(1),
-    cloudiaFields: [
+    sourceFields: [
       "nome",
       "telefone",
       "origem",
@@ -214,7 +214,7 @@ export const SEED_LEADS: SdrLeadSeed[] = [
       "dataOrigem",
       "dataModificacao",
     ],
-    cloudiaProvenance: {
+    sourceProvenance: {
       receivedAt: diasAtras(10),
       webhookEvent: "CUSTOMER_CREATED",
       tenantId: 789,

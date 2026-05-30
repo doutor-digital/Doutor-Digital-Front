@@ -11,7 +11,7 @@ export interface CloudiaApiKeyStatus {
   expiresAt?: string | null;
 }
 
-interface CloudiaStatusRaw {
+interface KommoStatusRaw {
   configured?: boolean;
   is_configured?: boolean;
   expiresAt?: string | null;
@@ -25,7 +25,7 @@ export const configService = {
   },
 
   async status(): Promise<CloudiaApiKeyStatus> {
-    const { data } = await api.get<CloudiaStatusRaw>("/api/config/cloudia-api-key/status");
+    const { data } = await api.get<KommoStatusRaw>("/api/config/cloudia-api-key/status");
     return {
       configured: Boolean(data?.configured ?? data?.is_configured ?? false),
       expiresAt: data?.expiresAt ?? data?.expires_at ?? null,
