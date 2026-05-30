@@ -4,7 +4,8 @@ import { Cog, Loader2 } from "@/components/icons";
 import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
-import { stageLabel } from "@/lib/stageLabels";
+import { assignmentsService } from "@/services/assignments";
+import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 const nf = (n?: number | null) =>
@@ -186,7 +187,21 @@ export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
   const [rangeKey, setRangeKey] = useState<RangeKey>("month");
 
-  const range = useMemo(() => computeRange(rangeKey), [rangeKey]);
+  // ─── Filtros avançados ─────────────────────────────────────────────
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<string>("");
+  const [attendantFilter, setAttendantFilter] = useState<string>("");
+  const [stageFilter, setStageFilter] = useState<Set<string>>(new Set());
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
+  const isCustom = customFrom !== "" && customTo !== "";
+
+  const range = useMemo(() => {
+    if (isCustom) {
+      return { from: isoStartOfDay(new Date(customFrom)), to: isoEndOfDay(new Date(customTo)) };
+    }
+    return computeRange(rangeKey);
+  }, [rangeKey, customFrom, customTo, isCustom]);
   const rangeLabel = `${fmtDateBr(range.from)} - ${fmtDateBr(range.to)}`;
 
   const units = useQuery({
@@ -195,20 +210,99 @@ export default function DashboardPage() {
     staleTime: 5 * 60_000,
   });
 
+  const attendants = useQuery({
+    queryKey: ["dash-amo", "attendants"],
+    queryFn: () => assignmentsService.listAttendants(),
+    staleTime: 5 * 60_000,
+  });
+
+  // Pipelines da Kommo (statuses) — usados pra traduzir status_id em nome amigável.
+  // Só consulta quando há unidade selecionada (endpoint precisa de token/subdomain da unidade).
+  const pipelines = useQuery({
+    queryKey: ["dash-amo", "kommo-pipelines", unitId],
+    queryFn: () => unitsService.kommoPipelines(unitId!),
+    enabled: unitId != null,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
+  // Map<status_id, status_name> a partir de todos os pipelines.
+  const stageNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of pipelines.data ?? []) {
+      for (const s of p.statuses ?? []) {
+        map.set(String(s.id), s.name);
+      }
+    }
+    return map;
+  }, [pipelines.data]);
+
+  // Tradução robusta: prefere o nome ao vivo da Kommo, cai pro mapa estático, e pro raw como último recurso.
+  const stageLabel = (raw?: string | null): string => {
+    if (!raw) return "—";
+    const t = String(raw).trim();
+    if (stageNameMap.has(t)) return stageNameMap.get(t)!;
+    return fallbackStageLabel(t);
+  };
+
+  const sources = useQuery({
+    queryKey: ["dash-amo", "sources", tenantId, unitId],
+    queryFn: () => webhooksService.distinctSources({
+      clinicId: tenantId ?? undefined,
+      unitId: unitId ?? undefined,
+    }),
+    enabled: tenantId != null,
+    staleTime: 5 * 60_000,
+  });
+
   const overview = useQuery({
-    queryKey: ["dash-amo", "overview", tenantId, unitId, range.from, range.to],
+    queryKey: [
+      "dash-amo",
+      "overview",
+      tenantId,
+      unitId,
+      range.from,
+      range.to,
+      sourceFilter,
+      attendantFilter,
+    ],
     queryFn: () =>
       webhooksService.dashboardOverview({
         clinicId: tenantId ?? undefined,
         unitId: unitId ?? undefined,
         dateFrom: range.from,
         dateTo: range.to,
+        source: sourceFilter || undefined,
+        attendantId: attendantFilter ? Number(attendantFilter) : undefined,
       }),
     enabled: tenantId != null,
     staleTime: 60_000,
   });
 
   const ov = overview.data;
+
+  const hasActiveFilters =
+    sourceFilter !== "" ||
+    attendantFilter !== "" ||
+    stageFilter.size > 0 ||
+    isCustom;
+
+  const resetFilters = () => {
+    setSourceFilter("");
+    setAttendantFilter("");
+    setStageFilter(new Set());
+    setCustomFrom("");
+    setCustomTo("");
+  };
+
+  const toggleStage = (stage: string) => {
+    setStageFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(stage)) next.delete(stage);
+      else next.add(stage);
+      return next;
+    });
+  };
 
   const agencyName = useMemo(() => {
     if (!unitId) return "Todas as unidades";
@@ -259,18 +353,29 @@ export default function DashboardPage() {
   const semPagamento = ov?.sem_pagamento ?? 0;
   const tasks = ov?.faltou ?? 0;
 
-  // Etapas com nome amigável (traduz códigos LeadStages.* e CanonicalStages.*).
+  // Etapas com nome amigável (Kommo pipeline ao vivo > mapa estático > raw).
+  // Filtragem opcional: se houver stageFilter ativo, restringe à seleção.
   const etapasComNome = useMemo(() => {
     const arr = ov?.etapas ?? [];
     return [...arr]
       .filter((e) => (e.quantidade ?? 0) > 0)
+      .filter((e) => stageFilter.size === 0 || stageFilter.has(e.etapa))
       .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
-      .slice(0, 8)
+      .slice(0, 12)
       .map((e) => ({
+        raw: e.etapa,
         label: stageLabel(e.etapa),
         value: e.quantidade ?? 0,
       }));
-  }, [ov]);
+  }, [ov, stageFilter, stageNameMap]);
+
+  // Lista completa de etapas pro filtro (com nome traduzido) — usa o overview pra saber o universo.
+  const allStagesForFilter = useMemo(() => {
+    const arr = ov?.etapas ?? [];
+    return [...arr]
+      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
+      .map((e) => ({ raw: e.etapa, label: stageLabel(e.etapa), value: e.quantidade ?? 0 }));
+  }, [ov, stageNameMap]);
   const etapasMax = useMemo(
     () => Math.max(1, ...etapasComNome.map((e) => e.value)),
     [etapasComNome],
@@ -313,9 +418,13 @@ export default function DashboardPage() {
               <button
                 key={r.key}
                 type="button"
-                onClick={() => setRangeKey(r.key)}
+                onClick={() => {
+                  setRangeKey(r.key);
+                  setCustomFrom("");
+                  setCustomTo("");
+                }}
                 className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
-                  rangeKey === r.key
+                  !isCustom && rangeKey === r.key
                     ? "bg-white text-slate-900"
                     : "text-white/70 hover:text-white"
                 }`}
@@ -324,7 +433,7 @@ export default function DashboardPage() {
               </button>
             ))}
             <span className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900">
-              {rangeLabel}
+              {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
             </span>
           </div>
 
@@ -361,13 +470,141 @@ export default function DashboardPage() {
             </div>
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+                hasActiveFilters
+                  ? "border-violet-400/60 bg-violet-500/20 text-white"
+                  : "border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+              }`}
             >
               <Cog className="h-3.5 w-3.5" />
-              Configurar
+              Filtros{hasActiveFilters ? ` (${
+                (sourceFilter ? 1 : 0) +
+                (attendantFilter ? 1 : 0) +
+                stageFilter.size +
+                (isCustom ? 1 : 0)
+              })` : ""}
             </button>
           </div>
         </div>
+
+        {/* ─── PAINEL DE FILTROS AVANÇADOS ─────────────────────────────── */}
+        {showAdvanced && (
+          <DarkCard className="mt-4" accent="#a78bfa">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                Filtros avançados
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-[11px] text-violet-300 hover:text-violet-200"
+                >
+                  Limpar tudo
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Origem */}
+              <div>
+                <label className="text-[11px] font-medium text-white/60">Origem</label>
+                <select
+                  value={sourceFilter}
+                  onChange={(e) => setSourceFilter(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                >
+                  <option value="" className="bg-slate-900">Todas</option>
+                  {(sources.data ?? []).map((s) => (
+                    <option key={s} value={s} className="bg-slate-900">{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Atendente */}
+              <div>
+                <label className="text-[11px] font-medium text-white/60">Atendente</label>
+                <select
+                  value={attendantFilter}
+                  onChange={(e) => setAttendantFilter(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                >
+                  <option value="" className="bg-slate-900">Todos</option>
+                  {(attendants.data ?? []).map((a) => (
+                    <option key={a.id} value={a.id} className="bg-slate-900">
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Período customizado */}
+              <div>
+                <label className="text-[11px] font-medium text-white/60">Período customizado</label>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  />
+                  <span className="text-white/40">–</span>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Etapas (multi-select com chips) */}
+            {allStagesForFilter.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-white/60">Etapas do funil</label>
+                  {stageFilter.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setStageFilter(new Set())}
+                      className="text-[10px] text-white/40 hover:text-white"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {allStagesForFilter.map((e) => {
+                    const active = stageFilter.has(e.raw);
+                    return (
+                      <button
+                        key={e.raw}
+                        type="button"
+                        onClick={() => toggleStage(e.raw)}
+                        className={`rounded-full border px-3 py-1 text-[11px] transition ${
+                          active
+                            ? "border-violet-400 bg-violet-500/30 text-white"
+                            : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
+                        }`}
+                      >
+                        {e.label} <span className="ml-1 opacity-60">{nf(e.value)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Aviso quando pipelines da Kommo não carregam */}
+            {unitId != null && pipelines.isError && (
+              <p className="mt-3 text-[11px] text-amber-300/80">
+                Não consegui carregar os nomes das etapas da Kommo (verifique o subdomain/token da unidade). Usando códigos brutos.
+              </p>
+            )}
+          </DarkCard>
+        )}
 
         {/* ─── LOADING ─────────────────────────────────────────────────── */}
         {isLoading ? (

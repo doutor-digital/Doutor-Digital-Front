@@ -7,10 +7,33 @@ import type {
   UpdateUnitInput,
 } from "@/types";
 
+export interface KommoPipelineStatus {
+  id: number;
+  name: string;
+  color?: string | null;
+  type: number;
+  pipeline_id: number;
+}
+
+export interface KommoPipeline {
+  id: number;
+  name: string;
+  is_main: boolean;
+  statuses: KommoPipelineStatus[];
+}
+
 export const unitsService = {
   async list(): Promise<Unit[]> {
     const { data } = await api.get<Unit[]>("/units");
     return asArray<Unit>(data);
+  },
+
+  /** Lista os pipelines/funis da Kommo da unidade — usado pra traduzir status_id em nome. */
+  async kommoPipelines(unitId: number | string): Promise<KommoPipeline[]> {
+    const id = toInt(unitId);
+    if (!id) return [];
+    const { data } = await api.get<KommoPipeline[]>(`/units/${id}/kommo-pipelines`);
+    return asArray<KommoPipeline>(data);
   },
 
   /** Busca uma unidade pelo seu Id interno (não clinicId). */
