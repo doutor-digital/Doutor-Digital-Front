@@ -56,6 +56,7 @@ import {
   Users,
   Users2,
   Wallet,
+  Webhook,
   Workflow,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -133,9 +134,10 @@ const navGroups: NavGroup[] = [
       {
         label: "Unidades",
         icon: Building2,
-        basePaths: ["/units", "/amanheceu"],
+        basePaths: ["/units", "/amanheceu", "/webhooks-monitor"],
         children: [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
+          { to: "/webhooks-monitor", label: "Monitor de webhooks", icon: Webhook },
           { to: "/amanheceu", label: "Amanheceu", icon: Sunrise, badge: "Novo" },
         ],
       },
