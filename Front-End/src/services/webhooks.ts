@@ -27,6 +27,24 @@ import type {
   TimeSeriesPoint,
 } from "@/types";
 
+export interface HeatmapCell {
+  dayOfWeek: number; // 0=domingo .. 6=sábado
+  hour: number; // 0..23
+  count: number;
+}
+
+export interface CampaignCell {
+  campaign: string;
+  source: string;
+  count: number;
+}
+
+export interface ByUnitEvolutionSeries {
+  unitId: number | null;
+  unitName: string;
+  points: Array<{ date: string; count: number }>;
+}
+
 export interface LeadFilters {
   clinicId?: number | string;
   search?: string;
@@ -390,6 +408,34 @@ export const webhooksService = {
   async syncHealth(): Promise<unknown> {
     const { data } = await api.get<unknown>("/webhooks/sync/health");
     return data;
+  },
+
+  async heatmap(params: {
+    unitId?: number; dateFrom?: string; dateTo?: string; source?: string;
+  } = {}): Promise<HeatmapCell[]> {
+    const { data } = await api.get<HeatmapCell[]>("/webhooks/dashboard/heatmap", {
+      params: cleanParams(params),
+    });
+    return Array.isArray(data) ? data : [];
+  },
+
+  async campaigns(params: {
+    unitId?: number; dateFrom?: string; dateTo?: string; source?: string; top?: number;
+  } = {}): Promise<CampaignCell[]> {
+    const { data } = await api.get<CampaignCell[]>("/webhooks/dashboard/campaigns", {
+      params: cleanParams(params),
+    });
+    return Array.isArray(data) ? data : [];
+  },
+
+  async byUnitEvolution(params: {
+    dateFrom: string; dateTo: string; source?: string;
+  }): Promise<ByUnitEvolutionSeries[]> {
+    const { data } = await api.get<ByUnitEvolutionSeries[]>(
+      "/webhooks/dashboard/by-unit-evolution",
+      { params: cleanParams(params) },
+    );
+    return Array.isArray(data) ? data : [];
   },
 
   async getTotalLeads(tenantId: number): Promise<number> {
