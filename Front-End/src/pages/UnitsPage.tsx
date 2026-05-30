@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { unitsService } from "@/services/units";
 import type { Unit, CreateUnitInput } from "@/types";
 import {
@@ -19,7 +19,7 @@ import {
   UserRound,
   X,
   Loader2,
-} from "lucide-react";
+} from "@/components/icons";
 
 const DEFAULT_PHOTO =
   "https://stract.to/wp-content/uploads/2024/12/kommo-crm.png";
