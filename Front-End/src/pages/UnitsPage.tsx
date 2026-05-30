@@ -528,6 +528,9 @@ export default function UnitsPage() {
                   e gravar nessa unidade. É seguro rodar várias vezes — usa
                   o ExternalId, então não duplica.
                 </p>
+                <p className="mt-2 text-xs text-amber-300">
+                  ⏱️ Pode levar 1-3 minutos. Não feche a tela durante a sync.
+                </p>
               </div>
               <button
                 onClick={closeSync}

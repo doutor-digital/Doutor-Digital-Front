@@ -60,11 +60,17 @@ export const unitsService = {
   }> {
     const id = toInt(unitId);
     if (!id) throw new Error("id inválido para sync");
-    const { data } = await api.post(`/units/${id}/sync-from-kommo`, {
-      accessToken: opts.accessToken,
-      persistToken: opts.persistToken ?? true,
-      maxLeads: opts.maxLeads,
-    });
+    const { data } = await api.post(
+      `/units/${id}/sync-from-kommo`,
+      {
+        accessToken: opts.accessToken,
+        persistToken: opts.persistToken ?? true,
+        maxLeads: opts.maxLeads,
+      },
+      // Sync pode demorar — pagina 250/vez na Kommo + busca contatos em lote.
+      // 5k leads ≈ 1-3 min; o backend roda até 10min mesmo se a conexão cair.
+      { timeout: 600_000 },
+    );
     return data;
   },
 
