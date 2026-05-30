@@ -251,10 +251,12 @@ export default function DashboardPage() {
   // ─── Render ───────────────────────────────────────────────────────────
   return (
     <div
-      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white"
+      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white font-normal"
       style={{
         background:
           "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
+        fontFamily: "'PT Sans', ui-sans-serif, system-ui, sans-serif",
+        fontWeight: 400,
       }}
     >
       {/* Padrão pontilhado sutil */}
