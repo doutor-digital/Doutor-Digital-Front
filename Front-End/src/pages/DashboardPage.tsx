@@ -718,10 +718,10 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* ─── 2. CARDS DE TOTAIS (Leads / Cadastro / Resgate) ─── */}
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {/* ── Total Leads — tipo INCOMING MESSAGES, com canais ── */}
-              <DarkCard accent="#34d399">
+            {/* ─── 2. CARDS DE TOTAIS — grid assimétrica amoCRM ────── */}
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* ── Total Leads (col 1, span 2 rows) — INCOMING MESSAGES ── */}
+              <DarkCard className="lg:row-span-2" accent="#34d399">
                 <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   <Fi name="fi-rr-users-alt" style={{ color: "#34d399" }} />
                   Total de Leads
@@ -864,6 +864,108 @@ export default function DashboardPage() {
                     );
                   })}
                 </ul>
+              </DarkCard>
+
+              {/* ── Origens de Leads (col 4, span 2 rows) — LEAD SOURCES ── */}
+              <DarkCard className="lg:row-span-2" accent="#22d3ee">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-marker" style={{ color: "#22d3ee" }} />
+                  Origens de Leads
+                </p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <ul className="flex-1 space-y-1.5 text-[11px]">
+                    {channels.length === 0 && <li className="text-white/40">Sem dados</li>}
+                    {channels.map((c) => (
+                      <li key={c.name} className="flex items-center gap-2 truncate" style={{ color: c.color }}>
+                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span className="truncate uppercase tracking-wide">{c.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="shrink-0">
+                    <ConcentricDonut
+                      data={channels.length ? channels : [{ name: "—", value: 1, color: "#1e293b" }]}
+                      size={200}
+                    />
+                  </div>
+                </div>
+                {/* Total embaixo do donut */}
+                <div className="mt-4 h-px w-full bg-white/10" />
+                <p className="mt-3 text-[10px] uppercase tracking-wider text-white/40">Total de leads</p>
+                <p className="mt-1 text-3xl font-bold leading-none text-cyan-300">{nf(funnelLeads.total)}</p>
+              </DarkCard>
+
+              {/* ── Row 2 col 2: Agendados (mini) ── */}
+              <DarkCard accent="#a78bfa">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-calendar-clock" style={{ color: "#a78bfa" }} />
+                  Agendados
+                </p>
+                <p className="mt-3 text-5xl font-bold leading-none text-violet-400">
+                  {nf(funnelLeads.agendados)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">
+                  {pctStr(funnelLeads.agendados, funnelLeads.total)} do total
+                </p>
+              </DarkCard>
+
+              {/* ── Row 2 col 3: No-show (KPI primeira linha) ── */}
+              <DarkCard accent="#f87171">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-cross-circle" style={{ color: "#f87171" }} />
+                  No-show
+                </p>
+                <p className="mt-3 text-5xl font-bold leading-none text-red-400">
+                  {nf(funnelLeads.no_show)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">
+                  {pctStr(funnelLeads.no_show, funnelLeads.agendados)} dos agendados
+                </p>
+              </DarkCard>
+            </div>
+
+            {/* ─── 2b. WON / ACTIVE / TASKS — fileira estilo Kommo ─── */}
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <DarkCard accent="#34d399">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-tooth" style={{ color: "#34d399" }} />
+                  Tratamentos
+                </p>
+                <p className="mt-3 text-5xl font-bold leading-none text-emerald-400">
+                  {nf(funnelLeads.tratamentos)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">
+                  {pctStr(funnelLeads.tratamentos, funnelLeads.total)} dos leads
+                </p>
+              </DarkCard>
+              <DarkCard accent="#60a5fa">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-stethoscope" style={{ color: "#60a5fa" }} />
+                  Consultas
+                </p>
+                <p className="mt-3 text-5xl font-bold leading-none text-sky-400">
+                  {nf(funnelLeads.consultas)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">
+                  {pctStr(funnelLeads.consultas, funnelLeads.agendados)} dos agendados
+                </p>
+              </DarkCard>
+              <DarkCard accent="#22d3ee">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  <Fi name="fi-rr-comment" style={{ color: "#22d3ee" }} />
+                  Interações
+                </p>
+                <p className="mt-3 text-5xl font-bold leading-none text-cyan-300">
+                  {nf(funnelLeads.interacoes)}
+                </p>
+                <div className="mt-3 h-px w-1/3 bg-white/10" />
+                <p className="mt-3 text-[11px] text-white/40">
+                  {pctStr(funnelLeads.interacoes, funnelLeads.total)} responderam
+                </p>
               </DarkCard>
             </div>
 
