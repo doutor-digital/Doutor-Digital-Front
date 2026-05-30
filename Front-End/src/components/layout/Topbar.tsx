@@ -1,30 +1,25 @@
 import { useState } from "react";
-import { Building2, ChevronDown, LogOut, RefreshCw, Search } from "@/components/icons";
+import { LogOut, RefreshCw, Search } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
-import { useClinic } from "@/hooks/useClinic";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationsBell } from "@/components/layout/NotificationsBell";
 import { AlertsIndicator } from "@/components/layout/AlertsIndicator";
+import { UnitSwitcher } from "@/components/layout/UnitSwitcher";
 
 export function Topbar() {
   const { user, logout } = useAuth();
-  const { setContext } = useClinic();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
-
-  const clinicId = useClinic().unitId || useClinic().tenantId;
 
   async function handleRefresh() {
     setRefreshing(true);
     await qc.invalidateQueries();
     setTimeout(() => setRefreshing(false), 700);
   }
-
-  void setContext;
 
   const initials = (user?.name ?? "C")
     .split(" ")
@@ -68,29 +63,7 @@ export function Topbar() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => navigate("/select-unit")}
-          className={cn(
-            "hidden md:flex items-center gap-2 h-8 px-3 rounded-md",
-            "border border-white/[0.07] bg-white/[0.02]",
-            "transition hover:border-white/[0.14] hover:bg-white/[0.04]",
-            "group",
-          )}
-        >
-          <Building2 className="h-3.5 w-3.5 text-slate-500 group-hover:text-slate-300 transition" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 group-hover:text-slate-400 transition">
-            Unidade
-          </span>
-          <span
-            className={cn(
-              "text-[11px] font-semibold tabular-nums max-w-[6rem] truncate",
-              clinicId ? "text-slate-200" : "text-slate-600",
-            )}
-          >
-            {clinicId || "—"}
-          </span>
-          <ChevronDown className="h-3 w-3 text-slate-600 group-hover:text-slate-400 transition" />
-        </button>
+        <UnitSwitcher />
 
         <div className="mx-1 h-5 w-px bg-white/[0.05]" />
 

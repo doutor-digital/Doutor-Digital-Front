@@ -5,7 +5,8 @@ interface ClinicStore {
   tenantId: number | null;
   unitId: number | null;
 
-  setContext: (tenantId: number, unitId: number) => void;
+  // unitId pode ser null → "Todas as unidades" (agregado por tenant).
+  setContext: (tenantId: number, unitId: number | null) => void;
 }
 
 export const useClinic = create<ClinicStore>()(
