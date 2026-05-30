@@ -734,6 +734,28 @@ export interface DashboardOverview {
   states: LeadsCountDto;
   etapas: Array<{ etapa: string; quantidade: number }>;
   origens: OrigemAgrupada[];
+
+  // ─── Extensões para a dashboard funnel-style ────────────────────
+  origens_consultas?: OrigemAgrupada[];
+  origens_tratamentos?: OrigemAgrupada[];
+
+  funnel_leads?: FunnelGroup;
+  funnel_cadastro?: FunnelGroup;
+  funnel_resgate?: FunnelGroup;
+
+  leads_por_semana?: Array<{ periodo: string; quantidade: number }>;
+  consultas_por_semana?: Array<{ periodo: string; quantidade: number }>;
+  tratamentos_por_semana?: Array<{ periodo: string; quantidade: number }>;
+  leads_por_dia_semana?: Array<{ dia: number; quantidade: number }>;
+}
+
+export interface FunnelGroup {
+  total: number;
+  interacoes: number;
+  agendados: number;
+  consultas: number;
+  tratamentos: number;
+  no_show: number;
 }
 
 /* ─── Comparecimento (Marcar Comparecimento) ──────────────────── */

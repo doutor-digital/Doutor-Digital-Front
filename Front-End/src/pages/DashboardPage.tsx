@@ -1,60 +1,87 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cog, Loader2 } from "@/components/icons";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Loader2 } from "@/components/icons";
 import { useClinic } from "@/hooks/useClinic";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { assignmentsService } from "@/services/assignments";
 import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
+import type { FunnelGroup } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 const nf = (n?: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("pt-BR").format(n);
 
-function isoDaysAgo(days: number) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
+const pctStr = (num: number, den: number, digits = 1) =>
+  den > 0 ? `${((num / den) * 100).toFixed(digits)}%` : "0%";
+
+function isoStartOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.toISOString();
 }
-function isoStartOfDay(date = new Date()) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+function isoEndOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x.toISOString();
 }
-function isoEndOfDay(date = new Date()) {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
-}
-function fmtDateBr(iso: string) {
+function fmtBr(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-// ─── Filtros (pílulas Today/Yesterday/Week/Month) ─────────────────────────
-type RangeKey = "today" | "yesterday" | "week" | "month" | "custom";
+// ─── Filtros: Ano / Mês / Semana / Dia ────────────────────────────────────
+type ScopeKey = "ano" | "mes" | "semana" | "dia";
 
-const RANGES: Array<{ key: RangeKey; label: string }> = [
-  { key: "today", label: "Hoje" },
-  { key: "yesterday", label: "Ontem" },
-  { key: "week", label: "Semana" },
-  { key: "month", label: "Mês" },
+const SCOPES: Array<{ key: ScopeKey; label: string; icon: string }> = [
+  { key: "ano",    label: "Ano",    icon: "fi-rr-calendar" },
+  { key: "mes",    label: "Mês",    icon: "fi-rr-calendar-clock" },
+  { key: "semana", label: "Semana", icon: "fi-rr-calendar-day" },
+  { key: "dia",    label: "Dia",    icon: "fi-rr-time-quarter-past" },
 ];
 
-function computeRange(key: RangeKey): { from: string; to: string } {
+function computeScopeRange(key: ScopeKey): { from: string; to: string } {
   const now = new Date();
-  if (key === "today") return { from: isoStartOfDay(now), to: isoEndOfDay(now) };
-  if (key === "yesterday") {
+  if (key === "dia") return { from: isoStartOfDay(now), to: isoEndOfDay(now) };
+  if (key === "semana") {
     const d = new Date(now);
-    d.setDate(d.getDate() - 1);
-    return { from: isoStartOfDay(d), to: isoEndOfDay(d) };
+    d.setDate(d.getDate() - 6);
+    return { from: isoStartOfDay(d), to: isoEndOfDay(now) };
   }
-  if (key === "week") return { from: isoDaysAgo(6), to: isoEndOfDay(now) };
-  if (key === "month") return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
-  return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
+  if (key === "mes") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 29);
+    return { from: isoStartOfDay(d), to: isoEndOfDay(now) };
+  }
+  // ano
+  const d = new Date(now);
+  d.setFullYear(d.getFullYear() - 1);
+  return { from: isoStartOfDay(d), to: isoEndOfDay(now) };
 }
 
-// ─── Cores por canal (matching amoCRM) ────────────────────────────────────
+// ─── Cores ────────────────────────────────────────────────────────────────
+const COLORS = {
+  emerald: "#34d399",
+  violet: "#a78bfa",
+  cyan: "#22d3ee",
+  amber: "#fbbf24",
+  rose: "#f472b6",
+  sky: "#60a5fa",
+  red: "#f87171",
+  slate: "#64748b",
+};
+const PIE_COLORS = ["#a78bfa", "#22d3ee", "#34d399", "#f472b6", "#fbbf24", "#60a5fa", "#f87171", "#64748b"];
+
 const CHANNEL_COLORS: Record<string, string> = {
   instagram: "#e1306c",
   whatsapp: "#25d366",
@@ -66,77 +93,23 @@ const CHANNEL_COLORS: Record<string, string> = {
   organic: "#22d3ee",
   google: "#fbbf24",
   email: "#94a3b8",
+  kommo: "#34d399",
 };
 function channelColor(name: string) {
   const k = (name || "").toLowerCase();
   for (const key of Object.keys(CHANNEL_COLORS)) {
     if (k.includes(key)) return CHANNEL_COLORS[key];
   }
-  // fallback determinístico
-  const palette = ["#a78bfa", "#22d3ee", "#34d399", "#f472b6", "#fbbf24", "#60a5fa"];
   let h = 0;
   for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
-  return palette[h % palette.length];
+  return PIE_COLORS[h % PIE_COLORS.length];
 }
 
-// ─── Donut concêntrico (LEAD SOURCES) ─────────────────────────────────────
-function ConcentricDonut({
-  data,
-  size = 240,
-}: {
-  data: Array<{ name: string; value: number; color: string }>;
-  size?: number;
-}) {
-  const max = Math.max(1, ...data.map((d) => d.value));
-  const center = size / 2;
-  const ringGap = 6;
-  const ringWidth = 10;
-  const innerRadius = 36;
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {data.map((d, i) => {
-        const r = innerRadius + i * (ringWidth + ringGap);
-        const circ = 2 * Math.PI * r;
-        const ratio = Math.min(1, d.value / max);
-        const dash = ratio * circ;
-        return (
-          <g key={i} transform={`rotate(-90 ${center} ${center})`}>
-            <circle
-              cx={center}
-              cy={center}
-              r={r}
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth={ringWidth}
-            />
-            <circle
-              cx={center}
-              cy={center}
-              r={r}
-              fill="none"
-              stroke={d.color}
-              strokeWidth={ringWidth}
-              strokeLinecap="round"
-              strokeDasharray={`${dash} ${circ - dash}`}
-            />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-// ─── Card escuro (base navy) ──────────────────────────────────────────────
+// ─── UI building blocks ──────────────────────────────────────────────────
 function DarkCard({
-  children,
-  className = "",
-  accent,
+  children, className = "", accent,
 }: {
-  children: React.ReactNode;
-  className?: string;
-  /** Cor da borda superior sólida do card. */
-  accent?: string;
+  children: React.ReactNode; className?: string; accent?: string;
 }) {
   return (
     <div
@@ -148,36 +121,295 @@ function DarkCard({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  range,
-  valueClass = "text-violet-400",
-  accent = "#a78bfa",
-  children,
-  className = "",
+// Ícones do Flaticon UIcons via classe CSS — não precisa de import.
+function Fi({ name, className = "", style }: { name: string; className?: string; style?: React.CSSProperties }) {
+  return <i className={`fi ${name} ${className}`} style={style} aria-hidden="true" />;
+}
+
+// ─── Funnel card (Lead / Cadastro / Resgate) ─────────────────────────────
+function FunnelCard({
+  title, icon, accent, data, prev, baselineForRates,
 }: {
-  label: string;
-  value: string | number;
-  range?: string;
-  valueClass?: string;
-  accent?: string;
-  children?: React.ReactNode;
-  className?: string;
+  title: string;
+  icon: string;
+  accent: string;
+  data: FunnelGroup | undefined;
+  /** Quando informado, mostra delta vs período anterior */
+  prev?: FunnelGroup | undefined;
+  /** Sobre o que calcular % das etapas. Default: total. */
+  baselineForRates?: "total" | "previous";
 }) {
+  const d = data ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
+  const total = d.total;
+
+  const rows = [
+    { label: "Interações",  value: d.interacoes,  icon: "fi-rr-comment", color: COLORS.cyan },
+    { label: "Agendados",   value: d.agendados,   icon: "fi-rr-calendar-clock", color: COLORS.violet },
+    { label: "Consultas",   value: d.consultas,   icon: "fi-rr-stethoscope", color: COLORS.sky },
+    { label: "Tratamentos", value: d.tratamentos, icon: "fi-rr-tooth", color: COLORS.emerald },
+    { label: "No-show",     value: d.no_show,     icon: "fi-rr-cross-circle", color: COLORS.red },
+  ];
+
   return (
-    <DarkCard className={className} accent={accent}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-        {label}
+    <DarkCard accent={accent} className="h-full">
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+          <Fi name={icon} className="text-sm" style={{ color: accent }} />
+          {title}
+        </p>
+        {prev && (
+          <DeltaPill current={d.total} previous={prev.total} />
+        )}
+      </div>
+
+      <p className="mt-3 text-4xl font-bold leading-none" style={{ color: accent }}>
+        {nf(total)}
       </p>
-      <p className={`mt-3 text-5xl font-bold leading-none ${valueClass}`}>
-        {value}
+      <p className="mt-1 text-[11px] text-white/40">Total no período</p>
+
+      <div className="my-4 h-px w-full bg-white/10" />
+
+      <ul className="space-y-2.5">
+        {rows.map((r) => {
+          const base = baselineForRates === "previous" && prev ? prev.total : total;
+          return (
+            <li key={r.label} className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-[12px] text-white/80">
+                <Fi name={r.icon} className="text-xs" style={{ color: r.color }} />
+                {r.label}
+              </span>
+              <span className="flex items-baseline gap-1.5">
+                <span className="font-semibold tabular-nums" style={{ color: r.color }}>
+                  {nf(r.value)}
+                </span>
+                <span className="text-[10px] text-white/40 tabular-nums">
+                  {pctStr(r.value, base)}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </DarkCard>
+  );
+}
+
+function DeltaPill({ current, previous }: { current: number; previous: number }) {
+  if (previous === 0 && current === 0) return null;
+  const delta = previous === 0 ? 100 : ((current - previous) / previous) * 100;
+  const up = delta >= 0;
+  return (
+    <span
+      className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+        up ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"
+      }`}
+    >
+      <Fi name={up ? "fi-rr-arrow-trend-up" : "fi-rr-arrow-trend-down"} />
+      {Math.abs(delta).toFixed(0)}%
+    </span>
+  );
+}
+
+// ─── Tabela por origem ────────────────────────────────────────────────────
+type OriginRow = { origem: string; quantidade: number };
+
+function OriginTable({
+  title, icon, accent, rows, secondColumnLabel, secondColumnValues,
+}: {
+  title: string;
+  icon: string;
+  accent: string;
+  rows: OriginRow[];
+  secondColumnLabel?: string;
+  /** Quando informado, exibe coluna extra (e %). Senão exibe só Qtd. */
+  secondColumnValues?: Map<string, number>;
+}) {
+  const total = rows.reduce((s, r) => s + r.quantidade, 0);
+  return (
+    <DarkCard accent={accent} className="h-full">
+      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        <Fi name={icon} className="text-sm" style={{ color: accent }} />
+        {title}
       </p>
-      <div className="mt-3 h-px w-1/3 bg-white/10" />
-      {range && (
-        <p className="mt-3 text-[11px] text-white/40">{range}</p>
-      )}
-      {children}
+
+      <div className="mt-4 overflow-hidden rounded-lg ring-1 ring-white/5">
+        <table className="w-full text-[12px]">
+          <thead className="bg-white/5 text-[10px] uppercase tracking-wider text-white/50">
+            <tr>
+              <th className="px-3 py-2 text-left">Origem</th>
+              <th className="px-3 py-2 text-right">Qtd</th>
+              {secondColumnValues && (
+                <>
+                  <th className="px-3 py-2 text-right">{secondColumnLabel ?? "—"}</th>
+                  <th className="px-3 py-2 text-right">%</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-white/40">Sem dados</td></tr>
+            )}
+            {rows.map((r) => {
+              const v2 = secondColumnValues?.get(r.origem) ?? 0;
+              return (
+                <tr key={r.origem} className="border-t border-white/5">
+                  <td className="px-3 py-2 text-white/85 flex items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: channelColor(r.origem) }} />
+                    <span className="truncate">{r.origem || "—"}</span>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-white/90">{nf(r.quantidade)}</td>
+                  {secondColumnValues && (
+                    <>
+                      <td className="px-3 py-2 text-right tabular-nums text-white/75">{nf(v2)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-white/60">{pctStr(v2, r.quantidade)}</td>
+                    </>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+          {rows.length > 0 && (
+            <tfoot>
+              <tr className="border-t border-white/10 bg-white/5 text-white/70">
+                <td className="px-3 py-2 text-[10px] uppercase tracking-wider">Total</td>
+                <td className="px-3 py-2 text-right tabular-nums font-semibold text-white">{nf(total)}</td>
+                {secondColumnValues && (<><td /><td /></>)}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </DarkCard>
+  );
+}
+
+// ─── Donut por semana ─────────────────────────────────────────────────────
+function WeekDonut({
+  title, icon, accent, data,
+}: {
+  title: string;
+  icon: string;
+  accent: string;
+  data: Array<{ periodo: string; quantidade: number }>;
+}) {
+  const total = data.reduce((s, d) => s + d.quantidade, 0);
+  return (
+    <DarkCard accent={accent} className="h-full">
+      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        <Fi name={icon} className="text-sm" style={{ color: accent }} />
+        {title}
+      </p>
+      <div className="mt-2 flex items-center gap-3">
+        <div className="relative h-44 w-44 shrink-0">
+          {total === 0 ? (
+            <div className="flex h-full items-center justify-center text-xs text-white/40">Sem dados</div>
+          ) : (
+            <>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={data}
+                    dataKey="quantidade"
+                    nameKey="periodo"
+                    innerRadius="65%"
+                    outerRadius="92%"
+                    paddingAngle={2}
+                  >
+                    {data.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="#0f1f3a" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "#0a1a36",
+                      border: "1px solid rgba(255,255,255,.1)",
+                      borderRadius: 8,
+                      color: "#fff",
+                      fontSize: 12,
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold" style={{ color: accent }}>{nf(total)}</span>
+                <span className="text-[10px] uppercase tracking-wider text-white/40">Total</span>
+              </div>
+            </>
+          )}
+        </div>
+        <ul className="min-w-0 flex-1 space-y-1 text-[11px]">
+          {data.slice(0, 6).map((d, i) => (
+            <li key={d.periodo} className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 truncate text-white/70">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                <span className="truncate">{d.periodo}</span>
+              </span>
+              <span className="tabular-nums text-white/85">{nf(d.quantidade)}</span>
+            </li>
+          ))}
+          {data.length > 6 && (
+            <li className="text-[10px] text-white/40">+ {data.length - 6} sem.</li>
+          )}
+        </ul>
+      </div>
+    </DarkCard>
+  );
+}
+
+// ─── Bar chart por dia da semana ──────────────────────────────────────────
+const DOW_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function WeekdayBarChart({
+  data,
+}: {
+  data: Array<{ dia: number; quantidade: number }>;
+}) {
+  const enriched = data.map((d) => ({
+    nome: DOW_LABELS[(d.dia - 1) % 7],
+    quantidade: d.quantidade,
+  }));
+  return (
+    <DarkCard accent={COLORS.emerald} className="h-full">
+      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        <Fi name="fi-rr-chart-histogram" className="text-sm text-emerald-400" />
+        Total de leads por dia da semana
+      </p>
+      <div className="mt-4 h-72">
+        <ResponsiveContainer>
+          <BarChart data={enriched} margin={{ top: 12, right: 16, left: 0, bottom: 4 }}>
+            <XAxis
+              dataKey="nome"
+              stroke="rgba(255,255,255,0.4)"
+              tick={{ fontSize: 11, fill: "rgba(255,255,255,0.6)" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              stroke="rgba(255,255,255,0.4)"
+              tick={{ fontSize: 11, fill: "rgba(255,255,255,0.5)" }}
+              axisLine={false}
+              tickLine={false}
+              width={32}
+            />
+            <Tooltip
+              cursor={{ fill: "rgba(167,139,250,0.1)" }}
+              contentStyle={{
+                background: "#0a1a36",
+                border: "1px solid rgba(255,255,255,.1)",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 12,
+              }}
+            />
+            <Bar dataKey="quantidade" radius={[6, 6, 0, 0]}>
+              {enriched.map((_, i) => (
+                <Cell key={i} fill={i === 0 || i === 6 ? COLORS.violet : COLORS.emerald} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </DarkCard>
   );
 }
@@ -185,13 +417,11 @@ function MetricCard({
 // ─── Main ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
-  const [rangeKey, setRangeKey] = useState<RangeKey>("month");
+  const [scope, setScope] = useState<ScopeKey>("mes");
 
-  // ─── Filtros avançados ─────────────────────────────────────────────
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("");
   const [attendantFilter, setAttendantFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<Set<string>>(new Set());
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
   const isCustom = customFrom !== "" && customTo !== "";
@@ -200,42 +430,30 @@ export default function DashboardPage() {
     if (isCustom) {
       return { from: isoStartOfDay(new Date(customFrom)), to: isoEndOfDay(new Date(customTo)) };
     }
-    return computeRange(rangeKey);
-  }, [rangeKey, customFrom, customTo, isCustom]);
-  const rangeLabel = `${fmtDateBr(range.from)} - ${fmtDateBr(range.to)}`;
+    return computeScopeRange(scope);
+  }, [scope, customFrom, customTo, isCustom]);
+  const rangeLabel = `${fmtBr(range.from)} – ${fmtBr(range.to)}`;
 
   const units = useQuery({
-    queryKey: ["dash-amo", "units"],
+    queryKey: ["dash-funnel", "units"],
     queryFn: () => unitsService.list(),
     staleTime: 5 * 60_000,
   });
 
   const attendants = useQuery({
-    queryKey: ["dash-amo", "attendants"],
+    queryKey: ["dash-funnel", "attendants"],
     queryFn: () => assignmentsService.listAttendants(),
     staleTime: 5 * 60_000,
   });
 
-  // Pipelines da Kommo (statuses) — usados pra traduzir status_id em nome amigável.
-  // Só consulta quando há unidade selecionada (endpoint precisa de token/subdomain da unidade).
   const pipelines = useQuery({
-    queryKey: ["dash-amo", "kommo-pipelines", unitId],
+    queryKey: ["dash-funnel", "pipelines", unitId],
     queryFn: () => unitsService.kommoPipelines(unitId!),
     enabled: unitId != null,
     staleTime: 10 * 60_000,
     retry: false,
   });
 
-  // Custom fields da Kommo (definições) — usados pra montar filtros dinâmicos.
-  const customFields = useQuery({
-    queryKey: ["dash-amo", "kommo-custom-fields", unitId],
-    queryFn: () => unitsService.kommoCustomFields(unitId!),
-    enabled: unitId != null,
-    staleTime: 10 * 60_000,
-    retry: false,
-  });
-
-  // Map<status_id, status_name> a partir de todos os pipelines.
   const stageNameMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const p of pipelines.data ?? []) {
@@ -245,8 +463,6 @@ export default function DashboardPage() {
     }
     return map;
   }, [pipelines.data]);
-
-  // Tradução robusta: prefere o nome ao vivo da Kommo, cai pro mapa estático, e pro raw como último recurso.
   const stageLabel = (raw?: string | null): string => {
     if (!raw) return "—";
     const t = String(raw).trim();
@@ -255,7 +471,7 @@ export default function DashboardPage() {
   };
 
   const sources = useQuery({
-    queryKey: ["dash-amo", "sources", tenantId, unitId],
+    queryKey: ["dash-funnel", "sources", tenantId, unitId],
     queryFn: () => webhooksService.distinctSources({
       clinicId: tenantId ?? undefined,
       unitId: unitId ?? undefined,
@@ -265,53 +481,47 @@ export default function DashboardPage() {
   });
 
   const overview = useQuery({
-    queryKey: [
-      "dash-amo",
-      "overview",
-      tenantId,
-      unitId,
-      range.from,
-      range.to,
-      sourceFilter,
-      attendantFilter,
-    ],
-    queryFn: () =>
-      webhooksService.dashboardOverview({
-        clinicId: tenantId ?? undefined,
-        unitId: unitId ?? undefined,
-        dateFrom: range.from,
-        dateTo: range.to,
-        source: sourceFilter || undefined,
-        attendantId: attendantFilter ? Number(attendantFilter) : undefined,
-      }),
+    queryKey: ["dash-funnel", "overview", tenantId, unitId, range.from, range.to, sourceFilter, attendantFilter],
+    queryFn: () => webhooksService.dashboardOverview({
+      clinicId: tenantId ?? undefined,
+      unitId: unitId ?? undefined,
+      dateFrom: range.from,
+      dateTo: range.to,
+      source: sourceFilter || undefined,
+      attendantId: attendantFilter ? Number(attendantFilter) : undefined,
+    }),
+    enabled: tenantId != null,
+    staleTime: 60_000,
+  });
+
+  // Período anterior (pra calcular delta nos cards-funnel)
+  const prevRange = useMemo(() => {
+    const fromMs = new Date(range.from).getTime();
+    const toMs = new Date(range.to).getTime();
+    const lenMs = toMs - fromMs;
+    return {
+      from: new Date(fromMs - lenMs - 1).toISOString(),
+      to: new Date(fromMs - 1).toISOString(),
+    };
+  }, [range.from, range.to]);
+
+  const overviewPrev = useQuery({
+    queryKey: ["dash-funnel", "overview-prev", tenantId, unitId, prevRange.from, prevRange.to, sourceFilter, attendantFilter],
+    queryFn: () => webhooksService.dashboardOverview({
+      clinicId: tenantId ?? undefined,
+      unitId: unitId ?? undefined,
+      dateFrom: prevRange.from,
+      dateTo: prevRange.to,
+      source: sourceFilter || undefined,
+      attendantId: attendantFilter ? Number(attendantFilter) : undefined,
+    }),
     enabled: tenantId != null,
     staleTime: 60_000,
   });
 
   const ov = overview.data;
-
-  const hasActiveFilters =
-    sourceFilter !== "" ||
-    attendantFilter !== "" ||
-    stageFilter.size > 0 ||
-    isCustom;
-
-  const resetFilters = () => {
-    setSourceFilter("");
-    setAttendantFilter("");
-    setStageFilter(new Set());
-    setCustomFrom("");
-    setCustomTo("");
-  };
-
-  const toggleStage = (stage: string) => {
-    setStageFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(stage)) next.delete(stage);
-      else next.add(stage);
-      return next;
-    });
-  };
+  const ovPrev = overviewPrev.data;
+  const isLoading = overview.isLoading && !ov;
 
   const agencyName = useMemo(() => {
     if (!unitId) return "Todas as unidades";
@@ -319,204 +529,144 @@ export default function DashboardPage() {
     return u?.name ?? "Dashboard";
   }, [unitId, units.data]);
 
-  // ─── Canais (origens com cor + barra proporcional) ────────────────────
-  const channels = useMemo(() => {
-    const arr = (ov?.origens ?? []).filter((o) => (o.quantidade ?? 0) > 0);
-    const sorted = [...arr].sort(
-      (a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0),
-    );
-    const top = sorted.slice(0, 5);
-    const otherTotal = sorted.slice(5).reduce(
-      (s, o) => s + (o.quantidade ?? 0),
-      0,
-    );
-    const items = top.map((o) => ({
-      name: o.origem ?? "—",
-      value: o.quantidade ?? 0,
-      color: channelColor(o.origem ?? ""),
-    }));
-    if (otherTotal > 0) {
-      items.push({ name: "Other", value: otherTotal, color: "#64748b" });
-    }
-    return items;
-  }, [ov]);
+  const hasActiveFilters =
+    sourceFilter !== "" || attendantFilter !== "" || isCustom;
+  const filterCount =
+    (sourceFilter ? 1 : 0) + (attendantFilter ? 1 : 0) + (isCustom ? 1 : 0);
 
-  const channelMax = useMemo(
-    () => Math.max(1, ...channels.map((c) => c.value)),
-    [channels],
+  // ─── Derivados ────────────────────────────────────────────────────────
+  const origensLeads: OriginRow[] = useMemo(
+    () => (ov?.origens ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
+    [ov],
+  );
+  const origensConsultas: OriginRow[] = useMemo(
+    () => (ov?.origens_consultas ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
+    [ov],
+  );
+  const origensTratamentos: OriginRow[] = useMemo(
+    () => (ov?.origens_tratamentos ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
+    [ov],
   );
 
-  const totalLeads = ov?.total_leads ?? 0;
-  const ongoing = ov?.consultas_agendadas ?? 0;
-  const unanswered = Math.max(0, (ov?.total_leads ?? 0) - (ov?.consultas ?? 0));
-  const wonLeads = ov?.fechou ?? 0;
-  // Usa o novo campo leads_ativos do backend (puxa da Kommo via CurrentStage canonicalizado).
-  // Fallback: total - fechou - nao_fechou - faltou para overviews antigos.
-  const activeLeads =
-    ov?.leads_ativos ??
-    Math.max(
-      0,
-      (ov?.total_leads ?? 0) - (ov?.fechou ?? 0) - (ov?.nao_fechou ?? 0) - (ov?.faltou ?? 0),
-    );
-  const comPagamento = ov?.com_pagamento ?? 0;
-  const semPagamento = ov?.sem_pagamento ?? 0;
-  const tasks = ov?.faltou ?? 0;
+  // Mapas pras colunas extras nas tabelas
+  const agendadosByOrigem = useMemo(() => {
+    // Não temos o split exato por origem do "agendados". Aproximação: usa origens_consultas
+    // (que inclui agendados+) como upper-bound. Pode trocar quando o backend devolver split.
+    const m = new Map<string, number>();
+    for (const o of ov?.origens_consultas ?? []) m.set(o.origem ?? "—", o.quantidade ?? 0);
+    return m;
+  }, [ov]);
+  const compareceuByOrigem = useMemo(() => {
+    // Aproximação: usa origens_tratamentos como proxy de "compareceu e seguiu". Idem acima.
+    const m = new Map<string, number>();
+    for (const o of ov?.origens_tratamentos ?? []) m.set(o.origem ?? "—", o.quantidade ?? 0);
+    return m;
+  }, [ov]);
 
-  // Etapas com nome amigável (Kommo pipeline ao vivo > mapa estático > raw).
-  // Filtragem opcional: se houver stageFilter ativo, restringe à seleção.
-  const etapasComNome = useMemo(() => {
+  // Topo de etapas (com nomes resolvidos da Kommo)
+  const etapasTop = useMemo(() => {
     const arr = ov?.etapas ?? [];
     return [...arr]
       .filter((e) => (e.quantidade ?? 0) > 0)
-      .filter((e) => stageFilter.size === 0 || stageFilter.has(e.etapa))
       .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
-      .slice(0, 12)
-      .map((e) => ({
-        raw: e.etapa,
-        label: stageLabel(e.etapa),
-        value: e.quantidade ?? 0,
-      }));
-  }, [ov, stageFilter, stageNameMap]);
-
-  // Lista completa de etapas pro filtro (com nome traduzido) — usa o overview pra saber o universo.
-  const allStagesForFilter = useMemo(() => {
-    const arr = ov?.etapas ?? [];
-    return [...arr]
-      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0))
+      .slice(0, 8)
       .map((e) => ({ raw: e.etapa, label: stageLabel(e.etapa), value: e.quantidade ?? 0 }));
   }, [ov, stageNameMap]);
-  const etapasMax = useMemo(
-    () => Math.max(1, ...etapasComNome.map((e) => e.value)),
-    [etapasComNome],
-  );
-
-  const isLoading = overview.isLoading && !ov;
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
     <div
-      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white font-normal"
+      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white"
       style={{
-        background:
-          "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
+        background: "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
         fontFamily: "'PT Sans', ui-sans-serif, system-ui, sans-serif",
         fontWeight: 400,
       }}
     >
-      {/* Padrão pontilhado sutil */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
         }}
       />
 
-      <div className="relative mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
-        {/* ─── HEADER: Título ─────────────────────────────────────────── */}
-        <h1 className="text-center text-4xl font-bold tracking-tight sm:text-5xl">
-          {agencyName}
-        </h1>
+      <div className="relative mx-auto max-w-[1500px] px-4 py-6 lg:px-8 lg:py-10">
+        {/* ─── HEADER ─────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Dashboard</p>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{agencyName}</h1>
+            <p className="mt-1 text-xs text-white/50">{rangeLabel}</p>
+          </div>
 
-        {/* ─── FILTROS ─────────────────────────────────────────────────── */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          {/* Pílulas centralizadas */}
-          <div className="mx-auto flex flex-wrap items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur">
-            {RANGES.map((r) => (
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition ${
+              hasActiveFilters
+                ? "border-violet-400/60 bg-violet-500/20 text-white"
+                : "border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+            }`}
+          >
+            <Fi name="fi-rr-settings-sliders" />
+            Filtros{hasActiveFilters ? ` (${filterCount})` : ""}
+          </button>
+        </div>
+
+        {/* ─── 1. FILTROS PRINCIPAIS (Ano / Mês / Semana / Dia) ───── */}
+        <div className="mt-5 flex flex-wrap items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur w-fit">
+          {SCOPES.map((s) => {
+            const active = !isCustom && scope === s.key;
+            return (
               <button
-                key={r.key}
+                key={s.key}
                 type="button"
                 onClick={() => {
-                  setRangeKey(r.key);
+                  setScope(s.key);
                   setCustomFrom("");
                   setCustomTo("");
                 }}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
-                  !isCustom && rangeKey === r.key
-                    ? "bg-white text-slate-900"
-                    : "text-white/70 hover:text-white"
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                  active ? "bg-white text-slate-900" : "text-white/70 hover:text-white"
                 }`}
               >
-                {r.label}
+                <Fi name={s.icon} />
+                {s.label}
               </button>
-            ))}
+            );
+          })}
+          {isCustom && (
             <span className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900">
-              {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
+              Personalizado
             </span>
-          </div>
-
-          {/* All / Select user / Setup */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
-              <button
-                type="button"
-                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900"
-              >
-                Todos
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white/70 hover:text-white"
-              >
-                Selecionar usuário
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  className="opacity-70"
-                >
-                  <path
-                    d="M3 4.5L6 7.5L9 4.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
-                hasActiveFilters
-                  ? "border-violet-400/60 bg-violet-500/20 text-white"
-                  : "border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
-              }`}
-            >
-              <Cog className="h-3.5 w-3.5" />
-              Filtros{hasActiveFilters ? ` (${
-                (sourceFilter ? 1 : 0) +
-                (attendantFilter ? 1 : 0) +
-                stageFilter.size +
-                (isCustom ? 1 : 0)
-              })` : ""}
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* ─── PAINEL DE FILTROS AVANÇADOS ─────────────────────────────── */}
+        {/* ─── Painel avançado ────────────────────────────────────── */}
         {showAdvanced && (
-          <DarkCard className="mt-4" accent="#a78bfa">
+          <DarkCard className="mt-4" accent={COLORS.violet}>
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+              <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                <Fi name="fi-rr-filter" className="text-violet-300" />
                 Filtros avançados
               </p>
               {hasActiveFilters && (
                 <button
                   type="button"
-                  onClick={resetFilters}
+                  onClick={() => {
+                    setSourceFilter("");
+                    setAttendantFilter("");
+                    setCustomFrom("");
+                    setCustomTo("");
+                  }}
                   className="text-[11px] text-violet-300 hover:text-violet-200"
                 >
                   Limpar tudo
                 </button>
               )}
             </div>
-
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Origem */}
               <div>
                 <label className="text-[11px] font-medium text-white/60">Origem</label>
                 <select
@@ -530,8 +680,6 @@ export default function DashboardPage() {
                   ))}
                 </select>
               </div>
-
-              {/* Atendente */}
               <div>
                 <label className="text-[11px] font-medium text-white/60">Atendente</label>
                 <select
@@ -541,14 +689,10 @@ export default function DashboardPage() {
                 >
                   <option value="" className="bg-slate-900">Todos</option>
                   {(attendants.data ?? []).map((a) => (
-                    <option key={a.id} value={a.id} className="bg-slate-900">
-                      {a.name}
-                    </option>
+                    <option key={a.id} value={a.id} className="bg-slate-900">{a.name}</option>
                   ))}
                 </select>
               </div>
-
-              {/* Período customizado */}
               <div>
                 <label className="text-[11px] font-medium text-white/60">Período customizado</label>
                 <div className="mt-1 flex items-center gap-1.5">
@@ -568,282 +712,107 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-
-            {/* Etapas (multi-select com chips) */}
-            {allStagesForFilter.length > 0 && (
+            {etapasTop.length > 0 && (
               <div className="mt-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-white/60">Etapas do funil</label>
-                  {stageFilter.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setStageFilter(new Set())}
-                      className="text-[10px] text-white/40 hover:text-white"
-                    >
-                      Limpar
-                    </button>
-                  )}
-                </div>
+                <label className="text-[11px] font-medium text-white/60">Etapas do funil (live)</label>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {allStagesForFilter.map((e) => {
-                    const active = stageFilter.has(e.raw);
-                    return (
-                      <button
-                        key={e.raw}
-                        type="button"
-                        onClick={() => toggleStage(e.raw)}
-                        className={`rounded-full border px-3 py-1 text-[11px] transition ${
-                          active
-                            ? "border-violet-400 bg-violet-500/30 text-white"
-                            : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
-                        }`}
-                      >
-                        {e.label} <span className="ml-1 opacity-60">{nf(e.value)}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Custom fields da Kommo (definições) ─ resumo */}
-            {(customFields.data?.length ?? 0) > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-white/60">
-                    Campos customizados da Kommo
-                  </label>
-                  <span className="text-[10px] text-white/40">
-                    {customFields.data!.length} campo(s) detectado(s)
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {customFields.data!.map((f) => (
+                  {etapasTop.map((e) => (
                     <span
-                      key={f.id}
-                      title={`type=${f.type}${f.code ? ` · code=${f.code}` : ""}`}
-                      className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] text-cyan-200"
+                      key={e.raw}
+                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] text-white/70"
                     >
-                      {f.name}
-                      {f.enums.length > 0 && (
-                        <span className="ml-1 opacity-60">
-                          ({f.enums.length} opç.)
-                        </span>
-                      )}
+                      {e.label} <span className="ml-1 opacity-60">{nf(e.value)}</span>
                     </span>
                   ))}
                 </div>
-                <p className="mt-2 text-[10px] text-white/40">
-                  Sincronizados nos leads via REST sync. Filtros por campo customizado virão na próxima iteração.
-                </p>
               </div>
-            )}
-
-            {/* Avisos quando endpoints da Kommo não carregam */}
-            {unitId != null && pipelines.isError && (
-              <p className="mt-3 text-[11px] text-amber-300/80">
-                Não consegui carregar os nomes das etapas da Kommo (verifique o subdomain/token da unidade). Usando códigos brutos.
-              </p>
-            )}
-            {unitId != null && customFields.isError && (
-              <p className="mt-2 text-[11px] text-amber-300/80">
-                Não consegui carregar os custom fields da Kommo (verifique o subdomain/token da unidade).
-              </p>
             )}
           </DarkCard>
         )}
 
-        {/* ─── LOADING ─────────────────────────────────────────────────── */}
         {isLoading ? (
           <div className="mt-12 flex items-center justify-center">
             <Loader2 className="h-7 w-7 animate-spin text-white/50" />
           </div>
         ) : (
           <>
-            {/* ─── GRID PRINCIPAL ─────────────────────────────────────── */}
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* INCOMING MESSAGES (col 1, span 2 rows) */}
-              <DarkCard className="lg:row-span-2" accent="#34d399">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Mensagens recebidas
-                </p>
-                <p className="mt-3 text-right text-5xl font-bold leading-none text-emerald-400">
-                  {nf(totalLeads)}
-                </p>
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                <div className="mt-4 h-px w-full bg-white/10" />
-
-                {/* Canais */}
-                <ul className="mt-4 space-y-3">
-                  {channels.length === 0 && (
-                    <li className="text-xs text-white/40">Sem dados</li>
-                  )}
-                  {channels.map((c) => {
-                    const ratio = c.value / channelMax;
-                    return (
-                      <li key={c.name}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
-                          <span className="flex items-center gap-2">
-                            <span
-                              className="inline-block h-2 w-2 rounded-full"
-                              style={{ background: c.color }}
-                            />
-                            <span className="truncate">{c.name}</span>
-                          </span>
-                          <span
-                            className="font-semibold"
-                            style={{ color: c.color }}
-                          >
-                            {nf(c.value)}
-                          </span>
-                        </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${Math.max(4, ratio * 100)}%`,
-                              background: c.color,
-                            }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </DarkCard>
-
-              {/* ONGOING CONVERSATIONS */}
-              <MetricCard
-                label="Consultas agendadas"
-                value={nf(ongoing)}
-                range={rangeLabel}
-                accent="#a78bfa"
+            {/* ─── 2. CARDS DE TOTAIS (3 colunas — Leads / Cadastro / Resgate) ── */}
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              <FunnelCard
+                title="Total de Leads"
+                icon="fi-rr-users-alt"
+                accent={COLORS.emerald}
+                data={ov?.funnel_leads}
+                prev={ovPrev?.funnel_leads}
               />
-
-              {/* UNANSWERED CONVERSATIONS */}
-              <MetricCard
-                label="Sem resposta"
-                value={nf(unanswered)}
-                range={rangeLabel}
-                accent="#f472b6"
+              <FunnelCard
+                title="Total Cadastro"
+                icon="fi-rr-user-add"
+                accent={COLORS.violet}
+                data={ov?.funnel_cadastro}
+                prev={ovPrev?.funnel_cadastro}
               />
-
-              {/* LEAD SOURCES (col 4, span 2 rows) */}
-              <DarkCard className="lg:row-span-2" accent="#22d3ee">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Origens de leads
-                </p>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <ul className="flex-1 space-y-1.5 text-[11px]">
-                    {channels.length === 0 && (
-                      <li className="text-white/40">Sem dados</li>
-                    )}
-                    {channels.map((c) => (
-                      <li
-                        key={c.name}
-                        className="flex items-center gap-2 truncate"
-                        style={{ color: c.color }}
-                      >
-                        <span
-                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ background: c.color }}
-                        />
-                        <span className="truncate uppercase tracking-wide">
-                          {c.name}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="shrink-0">
-                    <ConcentricDonut
-                      data={channels.length ? channels : [
-                        { name: "—", value: 1, color: "#1e293b" },
-                      ]}
-                      size={200}
-                    />
-                  </div>
-                </div>
-              </DarkCard>
-
-              {/* CONSULTAS AGENDADAS COM PAGAMENTO */}
-              <MetricCard
-                label="Agendadas com pagamento"
-                value={nf(comPagamento)}
-                range={rangeLabel}
-                accent="#34d399"
-                valueClass="text-emerald-400"
-              />
-
-              {/* CONSULTAS AGENDADAS SEM PAGAMENTO */}
-              <MetricCard
-                label="Agendadas sem pagamento"
-                value={nf(semPagamento)}
-                range={rangeLabel}
-                accent="#fbbf24"
-                valueClass="text-amber-400"
+              <FunnelCard
+                title="Total Resgate"
+                icon="fi-rr-rotate-right"
+                accent={COLORS.amber}
+                data={ov?.funnel_resgate}
+                prev={ovPrev?.funnel_resgate}
               />
             </div>
 
-            {/* ─── SEGUNDA FILEIRA: Won / Active / Tasks ─────────────── */}
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard
-                label="Leads ganhos"
-                value={nf(wonLeads)}
-                accent="#34d399"
-                valueClass="text-emerald-400"
+            {/* ─── 3. TABELAS POR ORIGEM ─────────────────────────────────── */}
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
+              <OriginTable
+                title="Origem dos Leads"
+                icon="fi-rr-marker"
+                accent={COLORS.emerald}
+                rows={origensLeads}
+                secondColumnLabel="Agendados"
+                secondColumnValues={agendadosByOrigem}
               />
-              <MetricCard
-                label="Leads ativos"
-                value={nf(activeLeads)}
-                accent="#60a5fa"
-                valueClass="text-sky-400"
+              <OriginTable
+                title="Origem das Consultas"
+                icon="fi-rr-stethoscope"
+                accent={COLORS.sky}
+                rows={origensConsultas}
+                secondColumnLabel="Compareceram"
+                secondColumnValues={compareceuByOrigem}
               />
-              <DarkCard accent="#a78bfa">
-                <div className="flex items-start justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                    Faltas
-                  </p>
-                  <Cog className="h-3.5 w-3.5 text-white/40" />
-                </div>
-                <p className="mt-3 text-5xl font-bold leading-none text-violet-400">
-                  {nf(tasks)}
-                </p>
-                <div className="mt-3 h-px w-1/3 bg-white/10" />
-              </DarkCard>
+              <OriginTable
+                title="Origem dos Tratamentos"
+                icon="fi-rr-tooth"
+                accent={COLORS.amber}
+                rows={origensTratamentos}
+              />
             </div>
 
-            {/* ─── TERCEIRA FILEIRA: Etapas do funil (nomes traduzidos) ── */}
-            {etapasComNome.length > 0 && (
-              <DarkCard className="mt-4" accent="#a78bfa">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                    Etapas do funil
-                  </p>
-                  <span className="text-[11px] text-white/40">{rangeLabel}</span>
-                </div>
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {etapasComNome.map((e) => {
-                    const ratio = e.value / etapasMax;
-                    return (
-                      <li key={e.label}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
-                          <span className="truncate">{e.label}</span>
-                          <span className="font-semibold text-violet-300">
-                            {nf(e.value)}
-                          </span>
-                        </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                          <div
-                            className="h-full rounded-full bg-violet-400"
-                            style={{ width: `${Math.max(4, ratio * 100)}%` }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </DarkCard>
-            )}
+            {/* ─── 4. ROSCA por SEMANA ───────────────────────────────────── */}
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
+              <WeekDonut
+                title="Leads por semana"
+                icon="fi-rr-calendar-day"
+                accent={COLORS.emerald}
+                data={ov?.leads_por_semana ?? []}
+              />
+              <WeekDonut
+                title="Consultas por semana"
+                icon="fi-rr-stethoscope"
+                accent={COLORS.sky}
+                data={ov?.consultas_por_semana ?? []}
+              />
+              <WeekDonut
+                title="Tratamentos por semana"
+                icon="fi-rr-tooth"
+                accent={COLORS.amber}
+                data={ov?.tratamentos_por_semana ?? []}
+              />
+            </div>
+
+            {/* ─── 5. BARRAS POR DIA DA SEMANA ───────────────────────────── */}
+            <div className="mt-4">
+              <WeekdayBarChart data={ov?.leads_por_dia_semana ?? []} />
+            </div>
           </>
         )}
       </div>
