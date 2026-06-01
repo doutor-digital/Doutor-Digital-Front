@@ -548,7 +548,7 @@ export default function DashboardPage() {
 
       <div className="relative mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
         {/* ─── HEADER: Título ─────────────────────────────────────────── */}
-        <h1 className="text-center text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="text-center text-2xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
           {agencyName}
         </h1>
 

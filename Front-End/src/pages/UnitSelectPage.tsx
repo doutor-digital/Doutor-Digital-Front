@@ -53,62 +53,86 @@ export default function UnitSelectPage() {
 
   const isEmpty = !units.isLoading && options.length === 0 && !search;
   return (
-    <div className="relative min-h-screen w-full bg-[#f6f7fb] py-4 sm:py-6">
-      <div className="min-h-[calc(100vh-2rem)] w-full border-y border-slate-200 bg-white px-4 py-8 shadow-sm sm:px-10 sm:py-10 lg:px-16 lg:py-12 xl:border-x xl:rounded-[32px]">
-        <div className="flex items-center justify-end">
+    <div
+      className="relative min-h-screen w-full overflow-hidden px-4 py-6 text-white sm:px-8 lg:px-12"
+      style={{
+        background:
+          "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
+        fontFamily: "'PT Sans', ui-sans-serif, system-ui, sans-serif",
+      }}
+    >
+      {/* Padrão pontilhado + brilhos da marca */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      />
+      <div className="pointer-events-none absolute -top-32 -right-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+
+      <div className="relative mx-auto max-w-[1200px]">
+        {/* Topo: marca + sair */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo-mark.png" alt="Doutor Digital Dash" className="h-8 w-auto object-contain" />
+            <span className="text-[15px] font-semibold tracking-tight text-white/90">
+              Doutor Digital
+            </span>
+          </div>
           <button
             onClick={logout}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
             Sair
           </button>
         </div>
 
-        <div className="mt-6 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">
+        <div className="mt-10 text-center animate-fade-in">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {isEmpty ? "Nenhuma unidade cadastrada" : "Escolha uma conta"}
           </h1>
-          {isEmpty && (
-            <p className="mx-auto mt-3 max-w-xl text-sm text-slate-500">
-              Cadastre sua primeira unidade. Cada unidade gera uma URL própria de
-              webhook da Kommo, pra os dados entrarem já separados por unidade.
-            </p>
-          )}
+          <p className="mx-auto mt-3 max-w-xl text-sm text-white/50">
+            {isEmpty
+              ? "Cadastre sua primeira unidade. Cada unidade gera uma URL própria de webhook da Kommo, pra os dados entrarem já separados por unidade."
+              : "Selecione a unidade que você quer acompanhar no painel."}
+          </p>
         </div>
 
         {isEmpty ? (
           <div className="mx-auto mt-12 flex max-w-md flex-col items-center gap-6">
             <button
               onClick={() => navigate("/units/new")}
-              className="group flex h-44 w-44 flex-col items-center justify-center gap-3 rounded-full border-2 border-dashed border-blue-200 bg-blue-50 text-blue-600 transition hover:border-blue-400 hover:bg-blue-100"
+              className="group flex h-44 w-44 flex-col items-center justify-center gap-3 rounded-full border-2 border-dashed border-emerald-400/40 bg-emerald-500/10 text-emerald-300 transition hover:border-emerald-400/70 hover:bg-emerald-500/15"
             >
               <Plus className="h-10 w-10 transition group-hover:scale-110" />
               <span className="text-sm font-semibold">Criar unidade</span>
             </button>
             <button
               onClick={() => navigate("/units/new")}
-              className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-700"
+              className="rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-[#04210f] shadow-[0_0_24px_rgba(16,185,129,0.35)] transition hover:bg-emerald-400"
             >
               Ir para gestão de unidades
             </button>
           </div>
         ) : (
           <>
-            <div className="mx-auto mt-10 max-w-[500px]">
+            <div className="mx-auto mt-9 max-w-[480px]">
               <div className="relative">
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Pesquisar sua conta"
-                  className="h-12 w-full rounded-lg border border-slate-300 bg-white py-3 pl-4 pr-12 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="h-12 w-full rounded-full border border-white/10 bg-white/5 py-3 pl-5 pr-12 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-emerald-400/50 focus:bg-white/[0.07]"
                 />
-                <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
               </div>
             </div>
 
-            <div className="mt-16 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {options.map((unit) => (
                 <button
                   key={unit.id}
@@ -116,9 +140,9 @@ export default function UnitSelectPage() {
                     setContext(unit.clinicId, Number(unit.id));
                     navigate("/");
                   }}
-                  className="group flex flex-col items-center justify-start text-center transition-transform duration-200 hover:-translate-y-1"
+                  className="group flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center transition duration-200 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.07]"
                 >
-                  <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-slate-50 p-4 transition duration-200 group-hover:bg-white group-hover:shadow-lg sm:h-40 sm:w-40">
+                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white p-3 shadow-md sm:h-28 sm:w-28">
                     <img
                       src={unit.logo}
                       alt={unit.name}
@@ -128,22 +152,21 @@ export default function UnitSelectPage() {
                       }}
                     />
                   </div>
-
-                  <p className="mt-6 w-full px-2 text-[13px] font-extrabold uppercase leading-snug text-slate-800 sm:text-[15px]">
+                  <p className="w-full px-1 text-[12px] font-bold uppercase leading-snug text-white/85 sm:text-[13px]">
                     {unit.name}
                   </p>
                 </button>
               ))}
 
-              {/* Botão "+" pra criar mais unidades direto daqui */}
+              {/* Card "Nova unidade" */}
               <button
                 onClick={() => navigate("/units/new")}
-                className="group flex flex-col items-center justify-start text-center transition-transform duration-200 hover:-translate-y-1"
+                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-4 text-center transition duration-200 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-emerald-500/5"
               >
-                <div className="flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition group-hover:border-blue-400 group-hover:bg-blue-50 group-hover:text-blue-500 sm:h-40 sm:w-40">
-                  <Plus className="h-10 w-10" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-white/15 text-white/40 transition group-hover:border-emerald-400/50 group-hover:text-emerald-300 sm:h-28 sm:w-28">
+                  <Plus className="h-9 w-9" />
                 </div>
-                <p className="mt-6 w-full px-2 text-[13px] font-extrabold uppercase leading-snug text-slate-500 group-hover:text-blue-600 sm:text-[15px]">
+                <p className="w-full px-1 text-[12px] font-bold uppercase leading-snug text-white/50 transition group-hover:text-emerald-300 sm:text-[13px]">
                   Nova unidade
                 </p>
               </button>
