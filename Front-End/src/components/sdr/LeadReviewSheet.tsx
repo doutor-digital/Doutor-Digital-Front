@@ -277,10 +277,10 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
           <div className="mt-6 rounded-lg border border-white/[0.05] bg-white/[0.015] p-3">
             <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Resumo</p>
             <p className="mt-1 text-[12px] text-slate-300">
-              <strong className="text-emerald-200">{draft.sourceFields.length}</strong> campo(s)
+              <strong className="text-emerald-200">{draft.sourceFields?.length ?? 0}</strong> campo(s)
               vieram do Kommo.{" "}
               <strong className="text-slate-200">
-                {15 - draft.sourceFields.length}
+                {15 - (draft.sourceFields?.length ?? 0)}
               </strong>{" "}
               precisa(m) de revisão/preenchimento manual.
             </p>

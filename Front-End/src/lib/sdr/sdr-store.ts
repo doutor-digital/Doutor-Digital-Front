@@ -409,7 +409,7 @@ export function useSdrStore(): SdrState {
 
 export function useSdrCounts() {
   const s = useSdrStore();
-  const cloudiaCount = s.leads.filter((l) => l.sourceFields.length > 0).length;
+  const cloudiaCount = s.leads.filter((l) => (l.sourceFields?.length ?? 0) > 0).length;
   return {
     leads: s.leads.length,
     leadsCloudia: cloudiaCount,

@@ -153,8 +153,8 @@ function DarkCard({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
-      style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
+      className={`relative overflow-hidden rounded-2xl border-2 bg-[#0f1f3a]/80 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
+      style={{ borderColor: accent ? `${accent}99` : "rgba(255,255,255,0.14)" }}
     >
       {children}
     </div>
@@ -530,8 +530,9 @@ export default function DashboardPage() {
     <div
       className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white font-normal"
       style={{
+        // Gradiente VERTICAL (não radial) — sem escurecer as laterais; "azul do meio" uniforme em toda a largura.
         background:
-          "radial-gradient(ellipse at top, #1a3565 0%, #0a1a36 45%, #050d22 100%)",
+          "linear-gradient(180deg, #1a3565 0%, #14294c 45%, #102444 100%)",
         fontFamily: "'PT Sans', ui-sans-serif, system-ui, sans-serif",
         fontWeight: 400,
       }}

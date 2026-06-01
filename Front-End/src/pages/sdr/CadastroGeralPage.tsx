@@ -111,19 +111,19 @@ export default function CadastroGeralPage() {
       const q = search.toLowerCase();
       r = r.filter(
         (l) =>
-          l.nome.toLowerCase().includes(q) ||
-          l.telefone.toLowerCase().includes(q) ||
+          (l.nome ?? "").toLowerCase().includes(q) ||
+          (l.telefone ?? "").toLowerCase().includes(q) ||
           (l.observacao ?? "").toLowerCase().includes(q),
       );
     }
     if (filterTipo !== "todos") r = r.filter((l) => l.tipo === filterTipo);
-    if (filterOrigem === "crm") r = r.filter((l) => l.sourceFields.length > 0);
-    if (filterOrigem === "manual") r = r.filter((l) => l.sourceFields.length === 0);
+    if (filterOrigem === "crm") r = r.filter((l) => (l.sourceFields?.length ?? 0) > 0);
+    if (filterOrigem === "manual") r = r.filter((l) => (l.sourceFields?.length ?? 0) === 0);
     return r;
   }, [pendingLeads, search, filterTipo, filterOrigem]);
 
   // KPIs do topo (sempre baseados no universo de leads pendentes, não nos filtrados)
-  const totalCloudia = pendingLeads.filter((l) => l.sourceFields.length > 0).length;
+  const totalCloudia = pendingLeads.filter((l) => (l.sourceFields?.length ?? 0) > 0).length;
   const totalManual = pendingLeads.length - totalCloudia;
   const totalResgate = pendingLeads.filter((l) => l.tipo === "Resgate").length;
   const totalCadastro = pendingLeads.filter((l) => l.tipo === "Cadastro").length;
