@@ -227,8 +227,10 @@ export default function App() {
             <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
           </Route>
 
-          {/* Integrações + Chef (auditoria global) + Perfil */}
+          {/* Convites da equipe */}
           <Route path="/integracoes"        element={<IntegracoesPage />}     />
+
+          {/* Chef (auditoria global) + Perfil */}
           <Route path="/chef/audit-logs"    element={<RequireAdminLevel><ChefAuditPage /></RequireAdminLevel>} />
 
           {/* Logs avançados — super_admin / analista_ti */}
@@ -238,19 +240,6 @@ export default function App() {
             <Route path="/admin/changes"   element={<EntityChangesPage />}    />
           </Route>
           <Route path="/perfil"             element={<PerfilPage />}          />
-
-          {/* Insights ── CAPI mockada + analytics agregadas */}
-          <Route path="/insights"               element={<InsightsHubPage />}     />
-          <Route path="/insights/system"        element={<SystemOverviewPage />}  />
-          <Route path="/insights/attribution"   element={<AttributionPathPage />} />
-          <Route path="/insights/utm"           element={<UtmExplorerPage />}     />
-          <Route path="/insights/sla"           element={<SlaPage />}             />
-          <Route path="/insights/heatmap"       element={<HeatmapPage />}         />
-          <Route path="/insights/cohort"        element={<CohortPage />}          />
-          <Route path="/insights/lost-reasons"  element={<LostReasonsPage />}     />
-          <Route path="/insights/forecast"      element={<ForecastPage />}        />
-          <Route path="/insights/map"           element={<LeadsMapPage />}        />
-          <Route path="/insights/quality-score" element={<QualityScorePage />}    />
 
           <Route path="*"                  element={<NotFoundPage />}     />
         </Route>

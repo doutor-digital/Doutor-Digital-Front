@@ -66,6 +66,8 @@ type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** PNG custom (sobrepõe o ícone lucide quando presente). */
+  iconUrl?: string;
   end?: boolean;
   badge?: string;
 };
@@ -75,10 +77,44 @@ type NavEntry =
   | {
       label: string;
       icon: LucideIcon;
+      iconUrl?: string;
       basePaths: string[];
       children: NavItem[];
       badge?: string;
     };
+
+/** Renderiza o ícone do item: PNG custom se houver, senão o ícone lucide. */
+function NavGlyph({
+  icon: Icon,
+  iconUrl,
+  active,
+  size = "h-[18px] w-[18px]",
+}: {
+  icon: LucideIcon;
+  iconUrl?: string;
+  active?: boolean;
+  size?: string;
+}) {
+  if (iconUrl) {
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        aria-hidden
+        className={cn(size, "shrink-0 object-contain")}
+        draggable={false}
+      />
+    );
+  }
+  return (
+    <Icon
+      className={cn(
+        "h-4 w-4 shrink-0 transition-colors",
+        active ? "text-emerald-300" : "text-slate-500 group-hover:text-slate-300",
+      )}
+    />
+  );
+}
 
 type NavGroup = {
   label: string;
@@ -89,11 +125,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Visão geral",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users },
+      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users, iconUrl: "/nav-icons/revisar.png" },
       {
         label: "Performance",
         icon: Gauge,
+        iconUrl: "/nav-icons/performance.png",
         basePaths: ["/analytics", "/evolution"],
         children: [
           { to: "/analytics", label: "Analytics", icon: BarChart3 },
@@ -108,6 +145,7 @@ const navGroups: NavGroup[] = [
       {
         label: "Leads",
         icon: ListChecks,
+        iconUrl: "/nav-icons/leads.png",
         basePaths: ["/leads", "/recent-leads", "/recuperacao", "/mudancas-etapas", "/conversao", "/funnel", "/sources"],
         children: [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
@@ -122,6 +160,7 @@ const navGroups: NavGroup[] = [
       {
         label: "Contatos",
         icon: ContactIcon,
+        iconUrl: "/nav-icons/contatos.png",
         basePaths: ["/contacts"],
         children: [
           { to: "/contacts", label: "Lista de contatos", icon: Users, end: true },
@@ -129,10 +168,11 @@ const navGroups: NavGroup[] = [
           { to: "/contacts/duplicates", label: "Duplicados", icon: Copy },
         ],
       },
-      { to: "/attendants", label: "Atendentes", icon: Users2 },
+      { to: "/attendants", label: "Atendentes", icon: Users2, iconUrl: "/nav-icons/atendentes.png" },
       {
         label: "Unidades",
         icon: Building2,
+        iconUrl: "/nav-icons/unidades.png",
         basePaths: ["/units", "/amanheceu", "/webhooks-monitor"],
         children: [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
@@ -148,6 +188,7 @@ const navGroups: NavGroup[] = [
       {
         label: "Cadastros · SDR",
         icon: ClipboardPlus,
+        iconUrl: "/nav-icons/cadastro-sdr.png",
         basePaths: ["/sdr"],
         children: [
           { to: "/sdr",                  label: "Painel SDR",            icon: Sparkles,       end: true },
@@ -166,51 +207,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Insights",
-    items: [
-      { to: "/insights",        label: "Hub",            icon: Sparkles, end: true, badge: "Novo" },
-      { to: "/insights/system", label: "Mapa do sistema", icon: Brain },
-      {
-        label: "Atribuição",
-        icon: Network,
-        basePaths: ["/insights/attribution", "/insights/utm"],
-        children: [
-          { to: "/insights/attribution", label: "Caminho",      icon: Network },
-          { to: "/insights/utm",         label: "UTM Explorer", icon: Tag, badge: "Mock" },
-        ],
-      },
-      {
-        label: "Operacional",
-        icon: Brain,
-        basePaths: [
-          "/insights/sla", "/insights/heatmap", "/insights/cohort",
-          "/insights/lost-reasons", "/insights/forecast",
-        ],
-        children: [
-          { to: "/insights/sla",          label: "SLA · 1ª resposta", icon: Timer },
-          { to: "/insights/heatmap",      label: "Heatmap",           icon: Flame },
-          { to: "/insights/cohort",       label: "Cohort",            icon: Layers },
-          { to: "/insights/lost-reasons", label: "Motivos de perda",  icon: AlertCircle },
-          { to: "/insights/forecast",     label: "Forecast",          icon: CalendarRange },
-        ],
-      },
-      {
-        label: "Distribuição",
-        icon: Map,
-        basePaths: ["/insights/map", "/insights/quality-score"],
-        children: [
-          { to: "/insights/map",           label: "Mapa de leads",   icon: Map, badge: "Mock" },
-          { to: "/insights/quality-score", label: "Quality Score",   icon: Award },
-        ],
-      },
-    ],
-  },
-  {
     label: "Financeiro",
     items: [
       {
         label: "Financeiro",
         icon: DollarSign,
+        iconUrl: "/nav-icons/financeiro.png",
         basePaths: ["/finance"],
         children: [
           { to: "/finance", label: "Visão geral", icon: Wallet, end: true },
@@ -226,6 +228,7 @@ const navGroups: NavGroup[] = [
       {
         label: "Relatórios",
         icon: FileBarChart,
+        iconUrl: "/nav-icons/relatorio.png",
         basePaths: ["/reports"],
         children: [
           { to: "/reports", label: "Todos os relatórios", icon: FileText, end: true },
@@ -233,21 +236,17 @@ const navGroups: NavGroup[] = [
           { to: "/reports?type=leads", label: "Leads", icon: ListChecks },
         ],
       },
-      { to: "/alerts", label: "Alertas", icon: Bell },
-    ],
-  },
-  {
-    label: "Integrações",
-    items: [
-      { to: "/integracoes", label: "Conexões e convites", icon: Plug, badge: "Novo" },
+      { to: "/alerts", label: "Alertas", icon: Bell, iconUrl: "/nav-icons/alertas.png" },
     ],
   },
   {
     label: "Sistema",
     items: [
+      { to: "/integracoes", label: "Convites", icon: UserPlus },
       {
         label: "Configurações",
         icon: Cog,
+        iconUrl: "/nav-icons/configuracoes.png",
         basePaths: ["/settings", "/logs"],
         children: [
           { to: "/settings", label: "Geral", icon: Cog, end: true },
@@ -261,16 +260,16 @@ const navGroups: NavGroup[] = [
 const chefGroup: NavGroup = {
   label: "Chef · Super-admin",
   items: [
-    { to: "/chef/audit-logs", label: "Auditoria global", icon: ChefHat },
+    { to: "/chef/audit-logs", label: "Auditoria global", icon: ChefHat, iconUrl: "/nav-icons/auditoria.png" },
   ],
 };
 
 const advancedLogsGroup: NavGroup = {
   label: "Logs avançados",
   items: [
-    { to: "/admin/sessions",  label: "Sessões de login", icon: History },
-    { to: "/admin/locations", label: "Localizações",      icon: Map },
-    { to: "/admin/changes",   label: "Alterações",         icon: ScrollText },
+    { to: "/admin/sessions",  label: "Sessões de login", icon: History,    iconUrl: "/nav-icons/sessoes.png" },
+    { to: "/admin/locations", label: "Localizações",      icon: Map,        iconUrl: "/nav-icons/localizacoes.png" },
+    { to: "/admin/changes",   label: "Alterações",         icon: ScrollText, iconUrl: "/nav-icons/alteracoes.png" },
   ],
 };
 
@@ -293,7 +292,7 @@ function NavBadge({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItemLink({ to, label, icon: Icon, end, badge }: NavItem) {
+function NavItemLink({ to, label, icon: Icon, iconUrl, end, badge }: NavItem) {
   return (
     <NavLink
       to={to}
@@ -312,14 +311,7 @@ function NavItemLink({ to, label, icon: Icon, end, badge }: NavItem) {
           {isActive && (
             <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-emerald-400" />
           )}
-          <Icon
-            className={cn(
-              "h-4 w-4 shrink-0 transition-colors",
-              isActive
-                ? "text-emerald-300"
-                : "text-slate-500 group-hover:text-slate-300",
-            )}
-          />
+          <NavGlyph icon={Icon} iconUrl={iconUrl} active={isActive} />
           <span className="truncate">{label}</span>
           {badge && <NavBadge>{badge}</NavBadge>}
         </>
@@ -336,6 +328,7 @@ function NavCollapsible({
   pathname: string;
 }) {
   const Icon = entry.icon;
+  const iconUrl = entry.iconUrl;
   const isWithin = entry.basePaths.some((p) => pathMatches(pathname, p));
   const [open, setOpen] = useState(isWithin);
 
@@ -364,14 +357,7 @@ function NavCollapsible({
         {isWithin && (
           <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-emerald-400" />
         )}
-        <Icon
-          className={cn(
-            "h-4 w-4 shrink-0 transition-colors",
-            isWithin
-              ? "text-emerald-300"
-              : "text-slate-500 group-hover:text-slate-300",
-          )}
-        />
+        <NavGlyph icon={Icon} iconUrl={iconUrl} active={isWithin} />
         <span className="flex-1 text-left truncate">{entry.label}</span>
         {!open && activeChildCount === 0 && entry.children.length > 0 && (
           <span className="rounded-full bg-white/[0.04] px-1.5 py-[1px] text-[9px] font-medium tabular-nums text-slate-500 ring-1 ring-inset ring-white/[0.05]">
@@ -440,11 +426,9 @@ export function Sidebar() {
 
   const groups = useMemo(() => {
     const role = user?.role;
-    // trafego_pago: só os números (Visão geral + Insights), somente leitura.
+    // trafego_pago: só os números (Visão geral), somente leitura.
     if (isReadOnly(role)) {
-      return navGroups.filter(
-        (g) => g.label === "Visão geral" || g.label === "Insights",
-      );
+      return navGroups.filter((g) => g.label === "Visão geral");
     }
     // super_admin / analista_ti: tudo + Logs avançados + Chef.
     if (isAdminLevel(role)) {
@@ -462,28 +446,14 @@ export function Sidebar() {
         "bg-[#0a0a0d]",
       )}
     >
-      <div className="relative flex items-center gap-3 border-b border-white/[0.05] px-5 py-5">
+      <div className="relative flex items-center justify-center border-b border-white/[0.05] px-5 py-5">
         <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent" />
-
-        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-white/[0.08]">
-          <img
-            src="https://i.postimg.cc/xjx4m8p5/Copia-de-logo-cor-original.png"
-            alt="Doutor Digital"
-            className="h-full w-full object-cover object-center"
-          />
-          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0a0a0d]" />
-        </div>
-
-        <div className="min-w-0 leading-tight">
-          <div className="truncate text-[13px] font-semibold tracking-tight text-slate-50">
-            Doutor Digital
-          </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-            <span>Insights</span>
-            <span className="text-slate-700">·</span>
-            <span className="text-emerald-400/80">v1.0</span>
-          </div>
-        </div>
+        <img
+          src="/logo-official.png"
+          alt="Doutor Digital"
+          className="h-11 w-auto object-contain"
+          draggable={false}
+        />
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.05] [&::-webkit-scrollbar-track]:bg-transparent">

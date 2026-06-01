@@ -17,6 +17,7 @@ import {
   type LucideIcon,
   Radio,
   Sunrise,
+  UserPlus,
   Users2,
   Workflow,
   X,
@@ -28,6 +29,7 @@ type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
+  iconUrl?: string;
   end?: boolean;
 };
 
@@ -36,9 +38,29 @@ type NavEntry =
   | {
       label: string;
       icon: LucideIcon;
+      iconUrl?: string;
       basePaths: string[];
       children: NavItem[];
     };
+
+function DrawerGlyph({
+  icon: Icon,
+  iconUrl,
+  active,
+}: {
+  icon: LucideIcon;
+  iconUrl?: string;
+  active?: boolean;
+}) {
+  if (iconUrl) {
+    return (
+      <img src={iconUrl} alt="" aria-hidden className="h-[22px] w-[22px] shrink-0 object-contain" draggable={false} />
+    );
+  }
+  return (
+    <Icon className={cn("h-[20px] w-[20px] shrink-0", active ? "text-brand-300" : "text-slate-500")} />
+  );
+}
 
 type NavGroup = {
   label: string;
@@ -49,23 +71,24 @@ const navGroups: NavGroup[] = [
   {
     label: "Visão geral",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-      { to: "/live", label: "Ao vivo", icon: Radio },
-      { to: "/analytics", label: "Analytics", icon: BarChart3 },
+      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users2, iconUrl: "/nav-icons/revisar.png" },
+      { to: "/analytics", label: "Performance", icon: BarChart3, iconUrl: "/nav-icons/performance.png" },
     ],
   },
   {
     label: "Gestão",
     items: [
-      { to: "/leads", label: "Leads", icon: ListChecks },
-      { to: "/contacts", label: "Contatos", icon: ContactIcon },
+      { to: "/leads", label: "Leads", icon: ListChecks, iconUrl: "/nav-icons/leads.png" },
+      { to: "/contacts", label: "Contatos", icon: ContactIcon, iconUrl: "/nav-icons/contatos.png" },
       { to: "/funnel", label: "Funil", icon: Workflow },
       { to: "/sources", label: "Origens", icon: Filter },
       { to: "/evolution", label: "Evolução", icon: LineChart },
-      { to: "/attendants", label: "Atendentes", icon: Users2 },
+      { to: "/attendants", label: "Atendentes", icon: Users2, iconUrl: "/nav-icons/atendentes.png" },
       {
         label: "Unidades",
         icon: Building2,
+        iconUrl: "/nav-icons/unidades.png",
         basePaths: ["/units", "/amanheceu"],
         children: [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
@@ -77,18 +100,21 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Financeiro",
-    items: [{ to: "/finance", label: "Financeiro", icon: DollarSign }],
+    items: [{ to: "/finance", label: "Financeiro", icon: DollarSign, iconUrl: "/nav-icons/financeiro.png" }],
   },
   {
     label: "Relatórios",
     items: [
-      { to: "/reports", label: "Relatórios", icon: FileBarChart },
-      { to: "/alerts", label: "Alertas", icon: Bell },
+      { to: "/reports", label: "Relatórios", icon: FileBarChart, iconUrl: "/nav-icons/relatorio.png" },
+      { to: "/alerts", label: "Alertas", icon: Bell, iconUrl: "/nav-icons/alertas.png" },
     ],
   },
   {
     label: "Sistema",
-    items: [{ to: "/settings", label: "Configurações", icon: Cog }],
+    items: [
+      { to: "/integracoes", label: "Convites", icon: UserPlus },
+      { to: "/settings", label: "Configurações", icon: Cog, iconUrl: "/nav-icons/configuracoes.png" },
+    ],
   },
 ];
 
@@ -126,12 +152,7 @@ function MobileNavLink({
     >
       {({ isActive }) => (
         <>
-          <item.icon
-            className={cn(
-              "h-[20px] w-[20px] shrink-0",
-              isActive ? "text-brand-300" : "text-slate-500",
-            )}
-          />
+          <DrawerGlyph icon={item.icon} iconUrl={item.iconUrl} active={isActive} />
           <span className="text-[14.5px] font-medium">{item.label}</span>
         </>
       )}
@@ -149,6 +170,7 @@ function MobileNavCollapsible({
   onClose: () => void;
 }) {
   const Icon = entry.icon;
+  const iconUrl = entry.iconUrl;
   const isWithin = entry.basePaths.some((p) => pathMatches(pathname, p));
   const [open, setOpen] = useState(isWithin);
 

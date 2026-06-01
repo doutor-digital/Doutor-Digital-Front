@@ -245,86 +245,12 @@ export default function IntegracoesPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-50">
-            Marketplace de Integrações
-          </h1>
-          <p className="text-sm text-slate-400">
-            Conecte a Doutor Digital a CRMs, ferramentas de anúncios e
-            automações.
-          </p>
-        </div>
-        <Button
-          onClick={loadStatus}
-          className="bg-white/[0.04] text-slate-100 hover:bg-white/[0.08]"
-        >
-          <RefreshCw
-            className={`mr-1.5 h-3.5 w-3.5 ${statusLoading ? "animate-spin" : ""}`}
-          />
-          Atualizar status
-        </Button>
+      <header>
+        <h1 className="text-2xl font-bold text-slate-50">Convites da equipe</h1>
+        <p className="text-sm text-slate-400">
+          Convide pessoas pra unidades específicas e gerencie os acessos.
+        </p>
       </header>
-
-      {/* busca + filtros */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex-1 min-w-[240px]">
-          <Input
-            icon={<Search className="h-4 w-4" />}
-            placeholder="Buscar integração…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-1 overflow-x-auto">
-          {(Object.keys(CATEGORY_LABEL) as Category[]).map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={[
-                "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
-                category === c
-                  ? "bg-emerald-400/10 text-emerald-200 ring-1 ring-inset ring-emerald-400/20"
-                  : "bg-white/[0.03] text-slate-400 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.06] hover:text-slate-200",
-              ].join(" ")}
-            >
-              {CATEGORY_LABEL[c]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* grid de cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {visibleProviders.map((p) => {
-          const st = statusOf(p);
-          return (
-            <ProviderCard
-              key={p.id}
-              provider={p}
-              status={st}
-              onConnect={() => {
-                if (p.id === "kommo") {
-                  navigate("/units");
-                  toast.message(
-                    "Configure o webhook do Kommo na tela de Unidades.",
-                  );
-                } else if (p.status === "coming-soon")
-                  toast.message("Em breve — fica de olho!");
-                else
-                  toast.message(
-                    `Conexão com ${p.name} ainda não está habilitada por aqui.`,
-                  );
-              }}
-            />
-          );
-        })}
-        {visibleProviders.length === 0 && (
-          <div className="col-span-full rounded-md border border-white/[0.06] bg-white/[0.02] p-6 text-center text-sm text-slate-500">
-            Nenhuma integração encontrada para "{search}".
-          </div>
-        )}
-      </div>
 
       {/* equipe / convites */}
       <section className="rounded-2xl border border-white/[0.06] bg-[#0a0a0d] p-6">
