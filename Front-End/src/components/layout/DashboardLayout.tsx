@@ -11,6 +11,8 @@ import { ActivityFeed } from "@/components/global/ActivityFeed";
 import { FloatingAssistant } from "@/components/global/FloatingAssistant";
 import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal";
 import { useTrackRecentNav } from "@/hooks/useRecentNav";
+import { useHeartbeat } from "@/hooks/useHeartbeat";
+import { LocationConsentPrompt } from "./LocationConsentPrompt";
 import {
   hasUnseenRelease,
   WhatsNewModal,
@@ -29,6 +31,9 @@ export default function DashboardLayout() {
 
   // Tracking: salva últimas rotas visitadas para o ⌘K
   useTrackRecentNav();
+
+  // Heartbeat de presença (alimenta "minutos logada" no log avançado)
+  useHeartbeat();
 
   // Auto-abrir "Novidades" se houver release não vista
   useEffect(() => {
@@ -72,6 +77,9 @@ export default function DashboardLayout() {
       {/* Atalhos (?) e novidades */}
       <ShortcutsModal />
       <WhatsNewModal open={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+
+      {/* Consentimento de localização (LGPD) — papéis operacionais */}
+      <LocationConsentPrompt />
 
       {/* Lazy: overlays não-críticos (não bloqueiam a primeira renderização) */}
       <Suspense fallback={null}>

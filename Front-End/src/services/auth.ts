@@ -105,4 +105,22 @@ export const authService = {
     const { data } = await api.get<MeResponse>("/api/auth/me");
     return data;
   },
+
+  /** Ping de atividade — acumula o tempo logado da sessão atual. */
+  async heartbeat(): Promise<void> {
+    await api.post("/api/auth/heartbeat", null, { silent401: true });
+  },
+
+  /** Envia as coordenadas (GPS) após a usuária consentir no navegador. */
+  async geoConsent(coords: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  }): Promise<void> {
+    await api.post("/api/auth/geo-consent", coords);
+  },
+
+  async logout(): Promise<void> {
+    await api.post("/api/auth/logout", null, { silent401: true });
+  },
 };

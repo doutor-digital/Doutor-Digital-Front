@@ -8,6 +8,7 @@ import {
   ChevronRight,
 } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
+import { isAdminLevel } from "@/lib/roles";
 import {
   auditService,
   type AuditLogItem,
@@ -20,10 +21,7 @@ const PAGE_SIZE = 50;
 
 export default function ChefAuditPage() {
   const { user } = useAuth();
-  const isSuperAdmin = useMemo(() => {
-    const r = (user?.role || "").toLowerCase();
-    return ["super_admin", "super-admin", "superadmin"].includes(r);
-  }, [user?.role]);
+  const isSuperAdmin = useMemo(() => isAdminLevel(user?.role), [user?.role]);
 
   const [filters, setFilters] = useState<AuditLogQuery>({
     page: 1,

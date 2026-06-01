@@ -20,7 +20,6 @@ import {
   Contact as ContactIcon,
   Copy,
   DollarSign,
-  Eye,
   FileBarChart,
   FileSearch,
   FileText,
@@ -42,7 +41,6 @@ import {
   Radio,
   Route as RouteIcon,
   ScrollText,
-  Send,
   ShieldAlert,
   Sparkles,
   Stethoscope,
@@ -61,6 +59,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { isAdminLevel, isReadOnly } from "@/lib/roles";
 import { SavedViewsSection } from "./SavedViewsSection";
 
 type NavItem = {
@@ -172,15 +171,6 @@ const navGroups: NavGroup[] = [
       { to: "/insights",        label: "Hub",            icon: Sparkles, end: true, badge: "Novo" },
       { to: "/insights/system", label: "Mapa do sistema", icon: Brain },
       {
-        label: "Meta CAPI",
-        icon: Send,
-        basePaths: ["/insights/capi-events", "/insights/pixel-health"],
-        children: [
-          { to: "/insights/capi-events",   label: "Eventos CAPI",  icon: Send,  badge: "Mock" },
-          { to: "/insights/pixel-health",  label: "Saúde do pixel", icon: Eye },
-        ],
-      },
-      {
         label: "Atribuição",
         icon: Network,
         basePaths: ["/insights/attribution", "/insights/utm"],
@@ -272,6 +262,15 @@ const chefGroup: NavGroup = {
   label: "Chef · Super-admin",
   items: [
     { to: "/chef/audit-logs", label: "Auditoria global", icon: ChefHat },
+  ],
+};
+
+const advancedLogsGroup: NavGroup = {
+  label: "Logs avançados",
+  items: [
+    { to: "/admin/sessions",  label: "Sessões de login", icon: History },
+    { to: "/admin/locations", label: "Localizações",      icon: Map },
+    { to: "/admin/changes",   label: "Alterações",         icon: ScrollText },
   ],
 };
 
@@ -440,9 +439,18 @@ export function Sidebar() {
   const { user } = useAuth();
 
   const groups = useMemo(() => {
-    const r = (user?.role || "").toLowerCase();
-    const isSuperAdmin = ["super_admin", "super-admin", "superadmin"].includes(r);
-    return isSuperAdmin ? [...navGroups, chefGroup] : navGroups;
+    const role = user?.role;
+    // trafego_pago: só os números (Visão geral + Insights), somente leitura.
+    if (isReadOnly(role)) {
+      return navGroups.filter(
+        (g) => g.label === "Visão geral" || g.label === "Insights",
+      );
+    }
+    // super_admin / analista_ti: tudo + Logs avançados + Chef.
+    if (isAdminLevel(role)) {
+      return [...navGroups, advancedLogsGroup, chefGroup];
+    }
+    return navGroups;
   }, [user?.role]);
 
   return (

@@ -1,8 +1,8 @@
 import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
-  AlertCircle, ArrowUpRight, Award, Brain, CalendarRange, Eye, Flame,
-  Layers, Map as MapIcon, Network, Send, Tag, Timer,
+  AlertCircle, ArrowUpRight, Award, Brain, CalendarRange, Flame,
+  Layers, Map as MapIcon, Network, Tag, Timer,
   type LucideIcon,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -27,8 +27,6 @@ export default function InsightsHubPage() {
 
   const queries = useQueries({
     queries: [
-      { queryKey: ["hub-capi", u],     queryFn: () => insightsService.listCapiEvents({ unitId: u, pageSize: 1 }) },
-      { queryKey: ["hub-pixel", u],    queryFn: () => insightsService.pixelHealth({ unitId: u }) },
       { queryKey: ["hub-attr", u],     queryFn: () => insightsService.attributionSummary({ unitId: u }) },
       { queryKey: ["hub-utm", u],      queryFn: () => insightsService.utm({ unitId: u }) },
       { queryKey: ["hub-sla", u],      queryFn: () => insightsService.sla({ unitId: u }) },
@@ -41,54 +39,9 @@ export default function InsightsHubPage() {
     ],
   });
 
-  const [capi, pixel, attr, utm, sla, heat, cohort, lost, forecast, geo, quality] = queries;
+  const [attr, utm, sla, heat, cohort, lost, forecast, geo, quality] = queries;
 
   const cards: HubCardSpec[] = [
-    {
-      group: "Meta CAPI",
-      to: "/insights/capi-events",
-      title: "Eventos CAPI",
-      description: "Lead, Schedule, Purchase mockados a partir dos leads reais",
-      icon: Send,
-      tone: "emerald",
-      kpi: capi.data?.stats
-        ? {
-            primary: formatNumber(capi.data.stats.received),
-            primaryLabel: "Eventos no período",
-            chips: [
-              { label: "Sucesso", value: formatPercent(capi.data.stats.successRate) },
-              { label: "Falhas", value: formatNumber(capi.data.stats.failed) },
-              { label: "Deduped", value: formatNumber(capi.data.stats.deduped) },
-            ],
-          }
-        : undefined,
-      loading: capi.isLoading,
-      bars: capi.data?.stats?.timeline
-        ?.slice(-14)
-        .map((t) => t.sent + t.failed + t.deduped) ?? [],
-    },
-    {
-      group: "Meta CAPI",
-      to: "/insights/pixel-health",
-      title: "Saúde do Pixel",
-      description: "Cobertura email/phone/IP/fbp/fbc + EMQ por unidade",
-      icon: Eye,
-      tone: "sky",
-      kpi: pixel.data
-        ? {
-            primary: pixel.data.averageEmqScore.toFixed(1),
-            primaryLabel: "EMQ médio (0-10)",
-            chips: [
-              { label: "Email", value: `${pixel.data.emailHashCoverage.toFixed(0)}%` },
-              { label: "Phone", value: `${pixel.data.phoneHashCoverage.toFixed(0)}%` },
-              { label: "fbp",   value: `${pixel.data.fbpCoverage.toFixed(0)}%` },
-            ],
-          }
-        : undefined,
-      loading: pixel.isLoading,
-      alert: pixel.data?.alerts?.find((a) => a.severity === "critical")?.title
-          ?? pixel.data?.alerts?.find((a) => a.severity === "warning")?.title,
-    },
     {
       group: "Atribuição",
       to: "/insights/attribution",

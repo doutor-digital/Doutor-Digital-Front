@@ -9,93 +9,6 @@ export interface PeriodFilters {
   endDate?: string;
 }
 
-export interface CapiEvent {
-  id: string;
-  eventName: string;
-  status: "received" | "sent" | "failed" | "deduped" | "pending";
-  eventTime: string;
-  sentAt?: string | null;
-  source?: string | null;
-  pixelId?: string | null;
-  leadId?: number | null;
-  leadName?: string | null;
-  phone?: string | null;
-  hasEmailHash: boolean;
-  hasPhoneHash: boolean;
-  hasIp: boolean;
-  hasFbp: boolean;
-  hasFbc: boolean;
-  emqScore?: number | null;
-  matchQuality?: string | null;
-  isDeduped: boolean;
-  dedupedWith?: string | null;
-  retryCount: number;
-  errorMessage?: string | null;
-  fbtraceId?: string | null;
-  value?: number | null;
-  currency?: string | null;
-  campaign?: string | null;
-  adId?: string | null;
-}
-
-export interface CapiTimeBucket {
-  bucket: string;
-  sent: number;
-  failed: number;
-  deduped: number;
-}
-
-export interface CapiEventStats {
-  received: number;
-  sent: number;
-  failed: number;
-  deduped: number;
-  pending: number;
-  successRate: number;
-  dedupRate: number;
-  averageEmqScore: number;
-  byEventName: Record<string, number>;
-  byStatus: Record<string, number>;
-  timeline: CapiTimeBucket[];
-}
-
-export interface CapiEventList {
-  total: number;
-  page: number;
-  pageSize: number;
-  items: CapiEvent[];
-  stats: CapiEventStats;
-}
-
-export interface PixelHealthByUnit {
-  unitId: number;
-  unitName: string;
-  totalEvents: number;
-  emqScore: number;
-  coverage: number;
-}
-
-export interface PixelHealthAlert {
-  severity: "info" | "warning" | "critical";
-  title: string;
-  message: string;
-}
-
-export interface PixelHealth {
-  periodStart: string;
-  periodEnd: string;
-  totalEvents: number;
-  emailHashCoverage: number;
-  phoneHashCoverage: number;
-  ipCoverage: number;
-  fbpCoverage: number;
-  fbcCoverage: number;
-  averageEmqScore: number;
-  deduplicationRate: number;
-  byUnit: PixelHealthByUnit[];
-  alerts: PixelHealthAlert[];
-}
-
 export interface AttributionTouch {
   order: number;
   at: string;
@@ -357,35 +270,6 @@ export interface QualityScore {
 const BASE = "/api/insights";
 
 export const insightsService = {
-  async listCapiEvents(params: PeriodFilters & {
-    eventName?: string;
-    status?: string;
-    page?: number;
-    pageSize?: number;
-  } = {}): Promise<CapiEventList> {
-    const { data } = await api.get<CapiEventList>(`${BASE}/capi/events`, {
-      params: cleanParams(params),
-    });
-    return data;
-  },
-
-  async getCapiEvent(id: string): Promise<CapiEvent> {
-    const { data } = await api.get<CapiEvent>(`${BASE}/capi/events/${encodeURIComponent(id)}`);
-    return data;
-  },
-
-  async retryCapiEvent(id: string): Promise<CapiEvent> {
-    const { data } = await api.post<CapiEvent>(`${BASE}/capi/events/${encodeURIComponent(id)}/retry`);
-    return data;
-  },
-
-  async pixelHealth(params: PeriodFilters = {}): Promise<PixelHealth> {
-    const { data } = await api.get<PixelHealth>(`${BASE}/capi/pixel-health`, {
-      params: cleanParams(params),
-    });
-    return data;
-  },
-
   async leadAttributionPath(leadId: number): Promise<AttributionPath> {
     const { data } = await api.get<AttributionPath>(`${BASE}/attribution/leads/${leadId}/path`);
     return data;

@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   AlertCircle, Award, CalendarRange, Eye, Flame, Layers, Map as MapIcon,
-  MessageCircle, Network, Send, Tag, Target, Timer, TrendingUp,
+  MessageCircle, Network, Tag, Target, Timer, TrendingUp,
   type LucideIcon,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,10 +15,9 @@ import { cn, formatNumber } from "@/lib/utils";
  *
  *   ┌─ Webhook Meta ──┐
  *   │                 │
- *   │ Cloudia/N8N ────┼──► Origin Events ──► Leads ──┬──► CAPI Events ──► Pixel Health
+ *   │ Cloudia/N8N ────┼──► Origin Events ──► Leads ──┬──► Atribuição (path / UTM)
  *   │                 │                              │
- *   │ Pixel browser ──┘                              ├──► Atribuição (path / UTM)
- *   │                                                ├──► Operacional (SLA / Heatmap / Cohort / Lost / Forecast)
+ *   │ Pixel browser ──┘                              ├──► Operacional (SLA / Heatmap / Cohort / Lost / Forecast)
  *   │                                                └──► Distribuição (Mapa / Quality Score)
  *
  * Cada node é clicável e leva pra página correspondente.
@@ -29,8 +28,6 @@ export default function SystemOverviewPage() {
 
   const queries = useQueries({
     queries: [
-      { queryKey: ["sys-capi", u],     queryFn: () => insightsService.listCapiEvents({ unitId: u, pageSize: 1 }) },
-      { queryKey: ["sys-pixel", u],    queryFn: () => insightsService.pixelHealth({ unitId: u }) },
       { queryKey: ["sys-attr", u],     queryFn: () => insightsService.attributionSummary({ unitId: u }) },
       { queryKey: ["sys-utm", u],      queryFn: () => insightsService.utm({ unitId: u }) },
       { queryKey: ["sys-sla", u],      queryFn: () => insightsService.sla({ unitId: u }) },
@@ -43,9 +40,9 @@ export default function SystemOverviewPage() {
     ],
   });
 
-  const [capi, pixel, attr, utm, sla, heat, cohort, lost, forecast, geo, quality] = queries;
+  const [attr, utm, sla, heat, cohort, lost, forecast, geo, quality] = queries;
 
-  const totalLeads = capi.data?.stats?.received ?? 0;
+  const totalLeads = heat.data?.totalLeads ?? 0;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -89,15 +86,7 @@ export default function SystemOverviewPage() {
       <Connector label="agregação · /api/insights/*" />
 
       {/* ─── Layer 3: insights ─────────────────────────────────────────── */}
-      <Layer title="3. Insights" subtitle="As 11 visões disponíveis">
-        <NodeGroup title="Meta CAPI" tone="emerald">
-          <Node icon={Send} label="Eventos CAPI" to="/insights/capi-events"
-            metric={capi.data?.stats?.received} metricLabel="eventos" loading={capi.isLoading} tone="emerald" />
-          <Node icon={Eye} label="Saúde do Pixel" to="/insights/pixel-health"
-            metric={pixel.data?.averageEmqScore} metricLabel="EMQ /10" suffix="" decimals={1}
-            loading={pixel.isLoading} tone="sky" />
-        </NodeGroup>
-
+      <Layer title="3. Insights" subtitle="As 9 visões disponíveis">
         <NodeGroup title="Atribuição" tone="violet">
           <Node icon={Network} label="Caminho" to="/insights/attribution"
             metric={attr.data?.totalConverted} metricLabel="convertidos" loading={attr.isLoading} tone="violet" />

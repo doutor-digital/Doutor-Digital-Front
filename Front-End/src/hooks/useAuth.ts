@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { setAuthToken } from "@/lib/api";
+import { authService } from "@/services/auth";
 
 interface User {
   name: string;
@@ -28,6 +29,8 @@ export const useAuth = create<AuthStore>()(
         set({ user, token });
       },
       logout: () => {
+        // Encerra a sessão no back (tempo logado) antes de limpar o token.
+        void authService.logout().catch(() => {});
         setAuthToken(null);
         set({ user: null, token: null });
       },

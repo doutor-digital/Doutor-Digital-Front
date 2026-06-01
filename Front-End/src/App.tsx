@@ -1,10 +1,11 @@
 import { ReactElement, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
+import { isAdminLevel, isReadOnly } from "@/lib/roles";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
@@ -46,8 +47,6 @@ const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 // ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
 const InsightsHubPage     = lazy(() => import("@/pages/InsightsHubPage"));
 const SystemOverviewPage  = lazy(() => import("@/pages/SystemOverviewPage"));
-const CapiEventsPage      = lazy(() => import("@/pages/CapiEventsPage"));
-const PixelHealthPage     = lazy(() => import("@/pages/PixelHealthPage"));
 const AttributionPathPage = lazy(() => import("@/pages/AttributionPathPage"));
 const UtmExplorerPage     = lazy(() => import("@/pages/UtmExplorerPage"));
 const SlaPage             = lazy(() => import("@/pages/SlaPage"));
@@ -62,6 +61,9 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
 const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
 const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
+const LoginSessionsPage   = lazy(() => import("@/pages/admin/LoginSessionsPage"));
+const LocationConsentsPage = lazy(() => import("@/pages/admin/LocationConsentsPage"));
+const EntityChangesPage   = lazy(() => import("@/pages/admin/EntityChangesPage"));
 const PerfilPage       = lazy(() => import("@/pages/PerfilPage"));
 
 // ─── Aceite de convite legado (mantido por compat — para tokens já enviados antes da migração)
@@ -117,6 +119,20 @@ function RequireAuth({ children }: { children: ReactElement }) {
 function RequireClinic({ children }: { children: ReactElement }) {
   const { unitId, tenantId } = useClinic();
   if (!unitId && !tenantId) return <Navigate to="/select-unit" replace />;
+  return children;
+}
+
+// Restringe rotas a papéis admin-level (super_admin / analista_ti) — ex.: logs avançados.
+function RequireAdminLevel({ children }: { children: ReactElement }) {
+  const { user } = useAuth();
+  if (!isAdminLevel(user?.role)) return <Navigate to="/" replace />;
+  return children;
+}
+
+// Bloqueia papéis somente-leitura (trafego_pago) em telas operacionais.
+function RequireWritable({ children }: { children: ReactElement }) {
+  const { user } = useAuth();
+  if (isReadOnly(user?.role)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -192,30 +208,37 @@ export default function App() {
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />
           <Route path="/contacts/:id"      element={<ContactDetailPage />} />
 
-          {/* SDR Unificado — substitui o sistema separado /cadastro/* dentro do dashboard principal */}
-          <Route path="/sdr"                 element={<PainelSdrPage />}         />
-          <Route path="/sdr/cadastro-geral"     element={<CadastroGeralPage />}     />
-          <Route path="/sdr/cadastro-geral/:id" element={<RevisarLeadSdrPage />}    />
-          <Route path="/sdr/leads-aprovados"    element={<SdrLeadsAprovadosPage />} />
-          <Route path="/sdr/consultas"       element={<SdrConsultasPage />}      />
-          <Route path="/sdr/tratamentos"     element={<SdrTratamentosPage />}    />
-          <Route path="/sdr/tarefas"         element={<SdrTarefasPage />}        />
-          <Route path="/sdr/agenda"          element={<SdrAgendaPage />}         />
-          <Route path="/sdr/metas"           element={<SdrMetasPage />}          />
-          <Route path="/sdr/auditoria"       element={<SdrAuditoriaPage />}      />
-          <Route path="/sdr/listas"          element={<SdrListasDominioPage />}  />
-          <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
+          {/* SDR Unificado — operacional, bloqueado para papéis somente-leitura */}
+          <Route element={<RequireWritable><Outlet /></RequireWritable>}>
+            <Route path="/sdr"                 element={<PainelSdrPage />}         />
+            <Route path="/sdr/cadastro-geral"     element={<CadastroGeralPage />}     />
+            <Route path="/sdr/cadastro-geral/:id" element={<RevisarLeadSdrPage />}    />
+            <Route path="/sdr/leads-aprovados"    element={<SdrLeadsAprovadosPage />} />
+            <Route path="/sdr/consultas"       element={<SdrConsultasPage />}      />
+            <Route path="/sdr/tratamentos"     element={<SdrTratamentosPage />}    />
+            <Route path="/sdr/tarefas"         element={<SdrTarefasPage />}        />
+            <Route path="/sdr/agenda"          element={<SdrAgendaPage />}         />
+            <Route path="/sdr/metas"           element={<SdrMetasPage />}          />
+            <Route path="/sdr/auditoria"       element={<SdrAuditoriaPage />}      />
+            <Route path="/sdr/listas"          element={<SdrListasDominioPage />}  />
+            <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
+          </Route>
 
           {/* Integrações + Chef (auditoria global) + Perfil */}
           <Route path="/integracoes"        element={<IntegracoesPage />}     />
-          <Route path="/chef/audit-logs"    element={<ChefAuditPage />}       />
+          <Route path="/chef/audit-logs"    element={<RequireAdminLevel><ChefAuditPage /></RequireAdminLevel>} />
+
+          {/* Logs avançados — super_admin / analista_ti */}
+          <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
+            <Route path="/admin/sessions"  element={<LoginSessionsPage />}    />
+            <Route path="/admin/locations" element={<LocationConsentsPage />} />
+            <Route path="/admin/changes"   element={<EntityChangesPage />}    />
+          </Route>
           <Route path="/perfil"             element={<PerfilPage />}          />
 
           {/* Insights ── CAPI mockada + analytics agregadas */}
           <Route path="/insights"               element={<InsightsHubPage />}     />
           <Route path="/insights/system"        element={<SystemOverviewPage />}  />
-          <Route path="/insights/capi-events"   element={<CapiEventsPage />}      />
-          <Route path="/insights/pixel-health"  element={<PixelHealthPage />}     />
           <Route path="/insights/attribution"   element={<AttributionPathPage />} />
           <Route path="/insights/utm"           element={<UtmExplorerPage />}     />
           <Route path="/insights/sla"           element={<SlaPage />}             />

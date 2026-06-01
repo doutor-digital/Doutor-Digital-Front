@@ -1,10 +1,11 @@
 import { api } from "@/lib/api";
 import type { LoginResponse } from "@/services/auth";
+import type { Role } from "@/lib/roles";
 
 export interface InvitationCreatePayload {
   email: string;
   unitId: number;
-  role: "unit_user" | "sdr" | "manager";
+  role: Role;
 }
 
 export interface InvitationCreateResponse {

@@ -15,6 +15,7 @@ import {
 } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+import { canInvite, isAdminLevel, type Role } from "@/lib/roles";
 import { configurationService } from "@/services/configuration";
 import {
   invitationsService,
@@ -126,14 +127,11 @@ export default function IntegracoesPage() {
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteUnitId, setInviteUnitId] = useState<number | "">(unitId ?? "");
-  const [inviteRole, setInviteRole] =
-    useState<"unit_user" | "sdr" | "manager">("unit_user");
+  const [inviteRole, setInviteRole] = useState<Role>("unit_user");
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
-  const isPrivileged = useMemo(() => {
-    const r = (user?.role || "").toLowerCase();
-    return ["super_admin", "super-admin", "superadmin", "sdr", "manager"].includes(r);
-  }, [user?.role]);
+  const isPrivileged = useMemo(() => canInvite(user?.role), [user?.role]);
+  const canGrantAnalistaTi = useMemo(() => isAdminLevel(user?.role), [user?.role]);
 
   async function loadStatus() {
     setStatusLoading(true);
@@ -392,6 +390,10 @@ export default function IntegracoesPage() {
                   <option value="unit_user">Usuário (só esta unidade)</option>
                   <option value="sdr">SDR (todas do tenant)</option>
                   <option value="manager">Gerente</option>
+                  <option value="trafego_pago">Tráfego pago (só os números)</option>
+                  {canGrantAnalistaTi && (
+                    <option value="analista_ti">Analista de TI (acesso total + logs)</option>
+                  )}
                 </select>
               </div>
             </div>
