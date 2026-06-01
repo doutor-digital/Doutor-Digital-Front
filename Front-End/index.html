@@ -15,12 +15,20 @@
     <link rel="preconnect" href="https://i.postimg.cc" crossorigin />
     <link rel="dns-prefetch" href="https://i.postimg.cc" />
 
-    <!-- Fonte PT Sans (usada na dashboard) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonte PT Sans self-hosted (carrega no mobile mesmo offline; sem CDN) -->
     <link
-      href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/ptsans-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/ptsans-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
 
     <!-- Flaticon UIcons (Regular Rounded) — usados na dashboard -->

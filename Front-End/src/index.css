@@ -3,6 +3,40 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
+   FONTE — PT Sans self-hosted (não depende de CDN; carrega no
+   mobile mesmo em rede ruim e fica no cache offline do PWA).
+   font-display: swap garante texto visível imediato (fallback).
+   ───────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "PT Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ptsans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PT Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ptsans-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PT Sans";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ptsans-400i.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PT Sans";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ptsans-700i.woff2") format("woff2");
+}
+
+/* ─────────────────────────────────────────────────────────────
    TEMA — CSS variables
    As mesmas classes (ex.: `bg-ink-950`, `text-slate-300`) se
    adaptam ao tema automaticamente.

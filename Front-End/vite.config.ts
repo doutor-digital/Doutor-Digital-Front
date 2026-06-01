@@ -17,7 +17,7 @@ export default defineConfig({
         "apple-touch-icon.png",
       ],
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
         navigateFallbackDenylist: [
           /^\/api\//,
           /^\/webhooks\//,

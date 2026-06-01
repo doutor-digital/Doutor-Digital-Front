@@ -114,6 +114,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          "PT Sans",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
