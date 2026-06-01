@@ -10,10 +10,11 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: [
         "favicon.svg",
-        "icon-192.svg",
-        "icon-512.svg",
-        "icon-maskable.svg",
-        "apple-touch-icon.svg",
+        "logo-dd.png",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-maskable-512.png",
+        "apple-touch-icon.png",
       ],
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
@@ -44,22 +45,23 @@ export default defineConfig({
         lang: "pt-BR",
         categories: ["business", "productivity"],
         icons: [
+          // PNG é obrigatório pro Android Chrome oferecer a instalação (SVG não conta).
           {
-            src: "/icon-192.svg",
+            src: "/icon-192.png",
             sizes: "192x192",
-            type: "image/svg+xml",
+            type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-512.svg",
+            src: "/icon-512.png",
             sizes: "512x512",
-            type: "image/svg+xml",
+            type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-maskable.svg",
+            src: "/icon-maskable-512.png",
             sizes: "512x512",
-            type: "image/svg+xml",
+            type: "image/png",
             purpose: "maskable",
           },
         ],
