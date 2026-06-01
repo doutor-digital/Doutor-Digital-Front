@@ -19,6 +19,7 @@ import {
   X,
   Loader2,
   RefreshCw,
+  Settings,
 } from "@/components/icons";
 
 const DEFAULT_PHOTO =
@@ -56,6 +57,13 @@ export default function UnitsPage() {
     pagesFetched: number;
     durationMs: number;
   } | null>(null);
+
+  // Modal "Configurar Kommo" (subdomínio + account_id + access token)
+  const [configTarget, setConfigTarget] = useState<Unit | null>(null);
+  const [cfgSubdomain, setCfgSubdomain] = useState("");
+  const [cfgAccountId, setCfgAccountId] = useState("");
+  const [cfgToken, setCfgToken] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const flash = useCallback((b: Banner, ttl = 4000) => {
     setBanner(b);
@@ -188,6 +196,51 @@ export default function UnitsPage() {
       flash({ type: "error", message: apiMessage(error, "Erro ao sincronizar com a Kommo.") });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const openConfig = (unit: Unit) => {
+    setConfigTarget(unit);
+    setCfgSubdomain(unit.kommoSubdomain ?? "");
+    setCfgAccountId(unit.kommoAccountId ?? "");
+    setCfgToken(""); // nunca pré-preenche o token (o back não devolve)
+  };
+
+  const closeConfig = () => {
+    if (savingConfig) return;
+    setConfigTarget(null);
+    setCfgSubdomain("");
+    setCfgAccountId("");
+    setCfgToken("");
+  };
+
+  const saveConfig = async () => {
+    if (!configTarget) return;
+    // Normaliza "minhaclinica.kommo.com" → "minhaclinica" (o back espera só o subdomínio).
+    const subdomain = cfgSubdomain
+      .trim()
+      .replace(/^https?:\/\//i, "")
+      .replace(/\.kommo\.com.*$/i, "")
+      .replace(/\/.*$/, "");
+    if (!subdomain) {
+      flash({ type: "error", message: "Informe o subdomínio da Kommo (ex.: minhaclinica)." });
+      return;
+    }
+    setSavingConfig(true);
+    try {
+      // Só envia o token se o usuário digitou algo — assim não apaga o já salvo.
+      const updated = await unitsService.update(configTarget.id, {
+        kommoSubdomain: subdomain,
+        kommoAccountId: cfgAccountId.trim() || undefined,
+        ...(cfgToken.trim() ? { kommoAccessToken: cfgToken.trim() } : {}),
+      });
+      setUnits((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      flash({ type: "success", message: "Integração Kommo configurada." });
+      closeConfig();
+    } catch (error) {
+      flash({ type: "error", message: apiMessage(error, "Erro ao salvar a configuração da Kommo.") });
+    } finally {
+      setSavingConfig(false);
     }
   };
 
@@ -364,6 +417,13 @@ export default function UnitsPage() {
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <button
+                        onClick={() => openConfig(unit)}
+                        title="Configurar integração Kommo (subdomínio + token)"
+                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-300"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => openSync(unit)}
                         title="Sincronizar leads da Kommo"
                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-300"
@@ -416,6 +476,24 @@ export default function UnitsPage() {
                       {leadsOf(unit)}
                     </span>
                   </div>
+
+                  <button
+                    onClick={() => openConfig(unit)}
+                    className="flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
+                  >
+                    <span className="flex items-center gap-1 text-xs text-slate-400">
+                      <Settings className="h-3.5 w-3.5" /> Integração Kommo
+                    </span>
+                    {unit.kommoSubdomain && unit.hasKommoToken ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <Check className="h-3.5 w-3.5" /> Conectada
+                      </span>
+                    ) : (
+                      <span className="text-xs font-medium text-amber-300">
+                        {unit.kommoSubdomain ? "Sem token" : "Configurar"}
+                      </span>
+                    )}
+                  </button>
 
                   <div className="space-y-1">
                     <span className="flex items-center gap-1 text-xs text-slate-400">
@@ -498,6 +576,114 @@ export default function UnitsPage() {
               >
                 {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {deleting ? "Removendo…" : "Remover"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Configurar Kommo modal */}
+      {configTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={closeConfig}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f1117] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  Configurar Kommo
+                </h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Conecte a unidade{" "}
+                  <span className="font-medium text-white">{configTarget.name}</span>{" "}
+                  à conta Kommo. O subdomínio e o token são necessários para
+                  ler pipelines e custom fields no dashboard.
+                </p>
+              </div>
+              <button
+                onClick={closeConfig}
+                disabled={savingConfig}
+                className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className={labelClass}>Subdomínio da Kommo *</label>
+                <input
+                  className={inputClass}
+                  value={cfgSubdomain}
+                  onChange={(e) => setCfgSubdomain(e.target.value)}
+                  placeholder="minhaclinica"
+                />
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  A parte antes de <code>.kommo.com</code> (ex.:{" "}
+                  <code>minhaclinica</code> de <code>minhaclinica.kommo.com</code>).
+                  Pode colar a URL inteira que a gente extrai o subdomínio.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>account_id (opcional)</label>
+                <input
+                  className={inputClass}
+                  value={cfgAccountId}
+                  onChange={(e) => setCfgAccountId(e.target.value)}
+                  placeholder="Ex.: 31415926"
+                />
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Ajuda a validar a origem dos webhooks. Deixe vazio se não souber.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Access token de longa duração
+                  {!configTarget.hasKommoToken && " *"}
+                </label>
+                {configTarget.hasKommoToken && (
+                  <div className="mb-2 flex items-start gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-3 text-xs text-emerald-300">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Já existe um token salvo. Deixe vazio para mantê-lo, ou
+                      cole um novo para substituir.
+                    </span>
+                  </div>
+                )}
+                <textarea
+                  className={`${inputClass} h-24 resize-none font-mono text-xs`}
+                  value={cfgToken}
+                  onChange={(e) => setCfgToken(e.target.value)}
+                  placeholder="eyJ0eXAiOi..."
+                />
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Pegue em <strong>Kommo → Perfil → Integrações → API</strong>{" "}
+                  → "Criar token de longa duração". É salvo criptografado por unidade.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={closeConfig}
+                disabled={savingConfig}
+                className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveConfig}
+                disabled={savingConfig}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 hover:bg-brand-400 disabled:opacity-50"
+              >
+                {savingConfig && <Loader2 className="h-4 w-4 animate-spin" />}
+                {savingConfig ? "Salvando…" : "Salvar"}
               </button>
             </div>
           </div>
@@ -594,8 +780,9 @@ export default function UnitsPage() {
                   {!syncTarget.kommoSubdomain && (
                     <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-xs text-amber-300">
                       ⚠️ Esta unidade não tem <code>KommoSubdomain</code>{" "}
-                      configurado. Edite a unidade e preencha (ex.:{" "}
-                      <code>minhaclinica.kommo.com</code>) antes de sincronizar.
+                      configurado. Use o botão <strong>⚙ Configurar Kommo</strong>{" "}
+                      no card da unidade (ex.: <code>minhaclinica.kommo.com</code>)
+                      antes de sincronizar.
                     </div>
                   )}
                 </div>

@@ -209,7 +209,11 @@ export interface CreateUnitInput {
 }
 
 export type UpdateUnitInput = Partial<
-  Omit<CreateUnitInput, "slug"> & { isActive: boolean }
+  Omit<CreateUnitInput, "slug"> & {
+    isActive: boolean;
+    /** Token de longa duração da API Kommo. String vazia ("") limpa o token salvo. */
+    kommoAccessToken: string;
+  }
 >;
 
 export interface LiveMetrics {
