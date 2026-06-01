@@ -75,11 +75,8 @@ export default function UnitSelectPage() {
       <div className="relative mx-auto max-w-[1200px]">
         {/* Topo: marca + sair */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo-mark.png" alt="Doutor Digital Dash" className="h-8 w-auto object-contain" />
-            <span className="text-[15px] font-semibold tracking-tight text-white/90">
-              Doutor Digital
-            </span>
+          <div className="flex items-center">
+            <img src="/logo-official.png" alt="Doutor Digital" className="h-9 w-9 object-contain" />
           </div>
           <button
             onClick={logout}

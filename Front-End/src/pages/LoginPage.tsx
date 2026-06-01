@@ -92,16 +92,13 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
 
         <div className="relative w-full max-w-md animate-fade-in">
-          <div className="mb-6 flex flex-col items-center">
+          <div className="mb-7 flex justify-center">
             <img
               src="/logo-official.png"
               alt="Doutor Digital"
-              className="w-[120px] select-none drop-shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+              className="w-[130px] select-none drop-shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
               draggable={false}
             />
-            <span className="mt-3 text-lg font-bold tracking-tight text-white/90">
-              Doutor Digital
-            </span>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 shadow-2xl backdrop-blur-xl">

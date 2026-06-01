@@ -91,9 +91,6 @@ export function MobileTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             alt="Doutor Digital"
             className="h-8 w-8 object-contain"
           />
-          <span className="text-[15px] font-semibold tracking-tight text-slate-50">
-            Doutor Digital
-          </span>
         </div>
 
         <div className="flex-1" />
