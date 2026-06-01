@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Cog, Loader2 } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
+import { kpiKey } from "@/hooks/useKpiOverrides";
+import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
+import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { assignmentsService } from "@/services/assignments";
@@ -300,6 +303,21 @@ export default function DashboardPage() {
 
   const ov = overview.data;
 
+  // Negócios (leads) para o board de funil estilo CRM — agrupados por etapa.
+  const leadsBoard = useQuery({
+    queryKey: ["dash-amo", "leads-board", tenantId, unitId, range.from, range.to, sourceFilter, stageFilter.size],
+    queryFn: () =>
+      webhooksService.listLeads({
+        clinicId: unitId ?? tenantId ?? undefined,
+        startDate: range.from,
+        endDate: range.to,
+        source: sourceFilter || undefined,
+        pageSize: 500,
+      }),
+    enabled: tenantId != null,
+    staleTime: 60_000,
+  });
+
   const hasActiveFilters =
     sourceFilter !== "" ||
     attendantFilter !== "" ||
@@ -399,6 +417,51 @@ export default function DashboardPage() {
     () => Math.max(1, ...etapasComNome.map((e) => e.value)),
     [etapasComNome],
   );
+
+  // ─── Board de funil estilo CRM (colunas por etapa + cards de negócio) ──
+  const kanbanColumns = useMemo<KanbanColumn[]>(() => {
+    const leads = leadsBoard.data ?? [];
+
+    // Tom da bolinha por recência da última atividade (proxy de "tarefa").
+    const toneOf = (lead: (typeof leads)[number]): KanbanTone => {
+      const ts = (lead.updatedAt as string) || (lead.createdAt as string);
+      if (!ts) return "red";
+      const days = (Date.now() - new Date(ts).getTime()) / 86_400_000;
+      if (days <= 2) return "green";
+      if (days <= 7) return "yellow";
+      return "red";
+    };
+
+    // Inicia as colunas na ordem do pipeline da Kommo (mantém etapas vazias, ex.: Fechamento).
+    const groups = new Map<string, { color?: string | null; cards: KanbanColumn["cards"] }>();
+    for (const p of pipelines.data ?? []) {
+      for (const s of p.statuses ?? []) {
+        if (!groups.has(s.name)) groups.set(s.name, { color: s.color, cards: [] });
+      }
+    }
+
+    for (const lead of leads) {
+      const raw = lead.currentStage ?? "";
+      if (stageFilter.size > 0 && !stageFilter.has(raw)) continue;
+      const label = stageLabel(raw);
+      if (!groups.has(label)) groups.set(label, { color: null, cards: [] });
+      groups.get(label)!.cards.push({
+        id: lead.id,
+        name: lead.name || `Lead #${lead.id}`,
+        subtitle: (lead.source as string) || lead.attendantName || "—",
+        meta: lead.attendantName && lead.source ? lead.attendantName : undefined,
+        tone: toneOf(lead),
+      });
+    }
+
+    return Array.from(groups.entries()).map(([title, g], i) => ({
+      id: `${title}-${i}`,
+      title,
+      color: g.color,
+      cards: g.cards,
+    }));
+  }, [leadsBoard.data, pipelines.data, stageNameMap, stageFilter]);
+
 
   // ─── Derivados da nova estrutura (funnel + origens + semanas) ──────
   const funnelLeads = ov?.funnel_leads ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
@@ -725,9 +788,13 @@ export default function DashboardPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Total de Leads
                 </p>
-                <p className="mt-4 text-right text-6xl font-bold leading-none text-emerald-400">
-                  {nf(funnelLeads.total)}
-                </p>
+                <EditableKpiValue
+                  okey={kpiKey(unitId, "total_leads")}
+                  live={funnelLeads.total}
+                  valueClass="text-6xl text-emerald-400"
+                  align="right"
+                  format={nf}
+                />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 <div className="mt-5 h-px w-full bg-white/10" />
                 <ul className="mt-4 space-y-3">
@@ -755,7 +822,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-violet-400">{nf(funnelCadastro.total)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={funnelCadastro.total} valueClass="text-violet-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -763,7 +830,7 @@ export default function DashboardPage() {
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-amber-400">{nf(funnelResgate.total)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={funnelResgate.total} valueClass="text-amber-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -795,7 +862,7 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-sky-400">{nf(funnelLeads.agendados)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={funnelLeads.agendados} valueClass="text-sky-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -803,7 +870,7 @@ export default function DashboardPage() {
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-red-400">{nf(funnelLeads.no_show)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={funnelLeads.no_show} valueClass="text-red-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -813,61 +880,45 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-emerald-400">{nf(funnelLeads.tratamentos)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={funnelLeads.tratamentos} valueClass="text-emerald-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-sky-400">{nf(funnelLeads.consultas)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={funnelLeads.consultas} valueClass="text-sky-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Interações</p>
-                <p className="mt-4 text-5xl font-bold leading-none text-cyan-300">{nf(funnelLeads.interacoes)}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={funnelLeads.interacoes} valueClass="text-cyan-300" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
             </div>
 
-            {/* ─── Funil de conversão (horizontal, 1 card só) ────────── */}
-            <DarkCard className="mt-4" accent="#a78bfa">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Funil de conversão
+            {/* ─── Funil de vendas estilo CRM (board Kanban por etapa) ── */}
+            <div className="mt-4 rounded-2xl bg-white p-5 shadow-lg ring-1 ring-black/5">
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800">Funil de vendas</h2>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-500">
+                  {rangeLabel}
+                </span>
+              </div>
+              {leadsBoard.isLoading && !leadsBoard.data ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                </div>
+              ) : (
+                <CrmKanban columns={kanbanColumns} />
+              )}
+              {unitId == null && (
+                <p className="mt-3 text-[11px] text-slate-400">
+                  Selecione uma unidade para que as etapas saiam com os nomes do pipeline da Kommo.
                 </p>
-                <span className="text-[11px] text-white/40">{rangeLabel}</span>
-              </div>
-              <div className="mt-5 space-y-3">
-                {[
-                  { lbl: "Leads",       val: funnelLeads.total,       color: "#34d399", base: funnelLeads.total },
-                  { lbl: "Interações",  val: funnelLeads.interacoes,  color: "#22d3ee", base: funnelLeads.total },
-                  { lbl: "Agendados",   val: funnelLeads.agendados,   color: "#60a5fa", base: funnelLeads.interacoes || funnelLeads.total },
-                  { lbl: "Consultas",   val: funnelLeads.consultas,   color: "#a78bfa", base: funnelLeads.agendados },
-                  { lbl: "Tratamentos", val: funnelLeads.tratamentos, color: "#fbbf24", base: funnelLeads.consultas },
-                ].map((s, i) => {
-                  const ratio = funnelLeads.total > 0 ? s.val / funnelLeads.total : 0;
-                  return (
-                    <div key={s.lbl} className="flex items-center gap-3">
-                      <span className="w-24 shrink-0 text-[12px] text-white/80">{s.lbl}</span>
-                      <div className="relative h-7 flex-1 overflow-hidden rounded-md bg-white/5">
-                        <div
-                          className="h-full rounded-md transition-all"
-                          style={{ width: `${Math.max(2, ratio * 100)}%`, background: s.color, opacity: 0.85 }}
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-semibold text-white">
-                          {nf(s.val)}
-                        </span>
-                      </div>
-                      <span className="w-20 shrink-0 text-right text-[11px] text-white/50 tabular-nums">
-                        {i === 0 ? "100%" : pctStr(s.val, s.base)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </DarkCard>
+              )}
+            </div>
 
             {/* ─── Tendência: barras por dia da semana ────────────────── */}
             <DarkCard className="mt-4" accent="#34d399">
