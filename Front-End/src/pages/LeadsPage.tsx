@@ -182,6 +182,42 @@ export default function LeadsPage() {
           </div>
         ) : pageItems.length ? (
           <>
+            {/* Mobile: lista de cards (a tabela estoura em telas pequenas) */}
+            <ul className="divide-y divide-white/[0.05] md:hidden">
+              {pageItems.map((l) => (
+                <li key={l.id}>
+                  <button
+                    onClick={() => navigate(`/leads/${l.id}/revisar`)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-white/[0.04]"
+                  >
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.04] text-[13px] font-semibold text-slate-100 ring-1 ring-inset ring-white/[0.08]">
+                      {(l.name ?? "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-[14px] font-semibold text-slate-100">
+                          {l.name ?? "Sem nome"}
+                        </span>
+                        <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
+                          {formatDate(l.createdAt)}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 truncate text-[12px] tabular-nums text-slate-400">
+                        {l.phone ?? "—"}
+                        {l.source ? ` · ${l.source}` : ""}
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <StateBadge state={l.conversationState ?? undefined} />
+                        <StageBadge stage={l.currentStage ?? undefined} />
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: tabela completa */}
+            <div className="hidden md:block">
             <Table>
               <THead>
                 <Tr>
@@ -238,6 +274,7 @@ export default function LeadsPage() {
                 ))}
               </TBody>
             </Table>
+            </div>
 
             <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.05]">
               <span className="text-[11px] text-slate-500 tabular-nums">
