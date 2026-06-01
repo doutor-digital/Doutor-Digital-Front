@@ -51,7 +51,13 @@
     <meta name="format-detection" content="telephone=no" />
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Boot splash: fundo branco instantâneo (antes do React montar) — evita flash escuro -->
+      <div style="position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:#ffffff;">
+        <img src="/logo-dd.png" alt="Doutor Digital Dash" style="width:280px;max-width:82vw;opacity:0;animation:bootLogo .6s ease-out .05s forwards;" />
+      </div>
+      <style>@keyframes bootLogo{to{opacity:1}}</style>
+    </div>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

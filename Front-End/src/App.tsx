@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
+import { SplashScreen } from "@/components/SplashScreen";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { isAdminLevel, isReadOnly } from "@/lib/roles";
 
@@ -140,7 +141,9 @@ function RequireWritable({ children }: { children: ReactElement }) {
 
 export default function App() {
   return (
-    <Suspense fallback={<RouteLoader />}>
+    <>
+      <SplashScreen />
+      <Suspense fallback={<RouteLoader />}>
       <Routes>
 
         {/* Pública */}
@@ -253,6 +256,7 @@ export default function App() {
         </Route>
 
       </Routes>
-    </Suspense>
+      </Suspense>
+    </>
   );
 }

@@ -128,11 +128,33 @@ export default {
         shimmer: "shimmer 1.6s linear infinite",
         "slide-in-left": "slideInLeft .22s cubic-bezier(0.32, 0.72, 0, 1) both",
         "slide-in-bottom": "slideInBottom .22s cubic-bezier(0.32, 0.72, 0, 1) both",
+        // Splash / abertura do app
+        "splash-logo": "splashLogo .9s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "splash-word": "splashWord .7s ease-out .5s both",
+        "splash-bar": "splashBar 1.7s ease-in-out .55s both",
+        float: "floaty 3.2s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        splashLogo: {
+          "0%": { opacity: "0", transform: "scale(.82) translateY(10px)" },
+          "60%": { opacity: "1" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        splashWord: {
+          "0%": { opacity: "0", transform: "translateY(10px)", letterSpacing: "0.4em" },
+          "100%": { opacity: "1", transform: "translateY(0)", letterSpacing: "0.15em" },
+        },
+        splashBar: {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
+        floaty: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-400px 0" },

@@ -912,26 +912,26 @@ export default function DashboardPage() {
             </div>
 
             {/* ─── Funil de vendas estilo CRM (board Kanban por etapa) ── */}
-            <div className="mt-4 rounded-2xl bg-white p-5 shadow-lg ring-1 ring-black/5">
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-800">Funil de vendas</h2>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-500">
-                  {rangeLabel}
-                </span>
+            <DarkCard className="mt-4" accent="#34d399">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Funil de vendas
+                </h2>
+                <span className="text-[11px] text-white/40">{rangeLabel}</span>
               </div>
               {leadsBoard.isLoading && !leadsBoard.data ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                  <Loader2 className="h-6 w-6 animate-spin text-white/40" />
                 </div>
               ) : (
                 <CrmKanban columns={kanbanColumns} />
               )}
               {unitId == null && (
-                <p className="mt-3 text-[11px] text-slate-400">
+                <p className="mt-3 text-[11px] text-white/40">
                   Selecione uma unidade para que as etapas saiam com os nomes do pipeline da Kommo.
                 </p>
               )}
-            </div>
+            </DarkCard>
 
             {/* ─── Tendência: barras por dia da semana ────────────────── */}
             <DarkCard className="mt-4" accent="#34d399">

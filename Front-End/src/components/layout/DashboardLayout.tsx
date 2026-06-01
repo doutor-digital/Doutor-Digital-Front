@@ -13,6 +13,7 @@ import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal";
 import { useTrackRecentNav } from "@/hooks/useRecentNav";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
 import { LocationConsentPrompt } from "./LocationConsentPrompt";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import {
   hasUnseenRelease,
   WhatsNewModal,
@@ -81,10 +82,16 @@ export default function DashboardLayout() {
       {/* Consentimento de localização (LGPD) — papéis operacionais */}
       <LocationConsentPrompt />
 
-      {/* Lazy: overlays não-críticos (não bloqueiam a primeira renderização) */}
-      <Suspense fallback={null}>
-        <FeedbackWidget mailto="doutordigitalconsultoria@gmail.com" />
-      </Suspense>
+      {/* Convite para instalar o app — só mobile */}
+      <InstallPrompt />
+
+      {/* Lazy: overlays não-críticos (não bloqueiam a primeira renderização).
+          Feedback fica escondido no celular (lg+) pra deixar o mobile mais limpo. */}
+      <div className="hidden lg:block">
+        <Suspense fallback={null}>
+          <FeedbackWidget mailto="doutordigitalconsultoria@gmail.com" />
+        </Suspense>
+      </div>
     </div>
   );
 }
