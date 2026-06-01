@@ -4,29 +4,29 @@ export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "dd:theme";
 
+// O produto é dark-only: sempre forçamos o tema escuro, ignorando a preferência
+// do sistema/armazenada (evita fundos brancos no mobile em modo claro).
 function readInitial(): Theme {
-  if (typeof window === "undefined") return "light";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "dark";
 }
 
-function apply(theme: Theme) {
+function apply(_theme?: Theme) {
   const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
-  root.dataset.theme = theme;
+  root.classList.add("dark");
+  root.dataset.theme = "dark";
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(readInitial);
+  const [theme] = useState<Theme>("dark");
 
   useEffect(() => {
-    apply(theme);
-    try { window.localStorage.setItem(STORAGE_KEY, theme); } catch { /* ignore */ }
-  }, [theme]);
+    apply();
+    try { window.localStorage.setItem(STORAGE_KEY, "dark"); } catch { /* ignore */ }
+  }, []);
 
-  const setTheme = useCallback((t: Theme) => setThemeState(t), []);
-  const toggle = useCallback(() => setThemeState((t) => (t === "dark" ? "light" : "dark")), []);
+  // Mantém a API, mas o tema é sempre dark.
+  const setTheme = useCallback((_t: Theme) => apply(), []);
+  const toggle = useCallback(() => apply(), []);
 
   return { theme, setTheme, toggle };
 }

@@ -87,13 +87,10 @@ export function MobileTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
           className="flex items-center gap-2 select-none cursor-pointer"
         >
           <img
-            src="/logo-mark.png"
+            src="/logo-dd.png"
             alt="Doutor Digital Dash"
-            className="h-7 w-auto object-contain"
+            className="h-6 w-auto max-w-[150px] object-contain"
           />
-          <span className="text-[15px] font-semibold tracking-tight text-slate-50">
-            Doutor Digital
-          </span>
         </div>
 
         <div className="flex-1" />
