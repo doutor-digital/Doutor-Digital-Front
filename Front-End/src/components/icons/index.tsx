@@ -8,6 +8,7 @@
  *   import { Foo } from "@/components/icons"
  */
 import type { ComponentType, SVGProps } from "react";
+import { cn } from "@/lib/utils";
 import {
   AcademicCapIcon,
   AdjustmentsHorizontalIcon,
@@ -307,8 +308,23 @@ export const Signal = SignalIcon;
 export const SlidersHorizontal = AdjustmentsHorizontalIcon;
 export const Smartphone = DevicePhoneMobileIcon;
 export const Smile = FaceSmileIcon;
-export const Sparkles = SparklesIcon;
-export const Star = StarIcon;
+// Ícone de IA custom — substitui a "estrela/sparkle" em todo o app de uma vez.
+// Mantém compatibilidade com o uso de LucideIcon (recebe className p/ tamanho).
+function AiGlyph({ className }: SVGProps<SVGSVGElement>) {
+  return (
+    <img
+      src="/ai-icon.png"
+      alt=""
+      aria-hidden
+      className={cn(
+        "inline-block h-[1em] w-[1em] shrink-0 object-contain align-[-0.125em]",
+        className,
+      )}
+    />
+  );
+}
+export const Sparkles = AiGlyph as unknown as LucideIcon;
+export const Star = AiGlyph as unknown as LucideIcon;
 export const StickyNote = BookmarkIcon;
 export const Sun = SunIcon;
 export const Sunrise = SunIcon;
