@@ -553,9 +553,9 @@ export default function DashboardPage() {
         </h1>
 
         {/* ─── FILTROS ─────────────────────────────────────────────────── */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          {/* Pílulas centralizadas */}
-          <div className="mx-auto flex flex-wrap items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur">
+        <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+          {/* Pílulas — rolam na horizontal no mobile (sem quebrar linha) */}
+          <div className="mx-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {RANGES.map((r) => (
               <button
                 key={r.key}
