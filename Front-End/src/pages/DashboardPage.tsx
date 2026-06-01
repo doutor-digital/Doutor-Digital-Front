@@ -432,33 +432,45 @@ export default function DashboardPage() {
       return "red";
     };
 
+    // Valor do negócio (R$): tratamento fechado > orçamento > consulta.
+    const valueOf = (lead: (typeof leads)[number]): number | null => {
+      const v =
+        (lead.treatmentPlanValue as number | undefined) ??
+        (lead.treatmentBudget as number | undefined) ??
+        (lead.consultationValue as number | undefined);
+      return typeof v === "number" && v > 0 ? v : null;
+    };
+
     // Inicia as colunas na ordem do pipeline da Kommo (mantém etapas vazias, ex.: Fechamento).
-    const groups = new Map<string, { color?: string | null; cards: KanbanColumn["cards"] }>();
+    const groups = new Map<string, KanbanColumn["cards"]>();
     for (const p of pipelines.data ?? []) {
       for (const s of p.statuses ?? []) {
-        if (!groups.has(s.name)) groups.set(s.name, { color: s.color, cards: [] });
+        if (!groups.has(s.name)) groups.set(s.name, []);
       }
     }
 
     for (const lead of leads) {
       const raw = lead.currentStage ?? "";
       if (stageFilter.size > 0 && !stageFilter.has(raw)) continue;
-      const label = stageLabel(raw);
-      if (!groups.has(label)) groups.set(label, { color: null, cards: [] });
-      groups.get(label)!.cards.push({
+      // Alinha o lead à coluna do pipeline pelo status_id da Kommo (currentStageId);
+      // se não houver, cai pro nome amigável do estágio canônico.
+      const stageId = lead.currentStageId as number | string | null | undefined;
+      const byId = stageId != null ? stageNameMap.get(String(stageId)) : undefined;
+      const label = byId ?? stageLabel(raw);
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push({
         id: lead.id,
         name: lead.name || `Lead #${lead.id}`,
         subtitle: (lead.source as string) || lead.attendantName || "—",
-        meta: lead.attendantName && lead.source ? lead.attendantName : undefined,
+        value: valueOf(lead),
         tone: toneOf(lead),
       });
     }
 
-    return Array.from(groups.entries()).map(([title, g], i) => ({
+    return Array.from(groups.entries()).map(([title, cards], i) => ({
       id: `${title}-${i}`,
       title,
-      color: g.color,
-      cards: g.cards,
+      cards,
     }));
   }, [leadsBoard.data, pipelines.data, stageNameMap, stageFilter]);
 
