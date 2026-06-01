@@ -153,8 +153,8 @@ function DarkCard({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border-2 bg-[#0f1f3a]/80 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
-      style={{ borderColor: accent ? `${accent}99` : "rgba(255,255,255,0.14)" }}
+      className={`relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
+      style={accent ? { borderTop: `4px solid ${accent}` } : undefined}
     >
       {children}
     </div>
@@ -795,68 +795,93 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* ─── Total de Leads — faixa AZUL de largura total ─── */}
-            <DarkCard className="mt-6" accent="#3b82f6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-8">
-                <div className="lg:w-64 lg:shrink-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                    Total de Leads
-                  </p>
-                  <EditableKpiValue
-                    okey={kpiKey(unitId, "total_leads")}
-                    live={funnelLeads.total}
-                    valueClass="text-6xl text-sky-400"
-                    format={nf}
-                  />
-                  <p className="mt-2 text-[11px] text-white/40">{rangeLabel}</p>
-                </div>
-
-                {/* Canais (origens) em barras horizontais, ocupando o resto da largura */}
-                <div className="flex-1 lg:border-l lg:border-white/10 lg:pl-8">
-                  <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {channels.length === 0 && <p className="text-xs text-white/40">Sem dados de origem</p>}
-                    {channels.map((c) => {
-                      const ratio = c.value / channelMax;
-                      return (
-                        <div key={c.name}>
-                          <div className="flex items-center justify-between text-[12px] text-white/80">
-                            <span className="flex items-center gap-2 truncate">
-                              <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: c.color }} />
-                              <span className="truncate">{c.name}</span>
-                            </span>
-                            <span className="font-semibold tabular-nums" style={{ color: c.color }}>{nf(c.value)}</span>
-                          </div>
-                          <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
-                            <div className="h-full rounded-full" style={{ width: `${Math.max(4, ratio * 100)}%`, background: c.color }} />
-                          </div>
+            {/* ─── Hero: grid assimétrica amoCRM (1 card por métrica) ─── */}
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
+              <DarkCard className="lg:row-span-2" accent="#34d399">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Total de Leads
+                </p>
+                <EditableKpiValue
+                  okey={kpiKey(unitId, "total_leads")}
+                  live={funnelLeads.total}
+                  valueClass="text-6xl text-emerald-400"
+                  align="right"
+                  format={nf}
+                />
+                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-5 h-px w-full bg-white/10" />
+                <ul className="mt-4 space-y-3">
+                  {channels.length === 0 && <li className="text-xs text-white/40">Sem dados</li>}
+                  {channels.map((c) => {
+                    const ratio = c.value / channelMax;
+                    return (
+                      <li key={c.name}>
+                        <div className="flex items-center justify-between text-[12px] text-white/80">
+                          <span className="flex items-center gap-2">
+                            <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} />
+                            <span className="truncate">{c.name}</span>
+                          </span>
+                          <span className="font-semibold tabular-nums" style={{ color: c.color }}>{nf(c.value)}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </DarkCard>
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
+                          <div className="h-full rounded-full" style={{ width: `${Math.max(4, ratio * 100)}%`, background: c.color }} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </DarkCard>
 
-            {/* ─── Métricas (1 card por número) ─── */}
-            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
                 <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={funnelCadastro.total} valueClass="text-violet-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
+
+              {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={funnelResgate.total} valueClass="text-amber-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
+
+              {/* Col 4 (tall): Origens de Leads — ConcentricDonut */}
+              <DarkCard className="lg:row-span-2" accent="#22d3ee">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Origens de Leads
+                </p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <ul className="flex-1 space-y-1.5 text-[11px]">
+                    {channels.length === 0 && <li className="text-white/40">Sem dados</li>}
+                    {channels.map((c) => (
+                      <li key={c.name} className="flex items-center gap-2 truncate" style={{ color: c.color }}>
+                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span className="truncate uppercase tracking-wide">{c.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="shrink-0">
+                    <ConcentricDonut
+                      data={channels.length ? channels : [{ name: "—", value: 1, color: "#1e293b" }]}
+                      size={200}
+                    />
+                  </div>
+                </div>
+              </DarkCard>
+
+              {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={funnelLeads.agendados} valueClass="text-sky-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
+
+              {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
                 <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={funnelLeads.no_show} valueClass="text-red-400" format={nf} />
@@ -864,30 +889,6 @@ export default function DashboardPage() {
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
             </div>
-
-            {/* ─── Origens de Leads — ConcentricDonut (largura total) ─── */}
-            <DarkCard className="mt-4" accent="#22d3ee">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                Origens de Leads
-              </p>
-              <div className="mt-4 flex items-center justify-between gap-6">
-                <ul className="flex-1 grid grid-cols-1 gap-x-6 gap-y-1.5 text-[11px] sm:grid-cols-2 lg:grid-cols-3">
-                  {channels.length === 0 && <li className="text-white/40">Sem dados</li>}
-                  {channels.map((c) => (
-                    <li key={c.name} className="flex items-center gap-2 truncate" style={{ color: c.color }}>
-                      <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                      <span className="truncate uppercase tracking-wide">{c.name}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="shrink-0">
-                  <ConcentricDonut
-                    data={channels.length ? channels : [{ name: "—", value: 1, color: "#1e293b" }]}
-                    size={180}
-                  />
-                </div>
-              </div>
-            </DarkCard>
 
             {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
