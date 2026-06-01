@@ -36,9 +36,9 @@ export function SplashScreen() {
 
       <div className="relative flex flex-col items-center px-8">
         <img
-          src="/logo-dd.png"
-          alt="Doutor Digital Dash"
-          className="w-[280px] max-w-[82vw] select-none animate-splash-logo"
+          src="/logo-official.png"
+          alt="Doutor Digital"
+          className="w-[170px] max-w-[55vw] select-none animate-splash-logo"
           draggable={false}
         />
 
