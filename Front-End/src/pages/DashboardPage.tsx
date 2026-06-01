@@ -432,9 +432,10 @@ export default function DashboardPage() {
       return "red";
     };
 
-    // Valor do negócio (R$): tratamento fechado > orçamento > consulta.
+    // Valor do negócio (R$): price da Kommo > tratamento fechado > orçamento > consulta.
     const valueOf = (lead: (typeof leads)[number]): number | null => {
       const v =
+        (lead.price as number | undefined) ??
         (lead.treatmentPlanValue as number | undefined) ??
         (lead.treatmentBudget as number | undefined) ??
         (lead.consultationValue as number | undefined);
