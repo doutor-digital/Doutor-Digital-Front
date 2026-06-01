@@ -836,7 +836,34 @@ function AdvancedView({
               <EmptyState title="Nenhum pagamento encontrado" />
             </div>
           ) : (
-            <table className="w-full text-[12.5px] min-w-[900px]">
+            <>
+            {/* Mobile: cards (a tabela de 9 colunas estoura no celular) */}
+            <ul className="divide-y divide-white/[0.05] md:hidden">
+              {payments.map((p) => (
+                <li key={p.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px] font-semibold text-slate-100">{p.leadName}</p>
+                      <p className="truncate text-[11.5px] text-slate-500">{p.treatment}</p>
+                    </div>
+                    <span className="shrink-0 text-[14px] font-bold tabular-nums text-emerald-300">
+                      {formatCurrency(p.amount)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-slate-400">
+                    <MethodPill methodKey={p.paymentMethod as PaymentMethod} />
+                    <span className="tabular-nums">
+                      {p.installments}× {formatCurrency(p.installmentValue)}
+                    </span>
+                    <span className="tabular-nums">{formatDate(p.paidAt)}</span>
+                    {p.unitName && <span className="truncate">{p.unitName}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: tabela completa */}
+            <table className="hidden w-full min-w-[900px] text-[12.5px] md:table">
               <thead>
                 <tr className="border-b border-white/[0.05]">
                   <th className="text-left px-5 py-3 text-[10px] font-medium uppercase tracking-widest text-slate-500">Lead</th>
@@ -893,6 +920,7 @@ function AdvancedView({
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       </Panel>
