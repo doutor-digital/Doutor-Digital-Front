@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Cog,
   Contact as ContactIcon,
+  Copy,
   DollarSign,
   FileBarChart,
   Filter,
@@ -83,6 +84,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/leads", label: "Leads", icon: ListChecks, iconUrl: "/nav-icons/leads.png" },
       { to: "/contacts", label: "Contatos", icon: ContactIcon, iconUrl: "/nav-icons/contatos.png" },
+      { to: "/duplicates", label: "Duplicados", icon: Copy },
       { to: "/funnel", label: "Funil", icon: Workflow },
       { to: "/sources", label: "Origens", icon: Filter },
       { to: "/evolution", label: "Evolução", icon: LineChart },

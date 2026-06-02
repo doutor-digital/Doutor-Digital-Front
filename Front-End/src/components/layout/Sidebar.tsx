@@ -170,6 +170,7 @@ const navGroups: NavGroup[] = [
           { to: "/contacts/duplicates", label: "Duplicados", icon: Copy },
         ],
       },
+      { to: "/duplicates", label: "Duplicados (leads + contatos)", icon: Copy, badge: "Novo" },
       { to: "/attendants", label: "Atendentes", icon: Users2, iconUrl: "/nav-icons/atendentes.png" },
       {
         label: "Unidades",
