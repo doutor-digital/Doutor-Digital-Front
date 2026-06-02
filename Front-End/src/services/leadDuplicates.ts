@@ -52,7 +52,11 @@ export const leadDuplicatesService = {
   },
 
   // ─── Dedup DIRETO na Kommo (lê a API ao vivo, marca a tag DUPLICADO lá) ───
-  async startKommoDedup(params: { unitId: number; mode?: string }): Promise<StartKommoDedupResponse> {
+  async startKommoDedup(params: {
+    unitId: number;
+    mode?: string;
+    apply?: boolean;
+  }): Promise<StartKommoDedupResponse> {
     const { data } = await api.post<StartKommoDedupResponse>("/leads/kommo-dedup/jobs", params);
     return data;
   },

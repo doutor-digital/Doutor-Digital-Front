@@ -64,6 +64,7 @@ export interface KommoDedupJob {
   unitId: number;
   tenantId: number | null;
   mode: string;
+  apply: boolean;
   leadsFetched: number;
   groupsFound: number;
   leadsToTag: number;

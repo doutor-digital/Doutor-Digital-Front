@@ -456,7 +456,8 @@ function LeadsDuplicatesTab() {
 
 function KommoDedupCard({ unitId, mode }: { unitId: number | null; mode: "phone" | "name" }) {
   const [jobId, setJobId] = useState<string | null>(null);
-  const [last, setLast] = useState<KommoDedupJob | null>(null);
+  const [findResult, setFindResult] = useState<KommoDedupJob | null>(null);
+  const [applyResult, setApplyResult] = useState<KommoDedupJob | null>(null);
 
   const jobQ = useQuery({
     queryKey: ["kommo-dedup-job", jobId],
@@ -472,19 +473,36 @@ function KommoDedupCard({ unitId, mode }: { unitId: number | null; mode: "phone"
   useEffect(() => {
     const j = jobQ.data;
     if (!j || !jobId || j.id !== jobId || !isTerminal(j.status)) return;
-    setLast(j);
     setJobId(null);
-    if (j.status === "Completed")
-      toast.success(`Kommo: ${formatNumber(j.confirmed)} duplicado(s) marcado(s) como DUPLICADO.`);
-    else if (j.status === "Failed") toast.error(j.error ?? "Falhou ao deduplicar na Kommo.");
+
+    if (j.status === "Failed") {
+      toast.error(j.error ?? "Falhou ao deduplicar na Kommo.");
+      return;
+    }
+    if (j.apply) {
+      setApplyResult(j);
+      toast.success(`Kommo: ${formatNumber(j.confirmed)} lead(s) marcado(s) como DUPLICADO (vermelho).`);
+    } else {
+      setFindResult(j);
+      if (j.leadsToTag === 0) toast.info("Nenhum lead duplicado encontrado na Kommo.");
+      else toast.success(`Encontrados ${formatNumber(j.leadsToTag)} duplicado(s). Agora é só aplicar a tag.`);
+    }
   }, [jobQ.data, jobId]);
 
   const startMut = useMutation({
-    mutationFn: () => leadDuplicatesService.startKommoDedup({ unitId: unitId!, mode }),
-    onSuccess: (d) => {
+    mutationFn: (apply: boolean) => leadDuplicatesService.startKommoDedup({ unitId: unitId!, mode, apply }),
+    onSuccess: (d, apply) => {
       setJobId(d.jobId);
-      setLast(null);
-      toast.success("Buscando na Kommo… pode levar alguns minutos. Pode deixar rodando.");
+      if (apply) setApplyResult(null);
+      else {
+        setFindResult(null);
+        setApplyResult(null);
+      }
+      toast.success(
+        apply
+          ? "Aplicando a tag na Kommo… pode deixar rodando."
+          : "Buscando na Kommo… pode levar alguns minutos. Pode deixar rodando.",
+      );
     },
     onError: (e: unknown) => {
       const err = e as { response?: { data?: { title?: string; message?: string } }; message?: string };
@@ -496,6 +514,8 @@ function KommoDedupCard({ unitId, mode }: { unitId: number | null; mode: "phone"
 
   const j = jobQ.data;
   const running = !!j && !isTerminal(j.status);
+  const isApplying = running && !!j?.apply;
+  const canApply = !!findResult && findResult.leadsToTag > 0 && !applyResult;
 
   return (
     <Card>
@@ -506,49 +526,63 @@ function KommoDedupCard({ unitId, mode }: { unitId: number | null; mode: "phone"
             <p className="text-[13px] font-semibold text-slate-100">Deduplicar direto na Kommo (ao vivo)</p>
             <p className="mt-1 text-[11.5px] text-slate-500">
               Lê os leads na própria Kommo (não depende do nosso banco), acha duplicados por{" "}
-              <b>{mode === "name" ? "nome" : "telefone"}</b>, mantém o mais avançado e marca os outros com a tag{" "}
-              <b>DUPLICADO</b> lá. Depois você filtra a tag na Kommo e apaga em massa.
+              <b>{mode === "name" ? "nome" : "telefone"}</b>, mantém o mais avançado. Primeiro <b>busca</b>; depois
+              você clica em <b>aplicar</b> pra marcar os outros com a tag <b>DUPLICADO</b> (vermelha) lá. Aí é só
+              filtrar a tag na Kommo e apagar em massa.
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => startMut.mutate()}
-            disabled={!unitId || running || startMut.isPending}
-          >
-            {running ? (
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Tag className="mr-2 h-4 w-4" />
-            )}
-            {running ? "Rodando…" : "Buscar e marcar na Kommo"}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => startMut.mutate(false)} disabled={!unitId || running || startMut.isPending}>
+            {running && !isApplying ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            {running && !isApplying ? "Buscando…" : "Buscar duplicados na Kommo"}
           </Button>
+
+          {canApply && (
+            <Button variant="danger" onClick={() => startMut.mutate(true)} disabled={running || startMut.isPending}>
+              {isApplying ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Tag className="mr-2 h-4 w-4" />}
+              {isApplying ? "Aplicando…" : `Aplicar tag DUPLICADO em ${formatNumber(findResult.leadsToTag)}`}
+            </Button>
+          )}
         </div>
 
         {!unitId && (
           <p className="text-[11.5px] text-amber-300">
-            Selecione uma unidade para usar a dedup direto na Kommo.
+            Selecione uma unidade (com token Kommo) para usar a dedup direto na Kommo.
           </p>
         )}
 
         {running && j && (
           <p className="text-[11.5px] text-slate-400">
-            {j.status === "Queued" ? (
-              "Na fila…"
-            ) : (
+            {j.status === "Queued"
+              ? "Na fila…"
+              : isApplying
+                ? `Aplicando tag… ${formatNumber(j.tagged)}/${formatNumber(j.leadsToTag)} marcados`
+                : `Lendo a Kommo… ${formatNumber(j.leadsFetched)} leads, ${formatNumber(j.groupsFound)} grupos`}
+          </p>
+        )}
+
+        {findResult && !applyResult && !running && (
+          <p className="text-[12px] text-slate-300">
+            {findResult.leadsToTag > 0 ? (
               <>
-                Lidos {formatNumber(j.leadsFetched)} leads · {formatNumber(j.groupsFound)} grupos · marcados{" "}
-                {formatNumber(j.tagged)}/{formatNumber(j.leadsToTag)}
+                Encontrados <b className="text-amber-200">{formatNumber(findResult.leadsToTag)}</b> duplicado(s) em{" "}
+                {formatNumber(findResult.groupsFound)} grupo(s) (de {formatNumber(findResult.leadsFetched)} leads
+                lidos). Clique em <b>Aplicar</b> pra marcar a tag.
               </>
+            ) : (
+              <>Nenhum duplicado encontrado na Kommo (lidos {formatNumber(findResult.leadsFetched)} leads).</>
             )}
           </p>
         )}
 
-        {last && !running && (
+        {applyResult && !running && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <ResultStat label="Leads lidos" value={last.leadsFetched} tone="slate" />
-            <ResultStat label="Grupos" value={last.groupsFound} tone="amber" />
-            <ResultStat label="Confirmados na Kommo" value={last.confirmed} tone="emerald" />
-            <ResultStat label="Falhas" value={last.failed} tone="rose" />
+            <ResultStat label="Leads lidos" value={applyResult.leadsFetched} tone="slate" />
+            <ResultStat label="Grupos" value={applyResult.groupsFound} tone="amber" />
+            <ResultStat label="Marcados na Kommo" value={applyResult.confirmed} tone="emerald" />
+            <ResultStat label="Falhas" value={applyResult.failed} tone="rose" />
           </div>
         )}
       </CardBody>
