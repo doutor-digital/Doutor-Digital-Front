@@ -27,7 +27,7 @@ import { unitsService } from "@/services/units";
 import { useClinic } from "@/hooks/useClinic";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 import type { DuplicateDeleteJobStatus } from "@/types";
-import type { LeadDuplicateDeleteJob, LeadDuplicateGroup } from "@/types/leadDuplicates";
+import type { KommoDedupJob, LeadDuplicateDeleteJob, LeadDuplicateGroup } from "@/types/leadDuplicates";
 
 type Tab = "leads" | "contacts";
 
@@ -389,6 +389,8 @@ function LeadsDuplicatesTab() {
         </CardBody>
       </Card>
 
+      <KommoDedupCard unitId={unitId ?? null} mode={mode} />
+
       {!tenantId && !ignoreTenant && (
         <Card>
           <CardBody>
@@ -449,6 +451,108 @@ function LeadsDuplicatesTab() {
         </>
       )}
     </>
+  );
+}
+
+function KommoDedupCard({ unitId, mode }: { unitId: number | null; mode: "phone" | "name" }) {
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [last, setLast] = useState<KommoDedupJob | null>(null);
+
+  const jobQ = useQuery({
+    queryKey: ["kommo-dedup-job", jobId],
+    queryFn: () => leadDuplicatesService.getKommoDedupJob(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (q) => {
+      const s = q.state.data?.status;
+      return !s || isTerminal(s) ? false : 1500;
+    },
+    refetchIntervalInBackground: true,
+  });
+
+  useEffect(() => {
+    const j = jobQ.data;
+    if (!j || !jobId || j.id !== jobId || !isTerminal(j.status)) return;
+    setLast(j);
+    setJobId(null);
+    if (j.status === "Completed")
+      toast.success(`Kommo: ${formatNumber(j.confirmed)} duplicado(s) marcado(s) como DUPLICADO.`);
+    else if (j.status === "Failed") toast.error(j.error ?? "Falhou ao deduplicar na Kommo.");
+  }, [jobQ.data, jobId]);
+
+  const startMut = useMutation({
+    mutationFn: () => leadDuplicatesService.startKommoDedup({ unitId: unitId!, mode }),
+    onSuccess: (d) => {
+      setJobId(d.jobId);
+      setLast(null);
+      toast.success("Buscando na Kommo… pode levar alguns minutos. Pode deixar rodando.");
+    },
+    onError: (e: unknown) => {
+      const err = e as { response?: { data?: { title?: string; message?: string } }; message?: string };
+      toast.error(
+        err?.response?.data?.message ?? err?.response?.data?.title ?? err?.message ?? "Falha ao iniciar.",
+      );
+    },
+  });
+
+  const j = jobQ.data;
+  const running = !!j && !isTerminal(j.status);
+
+  return (
+    <Card>
+      <CardBody className="py-3 space-y-3">
+        <div className="flex items-start gap-2.5">
+          <Tag className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold text-slate-100">Deduplicar direto na Kommo (ao vivo)</p>
+            <p className="mt-1 text-[11.5px] text-slate-500">
+              Lê os leads na própria Kommo (não depende do nosso banco), acha duplicados por{" "}
+              <b>{mode === "name" ? "nome" : "telefone"}</b>, mantém o mais avançado e marca os outros com a tag{" "}
+              <b>DUPLICADO</b> lá. Depois você filtra a tag na Kommo e apaga em massa.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => startMut.mutate()}
+            disabled={!unitId || running || startMut.isPending}
+          >
+            {running ? (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Tag className="mr-2 h-4 w-4" />
+            )}
+            {running ? "Rodando…" : "Buscar e marcar na Kommo"}
+          </Button>
+        </div>
+
+        {!unitId && (
+          <p className="text-[11.5px] text-amber-300">
+            Selecione uma unidade para usar a dedup direto na Kommo.
+          </p>
+        )}
+
+        {running && j && (
+          <p className="text-[11.5px] text-slate-400">
+            {j.status === "Queued" ? (
+              "Na fila…"
+            ) : (
+              <>
+                Lidos {formatNumber(j.leadsFetched)} leads · {formatNumber(j.groupsFound)} grupos · marcados{" "}
+                {formatNumber(j.tagged)}/{formatNumber(j.leadsToTag)}
+              </>
+            )}
+          </p>
+        )}
+
+        {last && !running && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <ResultStat label="Leads lidos" value={last.leadsFetched} tone="slate" />
+            <ResultStat label="Grupos" value={last.groupsFound} tone="amber" />
+            <ResultStat label="Confirmados na Kommo" value={last.confirmed} tone="emerald" />
+            <ResultStat label="Falhas" value={last.failed} tone="rose" />
+          </div>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 

@@ -56,3 +56,29 @@ export interface StartLeadDuplicateDeleteJobResponse {
   jobId: string;
   status: DuplicateDeleteJobStatus;
 }
+
+/** Job que lê a Kommo ao vivo e marca a tag DUPLICADO lá (não depende do nosso banco). */
+export interface KommoDedupJob {
+  id: string;
+  status: DuplicateDeleteJobStatus;
+  unitId: number;
+  tenantId: number | null;
+  mode: string;
+  leadsFetched: number;
+  groupsFound: number;
+  leadsToTag: number;
+  tagged: number;
+  confirmed: number;
+  failed: number;
+  progressPct: number;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+  createdBy: string;
+}
+
+export interface StartKommoDedupResponse {
+  jobId: string;
+  status: DuplicateDeleteJobStatus;
+}

@@ -1,8 +1,10 @@
 import { api } from "@/lib/api";
 import { cleanParams } from "@/lib/http";
 import type {
+  KommoDedupJob,
   LeadDuplicateDeleteJob,
   LeadDuplicatesReport,
+  StartKommoDedupResponse,
   StartLeadDuplicateDeleteJobResponse,
 } from "@/types/leadDuplicates";
 
@@ -45,6 +47,19 @@ export const leadDuplicatesService = {
   async cancelDeleteJob(jobId: string): Promise<LeadDuplicateDeleteJob> {
     const { data } = await api.delete<LeadDuplicateDeleteJob>(
       `/leads/admin/duplicates/jobs/${encodeURIComponent(jobId)}`,
+    );
+    return data;
+  },
+
+  // ─── Dedup DIRETO na Kommo (lê a API ao vivo, marca a tag DUPLICADO lá) ───
+  async startKommoDedup(params: { unitId: number; mode?: string }): Promise<StartKommoDedupResponse> {
+    const { data } = await api.post<StartKommoDedupResponse>("/leads/kommo-dedup/jobs", params);
+    return data;
+  },
+
+  async getKommoDedupJob(jobId: string): Promise<KommoDedupJob> {
+    const { data } = await api.get<KommoDedupJob>(
+      `/leads/kommo-dedup/jobs/${encodeURIComponent(jobId)}`,
     );
     return data;
   },
