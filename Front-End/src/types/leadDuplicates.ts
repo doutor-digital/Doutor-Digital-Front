@@ -15,8 +15,12 @@ export interface LeadDuplicateGroup {
   deleteNames: string[];
 }
 
+export type LeadDedupMode = "phone" | "name";
+
 export interface LeadDuplicatesReport {
   dryRun: boolean;
+  mode: string;
+  leadsScanned: number;
   groupsFound: number;
   leadsToDelete: number;
   page: number;

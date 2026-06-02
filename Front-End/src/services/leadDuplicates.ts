@@ -11,6 +11,7 @@ export const leadDuplicatesService = {
   async listDuplicates(params: {
     tenantId?: number;
     ignoreTenant?: boolean;
+    mode?: string;
     page?: number;
     pageSize?: number;
   } = {}): Promise<LeadDuplicatesReport> {
@@ -25,6 +26,7 @@ export const leadDuplicatesService = {
     ignoreTenant?: boolean;
     batchSize?: number;
     tagInKommo?: boolean;
+    mode?: string;
   }): Promise<StartLeadDuplicateDeleteJobResponse> {
     const { data } = await api.post<StartLeadDuplicateDeleteJobResponse>(
       "/leads/admin/duplicates/jobs",

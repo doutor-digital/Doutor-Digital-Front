@@ -92,6 +92,7 @@ function LeadsDuplicatesTab() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [ignoreTenant, setIgnoreTenant] = useState(false);
   const [tagInKommo, setTagInKommo] = useState(true);
+  const [mode, setMode] = useState<"phone" | "name">("phone");
   const [page, setPage] = useState(1);
   const [activeJobId, setActiveJobId] = useState<string | null>(
     () => sessionStorage.getItem(JOB_STORAGE_KEY),
@@ -110,11 +111,12 @@ function LeadsDuplicatesTab() {
   const noToken = !!selectedUnit && selectedUnit.hasKommoToken === false;
 
   const report = useQuery({
-    queryKey: ["lead-duplicates", tenantId, ignoreTenant, page],
+    queryKey: ["lead-duplicates", tenantId, ignoreTenant, mode, page],
     queryFn: () =>
       leadDuplicatesService.listDuplicates({
         tenantId: tenantId ?? undefined,
         ignoreTenant,
+        mode,
         page,
         pageSize: PAGE_SIZE,
       }),
@@ -171,6 +173,7 @@ function LeadsDuplicatesTab() {
         ignoreTenant,
         batchSize: BATCH_SIZE,
         tagInKommo,
+        mode,
       }),
     onSuccess: (data) => {
       setActiveJobId(data.jobId);
@@ -252,7 +255,11 @@ function LeadsDuplicatesTab() {
 
       <PageHeader
         title="Leads duplicados"
-        description="Leads com mesmo telefone. O mais avançado (pagamento/agendamento/etapa) é mantido."
+        description={
+          mode === "name"
+            ? "Leads com o MESMO NOME. O mais avançado é mantido."
+            : "Leads com o MESMO TELEFONE. O mais avançado (pagamento/agendamento/etapa) é mantido."
+        }
         actions={
           <>
             <Button variant="outline" onClick={() => report.refetch()} disabled={report.isFetching || running}>
@@ -270,6 +277,56 @@ function LeadsDuplicatesTab() {
           </>
         }
       />
+
+      {/* Critério de duplicidade */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-[12px] font-medium text-ink-500">Agrupar por:</span>
+        <div className="flex rounded-xl border border-hairline bg-surface p-0.5">
+          <button
+            type="button"
+            disabled={running}
+            onClick={() => {
+              setMode("phone");
+              setPage(1);
+            }}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors disabled:opacity-50",
+              mode === "phone" ? "bg-brand-500 text-white" : "text-ink-500 hover:text-ink-900",
+            )}
+          >
+            Telefone
+          </button>
+          <button
+            type="button"
+            disabled={running}
+            onClick={() => {
+              setMode("name");
+              setPage(1);
+            }}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors disabled:opacity-50",
+              mode === "name" ? "bg-brand-500 text-white" : "text-ink-500 hover:text-ink-900",
+            )}
+          >
+            Nome
+          </button>
+        </div>
+        {report.data && (
+          <span className="text-[11.5px] text-ink-500">
+            {formatNumber(report.data.leadsScanned)} leads analisados
+          </span>
+        )}
+      </div>
+
+      {mode === "name" && (
+        <div className="rounded-md p-3 ring-1 ring-inset ring-amber-500/25 bg-amber-500/[0.07] flex items-start gap-2.5">
+          <Info className="h-4 w-4 text-amber-300 mt-0.5 shrink-0" />
+          <p className="text-[12px] text-amber-200">
+            Modo <b>Nome</b>: agrupa leads com o mesmo nome (útil pra importações repetidas). Cuidado: nomes
+            iguais podem ser <b>pessoas diferentes</b> — confira o preview antes de apagar.
+          </p>
+        </div>
+      )}
 
       {lastResult && !running && (
         <ResultPanel job={lastResult} onDismiss={() => setLastResult(null)} />
@@ -382,7 +439,7 @@ function LeadsDuplicatesTab() {
                 </div>
                 <ul className="divide-y divide-white/[0.05]">
                   {groups.map((g) => (
-                    <LeadGroupItem key={`${g.tenantId}-${g.phoneNormalized}`} group={g} />
+                    <LeadGroupItem key={`${g.tenantId}-${g.phoneNormalized}`} group={g} mode={mode} />
                   ))}
                 </ul>
                 <Pagination page={data.page} totalPages={data.totalPages} disabled={report.isFetching || running} onChange={setPage} />
@@ -474,7 +531,7 @@ function ResultStat({
   );
 }
 
-function LeadGroupItem({ group: g }: { group: LeadDuplicateGroup }) {
+function LeadGroupItem({ group: g, mode }: { group: LeadDuplicateGroup; mode: "phone" | "name" }) {
   const MAX_INLINE = 20;
   const shownIds = g.deleteLeadIds.slice(0, MAX_INLINE);
   const hidden = Math.max(0, g.deleteLeadIds.length - MAX_INLINE);
@@ -483,11 +540,18 @@ function LeadGroupItem({ group: g }: { group: LeadDuplicateGroup }) {
     <li className="p-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[13px] tabular-nums text-slate-200">{g.phoneNormalized}</span>
+          <span
+            className={cn(
+              "text-[13px] text-slate-200",
+              mode === "phone" ? "font-mono tabular-nums" : "font-semibold capitalize",
+            )}
+          >
+            {mode === "phone" ? g.phoneNormalized : g.keepName || g.phoneNormalized}
+          </span>
           <button
             onClick={() => navigator.clipboard.writeText(g.phoneNormalized)}
             className="text-slate-600 hover:text-slate-300 transition"
-            title="Copiar telefone"
+            title={mode === "phone" ? "Copiar telefone" : "Copiar nome"}
           >
             <Copy className="h-3.5 w-3.5" />
           </button>
