@@ -149,7 +149,7 @@ function LeadsDuplicatesTab() {
     queryClient.invalidateQueries({ queryKey: ["dash-amo"] });
 
     if (j.status === "Completed") {
-      const tagInfo = j.taggedInKommo > 0 ? ` · ${formatNumber(j.taggedInKommo)} tagueado(s) na Kommo` : "";
+      const tagInfo = j.tagConfirmed > 0 ? ` · ${formatNumber(j.tagConfirmed)} confirmado(s) na Kommo` : "";
       toast.success(`${formatNumber(j.leadsDeleted)} lead(s) apagado(s)${tagInfo}.`);
       if (j.tagFailures > 0)
         toast.warning(`${formatNumber(j.tagFailures)} lead(s) falharam ao taguear na Kommo.`);
@@ -429,10 +429,17 @@ function ResultPanel({ job, onDismiss }: { job: LeadDuplicateDeleteJob; onDismis
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <ResultStat label="Apagados (dashboard)" value={job.leadsDeleted} tone="rose" />
-        <ResultStat label="Tagueados na Kommo" value={job.taggedInKommo} tone="emerald" />
+        <ResultStat label="Confirmados na Kommo" value={job.tagConfirmed} tone="emerald" />
         <ResultStat label="Falhas de tag" value={job.tagFailures} tone="amber" />
         <ResultStat label="Pulados (sem token)" value={job.tagSkipped} tone="slate" />
       </div>
+
+      {job.taggedInKommo !== job.tagConfirmed && (
+        <p className="mt-2 text-[11.5px] text-slate-400">
+          Enviados {formatNumber(job.taggedInKommo)} PATCH(s) de tag; confirmados {formatNumber(job.tagConfirmed)}{" "}
+          via re-leitura na Kommo.
+        </p>
+      )}
 
       {job.tagSkipped > 0 && (
         <p className="mt-3 text-[11.5px] text-amber-200">
