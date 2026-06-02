@@ -36,6 +36,7 @@ export interface LeadDuplicateDeleteJob {
   leadsDeleted: number;
   taggedInKommo: number;
   tagFailures: number;
+  tagSkipped: number;
   groupsFound: number;
   batchesExecuted: number;
   progressPct: number;

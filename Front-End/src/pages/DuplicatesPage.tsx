@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Copy,
   Globe,
+  Info,
   RefreshCw,
   Shield,
   Tag,
@@ -22,6 +23,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { DestructiveActionBar } from "@/components/ui/DestructiveActionBar";
 import ContactsDuplicatesPage from "@/pages/ContactsDuplicatesPage";
 import { leadDuplicatesService } from "@/services/leadDuplicates";
+import { unitsService } from "@/services/units";
 import { useClinic } from "@/hooks/useClinic";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 import type { DuplicateDeleteJobStatus } from "@/types";
@@ -85,7 +87,7 @@ const isTerminal = (s: DuplicateDeleteJobStatus) =>
   s === "Completed" || s === "Failed" || s === "Cancelled";
 
 function LeadsDuplicatesTab() {
-  const { tenantId } = useClinic();
+  const { tenantId, unitId } = useClinic();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [ignoreTenant, setIgnoreTenant] = useState(false);
@@ -94,6 +96,18 @@ function LeadsDuplicatesTab() {
   const [activeJobId, setActiveJobId] = useState<string | null>(
     () => sessionStorage.getItem(JOB_STORAGE_KEY),
   );
+  const [lastResult, setLastResult] = useState<LeadDuplicateDeleteJob | null>(null);
+
+  // Unidade selecionada → saber se tem token Kommo salvo (pra avisar antes).
+  const unitsQ = useQuery({
+    queryKey: ["units-token-check"],
+    queryFn: () => unitsService.list(),
+    staleTime: 5 * 60_000,
+  });
+  const selectedUnit = unitsQ.data?.find(
+    (u) => String(u.clinicId) === String(tenantId) || String(u.id) === String(unitId),
+  );
+  const noToken = !!selectedUnit && selectedUnit.hasKommoToken === false;
 
   const report = useQuery({
     queryKey: ["lead-duplicates", tenantId, ignoreTenant, page],
@@ -130,6 +144,7 @@ function LeadsDuplicatesTab() {
     sessionStorage.removeItem(JOB_STORAGE_KEY);
     setActiveJobId(null);
     setConfirmOpen(false);
+    setLastResult(j);
     queryClient.invalidateQueries({ queryKey: ["lead-duplicates"] });
     queryClient.invalidateQueries({ queryKey: ["dash-amo"] });
 
@@ -137,7 +152,11 @@ function LeadsDuplicatesTab() {
       const tagInfo = j.taggedInKommo > 0 ? ` · ${formatNumber(j.taggedInKommo)} tagueado(s) na Kommo` : "";
       toast.success(`${formatNumber(j.leadsDeleted)} lead(s) apagado(s)${tagInfo}.`);
       if (j.tagFailures > 0)
-        toast.warning(`${formatNumber(j.tagFailures)} lead(s) não puderam ser tagueados na Kommo.`);
+        toast.warning(`${formatNumber(j.tagFailures)} lead(s) falharam ao taguear na Kommo.`);
+      if (j.tagSkipped > 0)
+        toast.warning(
+          `${formatNumber(j.tagSkipped)} lead(s) não tagueados: unidade sem token Kommo (foram apagados só no dashboard).`,
+        );
     } else if (j.status === "Cancelled") {
       toast.info(`Cancelado. ${formatNumber(j.leadsDeleted)} já haviam sido apagado(s).`);
     } else if (j.status === "Failed") {
@@ -252,6 +271,21 @@ function LeadsDuplicatesTab() {
         }
       />
 
+      {lastResult && !running && (
+        <ResultPanel job={lastResult} onDismiss={() => setLastResult(null)} />
+      )}
+
+      {tagInKommo && noToken && !running && (
+        <div className="rounded-md p-3 ring-1 ring-inset ring-amber-500/25 bg-amber-500/[0.07] flex items-start gap-2.5">
+          <Info className="h-4 w-4 text-amber-300 mt-0.5 shrink-0" />
+          <p className="text-[12px] text-amber-200">
+            Esta unidade <b>não tem token da Kommo salvo</b>. Os duplicados serão{" "}
+            <b>apagados no dashboard</b>, mas <b>não serão marcados como DUPLICADO na Kommo</b>. Para marcar,
+            salve o token em Configurações → integração Kommo (ou desmarque a opção abaixo).
+          </p>
+        </div>
+      )}
+
       <Card>
         <CardBody className="py-3 space-y-3">
           <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -358,6 +392,78 @@ function LeadsDuplicatesTab() {
         </>
       )}
     </>
+  );
+}
+
+function ResultPanel({ job, onDismiss }: { job: LeadDuplicateDeleteJob; onDismiss: () => void }) {
+  const failed = job.status === "Failed";
+  const cancelled = job.status === "Cancelled";
+  return (
+    <div
+      className={cn(
+        "rounded-md p-4 ring-1 ring-inset",
+        failed ? "bg-rose-500/[0.07] ring-rose-500/25" : "bg-emerald-500/[0.06] ring-emerald-500/20",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          {failed ? (
+            <AlertTriangle className="h-4 w-4 text-rose-300" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+          )}
+          <span className="text-[13px] font-semibold text-slate-100">
+            {failed
+              ? "Falhou"
+              : cancelled
+                ? "Cancelado — resultado parcial"
+                : "Exclusão concluída"}
+          </span>
+        </div>
+        <button onClick={onDismiss} className="text-[11px] text-slate-400 hover:text-slate-200">
+          fechar
+        </button>
+      </div>
+
+      {failed && job.error && <p className="mb-3 text-[12px] text-rose-200">{job.error}</p>}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <ResultStat label="Apagados (dashboard)" value={job.leadsDeleted} tone="rose" />
+        <ResultStat label="Tagueados na Kommo" value={job.taggedInKommo} tone="emerald" />
+        <ResultStat label="Falhas de tag" value={job.tagFailures} tone="amber" />
+        <ResultStat label="Pulados (sem token)" value={job.tagSkipped} tone="slate" />
+      </div>
+
+      {job.tagSkipped > 0 && (
+        <p className="mt-3 text-[11.5px] text-amber-200">
+          {formatNumber(job.tagSkipped)} lead(s) foram apagados no dashboard, mas <b>não</b> marcados na Kommo
+          (unidade sem token). Salve o token e rode de novo para marcar os próximos.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ResultStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "rose" | "emerald" | "amber" | "slate";
+}) {
+  const map: Record<"rose" | "emerald" | "amber" | "slate", string> = {
+    rose: "text-rose-100",
+    emerald: "text-emerald-100",
+    amber: "text-amber-100",
+    slate: "text-slate-100",
+  };
+  return (
+    <div className="rounded-md bg-white/[0.03] ring-1 ring-inset ring-white/[0.06] p-2.5">
+      <p className={cn("text-[20px] font-bold tabular-nums leading-none", map[tone])}>{formatNumber(value)}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
+    </div>
   );
 }
 
