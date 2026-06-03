@@ -254,6 +254,19 @@ export const kpiConfigService = {
     await api.put("/api/config/kpis/lead-profile", body, { params: { unitId: id } });
   },
 
+  /** Leads com agendamento nos próximos N dias (sino global). */
+  async upcomingAppointments(
+    unitId: number | string | null | undefined,
+    days = 7,
+  ): Promise<{ items: UpcomingAppt[] }> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<{ items: UpcomingAppt[] }>(
+      "/webhooks/dashboard/upcoming-appointments",
+      { params: { ...(id ? { unitId: id } : {}), days } },
+    );
+    return { items: data?.items ?? [] };
+  },
+
   /** Perfil avançado do lead (idade por desfecho, alertas de agendamento, doutor). */
   async leadProfile(
     unitId: number | string | null | undefined,

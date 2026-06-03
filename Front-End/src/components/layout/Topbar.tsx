@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationsBell } from "@/components/layout/NotificationsBell";
+import { AppointmentsBell } from "@/components/layout/AppointmentsBell";
 import { AlertsIndicator } from "@/components/layout/AlertsIndicator";
 import { UnitSwitcher } from "@/components/layout/UnitSwitcher";
 
@@ -144,6 +145,7 @@ export function Topbar() {
           />
         </button>
 
+        <AppointmentsBell />
         <NotificationsBell />
         <AlertsIndicator />
         <ThemeToggle />
