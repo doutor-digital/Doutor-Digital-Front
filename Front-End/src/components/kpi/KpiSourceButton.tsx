@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, Filter, Layers, Loader2, SlidersHorizontal, Tag, X } from "@/components/icons";
@@ -95,7 +96,7 @@ export function KpiSourceButton({
   };
 
   return (
-    <div className="relative mt-3">
+    <div className="mt-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -110,8 +111,14 @@ export function KpiSourceButton({
         <span className="truncate">fonte: {summary}</span>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-[300px] rounded-xl border border-white/12 bg-[#0a0f1f] p-3 shadow-2xl ring-1 ring-white/5">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div className="relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-white/12 bg-[#0a0f1f] p-4 shadow-2xl ring-1 ring-white/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Fonte de {label}
@@ -142,7 +149,7 @@ export function KpiSourceButton({
               <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500">
                 <Layers className="h-3 w-3" /> Etapas ({config.stageIds?.length ?? 0})
               </p>
-              <div className="max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-white/[0.07] p-1.5">
+              <div className="max-h-64 space-y-0.5 overflow-y-auto rounded-md border border-white/[0.07] p-1.5">
                 {pipelines.length === 0 && (
                   <p className="px-1 py-1 text-[11px] text-slate-500">Sem pipelines da Kommo.</p>
                 )}
@@ -257,7 +264,9 @@ export function KpiSourceButton({
             {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             Salvar e aplicar
           </button>
-        </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
