@@ -85,7 +85,7 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
   const canEditKommo = (schema.data?.length ?? 0) > 0 && !!lead.externalId && !!lead.backendId;
 
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    draft.sourceFields.includes(k) ? "cloudia" : "manual";
+    draft.sourceFields?.includes(k) ? "cloudia" : "manual";
 
   const update = <K extends keyof SdrLead>(k: K, v: SdrLead[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));

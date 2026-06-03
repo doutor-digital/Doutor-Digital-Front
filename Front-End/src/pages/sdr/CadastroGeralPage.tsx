@@ -427,7 +427,7 @@ function ViewToggleBtn({
 
 function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    lead.sourceFields.includes(k) ? "cloudia" : "manual";
+    lead.sourceFields?.includes(k) ? "cloudia" : "manual";
   const isResgate = lead.tipo === "Resgate";
 
   return (
@@ -643,7 +643,7 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 
 function TableRow({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    lead.sourceFields.includes(k) ? "cloudia" : "manual";
+    lead.sourceFields?.includes(k) ? "cloudia" : "manual";
   return (
     <tr className="transition-colors hover:bg-white/[0.025]">
       <Td>
