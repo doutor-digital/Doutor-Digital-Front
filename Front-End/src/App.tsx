@@ -33,6 +33,7 @@ const UnitCreatePage   = lazy(() => import("@/pages/UnitCreatePage"));
 const WebhookMonitorPage = lazy(() => import("@/pages/WebhookMonitorPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
+const TechnicalSettingsPage = lazy(() => import("@/pages/TechnicalSettingsPage"));
 const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
@@ -239,6 +240,7 @@ export default function App() {
 
           {/* Logs avançados — super_admin / analista_ti */}
           <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
+            <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
             <Route path="/admin/sessions"  element={<LoginSessionsPage />}    />
             <Route path="/admin/locations" element={<LocationConsentsPage />} />
             <Route path="/admin/changes"   element={<EntityChangesPage />}    />

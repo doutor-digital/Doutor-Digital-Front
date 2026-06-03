@@ -481,6 +481,11 @@ export default function DashboardPage() {
   const funnelCadastro = ov?.funnel_cadastro ?? funnelLeads;
   const funnelResgate = ov?.funnel_resgate ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
 
+  // Prefere o valor mapeado nas Configurações Técnicas (kpi_overrides), quando existir;
+  // senão usa o cálculo padrão. O override manual (localStorage) ainda fica por cima.
+  const kpiLive = (key: string, fallback: number): number =>
+    ov?.kpi_overrides?.[key] ?? fallback;
+
   const origensLeadsRows = useMemo(
     () => (ov?.origens ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
     [ov],
@@ -804,7 +809,7 @@ export default function DashboardPage() {
                 </p>
                 <EditableKpiValue
                   okey={kpiKey(unitId, "total_leads")}
-                  live={funnelLeads.total}
+                  live={kpiLive("total_leads", funnelLeads.total)}
                   valueClass="text-6xl text-emerald-400"
                   align="right"
                   format={nf}
@@ -836,7 +841,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={funnelCadastro.total} valueClass="text-violet-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -844,7 +849,7 @@ export default function DashboardPage() {
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={funnelResgate.total} valueClass="text-amber-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -876,7 +881,7 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
-                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={funnelLeads.agendados} valueClass="text-sky-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -884,7 +889,7 @@ export default function DashboardPage() {
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={funnelLeads.no_show} valueClass="text-red-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
@@ -894,19 +899,19 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
-                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={funnelLeads.tratamentos} valueClass="text-emerald-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={funnelLeads.consultas} valueClass="text-sky-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
               <DarkCard accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Interações</p>
-                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={funnelLeads.interacoes} valueClass="text-cyan-300" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={kpiLive("interacoes", funnelLeads.interacoes)} valueClass="text-cyan-300" format={nf} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>

@@ -736,6 +736,8 @@ export interface DashboardOverview {
   comparecimento_rate: number;
   fechamento_rate: number;
   states: LeadsCountDto;
+  /** Valores de KPI vindos das Configurações Técnicas (mapeamento por unidade). */
+  kpi_overrides?: Record<string, number>;
   etapas: Array<{ etapa: string; quantidade: number }>;
   origens: OrigemAgrupada[];
 

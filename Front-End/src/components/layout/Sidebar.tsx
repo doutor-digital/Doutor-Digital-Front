@@ -43,6 +43,7 @@ import {
   Route as RouteIcon,
   ScrollText,
   ShieldAlert,
+  SlidersHorizontal,
   Sparkles,
   Stethoscope,
   Sunrise,
@@ -255,6 +256,7 @@ const navGroups: NavGroup[] = [
           { to: "/settings", label: "Geral", icon: Cog, end: true },
           { to: "/logs", label: "Logs do sistema", icon: ScrollText },
         ],
+        // Filho "Técnicas · KPIs" é injetado só para analista_ti/super_admin (ver groups).
       },
     ],
   },
@@ -280,6 +282,33 @@ function isNestedEntry(
   entry: NavEntry,
 ): entry is Extract<NavEntry, { children: NavItem[] }> {
   return "children" in entry;
+}
+
+/** Link das Configurações Técnicas — injetado só para analista_ti / super_admin. */
+const technicalSettingsChild: NavItem = {
+  to: "/settings/technical",
+  label: "Técnicas · KPIs",
+  icon: SlidersHorizontal,
+  badge: "Analista",
+};
+
+/** Adiciona o filho "Técnicas · KPIs" à seção Configurações (apenas nível admin). */
+function withTechnicalSettings(groups: NavGroup[]): NavGroup[] {
+  return groups.map((g) => {
+    if (g.label !== "Sistema") return g;
+    return {
+      ...g,
+      items: g.items.map((entry) =>
+        isNestedEntry(entry) && entry.label === "Configurações"
+          ? {
+              ...entry,
+              basePaths: [...entry.basePaths, "/settings/technical"],
+              children: [...entry.children, technicalSettingsChild],
+            }
+          : entry,
+      ),
+    };
+  });
 }
 
 function pathMatches(pathname: string, base: string): boolean {
@@ -433,9 +462,9 @@ export function Sidebar() {
     if (isReadOnly(role)) {
       return navGroups.filter((g) => g.label === "Visão geral");
     }
-    // super_admin / analista_ti: tudo + Logs avançados + Chef.
+    // super_admin / analista_ti: tudo + Configurações Técnicas + Logs avançados + Chef.
     if (isAdminLevel(role)) {
-      return [...navGroups, advancedLogsGroup, chefGroup];
+      return [...withTechnicalSettings(navGroups), advancedLogsGroup, chefGroup];
     }
     return navGroups;
   }, [user?.role]);

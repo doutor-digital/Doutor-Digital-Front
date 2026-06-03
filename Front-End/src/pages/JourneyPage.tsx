@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StageBadge } from "@/components/ui/Badge";
 import { webhooksService } from "@/services/webhooks";
+import { useStageNames } from "@/hooks/useStageNames";
 import { cn, formatCurrency, formatDate, formatDuration, formatNumber } from "@/lib/utils";
 import { classifyReason, REASON_TONE } from "@/lib/rejectionReasons";
 import type { LeadDetail, TimelineInteraction, TimelineInsights, TimelineStage } from "@/types";
@@ -71,8 +72,18 @@ export default function JourneyPage() {
 
   const l = lead.data;
   const t = timeline.data;
-  const stages = t?.stages ?? [];
   const insights = t?.insights;
+
+  // Resolve status_id cru da Kommo (104945887…) para o nome real da etapa.
+  const { resolve: resolveStage } = useStageNames(l?.unitId);
+  const stages = useMemo(
+    () =>
+      (t?.stages ?? []).map((s) => ({
+        ...s,
+        label: resolveStage(s.label, s.stageId),
+      })),
+    [t?.stages, resolveStage],
+  );
   const interactions = t?.interactions ?? [];
   const attribution = t?.attribution;
 
@@ -90,7 +101,7 @@ export default function JourneyPage() {
   const stageBars = useMemo(
     () =>
       stages.map((s) => ({
-        label: s.label.replace(/_/g, " "),
+        label: s.label,
         full: s.label,
         minutes: Math.max(0, s.durationMinutes ?? 0),
         isCurrent: s.isCurrent,
