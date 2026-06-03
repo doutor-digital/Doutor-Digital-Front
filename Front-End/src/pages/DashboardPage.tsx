@@ -9,6 +9,7 @@ import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
+import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -1090,6 +1091,14 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             </DarkCard>
+
+            {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
+            <CustomFieldsPanel
+              unitId={unitId}
+              dateFrom={range.from}
+              dateTo={range.to}
+              rangeLabel={rangeLabel}
+            />
           </>
         )}
       </div>
