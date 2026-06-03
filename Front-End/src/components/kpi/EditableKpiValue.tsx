@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Cog, RotateCcw, X } from "@/components/icons";
+import { Check, Cog, RotateCcw, Users, X } from "@/components/icons";
 import { useKpiOverrides } from "@/hooks/useKpiOverrides";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function EditableKpiValue({
   valueClass = "text-white",
   align = "left",
   format = (n) => new Intl.NumberFormat("pt-BR").format(n),
+  onDrill,
 }: {
   /** Chave canônica do override (use kpiKey(unitId, metric)). */
   okey: string;
@@ -26,6 +27,8 @@ export function EditableKpiValue({
   valueClass?: string;
   align?: "left" | "right";
   format?: (n: number) => string;
+  /** Quando fornecido, clicar no número abre o drill-down (ver os leads). */
+  onDrill?: () => void;
 }) {
   const overrides = useKpiOverrides((s) => s.overrides);
   const setOverride = useKpiOverrides((s) => s.setOverride);
@@ -69,9 +72,25 @@ export function EditableKpiValue({
       </button>
 
       <div className={align === "right" ? "text-right" : ""}>
-        <p className={cn("mt-4 text-5xl font-bold leading-none", valueClass)}>
-          {format(display)}
-        </p>
+        {onDrill ? (
+          <button
+            type="button"
+            onClick={onDrill}
+            title="Ver os leads deste KPI"
+            className={cn(
+              "group mt-4 flex items-baseline gap-2 text-5xl font-bold leading-none transition hover:opacity-90",
+              align === "right" && "ml-auto flex-row-reverse",
+              valueClass,
+            )}
+          >
+            {format(display)}
+            <Users className="h-4 w-4 self-center text-white/25 transition group-hover:text-white/70" />
+          </button>
+        ) : (
+          <p className={cn("mt-4 text-5xl font-bold leading-none", valueClass)}>
+            {format(display)}
+          </p>
+        )}
         {isManual && (
           <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-200">
             manual

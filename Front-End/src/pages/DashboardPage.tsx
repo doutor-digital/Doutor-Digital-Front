@@ -5,9 +5,12 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 
 import { useClinic } from "@/hooks/useClinic";
 import { kpiKey } from "@/hooks/useKpiOverrides";
 import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
+import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
+import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
+import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
 import { assignmentsService } from "@/services/assignments";
 import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
 import type { FunnelGroup } from "@/types";
@@ -198,6 +201,7 @@ function MetricCard({
 // ─── Main ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
+  const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
   const [rangeKey, setRangeKey] = useState<RangeKey>("mes");
 
   // ─── Filtros avançados ─────────────────────────────────────────────
@@ -247,6 +251,19 @@ export default function DashboardPage() {
     staleTime: 10 * 60_000,
     retry: false,
   });
+
+  // Mapeamentos de KPI salvos (Configurações Técnicas) — pra mostrar a fonte no card.
+  const savedKpis = useQuery({
+    queryKey: ["kpi-config", unitId],
+    queryFn: () => kpiConfigService.list(unitId!),
+    enabled: unitId != null,
+    retry: false,
+  });
+  const savedKpiByKey = useMemo(() => {
+    const m = new Map<string, KpiConfigItem>();
+    for (const it of savedKpis.data ?? []) m.set(it.kpi_key, it);
+    return m;
+  }, [savedKpis.data]);
 
   // Map<status_id, status_name> a partir de todos os pipelines.
   const stageNameMap = useMemo(() => {
@@ -485,6 +502,18 @@ export default function DashboardPage() {
   // senão usa o cálculo padrão. O override manual (localStorage) ainda fica por cima.
   const kpiLive = (key: string, fallback: number): number =>
     ov?.kpi_overrides?.[key] ?? fallback;
+
+  // Botão de fonte (analista) reutilizável por card.
+  const srcBtn = (key: string, label: string) => (
+    <KpiSourceButton
+      unitId={unitId}
+      kpiKey={key}
+      label={label}
+      pipelines={pipelines.data ?? []}
+      customFields={customFields.data ?? []}
+      saved={savedKpiByKey.get(key)}
+    />
+  );
 
   const origensLeadsRows = useMemo(
     () => (ov?.origens ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
@@ -813,8 +842,10 @@ export default function DashboardPage() {
                   valueClass="text-6xl text-emerald-400"
                   align="right"
                   format={nf}
+                  onDrill={() => setDrill({ kpiKey: "total_leads", label: "Total de Leads" })}
                 />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("total_leads", "Total de Leads")}
                 <div className="mt-5 h-px w-full bg-white/10" />
                 <ul className="mt-4 space-y-3">
                   {channels.length === 0 && <li className="text-xs text-white/40">Sem dados</li>}
@@ -841,17 +872,19 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("cadastro", "Cadastro")}
               </DarkCard>
 
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("resgate", "Resgate")}
               </DarkCard>
 
               {/* Col 4 (tall): Origens de Leads — ConcentricDonut */}
@@ -881,17 +914,19 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
-                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("agendados", "Agendados")}
               </DarkCard>
 
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("no_show", "No-show")}
               </DarkCard>
             </div>
 
@@ -899,21 +934,24 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
-                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("tratamentos", "Tratamentos")}
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("consultas", "Consultas")}
               </DarkCard>
               <DarkCard accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Interações</p>
-                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={kpiLive("interacoes", funnelLeads.interacoes)} valueClass="text-cyan-300" format={nf} />
+                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={kpiLive("interacoes", funnelLeads.interacoes)} valueClass="text-cyan-300" format={nf} onDrill={() => setDrill({ kpiKey: "interacoes", label: "Interações" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                {srcBtn("interacoes", "Interações")}
               </DarkCard>
             </div>
 
@@ -965,6 +1003,15 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Drill-down: clicar no número de um KPI abre a lista dos leads. */}
+      <KpiDrillDown
+        target={drill}
+        unitId={unitId}
+        dateFrom={range.from}
+        dateTo={range.to}
+        onClose={() => setDrill(null)}
+      />
     </div>
   );
 }

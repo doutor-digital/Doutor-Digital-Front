@@ -40,6 +40,51 @@ export interface KpiPreviewResult {
   note?: string | null;
 }
 
+/** Um lead na lista de drill-down de um KPI. */
+export interface KpiLeadItem {
+  id: number;
+  external_id: number;
+  name: string;
+  phone?: string | null;
+  source?: string | null;
+  channel?: string | null;
+  current_stage?: string | null;
+  current_stage_id?: number | null;
+  lead_type?: string | null;
+  has_appointment: boolean;
+  has_payment: boolean;
+  created_at: string;
+  matched_value?: string | null;
+}
+
+export interface KpiLeadsResult {
+  items: KpiLeadItem[];
+  total: number;
+  truncated: boolean;
+  note?: string | null;
+}
+
+export interface CustomFieldValueCount {
+  value: string;
+  count: number;
+}
+
+export interface CustomFieldSummary {
+  field_id: number;
+  field_name: string;
+  field_code?: string | null;
+  type: string;
+  filled: number;
+  distinct_values: number;
+  top_values: CustomFieldValueCount[];
+}
+
+export interface CustomFieldsSummaryResult {
+  total_leads: number;
+  fields: CustomFieldSummary[];
+  truncated: boolean;
+}
+
 export const kpiConfigService = {
   /** Catálogo dos KPIs mapeáveis + tipos de fonte disponíveis. */
   async catalog(): Promise<{ items: KpiCatalogItem[]; source_types: KpiSourceType[] }> {
@@ -71,6 +116,46 @@ export const kpiConfigService = {
       { params: { unitId: id } },
     );
     return data;
+  },
+
+  /** Drill-down: os leads por trás de um KPI (resolve a fonte salva por kpi_key). */
+  async drillLeads(
+    unitId: number | string | null | undefined,
+    payload: {
+      kpi_key: string;
+      source_type?: KpiSourceType;
+      config?: KpiSourceConfig;
+      date_from?: string;
+      date_to?: string;
+    },
+  ): Promise<KpiLeadsResult> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.post<KpiLeadsResult>("/webhooks/dashboard/kpi-leads", payload, {
+      params: id ? { unitId: id } : {},
+    });
+    return {
+      items: data?.items ?? [],
+      total: data?.total ?? 0,
+      truncated: Boolean(data?.truncated),
+      note: data?.note ?? null,
+    };
+  },
+
+  /** Métricas de todos os campos customizados do período (perfil do lead). */
+  async customFieldsSummary(
+    unitId: number | string | null | undefined,
+    range?: { date_from?: string; date_to?: string },
+  ): Promise<CustomFieldsSummaryResult> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<CustomFieldsSummaryResult>(
+      "/webhooks/dashboard/custom-fields-summary",
+      { params: { ...(id ? { unitId: id } : {}), dateFrom: range?.date_from, dateTo: range?.date_to } },
+    );
+    return {
+      total_leads: data?.total_leads ?? 0,
+      fields: data?.fields ?? [],
+      truncated: Boolean(data?.truncated),
+    };
   },
 
   /** Calcula o número de um KPI ao vivo (pré-visualização antes de salvar). */

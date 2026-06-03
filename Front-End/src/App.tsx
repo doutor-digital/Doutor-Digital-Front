@@ -34,6 +34,7 @@ const WebhookMonitorPage = lazy(() => import("@/pages/WebhookMonitorPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const TechnicalSettingsPage = lazy(() => import("@/pages/TechnicalSettingsPage"));
+const CustomFieldsPage = lazy(() => import("@/pages/CustomFieldsPage"));
 const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
@@ -204,6 +205,7 @@ export default function App() {
           <Route path="/reports"           element={<ReportsPage />}      />
           <Route path="/finance"           element={<FinancePage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />
+          <Route path="/campos-customizados" element={<CustomFieldsPage />} />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
           <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
