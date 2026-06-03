@@ -1,12 +1,14 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Plug, RefreshCw, XCircle } from "@/components/icons";
+import { CheckCircle2, Loader2, Plug, RefreshCw, Settings2, XCircle } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Input } from "@/components/ui/Input";
 import { useClinic } from "@/hooks/useClinic";
 import {
   integrationsService,
   type AdAccount,
+  type AdsCredentialStatus,
   type AdsProvider,
 } from "@/services/integrations";
 import { cn } from "@/lib/utils";
@@ -59,6 +61,18 @@ export default function CentralIntegracoesPage() {
     for (const p of accounts.data?.providers ?? []) m.set(p.provider, p.live);
     return m;
   }, [accounts.data]);
+
+  const creds = useQuery({
+    queryKey: ["integrations-ads-credentials", tenantId],
+    queryFn: () => integrationsService.getCredentials(),
+  });
+  const credsByProvider = useMemo(() => {
+    const m = new Map<AdsProvider, AdsCredentialStatus>();
+    for (const c of creds.data?.items ?? []) m.set(c.provider, c);
+    return m;
+  }, [creds.data]);
+
+  const [openCreds, setOpenCreds] = useState<AdsProvider | null>(null);
 
   // Toast pós-callback do OAuth (?connected= / ?error=) + limpa a URL.
   useEffect(() => {
@@ -120,7 +134,8 @@ export default function CentralIntegracoesPage() {
           {PROVIDERS.map((p) => {
             const acct = byProvider.get(p.id);
             const connected = acct?.status === "connected";
-            const live = liveOf.get(p.id) ?? acct?.live ?? false;
+            const credStatus = credsByProvider.get(p.id);
+            const live = credStatus?.live ?? liveOf.get(p.id) ?? acct?.live ?? false;
             const busy =
               (connect.isPending && connect.variables === p.id) ||
               (sync.isPending && sync.variables === acct?.id) ||
@@ -215,7 +230,26 @@ export default function CentralIntegracoesPage() {
                       </button>
                     </>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setOpenCreds((v) => (v === p.id ? null : p.id))}
+                    className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
+                  >
+                    <Settings2 className="h-3.5 w-3.5" /> Credenciais
+                  </button>
                 </div>
+
+                {openCreds === p.id && (
+                  <CredentialsForm
+                    provider={p.id}
+                    status={credStatus}
+                    onSaved={() => {
+                      qc.invalidateQueries({ queryKey: ["integrations-ads-credentials", tenantId] });
+                      qc.invalidateQueries({ queryKey: ["integrations-ads", tenantId] });
+                      setOpenCreds(null);
+                    }}
+                  />
+                )}
               </div>
             );
           })}
@@ -224,10 +258,78 @@ export default function CentralIntegracoesPage() {
 
       <p className="text-[11px] leading-relaxed text-white/35">
         Em modo <span className="text-amber-300">demo</span>, o "Conectar" cria uma conta de exemplo e
-        gera gasto mock por campanha/dia. Quando as credenciais reais (Meta App / Google Ads developer
-        token) forem configuradas no servidor, os mesmos botões passam a usar a API real — sem mudar
-        nada aqui.
+        gera gasto mock por campanha/dia. Preencha as <span className="text-slate-200">Credenciais</span>{" "}
+        (App ID/Secret do Meta, Client/Secret/Developer Token do Google) pra virar{" "}
+        <span className="text-emerald-300">produção</span> — os mesmos botões passam a usar a API real.
       </p>
+    </div>
+  );
+}
+
+/** Formulário inline pra salvar as credenciais do app de um provedor. */
+function CredentialsForm({
+  provider,
+  status,
+  onSaved,
+}: {
+  provider: AdsProvider;
+  status?: AdsCredentialStatus;
+  onSaved: () => void;
+}) {
+  const isMeta = provider === "meta";
+  const [clientId, setClientId] = useState(status?.client_id ?? "");
+  const [clientSecret, setClientSecret] = useState("");
+  const [devToken, setDevToken] = useState(status?.developer_token ?? "");
+
+  const save = useMutation({
+    mutationFn: () =>
+      integrationsService.saveCredentials(provider, {
+        client_id: clientId.trim() || undefined,
+        client_secret: clientSecret.trim() || undefined,
+        developer_token: devToken.trim() || undefined,
+      }),
+    onSuccess: (r) => {
+      toast.success(r.live ? "Credenciais salvas — modo produção ativo!" : "Credenciais salvas.");
+      onSaved();
+    },
+    onError: () => toast.error("Falha ao salvar as credenciais."),
+  });
+
+  return (
+    <div className="mt-4 space-y-2 rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
+      <p className="text-[10px] uppercase tracking-wider text-slate-500">
+        {isMeta
+          ? "Meta for Developers → App ID + App Secret"
+          : "Google Cloud OAuth (Client ID/Secret) + Developer Token (Google Ads)"}
+        {status?.source === "config" && " · hoje via variável de ambiente"}
+      </p>
+      <Input
+        placeholder={isMeta ? "App ID" : "OAuth Client ID"}
+        value={clientId}
+        onChange={(e) => setClientId(e.target.value)}
+      />
+      <Input
+        type="password"
+        placeholder={status?.has_secret ? "•••••• (deixe vazio p/ manter)" : isMeta ? "App Secret" : "Client Secret"}
+        value={clientSecret}
+        onChange={(e) => setClientSecret(e.target.value)}
+      />
+      {!isMeta && (
+        <Input
+          placeholder="Developer Token"
+          value={devToken}
+          onChange={(e) => setDevToken(e.target.value)}
+        />
+      )}
+      <button
+        type="button"
+        onClick={() => save.mutate()}
+        disabled={save.isPending}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/90 px-3 py-1.5 text-[12px] font-semibold text-[#06231a] transition hover:bg-emerald-400 disabled:opacity-60"
+      >
+        {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+        Salvar credenciais
+      </button>
     </div>
   );
 }

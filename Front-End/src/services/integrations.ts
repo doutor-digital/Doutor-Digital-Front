@@ -28,6 +28,17 @@ export interface AdsSpendItem {
   currency: string;
 }
 
+/** Estado das credenciais de um provedor (NUNCA traz o segredo em texto). */
+export interface AdsCredentialStatus {
+  provider: AdsProvider;
+  client_id?: string | null;
+  has_secret: boolean;
+  developer_token?: string | null;
+  live: boolean;
+  /** "none" = nada configurado · "config" = via env · "db" = salvo pela tela. */
+  source: "none" | "config" | "db";
+}
+
 /** Central de Integrações — contas de Meta/Google Ads + gasto por campanha. */
 export const integrationsService = {
   /** Contas conectadas + provedores disponíveis. */
@@ -68,6 +79,26 @@ export const integrationsService = {
   /** Desconecta a conta (apaga tokens). */
   async disconnect(id: number): Promise<void> {
     await api.delete(`/api/integrations/ads/${id}`);
+  },
+
+  /** Status das credenciais do app por provedor. */
+  async getCredentials(): Promise<{ items: AdsCredentialStatus[] }> {
+    const { data } = await api.get<{ items: AdsCredentialStatus[] }>(
+      "/api/integrations/ads/credentials",
+    );
+    return { items: data?.items ?? [] };
+  },
+
+  /** Salva as credenciais de um provedor (o segredo só troca se enviado). */
+  async saveCredentials(
+    provider: AdsProvider,
+    body: { client_id?: string; client_secret?: string; developer_token?: string },
+  ): Promise<{ live: boolean }> {
+    const { data } = await api.put<{ live: boolean }>(
+      `/api/integrations/ads/credentials/${provider}`,
+      body,
+    );
+    return data;
   },
 
   /** Gasto agregado por campanha no período (consumido pelo /desempenho). */
