@@ -83,6 +83,13 @@ export interface SdrLeadResponseDto {
   importBatchId?: number;
   createdAt: string;
   updatedAt: string;
+  customFields?: Array<{
+    fieldId: number;
+    fieldName: string;
+    fieldCode?: string | null;
+    type?: string | null;
+    value?: string | null;
+  }>;
 }
 
 export const sdrService = {
@@ -142,6 +149,7 @@ export function sdrLeadFromBackend(dto: SdrLeadResponseDto): SdrLead {
           tenantId: dto.tenantId,
         }
       : undefined,
+    customFields: dto.customFields ?? [],
     createdAt: dto.createdAt,
   };
 }

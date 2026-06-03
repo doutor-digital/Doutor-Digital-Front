@@ -59,7 +59,18 @@ export interface SdrLead {
   sourceFields: SdrSourceFieldKey[];
   sourceProvenance?: SourceProvenance;
 
+  /** Todos os campos customizados da Kommo (nome → valor), pra ver tudo na revisão. */
+  customFields?: SdrCustomField[];
+
   createdAt: string;
+}
+
+export interface SdrCustomField {
+  fieldId: number;
+  fieldName: string;
+  fieldCode?: string | null;
+  type?: string | null;
+  value?: string | null;
 }
 
 export type SdrSourceFieldKey =

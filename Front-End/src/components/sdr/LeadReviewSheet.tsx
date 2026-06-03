@@ -273,6 +273,48 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
             </SourceFieldShell>
           </div>
 
+          {/* Bloco: Campos da Kommo (todos os campos customizados do cartão) */}
+          {(lead.customFields?.length ?? 0) > 0 && (
+            <>
+              <SectionHeader
+                title="Campos da Kommo"
+                subtitle="Todos os campos do cartão do lead, como vieram preenchidos do Kommo."
+                className="mt-7"
+                cloudia
+              />
+              <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                {lead.customFields!.map((f) => {
+                  const raw = (f.value ?? "").trim();
+                  const isDate =
+                    f.type === "date" ||
+                    f.type === "birthday" ||
+                    /\bdata\b|nascimento/i.test(f.fieldName);
+                  let value = raw;
+                  if (raw && isDate && /^\d{8,}$/.test(raw)) {
+                    const d = new Date(Number(raw) * 1000);
+                    if (!Number.isNaN(d.getTime())) value = d.toLocaleDateString("pt-BR");
+                  }
+                  const filled = value.length > 0;
+                  return (
+                    <div
+                      key={`${f.fieldId}-${f.fieldName}`}
+                      className="flex items-baseline justify-between gap-3 rounded-md border border-white/[0.05] bg-white/[0.015] px-3 py-2"
+                    >
+                      <span className="shrink-0 text-[11.5px] text-slate-400">{f.fieldName}</span>
+                      <span
+                        className={`text-right text-[12.5px] font-medium ${
+                          filled ? "text-slate-50" : "text-slate-600"
+                        }`}
+                      >
+                        {filled ? value : "—"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {/* Resumo de provenance */}
           <div className="mt-6 rounded-lg border border-white/[0.05] bg-white/[0.015] p-3">
             <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Resumo</p>
