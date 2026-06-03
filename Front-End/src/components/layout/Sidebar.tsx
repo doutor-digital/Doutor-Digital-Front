@@ -294,21 +294,35 @@ const technicalSettingsChild: NavItem = {
   badge: "Analista",
 };
 
-/** Adiciona o filho "Técnicas · KPIs" à seção Configurações (apenas nível admin). */
+/** Link da Central de Integrações (Meta/Google Ads) — só nível admin. */
+const integracoesAdsItem: NavItem = {
+  to: "/integracoes/ads",
+  label: "Central de Integrações",
+  icon: Plug2,
+  badge: "Novo",
+};
+
+/**
+ * Injeções só para analista_ti / super_admin no grupo "Sistema": o filho "Técnicas · KPIs"
+ * na seção Configurações e o item "Central de Integrações".
+ */
 function withTechnicalSettings(groups: NavGroup[]): NavGroup[] {
   return groups.map((g) => {
     if (g.label !== "Sistema") return g;
     return {
       ...g,
-      items: g.items.map((entry) =>
-        isNestedEntry(entry) && entry.label === "Configurações"
-          ? {
-              ...entry,
-              basePaths: [...entry.basePaths, "/settings/technical"],
-              children: [...entry.children, technicalSettingsChild],
-            }
-          : entry,
-      ),
+      items: [
+        ...g.items.map((entry) =>
+          isNestedEntry(entry) && entry.label === "Configurações"
+            ? {
+                ...entry,
+                basePaths: [...entry.basePaths, "/settings/technical"],
+                children: [...entry.children, technicalSettingsChild],
+              }
+            : entry,
+        ),
+        integracoesAdsItem,
+      ],
     };
   });
 }

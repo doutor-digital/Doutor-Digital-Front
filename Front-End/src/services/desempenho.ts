@@ -8,6 +8,8 @@
  * Tudo é calculado no front a partir de `DadosDashboard`. Sem localStorage/sessionStorage.
  */
 
+import { integrationsService, type AdsSpendItem } from "@/services/integrations";
+
 // ─── Modelo de dados (contrato com a futura API) ───────────────────────────────
 
 export type Canal = "meta" | "google" | "organico" | "outro";
@@ -259,10 +261,56 @@ export async function carregarDados(periodo: Periodo): Promise<DadosDashboard> {
   await new Promise((r) => setTimeout(r, 350));
 
   const f = FATOR_PERIODO[periodo.key] ?? 1;
+  let origens = escalarOrigens(ORIGENS_BASE, f);
+
+  // Investimento REAL: vem da Central de Integrações (Meta/Google Ads → nosso banco).
+  // Casa cada campanha com a origem por nome; se não houver gasto/permissão, mantém o mock.
+  try {
+    const { items } = await integrationsService.spend({ from: periodo.inicio, to: periodo.fim });
+    if (items.length) origens = aplicarInvestimentoReal(origens, items);
+  } catch {
+    /* sem integração/sem permissão — segue com o investimento mock */
+  }
+
   return {
     periodo: { inicio: periodo.inicio, fim: periodo.fim },
-    origens: escalarOrigens(ORIGENS_BASE, f),
+    origens,
     motivosNaoAgendamento: escalarMotivos(MOTIVOS_NAO_AGENDA_BASE, f),
     motivosNaoFechamento: escalarMotivos(MOTIVOS_NAO_FECHA_BASE, f),
   };
+}
+
+const tokens = (s: string) =>
+  new Set(
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length > 2),
+  );
+
+/**
+ * Substitui o `investimento` de cada origem pela soma do gasto real das campanhas que
+ * casam com o nome dela (sobreposição de ≥2 tokens). Origem sem match mantém o mock.
+ */
+function aplicarInvestimentoReal(
+  origens: OrigemDesempenho[],
+  spend: AdsSpendItem[],
+): OrigemDesempenho[] {
+  const spendTokens = spend.map((s) => ({ s, t: tokens(s.campaign_name ?? "") }));
+  return origens.map((o) => {
+    const ot = tokens(o.nome);
+    let total = 0;
+    let matched = false;
+    for (const { s, t } of spendTokens) {
+      let overlap = 0;
+      for (const tok of t) if (ot.has(tok)) overlap++;
+      if (overlap >= 2) {
+        total += s.spend;
+        matched = true;
+      }
+    }
+    return matched ? { ...o, investimento: Math.round(total) } : o;
+  });
 }

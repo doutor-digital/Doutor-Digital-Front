@@ -66,6 +66,7 @@ const QualityScorePage    = lazy(() => import("@/pages/QualityScorePage"));
 const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
 const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
+const CentralIntegracoesPage = lazy(() => import("@/pages/CentralIntegracoesPage"));
 const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
 const LoginSessionsPage   = lazy(() => import("@/pages/admin/LoginSessionsPage"));
 const LocationConsentsPage = lazy(() => import("@/pages/admin/LocationConsentsPage"));
@@ -245,6 +246,7 @@ export default function App() {
           {/* Logs avançados — super_admin / analista_ti */}
           <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
             <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
+            <Route path="/integracoes/ads"  element={<CentralIntegracoesPage />} />
             <Route path="/admin/sessions"  element={<LoginSessionsPage />}    />
             <Route path="/admin/locations" element={<LocationConsentsPage />} />
             <Route path="/admin/changes"   element={<EntityChangesPage />}    />
