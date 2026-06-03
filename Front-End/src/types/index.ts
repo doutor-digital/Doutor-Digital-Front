@@ -738,6 +738,15 @@ export interface DashboardOverview {
   states: LeadsCountDto;
   /** Valores de KPI vindos das Configurações Técnicas (mapeamento por unidade). */
   kpi_overrides?: Record<string, number>;
+  /** KPIs criados do zero pelo analista (nome + cor + fonte + valor já calculado). */
+  custom_kpis?: Array<{
+    key: string;
+    label: string;
+    color?: string | null;
+    value: number;
+    source_type: string;
+    sort_order: number;
+  }>;
   etapas: Array<{ etapa: string; quantidade: number }>;
   origens: OrigemAgrupada[];
 

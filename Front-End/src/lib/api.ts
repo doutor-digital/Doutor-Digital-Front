@@ -18,7 +18,10 @@ export const API_BASE_URL =
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30_000,
+  // 2 min: consultas pesadas (dashboard-overview com KPIs custom, chamadas ao vivo da
+  // Kommo) passam de 30s sem ser erro. Endpoints específicos sobrescrevem com seu próprio
+  // timeout quando precisam de mais (ex.: import em units.ts).
+  timeout: 120_000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -54,6 +57,12 @@ api.interceptors.response.use(
     const cfg = error.config as AxiosRequestConfig | undefined;
     const silent401 = cfg?.silent401 === true;
 
+    // Timeout do axios / falha de rede (sem resposta do servidor): não joga a mensagem
+    // crua ("timeout of 30000ms exceeded") num toast. Quem chamou (react-query) já trata
+    // o estado de erro/loading; a consulta pesada normalmente segue rodando no servidor.
+    const isTimeout = error.code === "ECONNABORTED" || /timeout/i.test(error.message || "");
+    const semResposta = !error.response;
+
     if (status === 401 && !silent401) {
       localStorage.removeItem("auth_token");
       if (!window.location.pathname.startsWith("/login")) {
@@ -65,6 +74,8 @@ api.interceptors.response.use(
       toast.error(`Erro ${status}: ${msg || "falha no servidor"}`);
     } else if (status === 404) {
       // silent - deixa o caller decidir
+    } else if (isTimeout || semResposta) {
+      // silencioso (sem toast) — evita o erro cru de timeout/rede na tela
     } else if (msg && status !== 401) {
       toast.error(msg);
     }

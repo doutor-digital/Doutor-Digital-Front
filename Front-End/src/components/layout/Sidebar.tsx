@@ -135,8 +135,9 @@ const navGroups: NavGroup[] = [
         label: "Performance",
         icon: Gauge,
         iconUrl: "/nav-icons/performance.png",
-        basePaths: ["/analytics", "/evolution"],
+        basePaths: ["/analytics", "/evolution", "/desempenho"],
         children: [
+          { to: "/desempenho", label: "Desempenho de Mídia", icon: Target, badge: "Novo" },
           { to: "/analytics", label: "Analytics", icon: BarChart3 },
           { to: "/evolution", label: "Evolução", icon: LineChart },
         ],

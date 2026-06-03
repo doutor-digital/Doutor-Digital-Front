@@ -30,8 +30,34 @@ export interface KpiConfigItem {
   kpi_key: string;
   source_type: KpiSourceType;
   config: KpiSourceConfig;
+  /** KPI criado do zero (chave gerada + nome/cor próprios). */
+  is_custom?: boolean;
+  display_name?: string | null;
+  accent_color?: string | null;
+  sort_order?: number;
   updated_by_email?: string | null;
   updated_at?: string | null;
+}
+
+/** Item para salvar (upsert) — inclui os campos de KPI custom. */
+export interface KpiConfigSaveItem {
+  kpi_key: string;
+  source_type: KpiSourceType;
+  config: KpiSourceConfig;
+  is_custom?: boolean;
+  display_name?: string | null;
+  accent_color?: string | null;
+  sort_order?: number;
+}
+
+/** KPI custom já resolvido (vem no dashboard-overview, com o valor do período). */
+export interface CustomKpi {
+  key: string;
+  label: string;
+  color?: string | null;
+  value: number;
+  source_type: KpiSourceType;
+  sort_order: number;
 }
 
 export interface KpiPreviewResult {
@@ -107,7 +133,7 @@ export const kpiConfigService = {
   /** Salva (upsert) os mapeamentos da unidade. */
   async save(
     unitId: number | string,
-    items: Array<{ kpi_key: string; source_type: KpiSourceType; config: KpiSourceConfig }>,
+    items: KpiConfigSaveItem[],
   ): Promise<{ count: number }> {
     const id = toInt(unitId);
     const { data } = await api.put<{ count: number }>(
@@ -116,6 +142,14 @@ export const kpiConfigService = {
       { params: { unitId: id } },
     );
     return data;
+  },
+
+  /** Remove um KPI (custom) da unidade. */
+  async remove(unitId: number | string, kpiKey: string): Promise<void> {
+    const id = toInt(unitId);
+    await api.delete(`/api/config/kpis/${encodeURIComponent(kpiKey)}`, {
+      params: { unitId: id },
+    });
   },
 
   /** Drill-down: os leads por trás de um KPI (resolve a fonte salva por kpi_key). */

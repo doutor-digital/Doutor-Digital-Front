@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cog, Loader2 } from "@/components/icons";
+import { Cog, Loader2, Pencil, Plus } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
 import { kpiKey } from "@/hooks/useKpiOverrides";
 import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
+import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
+import { useAuth } from "@/hooks/useAuth";
+import { isAdminLevel } from "@/lib/roles";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
@@ -202,6 +205,10 @@ function MetricCard({
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
   const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
+  // Modal de KPI custom: null = fechado; { existing } = abrindo p/ criar (undefined) ou editar.
+  const [kpiModal, setKpiModal] = useState<{ existing: KpiConfigItem | null } | null>(null);
+  const { user } = useAuth();
+  const canEditKpis = isAdminLevel(user?.role) && unitId != null;
   const [rangeKey, setRangeKey] = useState<RangeKey>("mes");
 
   // ─── Filtros avançados ─────────────────────────────────────────────
@@ -955,6 +962,64 @@ export default function DashboardPage() {
               </DarkCard>
             </div>
 
+            {/* ─── Meus KPIs (criados pelo analista) ──────────────────── */}
+            {((ov?.custom_kpis?.length ?? 0) > 0 || canEditKpis) && (
+              <div className="mt-6">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+                    Meus KPIs
+                  </h2>
+                  {canEditKpis && (
+                    <button
+                      type="button"
+                      onClick={() => setKpiModal({ existing: null })}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-200 ring-1 ring-inset ring-emerald-400/25 transition hover:bg-emerald-500/25"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Novo KPI
+                    </button>
+                  )}
+                </div>
+
+                {(ov?.custom_kpis?.length ?? 0) === 0 ? (
+                  <DarkCard>
+                    <p className="text-[12px] text-white/50">
+                      Nenhum KPI custom ainda. Clique em <span className="text-emerald-300">Novo KPI</span> para criar um card com a métrica, a cor e a fonte (etapa/campo) que você quiser.
+                    </p>
+                  </DarkCard>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {ov!.custom_kpis!.map((k) => (
+                      <DarkCard key={k.key} accent={k.color ?? "#64748b"}>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                            {k.label}
+                          </p>
+                          {canEditKpis && (
+                            <button
+                              type="button"
+                              onClick={() => setKpiModal({ existing: savedKpiByKey.get(k.key) ?? null })}
+                              className="shrink-0 rounded-full p-1 text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                              aria-label={`Editar ${k.label}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <EditableKpiValue
+                          okey={kpiKey(unitId, k.key)}
+                          live={k.value}
+                          format={nf}
+                          onDrill={() => setDrill({ kpiKey: k.key, label: k.label })}
+                        />
+                        <div className="mt-4 h-px w-1/3 bg-white/10" />
+                        <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                      </DarkCard>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ─── Funil de vendas estilo CRM (board Kanban por etapa) ── */}
             <DarkCard className="mt-4" accent="#34d399">
               <div className="mb-3 flex items-center justify-between">
@@ -1012,6 +1077,17 @@ export default function DashboardPage() {
         dateTo={range.to}
         onClose={() => setDrill(null)}
       />
+
+      {/* Criar/editar KPI custom (só analista, com unidade selecionada). */}
+      {kpiModal && unitId != null && (
+        <CustomKpiModal
+          unitId={unitId}
+          pipelines={pipelines.data ?? []}
+          customFields={customFields.data ?? []}
+          existing={kpiModal.existing}
+          onClose={() => setKpiModal(null)}
+        />
+      )}
     </div>
   );
 }
