@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Loader2, Save, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "@/components/icons";
 import { SourceFieldShell } from "@/components/sdr/SourceField";
+import { KommoFieldsEditor } from "@/components/sdr/KommoFieldsEditor";
 import { reviewSdrLead, upsertSdrLead } from "@/lib/sdr/sdr-store";
 import type { SdrSourceFieldKey, SdrLead, SdrCustomField } from "@/types/sdr";
 import { unitsService } from "@/services/units";
@@ -79,6 +80,9 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
     for (const f of filled) if (!sch.some((s) => s.id === f.fieldId)) merged.push(f);
     return merged.sort((a, b) => (b.value ? 1 : 0) - (a.value ? 1 : 0));
   }, [lead.customFields, schema.data]);
+
+  // Editável quando temos o schema (tipos/opções) + vínculo com a Kommo (externalId).
+  const canEditKommo = (schema.data?.length ?? 0) > 0 && !!lead.externalId && !!lead.backendId;
 
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
     draft.sourceFields.includes(k) ? "cloudia" : "manual";
@@ -305,13 +309,18 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
               <SectionHeader
                 title="Campos da Kommo"
                 subtitle={
-                  schema.data
-                    ? "Todos os campos do cartão do lead. Preenchidos em destaque; vazios como “—”."
-                    : "Campos preenchidos do cartão do lead, como vieram do Kommo."
+                  canEditKommo
+                    ? "Edite qualquer campo e clique em “Salvar na Kommo” — grava no CRM e aqui."
+                    : schema.data
+                      ? "Todos os campos do cartão do lead. Preenchidos em destaque; vazios como “—”."
+                      : "Campos preenchidos do cartão do lead, como vieram do Kommo."
                 }
                 className="mt-7"
                 cloudia
               />
+              {canEditKommo ? (
+                <KommoFieldsEditor lead={lead} schema={schema.data!} fields={allCustomFields} />
+              ) : (
               <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                 {allCustomFields.map((f) => {
                   const raw = (f.value ?? "").trim();
@@ -342,6 +351,7 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
                   );
                 })}
               </div>
+              )}
             </>
           )}
 

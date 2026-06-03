@@ -149,8 +149,35 @@ export function sdrLeadFromBackend(dto: SdrLeadResponseDto): SdrLead {
           tenantId: dto.tenantId,
         }
       : undefined,
+    backendId: dto.id,
     unitId: dto.unitId,
     customFields: dto.customFields ?? [],
     createdAt: dto.createdAt,
   };
+}
+
+/** Um campo a gravar de volta na Kommo. */
+export interface SdrCustomFieldUpdate {
+  fieldId: number;
+  fieldName?: string | null;
+  fieldCode?: string | null;
+  type?: string | null;
+  value?: string | null;
+  /** enum_id pra campos select/multiselect. */
+  enumId?: number | null;
+}
+
+/**
+ * Grava os campos editados de volta na Kommo (PATCH) e atualiza o nosso banco.
+ * Devolve a lista de campos já atualizada.
+ */
+export async function updateLeadCustomFields(
+  backendId: number,
+  fields: SdrCustomFieldUpdate[],
+): Promise<{ customFields: import("@/types/sdr").SdrCustomField[] }> {
+  const r = await api.put<{ customFields: import("@/types/sdr").SdrCustomField[] }>(
+    `/api/sdr/leads/${backendId}/custom-fields`,
+    { fields },
+  );
+  return { customFields: r.data?.customFields ?? [] };
 }

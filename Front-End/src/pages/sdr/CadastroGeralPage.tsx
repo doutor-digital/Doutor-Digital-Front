@@ -526,6 +526,25 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
         )}
       </div>
 
+      {/* Chips dos campos da Kommo preenchidos */}
+      {(lead.customFields?.some((f) => f.value) ?? false) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {lead.customFields!
+            .filter((f) => f.value)
+            .slice(0, 6)
+            .map((f) => (
+              <span
+                key={f.fieldId}
+                className="inline-flex max-w-[150px] items-center gap-1 rounded-md bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-slate-300 ring-1 ring-inset ring-white/[0.06]"
+                title={`${f.fieldName}: ${f.value}`}
+              >
+                <span className="text-slate-500">{f.fieldName}:</span>
+                <span className="truncate">{f.value}</span>
+              </span>
+            ))}
+        </div>
+      )}
+
       {/* Observação preview */}
       {lead.observacao && (
         <p className="mt-3 line-clamp-2 rounded-md bg-white/[0.025] px-2.5 py-1.5 text-[11px] italic text-slate-400">
