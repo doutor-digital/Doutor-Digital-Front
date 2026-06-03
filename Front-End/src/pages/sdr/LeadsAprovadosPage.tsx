@@ -16,6 +16,8 @@ import {
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SourceInlineBadge } from "@/components/sdr/SourceField";
+import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
+import { useClinic } from "@/hooks/useClinic";
 import { useIsClient, useSdrStore } from "@/lib/sdr/sdr-store";
 import type { SdrLead } from "@/types/sdr";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -24,6 +26,7 @@ type TabKind = "normais" | "importados" | "todos";
 
 export default function LeadsAprovadosPage() {
   const ready = useIsClient();
+  const { unitId } = useClinic();
   const { leads, consultas, tratamentos } = useSdrStore();
   const [tab, setTab] = useState<TabKind>("normais");
   const [search, setSearch] = useState("");
@@ -146,6 +149,9 @@ export default function LeadsAprovadosPage() {
           </BentoCell>
         </div>
       )}
+
+      {/* ── Campos da Kommo (números por período) ───────────────── */}
+      <CustomFieldsPanel unitId={unitId} withPeriodPicker />
 
       {/* ── TABS NORMAIS / IMPORTADOS ───────────────────────────── */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
