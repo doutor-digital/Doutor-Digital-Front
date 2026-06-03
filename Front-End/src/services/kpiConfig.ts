@@ -124,6 +124,33 @@ export interface CustomFieldsSummaryResult {
   truncated: boolean;
 }
 
+export interface AgeStat {
+  avg: number;
+  count: number;
+}
+
+export interface UpcomingAppt {
+  lead_id: number;
+  name: string;
+  phone?: string | null;
+  scheduled_at: string;
+  days_until: number;
+}
+
+export interface LeadProfileAnalytics {
+  total_leads: number;
+  age: {
+    overall: AgeStat;
+    agendou: AgeStat;
+    compareceu: AgeStat;
+    fechou: AgeStat;
+    faltou: AgeStat;
+  };
+  upcoming: UpcomingAppt[];
+  doctors: Array<{ label: string; count: number }>;
+  outcomes: { contato: number; agendou: number; compareceu: number; fechou: number; faltou: number };
+}
+
 export const kpiConfigService = {
   /** Catálogo dos KPIs mapeáveis + tipos de fonte disponíveis. */
   async catalog(): Promise<{ items: KpiCatalogItem[]; source_types: KpiSourceType[] }> {
@@ -203,6 +230,23 @@ export const kpiConfigService = {
       fields: data?.fields ?? [],
       truncated: Boolean(data?.truncated),
     };
+  },
+
+  /** Perfil avançado do lead (idade por desfecho, alertas de agendamento, doutor). */
+  async leadProfile(
+    unitId: number | string | null | undefined,
+    range?: { date_from?: string; date_to?: string; upcoming_days?: number },
+  ): Promise<LeadProfileAnalytics> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<LeadProfileAnalytics>("/webhooks/dashboard/lead-profile", {
+      params: {
+        ...(id ? { unitId: id } : {}),
+        dateFrom: range?.date_from,
+        dateTo: range?.date_to,
+        upcomingDays: range?.upcoming_days,
+      },
+    });
+    return data;
   },
 
   /** Calcula o número de um KPI ao vivo (pré-visualização antes de salvar). */

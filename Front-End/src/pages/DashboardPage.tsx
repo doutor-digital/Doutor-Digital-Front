@@ -10,6 +10,7 @@ import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
+import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -1091,6 +1092,9 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             </DarkCard>
+
+            {/* ─── Perfil avançado do lead (idade/alertas/doutor) ───── */}
+            <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
 
             {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
             <CustomFieldsPanel
