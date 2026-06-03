@@ -745,6 +745,8 @@ export interface DashboardOverview {
     color?: string | null;
     value: number;
     source_type: string;
+    display_type?: "number" | "source_chart";
+    breakdown?: Array<{ label: string; value: number }>;
     sort_order: number;
   }>;
   etapas: Array<{ etapa: string; quantidade: number }>;

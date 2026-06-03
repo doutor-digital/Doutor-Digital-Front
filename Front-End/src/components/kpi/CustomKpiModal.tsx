@@ -9,6 +9,7 @@ import type { KommoPipeline, KommoCustomField } from "@/services/units";
 import {
   kpiConfigService,
   type KpiConfigItem,
+  type KpiDisplayType,
   type KpiSourceConfig,
   type KpiSourceType,
 } from "@/services/kpiConfig";
@@ -60,7 +61,12 @@ export function CustomKpiModal({
     (existing?.source_type as KpiSourceType) ?? "kommo_stage",
   );
   const [config, setConfig] = useState<KpiSourceConfig>(existing?.config ?? {});
+  const [displayType, setDisplayType] = useState<KpiDisplayType>(
+    (existing?.display_type as KpiDisplayType) ?? "number",
+  );
   const [preview, setPreview] = useState<number | null>(null);
+
+  const isChart = displayType === "source_chart";
 
   const selectedField = useMemo(
     () => customFields.find((f) => f.id === config.fieldId),
@@ -84,11 +90,13 @@ export function CustomKpiModal({
       kpiConfigService.save(unitId, [
         {
           kpi_key: existing?.kpi_key ?? genKey(),
-          source_type: sourceType,
+          // No modo gráfico a fonte é sempre o campo customizado (distribui os valores).
+          source_type: isChart ? "custom_field_count" : sourceType,
           config,
           is_custom: true,
           display_name: name.trim(),
           accent_color: color,
+          display_type: displayType,
           sort_order: existing?.sort_order ?? Date.now() % 100000,
         },
       ]),
@@ -111,7 +119,11 @@ export function CustomKpiModal({
   });
 
   const doPreview = useMutation({
-    mutationFn: () => kpiConfigService.preview(unitId, { source_type: sourceType, config }),
+    mutationFn: () =>
+      kpiConfigService.preview(unitId, {
+        source_type: isChart ? "custom_field_count" : sourceType,
+        config,
+      }),
     onSuccess: (r) => setPreview(r.value),
     onError: () => toast.error("Falha ao calcular a prévia."),
   });
@@ -129,7 +141,8 @@ export function CustomKpiModal({
     setPreview(null);
   };
 
-  const canSave = name.trim().length > 0 && !save.isPending;
+  const canSave =
+    name.trim().length > 0 && !save.isPending && (!isChart || config.fieldId != null);
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -186,22 +199,50 @@ export function CustomKpiModal({
           </label>
         </div>
 
-        {/* Fonte */}
-        <label className="mb-1 mt-4 block text-[10px] uppercase tracking-wider text-slate-500">Fonte do número</label>
-        <Select
-          value={sourceType}
-          onChange={(e) => {
-            setSourceType(e.target.value as KpiSourceType);
-            setPreview(null);
-          }}
-          className="text-[12px]"
-        >
-          {Object.entries(SOURCE_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+        {/* Tipo do KPI: número ou gráfico de origens */}
+        <label className="mb-1 mt-4 block text-[10px] uppercase tracking-wider text-slate-500">Tipo do KPI</label>
+        <div className="inline-flex w-full items-center rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+          {([
+            ["number", "Número"],
+            ["source_chart", "Gráfico de origens"],
+          ] as const).map(([v, l]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => {
+                setDisplayType(v);
+                setPreview(null);
+              }}
+              className={cn(
+                "flex-1 rounded-md px-3 py-1 text-[11.5px] font-medium transition",
+                displayType === v ? "bg-white/[0.1] text-slate-50" : "text-slate-400 hover:text-slate-200",
+              )}
+            >
+              {l}
+            </button>
           ))}
-        </Select>
+        </div>
 
-        {usesStage && (
+        {/* Fonte (só no modo número; no gráfico a fonte é sempre o campo de origem) */}
+        {!isChart && (
+          <>
+            <label className="mb-1 mt-3 block text-[10px] uppercase tracking-wider text-slate-500">Fonte do número</label>
+            <Select
+              value={sourceType}
+              onChange={(e) => {
+                setSourceType(e.target.value as KpiSourceType);
+                setPreview(null);
+              }}
+              className="text-[12px]"
+            >
+              {Object.entries(SOURCE_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </Select>
+          </>
+        )}
+
+        {!isChart && usesStage && (
           <div className="mt-2">
             <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500">
               <Layers className="h-3 w-3" /> Etapas ({config.stageIds?.length ?? 0})
@@ -243,10 +284,10 @@ export function CustomKpiModal({
           </div>
         )}
 
-        {usesField && (
+        {(isChart || usesField) && (
           <div className="mt-2">
             <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500">
-              <Tag className="h-3 w-3" /> Campo customizado
+              <Tag className="h-3 w-3" /> {isChart ? "Campo de origem" : "Campo customizado"}
             </p>
             <Select
               value={config.fieldId ?? ""}
@@ -266,7 +307,7 @@ export function CustomKpiModal({
           </div>
         )}
 
-        {usesMatch && selectedField && (
+        {!isChart && usesMatch && selectedField && (
           <div className="mt-2">
             <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500">
               <Filter className="h-3 w-3" /> Valores (vazio = qualquer)

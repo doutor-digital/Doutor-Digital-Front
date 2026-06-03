@@ -26,6 +26,9 @@ export interface KpiCatalogItem {
   description: string;
 }
 
+/** Como o KPI custom é exibido. */
+export type KpiDisplayType = "number" | "source_chart";
+
 export interface KpiConfigItem {
   kpi_key: string;
   source_type: KpiSourceType;
@@ -34,6 +37,7 @@ export interface KpiConfigItem {
   is_custom?: boolean;
   display_name?: string | null;
   accent_color?: string | null;
+  display_type?: KpiDisplayType;
   sort_order?: number;
   updated_by_email?: string | null;
   updated_at?: string | null;
@@ -47,7 +51,14 @@ export interface KpiConfigSaveItem {
   is_custom?: boolean;
   display_name?: string | null;
   accent_color?: string | null;
+  display_type?: KpiDisplayType;
   sort_order?: number;
+}
+
+/** Uma fatia do gráfico de um KPI custom (ex.: "Instagram" → 42). */
+export interface KpiBreakdownItem {
+  label: string;
+  value: number;
 }
 
 /** KPI custom já resolvido (vem no dashboard-overview, com o valor do período). */
@@ -57,6 +68,8 @@ export interface CustomKpi {
   color?: string | null;
   value: number;
   source_type: KpiSourceType;
+  display_type?: KpiDisplayType;
+  breakdown?: KpiBreakdownItem[];
   sort_order: number;
 }
 

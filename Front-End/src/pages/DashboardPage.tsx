@@ -8,6 +8,7 @@ import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
+import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -988,33 +989,57 @@ export default function DashboardPage() {
                   </DarkCard>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {ov!.custom_kpis!.map((k) => (
-                      <DarkCard key={k.key} accent={k.color ?? "#64748b"}>
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                            {k.label}
-                          </p>
-                          {canEditKpis && (
-                            <button
-                              type="button"
-                              onClick={() => setKpiModal({ existing: savedKpiByKey.get(k.key) ?? null })}
-                              className="shrink-0 rounded-full p-1 text-white/30 transition hover:bg-white/10 hover:text-white/70"
-                              aria-label={`Editar ${k.label}`}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                    {ov!.custom_kpis!.map((k) =>
+                      k.display_type === "source_chart" ? (
+                        <div key={k.key} className="sm:col-span-2">
+                          <CustomKpiChartCard
+                            label={k.label}
+                            accent={k.color}
+                            total={k.value}
+                            breakdown={k.breakdown ?? []}
+                            canEdit={canEditKpis}
+                            onEdit={() => setKpiModal({ existing: savedKpiByKey.get(k.key) ?? null })}
+                            onDrillValue={(value) => {
+                              const cfg = savedKpiByKey.get(k.key)?.config ?? {};
+                              setDrill({
+                                kpiKey: k.key,
+                                label: `${k.label}: ${value}`,
+                                source: {
+                                  source_type: "custom_field_count",
+                                  config: { fieldId: cfg.fieldId, fieldCode: cfg.fieldCode, matchValues: [value] },
+                                },
+                              });
+                            }}
+                          />
                         </div>
-                        <EditableKpiValue
-                          okey={kpiKey(unitId, k.key)}
-                          live={k.value}
-                          format={nf}
-                          onDrill={() => setDrill({ kpiKey: k.key, label: k.label })}
-                        />
-                        <div className="mt-4 h-px w-1/3 bg-white/10" />
-                        <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                      </DarkCard>
-                    ))}
+                      ) : (
+                        <DarkCard key={k.key} accent={k.color ?? "#64748b"}>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                              {k.label}
+                            </p>
+                            {canEditKpis && (
+                              <button
+                                type="button"
+                                onClick={() => setKpiModal({ existing: savedKpiByKey.get(k.key) ?? null })}
+                                className="shrink-0 rounded-full p-1 text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                                aria-label={`Editar ${k.label}`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                          <EditableKpiValue
+                            okey={kpiKey(unitId, k.key)}
+                            live={k.value}
+                            format={nf}
+                            onDrill={() => setDrill({ kpiKey: k.key, label: k.label })}
+                          />
+                          <div className="mt-4 h-px w-1/3 bg-white/10" />
+                          <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                        </DarkCard>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
