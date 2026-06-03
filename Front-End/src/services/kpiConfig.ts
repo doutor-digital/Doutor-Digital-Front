@@ -137,6 +137,12 @@ export interface UpcomingAppt {
   days_until: number;
 }
 
+export interface LeadProfileFieldConfig {
+  birthdate_field_id?: number | null;
+  appointment_field_id?: number | null;
+  doctor_field_id?: number | null;
+}
+
 export interface LeadProfileAnalytics {
   total_leads: number;
   age: {
@@ -230,6 +236,22 @@ export const kpiConfigService = {
       fields: data?.fields ?? [],
       truncated: Boolean(data?.truncated),
     };
+  },
+
+  /** Lê o mapeamento de campos do Perfil do Lead (nascimento/agendamento/doutor). */
+  async getLeadProfileConfig(unitId: number | string): Promise<LeadProfileFieldConfig> {
+    const id = toInt(unitId);
+    if (!id) return {};
+    const { data } = await api.get<LeadProfileFieldConfig>("/api/config/kpis/lead-profile", {
+      params: { unitId: id },
+    });
+    return data ?? {};
+  },
+
+  /** Salva o mapeamento de campos do Perfil do Lead. */
+  async saveLeadProfileConfig(unitId: number | string, body: LeadProfileFieldConfig): Promise<void> {
+    const id = toInt(unitId);
+    await api.put("/api/config/kpis/lead-profile", body, { params: { unitId: id } });
   },
 
   /** Perfil avançado do lead (idade por desfecho, alertas de agendamento, doutor). */

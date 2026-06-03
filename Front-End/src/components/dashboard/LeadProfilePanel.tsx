@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Bell, Calendar, Loader2, Stethoscope, Users } from "@/components/icons";
-import { kpiConfigService, type AgeStat } from "@/services/kpiConfig";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { Bell, Calendar, Loader2, SlidersHorizontal, Stethoscope, Users, X } from "@/components/icons";
+import { Select } from "@/components/ui/Select";
+import { useAuth } from "@/hooks/useAuth";
+import { isAdminLevel } from "@/lib/roles";
+import { kpiConfigService, type AgeStat, type LeadProfileFieldConfig } from "@/services/kpiConfig";
+import { unitsService } from "@/services/units";
 import { formatNumber } from "@/lib/utils";
 
 const SEGMENTS: Array<{ key: keyof Ages; label: string; color: string }> = [
@@ -48,7 +54,11 @@ export function LeadProfilePanel({
     queryFn: () => kpiConfigService.leadProfile(unitId, { date_from: from, date_to: to, upcoming_days: 7 }),
   });
 
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const canConfig = isAdminLevel(user?.role) && unitId != null;
   const [showAllAppts, setShowAllAppts] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const data = q.data;
   const upcoming = data?.upcoming ?? [];
   const docMax = data?.doctors[0]?.count ?? 1;
@@ -58,9 +68,31 @@ export function LeadProfilePanel({
       className="mt-4 rounded-2xl bg-[#0f1f3a]/80 p-5 ring-1 ring-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
       style={{ borderTop: "4px solid #a78bfa" }}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-        Perfil do lead · análise avançada
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+          Perfil do lead · análise avançada
+        </p>
+        {canConfig && (
+          <button
+            type="button"
+            onClick={() => setConfigOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-[10.5px] font-medium text-slate-300 ring-1 ring-inset ring-white/[0.08] transition hover:bg-white/[0.08]"
+          >
+            <SlidersHorizontal className="h-3 w-3" /> Escolher campos
+          </button>
+        )}
+      </div>
+
+      {configOpen && unitId != null && (
+        <LeadProfileConfigModal
+          unitId={unitId}
+          onClose={() => setConfigOpen(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["lead-profile", unitId] });
+            setConfigOpen(false);
+          }}
+        />
+      )}
 
       {q.isLoading ? (
         <div className="grid h-28 place-items-center text-white/40">
@@ -164,5 +196,107 @@ export function LeadProfilePanel({
         </>
       )}
     </div>
+  );
+}
+
+/** Modal pra escolher quais campos da Kommo são nascimento / data de agendamento / doutor. */
+function LeadProfileConfigModal({
+  unitId,
+  onClose,
+  onSaved,
+}: {
+  unitId: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const fields = useQuery({
+    queryKey: ["kommo-custom-fields-schema", unitId],
+    queryFn: () => unitsService.kommoCustomFields(unitId),
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+  const current = useQuery({
+    queryKey: ["lead-profile-config", unitId],
+    queryFn: () => kpiConfigService.getLeadProfileConfig(unitId),
+  });
+
+  const [cfg, setCfg] = useState<LeadProfileFieldConfig>({});
+  // hidrata o estado quando a config carrega.
+  const loaded = current.data;
+  useEffect(() => {
+    if (loaded)
+      setCfg({
+        birthdate_field_id: loaded.birthdate_field_id ?? null,
+        appointment_field_id: loaded.appointment_field_id ?? null,
+        doctor_field_id: loaded.doctor_field_id ?? null,
+      });
+  }, [loaded]);
+
+  const opts = fields.data ?? [];
+  const save = useMutation({
+    mutationFn: () => kpiConfigService.saveLeadProfileConfig(unitId, cfg),
+    onSuccess: () => {
+      toast.success("Campos salvos.");
+      onSaved();
+    },
+    onError: () => toast.error("Falha ao salvar os campos."),
+  });
+
+  const pick = (key: keyof LeadProfileFieldConfig, v: string) =>
+    setCfg((c) => ({ ...c, [key]: v ? Number(v) : null }));
+
+  const Row = ({ label, k, hint }: { label: string; k: keyof LeadProfileFieldConfig; hint: string }) => (
+    <div>
+      <label className="mb-1 block text-[10.5px] uppercase tracking-wider text-slate-500">{label}</label>
+      <Select value={cfg[k] ?? ""} onChange={(e) => pick(k, e.target.value)} className="text-[12.5px]">
+        <option value="">— casar pelo nome ({hint}) —</option>
+        {opts.map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.name} ({f.type})
+          </option>
+        ))}
+      </Select>
+    </div>
+  );
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="relative w-full max-w-md space-y-3 rounded-2xl border border-white/12 bg-[#0a0f1f] p-5 shadow-2xl ring-1 ring-white/5">
+        <div className="flex items-center justify-between">
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-200">
+            Escolher campos do perfil
+          </p>
+          <button type="button" onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {fields.isLoading || current.isLoading ? (
+          <div className="grid h-24 place-items-center text-white/40">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        ) : opts.length === 0 ? (
+          <p className="text-[12px] text-slate-400">
+            Sem campos da Kommo nesta unidade (configure subdomínio + token em Unidades).
+          </p>
+        ) : (
+          <>
+            <Row label="Campo de nascimento (idade)" k="birthdate_field_id" hint="nascimento" />
+            <Row label="Campo de data de agendamento (alerta)" k="appointment_field_id" hint="agendamento" />
+            <Row label="Campo do doutor responsável" k="doctor_field_id" hint="responsável/doutor" />
+            <button
+              type="button"
+              onClick={() => save.mutate()}
+              disabled={save.isPending}
+              className="mt-1 w-full rounded-lg bg-emerald-500/90 px-3 py-1.5 text-[12px] font-semibold text-[#06231a] transition hover:bg-emerald-400 disabled:opacity-60"
+            >
+              {save.isPending ? "Salvando…" : "Salvar campos"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
