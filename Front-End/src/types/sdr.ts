@@ -59,6 +59,9 @@ export interface SdrLead {
   sourceFields: SdrSourceFieldKey[];
   sourceProvenance?: SourceProvenance;
 
+  /** Unidade do lead — usada pra buscar o schema de campos da Kommo na revisão. */
+  unitId?: number;
+
   /** Todos os campos customizados da Kommo (nome → valor), pra ver tudo na revisão. */
   customFields?: SdrCustomField[];
 

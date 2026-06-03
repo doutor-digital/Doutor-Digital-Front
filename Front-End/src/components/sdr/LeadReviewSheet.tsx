@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Loader2, Save, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "@/components/icons";
 import { SourceFieldShell } from "@/components/sdr/SourceField";
 import { reviewSdrLead, upsertSdrLead } from "@/lib/sdr/sdr-store";
-import type { SdrSourceFieldKey, SdrLead } from "@/types/sdr";
+import type { SdrSourceFieldKey, SdrLead, SdrCustomField } from "@/types/sdr";
+import { unitsService } from "@/services/units";
 import { LEAD_ORIGENS, LEAD_MOTIVOS_NAO_AGENDAMENTO } from "@/lib/cadastra/lead-mapping";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -53,6 +55,30 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, phase]);
+
+  // Schema de campos da Kommo da unidade — pra mostrar TODOS os campos (mesmo vazios).
+  const schema = useQuery({
+    queryKey: ["kommo-custom-fields-schema", lead.unitId],
+    queryFn: () => unitsService.kommoCustomFields(lead.unitId!),
+    enabled: lead.unitId != null,
+    retry: false,
+    staleTime: 10 * 60_000,
+  });
+
+  // Mescla os campos preenchidos do lead com o schema (todos os definidos). Preenchidos
+  // primeiro; se o schema não carregar, cai pros preenchidos apenas.
+  const allCustomFields = useMemo<SdrCustomField[]>(() => {
+    const filled = lead.customFields ?? [];
+    const sch = schema.data ?? [];
+    if (sch.length === 0) return filled;
+    const byId = new Map(filled.map((f) => [f.fieldId, f]));
+    const merged: SdrCustomField[] = sch.map((s) => {
+      const f = byId.get(s.id);
+      return { fieldId: s.id, fieldName: s.name, fieldCode: s.code ?? null, type: s.type, value: f?.value ?? null };
+    });
+    for (const f of filled) if (!sch.some((s) => s.id === f.fieldId)) merged.push(f);
+    return merged.sort((a, b) => (b.value ? 1 : 0) - (a.value ? 1 : 0));
+  }, [lead.customFields, schema.data]);
 
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
     draft.sourceFields.includes(k) ? "cloudia" : "manual";
@@ -273,17 +299,21 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
             </SourceFieldShell>
           </div>
 
-          {/* Bloco: Campos da Kommo (todos os campos customizados do cartão) */}
-          {(lead.customFields?.length ?? 0) > 0 && (
+          {/* Bloco: Campos da Kommo (todos os campos do cartão — preenchidos e vazios) */}
+          {allCustomFields.length > 0 && (
             <>
               <SectionHeader
                 title="Campos da Kommo"
-                subtitle="Todos os campos do cartão do lead, como vieram preenchidos do Kommo."
+                subtitle={
+                  schema.data
+                    ? "Todos os campos do cartão do lead. Preenchidos em destaque; vazios como “—”."
+                    : "Campos preenchidos do cartão do lead, como vieram do Kommo."
+                }
                 className="mt-7"
                 cloudia
               />
               <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
-                {lead.customFields!.map((f) => {
+                {allCustomFields.map((f) => {
                   const raw = (f.value ?? "").trim();
                   const isDate =
                     f.type === "date" ||

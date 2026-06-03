@@ -149,6 +149,7 @@ export function sdrLeadFromBackend(dto: SdrLeadResponseDto): SdrLead {
           tenantId: dto.tenantId,
         }
       : undefined,
+    unitId: dto.unitId,
     customFields: dto.customFields ?? [],
     createdAt: dto.createdAt,
   };
