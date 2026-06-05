@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, Loader2, Users } from "@/components/icons";
 import { Badge } from "@/components/ui/Badge";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
@@ -51,6 +51,33 @@ export function CustomFieldsPanel({
   const to = eff.to;
 
   const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  async function handleSync() {
+    if (!unitId || syncing) return;
+    setSyncing(true);
+    setSyncMsg("Sincronizando…");
+    try {
+      const r = await unitsService.syncFromKommo(unitId, { maxLeads: 5000 });
+      if (r.success) {
+        setSyncMsg(`OK — ${r.leadsPersisted} leads atualizados em ${(r.durationMs / 1000).toFixed(1)}s`);
+        // Invalida summary + schema pra recarregar com dados novos
+        await queryClient.invalidateQueries({ queryKey: ["custom-fields-summary"] });
+        await queryClient.invalidateQueries({ queryKey: ["kommo-custom-fields-schema"] });
+      } else {
+        setSyncMsg(`Falhou: ${r.error ?? "erro desconhecido"}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSyncMsg(`Erro: ${msg}`);
+    } finally {
+      setSyncing(false);
+      // Mensagem some depois de 8s
+      setTimeout(() => setSyncMsg(null), 8000);
+    }
+  }
 
   const summary = useQuery({
     queryKey: ["custom-fields-summary", "dash", unitId, from, to],
@@ -101,24 +128,43 @@ export function CustomFieldsPanel({
             {!withPeriodPicker && rangeLabel ? ` · ${rangeLabel}` : ""}
           </p>
         </div>
-        {withPeriodPicker && (
-          <div className="inline-flex items-center rounded-lg border border-white/[0.06] bg-white/[0.03] p-0.5">
-            {PERIODS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setPeriod(p.key)}
-                className={cn(
-                  "rounded-md px-3 py-1 text-[11px] font-medium transition",
-                  period === p.key ? "bg-white/[0.1] text-slate-50" : "text-slate-400 hover:text-slate-200",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {withPeriodPicker && (
+            <div className="inline-flex items-center rounded-lg border border-white/[0.06] bg-white/[0.03] p-0.5">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPeriod(p.key)}
+                  className={cn(
+                    "rounded-md px-3 py-1 text-[11px] font-medium transition",
+                    period === p.key ? "bg-white/[0.1] text-slate-50" : "text-slate-400 hover:text-slate-200",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={!unitId || syncing}
+            title="Puxa de novo os campos customizados da Kommo (5k leads mais recentes)"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] font-medium",
+              "text-slate-200 hover:bg-white/[0.08] hover:text-slate-50",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+            )}
+          >
+            {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : "⟳"}
+            {syncing ? "Sincronizando…" : "Sincronizar Kommo"}
+          </button>
+        </div>
       </div>
+      {syncMsg && (
+        <p className="mt-2 text-[11px] text-slate-300">{syncMsg}</p>
+      )}
 
       {summary.isLoading ? (
         <div className="grid h-32 place-items-center text-white/40">
