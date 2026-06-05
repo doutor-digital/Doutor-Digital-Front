@@ -36,15 +36,15 @@ function isoDaysAgo(days: number): string {
 }
 
 export default function IaAnalyticsPage() {
-  const { unitId } = useClinic();
+  const { unitId, tenantId } = useClinic();
   const queryClient = useQueryClient();
   const [rangeKey, setRangeKey] = useState("30");
   const [keyInput, setKeyInput] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
 
   const settings = useQuery({
-    queryKey: ["ai-settings"],
-    queryFn: () => aiService.getSettings(),
+    queryKey: ["ai-settings", tenantId],
+    queryFn: () => aiService.getSettings(tenantId),
   });
 
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
@@ -52,7 +52,7 @@ export default function IaAnalyticsPage() {
   const dateTo = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const setKey = useMutation({
-    mutationFn: (k: string) => aiService.setKey(k),
+    mutationFn: (k: string) => aiService.setKey(k, tenantId),
     onSuccess: () => {
       setKeyInput("");
       setShowKeyInput(false);
@@ -61,12 +61,12 @@ export default function IaAnalyticsPage() {
   });
 
   const deleteKey = useMutation({
-    mutationFn: () => aiService.deleteKey(),
+    mutationFn: () => aiService.deleteKey(tenantId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ai-settings"] }),
   });
 
   const ping = useMutation({
-    mutationFn: () => aiService.test(),
+    mutationFn: () => aiService.test(tenantId),
   });
 
   const analyze = useMutation({

@@ -15,28 +15,49 @@ export interface AiAnalyzeResponse {
   durationSec: number;
 }
 
+export interface AiChatResponse {
+  content: string;
+  toolsCalled: string[];
+}
+
 /**
- * Cliente da API de I.A. do painel (backend → OpenAI GPT-4o-mini + Whisper).
- * A chave fica guardada por tenant no backend, cifrada — o front nunca recebe
- * o valor de volta, só o boolean `hasKey`.
+ * Cliente da API de I.A. do painel (backend → OpenAI gpt-4o-mini +
+ * gpt-4o-mini-transcribe). A chave fica guardada por tenant no backend,
+ * cifrada — o front nunca recebe o valor de volta.
+ *
+ * `tenantId` é incluído como query em toda chamada quando o caller é
+ * super_admin sem tenant_id no JWT (caso típico de quem administra
+ * o painel). O front pega de useClinic.tenantId.
  */
 export const aiService = {
-  async getSettings(): Promise<AiSettings> {
-    const { data } = await api.get<AiSettings>("/api/ai/settings");
+  async getSettings(tenantId?: number | null): Promise<AiSettings> {
+    const { data } = await api.get<AiSettings>("/api/ai/settings", {
+      params: tenantId ? { tenantId } : {},
+    });
     return { hasKey: Boolean(data?.hasKey) };
   },
 
-  async setKey(apiKey: string): Promise<AiSettings> {
-    const { data } = await api.put<AiSettings>("/api/ai/settings", { apiKey });
+  async setKey(apiKey: string, tenantId?: number | null): Promise<AiSettings> {
+    const { data } = await api.put<AiSettings>(
+      "/api/ai/settings",
+      { apiKey },
+      { params: tenantId ? { tenantId } : {} },
+    );
     return { hasKey: Boolean(data?.hasKey) };
   },
 
-  async deleteKey(): Promise<void> {
-    await api.delete("/api/ai/settings");
+  async deleteKey(tenantId?: number | null): Promise<void> {
+    await api.delete("/api/ai/settings", {
+      params: tenantId ? { tenantId } : {},
+    });
   },
 
-  async test(): Promise<AiPingResponse> {
-    const { data } = await api.post<AiPingResponse>("/api/ai/settings/test");
+  async test(tenantId?: number | null): Promise<AiPingResponse> {
+    const { data } = await api.post<AiPingResponse>(
+      "/api/ai/settings/test",
+      {},
+      { params: tenantId ? { tenantId } : {} },
+    );
     return data;
   },
 
@@ -48,7 +69,7 @@ export const aiService = {
     const { data } = await api.post<AiAnalyzeResponse>(
       "/api/ai/analyze",
       payload,
-      { timeout: 180_000 }, // GPT pode levar ~30-60s pra responder
+      { timeout: 180_000 },
     );
     return {
       markdown: data?.markdown ?? "",
@@ -63,8 +84,9 @@ export const aiService = {
     dateFrom?: string;
     dateTo?: string;
     currentPath?: string;
-  }): Promise<string> {
-    const { data } = await api.post<{ content: string }>(
+    tenantId?: number | null;
+  }): Promise<AiChatResponse> {
+    const { data } = await api.post<{ content: string; toolsCalled: string[] }>(
       "/api/ai/chat",
       {
         messages: payload.messages,
@@ -73,21 +95,29 @@ export const aiService = {
         dateTo: payload.dateTo,
         currentPath: payload.currentPath,
       },
-      { timeout: 120_000 },
+      {
+        timeout: 120_000,
+        params: payload.tenantId ? { tenantId: payload.tenantId } : {},
+      },
     );
-    return data?.content ?? "";
+    return {
+      content: data?.content ?? "",
+      toolsCalled: data?.toolsCalled ?? [],
+    };
   },
 
   /**
-   * Manda áudio gravado pelo browser pra Whisper transcrever (pt-BR).
-   * Aceita webm/wav/m4a/mp3. Cap 25MB do Whisper.
+   * Manda áudio gravado pelo browser para o endpoint /v1/audio/transcriptions
+   * da OpenAI (modelo gpt-4o-mini-transcribe). Aceita webm/wav/m4a/mp3.
+   * Cap 25MB.
    */
-  async transcribe(blob: Blob, fileName = "audio.webm"): Promise<string> {
+  async transcribe(blob: Blob, fileName = "audio.webm", tenantId?: number | null): Promise<string> {
     const form = new FormData();
     form.append("audio", blob, fileName);
     const { data } = await api.post<{ text: string }>("/api/ai/transcribe", form, {
       headers: { "Content-Type": "multipart/form-data" },
       timeout: 120_000,
+      params: tenantId ? { tenantId } : {},
     });
     return data?.text ?? "";
   },

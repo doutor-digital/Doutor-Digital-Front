@@ -10,6 +10,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   ts: number;
+  toolsCalled?: string[];
 }
 
 const STORAGE_KEY = "doutor.digital.ai.chat.history";
@@ -42,11 +43,11 @@ function saveHistory(msgs: ChatMessage[]) {
  */
 export function FloatingAiChat() {
   const location = useLocation();
-  const { unitId } = useClinic();
+  const { unitId, tenantId } = useClinic();
 
   const settings = useQuery({
-    queryKey: ["ai-settings"],
-    queryFn: () => aiService.getSettings(),
+    queryKey: ["ai-settings", tenantId],
+    queryFn: () => aiService.getSettings(tenantId),
     staleTime: 5 * 60_000,
   });
 
@@ -107,8 +108,17 @@ export function FloatingAiChat() {
         messages: next.map((m) => ({ role: m.role, content: m.content })),
         unitId,
         currentPath: location.pathname,
+        tenantId,
       });
-      setMessages([...next, { role: "assistant", content: reply, ts: Date.now() }]);
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: reply.content,
+          ts: Date.now(),
+          toolsCalled: reply.toolsCalled,
+        },
+      ]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -133,7 +143,7 @@ export function FloatingAiChat() {
         if (blob.size === 0) return;
         setTranscribing(true);
         try {
-          const text = await aiService.transcribe(blob, "audio.webm");
+          const text = await aiService.transcribe(blob, "audio.webm", tenantId);
           // Se o usuário já digitou algo, anexa. Senão, substitui.
           setInput((prev) => (prev ? `${prev} ${text}`.trim() : text));
         } catch (err: unknown) {
@@ -237,7 +247,7 @@ export function FloatingAiChat() {
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+                className={cn("flex flex-col gap-1", m.role === "user" ? "items-end" : "items-start")}
               >
                 <div
                   className={cn(
@@ -249,6 +259,19 @@ export function FloatingAiChat() {
                 >
                   {m.content}
                 </div>
+                {m.role === "assistant" && m.toolsCalled && m.toolsCalled.length > 0 && (
+                  <div className="flex flex-wrap gap-1 max-w-[85%]">
+                    {Array.from(new Set(m.toolsCalled)).map((tool) => (
+                      <span
+                        key={tool}
+                        className="text-[9.5px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono"
+                        title={`Consultou: ${tool}`}
+                      >
+                        🔧 {tool}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {sending && (
