@@ -130,6 +130,7 @@ const navGroups: NavGroup[] = [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, badge: "Novo" },
       { to: "/ia", label: "I.A. · agente-Dt", icon: Bot, iconUrl: "/ai-icon.png", badge: "Novo" },
+      { to: "/conversas", label: "Conversas & Atendimento", icon: Radio, badge: "Novo" },
       { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users, iconUrl: "/nav-icons/revisar.png" },
       {
         label: "Performance",
