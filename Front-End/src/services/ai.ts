@@ -57,6 +57,27 @@ export const aiService = {
     };
   },
 
+  async chat(payload: {
+    messages: Array<{ role: "user" | "assistant"; content: string }>;
+    unitId?: number | null;
+    dateFrom?: string;
+    dateTo?: string;
+    currentPath?: string;
+  }): Promise<string> {
+    const { data } = await api.post<{ content: string }>(
+      "/api/ai/chat",
+      {
+        messages: payload.messages,
+        unitId: payload.unitId ?? null,
+        dateFrom: payload.dateFrom,
+        dateTo: payload.dateTo,
+        currentPath: payload.currentPath,
+      },
+      { timeout: 120_000 },
+    );
+    return data?.content ?? "";
+  },
+
   /**
    * Manda áudio gravado pelo browser pra Whisper transcrever (pt-BR).
    * Aceita webm/wav/m4a/mp3. Cap 25MB do Whisper.

@@ -9,6 +9,7 @@ import { MobileDrawer } from "./MobileDrawer";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { ActivityFeed } from "@/components/global/ActivityFeed";
 import { FloatingAssistant } from "@/components/global/FloatingAssistant";
+import { FloatingAiChat } from "@/components/ai/FloatingAiChat";
 import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal";
 import { useTrackRecentNav } from "@/hooks/useRecentNav";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
@@ -74,6 +75,7 @@ export default function DashboardLayout() {
       <CommandPalette />
       <ActivityFeed />
       <FloatingAssistant />
+      <FloatingAiChat />
 
       {/* Atalhos (?) e novidades */}
       <ShortcutsModal />
