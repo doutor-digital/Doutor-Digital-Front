@@ -123,6 +123,13 @@ export default {
           "Inter",
           "sans-serif",
         ],
+        display: [
+          "Playfair Display",
+          "Georgia",
+          "Cambria",
+          "Times New Roman",
+          "serif",
+        ],
       },
       animation: {
         "fade-in": "fadeIn .25s ease-out both",

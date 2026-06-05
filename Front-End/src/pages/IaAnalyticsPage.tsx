@@ -309,8 +309,8 @@ export default function IaAnalyticsPage() {
             IA
           </div>
           <div>
-            <h1 className="text-[14px] font-semibold tracking-wide text-white">
-              ANÁLISE COM I.A. · GPT-4o-mini
+            <h1 className="font-display text-[16px] font-semibold tracking-wide text-white">
+              Análise com I.A. · GPT-4o-mini
             </h1>
             <p className="text-[10.5px] text-white/70 mt-0.5">
               {unitId ? `Unidade #${unitId}` : "Selecione uma unidade no topo do painel"}
@@ -496,7 +496,7 @@ export default function IaAnalyticsPage() {
         <section>
           <div className="flex items-end justify-between mb-3">
             <div>
-              <h2 className="text-[18px] font-semibold" style={{ color: C.ink }}>
+              <h2 className="font-display text-[22px] font-semibold tracking-tight" style={{ color: C.ink }}>
                 Perguntas rápidas
               </h2>
               <p className="text-[12px] mt-0.5" style={{ color: C.inkSoft }}>
@@ -611,7 +611,7 @@ export default function IaAnalyticsPage() {
         >
           <div className="flex items-end justify-between gap-3 mb-3">
             <div>
-              <h2 className="text-[18px] font-semibold" style={{ color: C.ink }}>
+              <h2 className="font-display text-[22px] font-semibold tracking-tight" style={{ color: C.ink }}>
                 Análise profunda da unidade
               </h2>
               <p className="text-[12px] mt-0.5" style={{ color: C.inkSoft }}>
@@ -695,21 +695,21 @@ function MarkdownLite({ text }: { text: string }) {
     if (trimmed.startsWith("# ")) {
       flushList();
       out.push(
-        <h1 key={idx} className="text-[18px] font-bold mt-3 mb-2" style={{ color: C.ink }}>
+        <h1 key={idx} className="font-display text-[22px] font-bold mt-3 mb-2 tracking-tight" style={{ color: C.ink }}>
           <InlineMd text={trimmed.slice(2)} />
         </h1>,
       );
     } else if (trimmed.startsWith("## ")) {
       flushList();
       out.push(
-        <h2 key={idx} className="text-[14.5px] font-bold mt-4 mb-1.5" style={{ color: C.primary }}>
+        <h2 key={idx} className="font-display text-[18px] font-bold mt-4 mb-1.5 tracking-tight" style={{ color: C.primary }}>
           <InlineMd text={trimmed.slice(3)} />
         </h2>,
       );
     } else if (trimmed.startsWith("### ")) {
       flushList();
       out.push(
-        <h3 key={idx} className="text-[13px] font-semibold mt-3 mb-1" style={{ color: C.ink }}>
+        <h3 key={idx} className="font-display text-[15px] font-semibold mt-3 mb-1" style={{ color: C.ink }}>
           <InlineMd text={trimmed.slice(4)} />
         </h3>,
       );

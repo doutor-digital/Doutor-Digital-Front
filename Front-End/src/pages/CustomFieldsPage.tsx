@@ -151,7 +151,7 @@ export default function CustomFieldsPage() {
             DD
           </div>
           <div>
-            <h1 className="text-[14px] font-semibold tracking-wide text-white">CAMPOS CUSTOMIZADOS</h1>
+            <h1 className="font-display text-[16px] font-semibold tracking-wide text-white">Campos Customizados</h1>
             <p className="text-[10.5px] text-white/70 mt-0.5">Unidade {unitId}</p>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function CustomFieldsPage() {
       <div className="px-6 py-5" style={{ color: C.ink }}>
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-[26px] font-semibold tracking-tight" style={{ color: C.ink }}>
+            <h2 className="font-display text-[30px] font-semibold tracking-tight" style={{ color: C.ink }}>
               Visão Geral
             </h2>
             <p className="mt-0.5 text-[12px]" style={{ color: C.inkSoft }}>
@@ -222,7 +222,7 @@ export default function CustomFieldsPage() {
         ) : (
           <div className="space-y-4">
             {/* ───── ANÁLISES CRUZADAS ───── */}
-            <h3 className="text-[16px] font-semibold pt-2" style={{ color: C.ink }}>
+            <h3 className="font-display text-[22px] font-semibold pt-2 tracking-tight" style={{ color: C.ink }}>
               Análises Cruzadas
             </h3>
 
@@ -362,7 +362,7 @@ export default function CustomFieldsPage() {
             </div>
 
             {/* ───── LISTA COMPLETA DE CAMPOS (clicável) ───── */}
-            <h3 className="text-[16px] font-semibold pt-4" style={{ color: C.ink }}>
+            <h3 className="font-display text-[22px] font-semibold pt-4 tracking-tight" style={{ color: C.ink }}>
               Todos os Campos · clique para ver detalhes
             </h3>
 
@@ -564,7 +564,7 @@ function FieldDetailModal({
         {/* Header */}
         <header className="flex items-start justify-between px-5 py-3 border-b" style={{ borderColor: C.rule }}>
           <div>
-            <h2 className="text-[16px] font-semibold" style={{ color: C.ink }}>
+            <h2 className="font-display text-[20px] font-semibold tracking-tight" style={{ color: C.ink }}>
               {field.field_name}
             </h2>
             <p className="text-[11px] mt-0.5" style={{ color: C.inkSoft }}>
