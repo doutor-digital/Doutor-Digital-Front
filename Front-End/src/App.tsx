@@ -49,6 +49,7 @@ const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const ConversasAtendimentoPage = lazy(() => import("@/pages/ConversasAtendimentoPage"));
+const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 
 // ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
@@ -216,6 +217,7 @@ export default function App() {
           <Route path="/mudancas-etapas"   element={<MudancasEtapasPage />} />
           <Route path="/conversao"         element={<ConversaoPage />}    />
           <Route path="/conversas"         element={<ConversasAtendimentoPage />} />
+          <Route path="/ia-analytics"      element={<IaAnalyticsPage />} />
           <Route path="/contacts"          element={<ContactsPage />}     />
           <Route path="/duplicates"        element={<DuplicatesPage />}   />
           <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
