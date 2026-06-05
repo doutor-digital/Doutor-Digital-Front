@@ -124,6 +124,32 @@ export interface CustomFieldsSummaryResult {
   truncated: boolean;
 }
 
+export interface SexoOutcomeRow {
+  sexo: string;
+  total: number;
+  agendou: number;
+  compareceu: number;
+  fechou: number;
+  faltou: number;
+}
+
+export interface ValueCount {
+  value: string;
+  count: number;
+}
+
+export interface CustomFieldsCrossAnalysis {
+  total_leads: number;
+  sexo_by_outcome: SexoOutcomeRow[];
+  tratamento_indicado: ValueCount[];
+  tratamento_fechado: ValueCount[];
+  motivo_nao_agendamento: ValueCount[];
+  profissao: ValueCount[];
+  origem: ValueCount[];
+  responsavel_agendamento: ValueCount[];
+  qualificacao: ValueCount[];
+}
+
 export interface AgeStat {
   avg: number;
   count: number;
@@ -235,6 +261,29 @@ export const kpiConfigService = {
       total_leads: data?.total_leads ?? 0,
       fields: data?.fields ?? [],
       truncated: Boolean(data?.truncated),
+    };
+  },
+
+  /** Análises cruzadas: Sexo × desfecho + top values de Tratamento/Motivo/Profissão/etc. */
+  async customFieldsCrossAnalysis(
+    unitId: number | string | null | undefined,
+    range?: { date_from?: string; date_to?: string },
+  ): Promise<CustomFieldsCrossAnalysis> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<CustomFieldsCrossAnalysis>(
+      "/webhooks/dashboard/custom-fields-cross-analysis",
+      { params: { ...(id ? { unitId: id } : {}), dateFrom: range?.date_from, dateTo: range?.date_to } },
+    );
+    return {
+      total_leads: data?.total_leads ?? 0,
+      sexo_by_outcome: data?.sexo_by_outcome ?? [],
+      tratamento_indicado: data?.tratamento_indicado ?? [],
+      tratamento_fechado: data?.tratamento_fechado ?? [],
+      motivo_nao_agendamento: data?.motivo_nao_agendamento ?? [],
+      profissao: data?.profissao ?? [],
+      origem: data?.origem ?? [],
+      responsavel_agendamento: data?.responsavel_agendamento ?? [],
+      qualificacao: data?.qualificacao ?? [],
     };
   },
 

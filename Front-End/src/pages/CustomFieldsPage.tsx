@@ -1,15 +1,19 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Loader2 } from "@/components/icons";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from "recharts";
+import { Loader2, Users2 } from "@/components/icons";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { useClinic } from "@/hooks/useClinic";
-import { kpiConfigService, type CustomFieldSummary } from "@/services/kpiConfig";
+import {
+  kpiConfigService,
+  type CustomFieldSummary,
+  type ValueCount,
+} from "@/services/kpiConfig";
 import { unitsService } from "@/services/units";
 import { cn, formatNumber } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Paleta (inspirada no relatório de referência)
+// Paleta
 // ─────────────────────────────────────────────────────────────────────────────
 
 const C = {
@@ -18,16 +22,18 @@ const C = {
   header: "#4F46E5",
   headerDark: "#3730A3",
   primary: "#4F46E5",
-  primarySoft: "#A5B4FC",
   teal: "#10B981",
-  tealSoft: "#6EE7B7",
+  amber: "#F59E0B",
+  rose: "#EC4899",
+  cyan: "#06B6D4",
+  purple: "#A855F7",
+  green: "#22C55E",
   ink: "#1E293B",
   inkSoft: "#64748B",
   rule: "#E5E7EB",
-  rowAlt: "#F8FAFC",
 } as const;
 
-const PALETTE = [C.primary, C.teal, "#F59E0B", "#EC4899", "#06B6D4", "#A855F7", "#22C55E", "#94A3B8"];
+const PALETTE = [C.primary, C.teal, C.amber, C.rose, C.cyan, C.purple, C.green, "#94A3B8"];
 
 const RANGES: Array<{ key: string; label: string; days: number }> = [
   { key: "7", label: "7 dias", days: 7 },
@@ -53,6 +59,7 @@ export default function CustomFieldsPage() {
   const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [detailField, setDetailField] = useState<CustomFieldSummary | null>(null);
 
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
   const dateFrom = useMemo(() => isoDaysAgo(days), [days]);
@@ -62,6 +69,14 @@ export default function CustomFieldsPage() {
     queryKey: ["custom-fields-summary", unitId, dateFrom, dateTo],
     queryFn: () =>
       kpiConfigService.customFieldsSummary(unitId, { date_from: dateFrom, date_to: dateTo }),
+    enabled: unitId != null,
+  });
+
+  const cross = useQuery({
+    queryKey: ["custom-fields-cross", unitId, dateFrom, dateTo],
+    queryFn: () =>
+      kpiConfigService.customFieldsCrossAnalysis(unitId, { date_from: dateFrom, date_to: dateTo }),
+    enabled: unitId != null,
   });
 
   const total = summary.data?.total_leads ?? 0;
@@ -72,59 +87,6 @@ export default function CustomFieldsPage() {
     return q ? allFields.filter((f) => f.field_name.toLowerCase().includes(q)) : allFields;
   }, [allFields, search]);
 
-  // Métricas agregadas pros KPI cards
-  const metrics = useMemo(() => {
-    const fieldsWithData = allFields.filter((f) => f.filled > 0);
-    const totalFills = allFields.reduce((s, f) => s + f.filled, 0);
-    const avgFill =
-      allFields.length > 0
-        ? allFields.reduce((s, f) => s + f.filled / Math.max(1, total), 0) / allFields.length
-        : 0;
-    const totalDistinct = allFields.reduce((s, f) => s + f.distinct_values, 0);
-    return {
-      totalLeads: total,
-      fieldsActive: fieldsWithData.length,
-      fieldsTotal: allFields.length,
-      totalFills,
-      avgFillPct: Math.round(avgFill * 100),
-      totalDistinct,
-    };
-  }, [allFields, total]);
-
-  // Top 8 campos por preenchimento → bar chart
-  const topFieldsForChart = useMemo(() => {
-    return [...filteredFields]
-      .sort((a, b) => b.filled - a.filled)
-      .slice(0, 8)
-      .map((f) => ({
-        name: shortLabel(f.field_name, 10),
-        fullName: f.field_name,
-        preenchido: f.filled,
-        vazio: Math.max(0, total - f.filled),
-      }));
-  }, [filteredFields, total]);
-
-  // Top 3 campos pra gauges circulares
-  const topThree = useMemo(() => {
-    return [...filteredFields].sort((a, b) => b.filled - a.filled).slice(0, 3);
-  }, [filteredFields]);
-
-  // "Analytical" — lista horizontal de barras (top 8 ordenados)
-  const analyticalRows = useMemo(() => {
-    return [...filteredFields]
-      .sort((a, b) => b.filled - a.filled)
-      .slice(0, 8)
-      .map((f, i) => ({
-        label: f.field_name,
-        pct: total > 0 ? Math.round((f.filled / total) * 100) : 0,
-        count: f.filled,
-        color: PALETTE[i % PALETTE.length],
-      }));
-  }, [filteredFields, total]);
-
-  // "Distribuição" — top values do campo #1 mais preenchido
-  const topField = topThree[0];
-
   async function handleSync() {
     if (!unitId || syncing) return;
     setSyncing(true);
@@ -134,6 +96,7 @@ export default function CustomFieldsPage() {
       if (r.success) {
         setSyncMsg(`OK — ${r.leadsPersisted} leads em ${(r.durationMs / 1000).toFixed(1)}s`);
         await queryClient.invalidateQueries({ queryKey: ["custom-fields-summary"] });
+        await queryClient.invalidateQueries({ queryKey: ["custom-fields-cross"] });
       } else {
         setSyncMsg(`Falhou: ${r.error ?? "erro desconhecido"}`);
       }
@@ -146,9 +109,36 @@ export default function CustomFieldsPage() {
     }
   }
 
+  // Sem unit selecionada → tela informativa
+  if (unitId == null) {
+    return (
+      <div className="-mx-4 md:-mx-6 -mt-2 min-h-[calc(100vh-3rem)]" style={{ background: C.bg }}>
+        <header
+          className="flex items-center px-6 py-3"
+          style={{ background: `linear-gradient(90deg, ${C.headerDark} 0%, ${C.header} 100%)` }}
+        >
+          <h1 className="text-[14px] font-semibold tracking-wide text-white">CAMPOS CUSTOMIZADOS</h1>
+        </header>
+        <div className="px-6 py-10 max-w-xl mx-auto">
+          <div className="rounded-xl p-8 text-center" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
+            <Users2 className="h-10 w-10 mx-auto mb-3" style={{ color: C.inkSoft }} />
+            <h2 className="text-[18px] font-semibold mb-1" style={{ color: C.ink }}>
+              Selecione uma unidade
+            </h2>
+            <p className="text-[13px]" style={{ color: C.inkSoft }}>
+              Pra ver os campos customizados de uma clínica específica, escolha a unidade no topo do painel.
+              <br />
+              Sem unidade, o dado fica agregado entre todas e perde sentido.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="-mx-4 md:-mx-6 -mt-2" style={{ background: C.bg, minHeight: "calc(100vh - 3rem)" }}>
-      {/* Header bar roxo (estilo dashboard de referência) */}
+      {/* Header */}
       <header
         className="flex items-center justify-between px-6 py-3"
         style={{ background: `linear-gradient(90deg, ${C.headerDark} 0%, ${C.header} 100%)` }}
@@ -160,9 +150,10 @@ export default function CustomFieldsPage() {
           >
             DD
           </div>
-          <h1 className="text-[14px] font-semibold tracking-wide text-white">
-            CAMPOS CUSTOMIZADOS
-          </h1>
+          <div>
+            <h1 className="text-[14px] font-semibold tracking-wide text-white">CAMPOS CUSTOMIZADOS</h1>
+            <p className="text-[10.5px] text-white/70 mt-0.5">Unidade {unitId}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -188,14 +179,13 @@ export default function CustomFieldsPage() {
 
       {/* Conteúdo */}
       <div className="px-6 py-5" style={{ color: C.ink }}>
-        {/* Linha do título + filtros de período */}
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-[26px] font-semibold tracking-tight" style={{ color: C.ink }}>
               Visão Geral
             </h2>
             <p className="mt-0.5 text-[12px]" style={{ color: C.inkSoft }}>
-              {formatNumber(total)} leads no período · {dateFrom} → {dateTo}
+              {formatNumber(total)} leads · {dateFrom} → {dateTo}
             </p>
           </div>
           <div className="inline-flex items-center rounded-md border" style={{ borderColor: C.rule, background: C.panel }}>
@@ -225,166 +215,177 @@ export default function CustomFieldsPage() {
           </div>
         )}
 
-        {summary.isLoading ? (
+        {summary.isLoading || cross.isLoading ? (
           <div className="grid h-72 place-items-center" style={{ color: C.inkSoft }}>
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-4">
-            {/* ───── LINHA 1 ───── */}
+          <div className="space-y-4">
+            {/* ───── ANÁLISES CRUZADAS ───── */}
+            <h3 className="text-[16px] font-semibold pt-2" style={{ color: C.ink }}>
+              Análises Cruzadas
+            </h3>
 
-            {/* Average Charts (esquerda) */}
-            <Panel title="Preenchimento por Campo" className="col-span-12 lg:col-span-8">
-              <div className="h-72 px-4 pb-4">
-                {topFieldsForChart.length === 0 ? (
-                  <EmptyMini text="Sem dados pra exibir" />
+            <div className="grid grid-cols-12 gap-4">
+              {/* Sexo × desfecho — bar chart agrupado */}
+              <Panel title="Sexo × Desfecho" subtitle="Quem agendou, compareceu e fechou — por sexo" className="col-span-12 lg:col-span-8">
+                {(cross.data?.sexo_by_outcome.length ?? 0) === 0 ? (
+                  <EmptyMini text="Campo 'Sexo' não preenchido em leads do período" />
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topFieldsForChart} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={C.rule} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fill: C.inkSoft, fontSize: 10 }} interval={0} />
-                      <YAxis tick={{ fill: C.inkSoft, fontSize: 10 }} />
-                      <Tooltip
-                        cursor={{ fill: "rgba(79, 70, 229, 0.06)" }}
-                        contentStyle={{
-                          background: "#fff",
-                          border: `1px solid ${C.rule}`,
-                          borderRadius: 6,
-                          fontSize: 12,
-                          color: C.ink,
-                        }}
-                        formatter={(v: number, name: string) => [formatNumber(v), name]}
-                        labelFormatter={(_, payload) => {
-                          const item = payload?.[0]?.payload as { fullName?: string } | undefined;
-                          return item?.fullName ?? "";
-                        }}
-                      />
-                      <Bar dataKey="preenchido" fill={C.teal} name="Preenchido" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="vazio" fill={C.primary} name="Vazio" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div className="h-72 px-4 pb-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={cross.data?.sexo_by_outcome ?? []} margin={{ top: 16, right: 12, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={C.rule} vertical={false} />
+                        <XAxis dataKey="sexo" tick={{ fill: C.inkSoft, fontSize: 11 }} />
+                        <YAxis tick={{ fill: C.inkSoft, fontSize: 10 }} />
+                        <Tooltip
+                          contentStyle={{ background: "#fff", border: `1px solid ${C.rule}`, borderRadius: 6, fontSize: 12 }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="total" fill={C.inkSoft} name="Total" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="agendou" fill={C.primary} name="Agendou" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="compareceu" fill={C.teal} name="Compareceu" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="fechou" fill={C.green} name="Fechou" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="faltou" fill={C.amber} name="Faltou" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
-              </div>
-            </Panel>
+              </Panel>
 
-            {/* Calculation (direita) — 3 KPI cards */}
-            <Panel title="Resumo" className="col-span-12 lg:col-span-4">
-              <div className="grid grid-cols-3 gap-2 px-4 py-4">
-                <KpiTile
-                  label="Leads"
-                  value={formatNumber(metrics.totalLeads)}
-                  icon="👥"
-                  color={C.primary}
-                />
-                <KpiTile
-                  label="Campos ativos"
-                  value={`${metrics.fieldsActive}/${metrics.fieldsTotal}`}
-                  icon="↓"
-                  color={C.teal}
-                />
-                <KpiTile
-                  label="Preenchimentos"
-                  value={formatNumber(metrics.totalFills)}
-                  icon="★"
-                  color={C.primary}
-                />
-              </div>
-            </Panel>
-
-            {/* ───── LINHA 2 ───── */}
-
-            {/* Distribuição (esquerda) — top values do campo #1 */}
-            <Panel
-              title={topField ? `Distribuição: ${topField.field_name}` : "Distribuição"}
-              className="col-span-12 lg:col-span-8"
-            >
-              <div className="px-4 py-4">
-                {!topField || topField.top_values.length === 0 ? (
-                  <EmptyMini text="Selecione um campo com valores preenchidos" />
-                ) : (
-                  <ul className="space-y-2">
-                    {topField.top_values.slice(0, 8).map((v, i) => {
-                      const max = topField.top_values[0]?.count ?? 1;
-                      const pct = Math.round((v.count / max) * 100);
-                      return (
-                        <li
-                          key={v.value}
-                          className="flex items-center gap-3 rounded-md p-2 hover:bg-slate-50 cursor-pointer"
-                          onClick={() =>
-                            setDrill({
-                              kpiKey: `field_${topField.field_id}`,
-                              label: `${topField.field_name}: ${v.value}`,
-                              source: {
-                                source_type: "custom_field_count",
-                                config: {
-                                  fieldId: topField.field_id,
-                                  fieldCode: topField.field_code,
-                                  matchValues: [v.value],
-                                },
-                              },
-                            })
-                          }
-                        >
-                          <div className="w-40 truncate text-[12px]" style={{ color: C.ink }}>
-                            {v.value}
-                          </div>
-                          <div className="flex-1 h-2.5 rounded-full" style={{ background: C.rule }}>
-                            <div
-                              className="h-full rounded-full"
-                              style={{ width: `${Math.max(3, pct)}%`, background: PALETTE[i % PALETTE.length] }}
-                            />
-                          </div>
-                          <div className="w-12 text-right text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
-                            {formatNumber(v.count)}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </Panel>
-
-            {/* 3 Gauges circulares (direita) */}
-            <Panel title="Top 3 campos" className="col-span-12 lg:col-span-4">
-              <div className="flex flex-col items-center gap-4 px-4 py-4">
-                {topThree.length === 0 ? (
-                  <EmptyMini text="Sem dados" />
-                ) : (
-                  topThree.map((f, i) => {
-                    const pct = total > 0 ? Math.round((f.filled / total) * 100) : 0;
+              {/* KPI lateral — taxas de fechamento por sexo */}
+              <Panel title="Taxa de Fechamento" subtitle="Fechou / Total — por sexo" className="col-span-12 lg:col-span-4">
+                <div className="px-4 py-4 space-y-3">
+                  {(cross.data?.sexo_by_outcome ?? []).slice(0, 5).map((row) => {
+                    const pct = row.total > 0 ? Math.round((row.fechou / row.total) * 100) : 0;
                     return (
-                      <CircleGauge
-                        key={f.field_id}
-                        label={`Chart 0${i + 1} · ${shortLabel(f.field_name, 14)}`}
-                        pct={pct}
-                        color={i === 1 ? C.primary : C.primary}
-                        filled={i === 1}
-                      />
+                      <div key={row.sexo}>
+                        <div className="flex items-center justify-between text-[12px]" style={{ color: C.ink }}>
+                          <span className="font-medium">{row.sexo}</span>
+                          <span className="tabular-nums" style={{ color: C.inkSoft }}>
+                            {row.fechou} / {row.total} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="mt-1 h-2 rounded-full" style={{ background: C.rule }}>
+                          <div className="h-full rounded-full" style={{ width: `${Math.max(2, pct)}%`, background: C.green }} />
+                        </div>
+                      </div>
                     );
-                  })
-                )}
-              </div>
-            </Panel>
+                  })}
+                  {(cross.data?.sexo_by_outcome.length ?? 0) === 0 && <EmptyMini text="Sem dados" />}
+                </div>
+              </Panel>
 
-            {/* ───── LINHA 3 ───── */}
+              {/* Origem */}
+              <BarPanel
+                title="Origem"
+                subtitle="De onde os leads vieram"
+                data={cross.data?.origem ?? []}
+                color={C.primary}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Origem", "Origem", value, allFields)
+                }
+              />
 
-            {/* Lista de TODOS os campos (analytical-style) */}
-            <Panel title="Todos os Campos" className="col-span-12">
+              {/* Tratamento indicado */}
+              <BarPanel
+                title="Tratamento Indicado"
+                subtitle="Quais tratamentos a SDR mais indica"
+                data={cross.data?.tratamento_indicado ?? []}
+                color={C.teal}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Tratamento Indicado", "Tratamento indicado", value, allFields)
+                }
+              />
+
+              {/* Motivo do não agendamento */}
+              <BarPanel
+                title="Motivo do Não Agendamento"
+                subtitle="Por que os leads não agendaram"
+                data={cross.data?.motivo_nao_agendamento ?? []}
+                color={C.amber}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Motivo do não agendamento", "Motivo do não agendamento", value, allFields)
+                }
+              />
+
+              {/* Tratamento fechado */}
+              <BarPanel
+                title="Tratamento Fechado"
+                subtitle="O que os leads acabam contratando"
+                data={cross.data?.tratamento_fechado ?? []}
+                color={C.green}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Tratamento Fechado", "Tratamento fechado", value, allFields)
+                }
+              />
+
+              {/* Profissão */}
+              <BarPanel
+                title="Profissão"
+                subtitle="Top profissões dos leads"
+                data={cross.data?.profissao ?? []}
+                color={C.purple}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Profissão", "Profissão", value, allFields)
+                }
+              />
+
+              {/* Qualificação do lead */}
+              <BarPanel
+                title="Qualificação do Lead"
+                subtitle="Quente / Morno / Frio"
+                data={cross.data?.qualificacao ?? []}
+                color={C.rose}
+                className="col-span-12 lg:col-span-6"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Qualificação do lead", "Qualificação do lead", value, allFields)
+                }
+              />
+
+              {/* Responsável agendamento */}
+              <BarPanel
+                title="Responsável pelo Agendamento"
+                subtitle="Atendente que mais agendou"
+                data={cross.data?.responsavel_agendamento ?? []}
+                color={C.cyan}
+                className="col-span-12"
+                onClick={(value) =>
+                  drillByFieldName(setDrill, "Responsável agendamento", "Responsável agendamento", value, allFields)
+                }
+              />
+            </div>
+
+            {/* ───── LISTA COMPLETA DE CAMPOS (clicável) ───── */}
+            <h3 className="text-[16px] font-semibold pt-4" style={{ color: C.ink }}>
+              Todos os Campos · clique para ver detalhes
+            </h3>
+
+            <Panel className="col-span-12">
               <div className="px-4 py-3">
-                {analyticalRows.length === 0 && filteredFields.length === 0 ? (
+                {filteredFields.length === 0 ? (
                   <EmptyMini text="Nenhum campo no período" />
                 ) : (
                   <ul className="space-y-1.5">
                     {filteredFields.map((f, i) => {
                       const pct = total > 0 ? Math.round((f.filled / total) * 100) : 0;
                       const color = PALETTE[i % PALETTE.length];
+                      const disabled = f.filled === 0;
                       return (
                         <li
                           key={f.field_id}
-                          className="grid grid-cols-12 items-center gap-3 rounded-md py-1.5 px-2 hover:bg-slate-50"
+                          onClick={() => !disabled && setDetailField(f)}
+                          className={cn(
+                            "grid grid-cols-12 items-center gap-3 rounded-md py-2 px-2",
+                            disabled ? "opacity-50" : "hover:bg-slate-50 cursor-pointer",
+                          )}
                         >
-                          <div className="col-span-3 truncate text-[12px]" style={{ color: C.ink }} title={f.field_name}>
+                          <div className="col-span-3 truncate text-[12px] font-medium" style={{ color: C.ink }} title={f.field_name}>
                             {f.field_name}
                           </div>
                           <div className="col-span-2 text-[10.5px] uppercase tracking-wide" style={{ color: C.inkSoft }}>
@@ -412,20 +413,32 @@ export default function CustomFieldsPage() {
                 )}
               </div>
             </Panel>
-
-            {/* Recent Update — barra fina informativa */}
-            <Panel className="col-span-12">
-              <div className="px-4 py-3 flex items-center gap-4 text-[12px]" style={{ color: C.inkSoft }}>
-                <span className="font-semibold" style={{ color: C.ink }}>{dateTo}</span>
-                <span className="font-medium" style={{ color: C.ink }}>Última atualização</span>
-                <span>
-                  Cache: 1h · Sync periódico Kommo a cada 30min · Clique "Sincronizar Kommo" pra puxar agora.
-                </span>
-              </div>
-            </Panel>
           </div>
         )}
       </div>
+
+      {/* Modal: detalhe do campo */}
+      {detailField && (
+        <FieldDetailModal
+          field={detailField}
+          totalLeads={total}
+          onClose={() => setDetailField(null)}
+          onDrillValue={(value) =>
+            setDrill({
+              kpiKey: `field_${detailField.field_id}`,
+              label: `${detailField.field_name}: ${value}`,
+              source: {
+                source_type: "custom_field_count",
+                config: {
+                  fieldId: detailField.field_id,
+                  fieldCode: detailField.field_code,
+                  matchValues: [value],
+                },
+              },
+            })
+          }
+        />
+      )}
 
       <KpiDrillDown
         target={drill}
@@ -444,10 +457,12 @@ export default function CustomFieldsPage() {
 
 function Panel({
   title,
+  subtitle,
   children,
   className,
 }: {
   title?: string;
+  subtitle?: string;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -458,9 +473,16 @@ function Panel({
     >
       {title && (
         <header className="px-4 py-2.5 border-b" style={{ borderColor: C.rule }}>
-          <span className="text-[12.5px] font-semibold" style={{ color: C.ink }}>
-            {title}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-[12.5px] font-semibold" style={{ color: C.ink }}>
+              {title}
+            </span>
+            {subtitle && (
+              <span className="text-[10.5px]" style={{ color: C.inkSoft }}>
+                · {subtitle}
+              </span>
+            )}
+          </div>
         </header>
       )}
       {children}
@@ -468,108 +490,202 @@ function Panel({
   );
 }
 
-function KpiTile({
-  label,
-  value,
-  icon,
+function BarPanel({
+  title,
+  subtitle,
+  data,
   color,
+  className,
+  onClick,
 }: {
-  label: string;
-  value: string;
-  icon: string;
+  title: string;
+  subtitle: string;
+  data: ValueCount[];
   color: string;
+  className?: string;
+  onClick?: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center">
-      <span className="text-[10px] uppercase tracking-widest" style={{ color: C.inkSoft }}>
-        {label}
-      </span>
-      <span className="mt-1.5 text-[24px] font-bold tabular-nums leading-none" style={{ color }}>
-        {icon === "👥" || icon === "↓" || icon === "★" ? (
-          <span className="block text-[20px]" style={{ color }}>{icon}</span>
-        ) : null}
-      </span>
-      <span className="mt-1 text-[20px] font-extrabold tabular-nums" style={{ color: C.ink }}>
-        {value}
-      </span>
-    </div>
+    <Panel title={title} subtitle={subtitle} className={className}>
+      {data.length === 0 ? (
+        <div className="h-44 grid place-items-center">
+          <EmptyMini text="Sem dados — campo não preenchido em leads do período" />
+        </div>
+      ) : (
+        <div className="px-4 py-3 max-h-72 overflow-y-auto">
+          <ul className="space-y-1.5">
+            {data.map((v) => {
+              const max = data[0]?.count ?? 1;
+              const pct = Math.round((v.count / max) * 100);
+              return (
+                <li
+                  key={v.value}
+                  onClick={() => onClick?.(v.value)}
+                  className={cn("flex items-center gap-3 rounded-md p-1.5", onClick && "hover:bg-slate-50 cursor-pointer")}
+                >
+                  <div className="w-44 truncate text-[12px]" style={{ color: C.ink }} title={v.value}>
+                    {v.value}
+                  </div>
+                  <div className="flex-1 h-2 rounded-full" style={{ background: C.rule }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.max(3, pct)}%`, background: color }} />
+                  </div>
+                  <div className="w-12 text-right text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
+                    {formatNumber(v.count)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </Panel>
   );
 }
 
-function CircleGauge({
-  label,
-  pct,
-  color,
-  filled,
+function FieldDetailModal({
+  field,
+  totalLeads,
+  onClose,
+  onDrillValue,
 }: {
-  label: string;
-  pct: number;
-  color: string;
-  filled: boolean;
+  field: CustomFieldSummary;
+  totalLeads: number;
+  onClose: () => void;
+  onDrillValue: (value: string) => void;
 }) {
-  const size = 84;
-  const stroke = 8;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const offset = c - (pct / 100) * c;
+  const fillPct = totalLeads > 0 ? Math.round((field.filled / totalLeads) * 100) : 0;
 
   return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Trilho */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={C.rule}
-          strokeWidth={stroke}
-          fill="none"
-        />
-        {/* Preenchimento (estilo "ring 02" da imagem = preenchido sólido) */}
-        {filled && (
-          <circle cx={size / 2} cy={size / 2} r={r - stroke / 2 - 1} fill={color} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl flex flex-col"
+        style={{ background: C.panel }}
+      >
+        {/* Header */}
+        <header className="flex items-start justify-between px-5 py-3 border-b" style={{ borderColor: C.rule }}>
+          <div>
+            <h2 className="text-[16px] font-semibold" style={{ color: C.ink }}>
+              {field.field_name}
+            </h2>
+            <p className="text-[11px] mt-0.5" style={{ color: C.inkSoft }}>
+              tipo: {field.type} · {formatNumber(field.filled)} leads preenchidos ({fillPct}%) ·{" "}
+              {field.distinct_values} valores distintos
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-[20px] leading-none hover:opacity-60 px-2"
+            style={{ color: C.inkSoft }}
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </header>
+
+        {/* Bar chart top 12 */}
+        {field.top_values.length === 0 ? (
+          <div className="p-8 text-center" style={{ color: C.inkSoft }}>
+            Nenhum valor preenchido no período.
+          </div>
+        ) : (
+          <>
+            <div className="px-5 pt-4 pb-2">
+              <p className="text-[11px] uppercase tracking-widest mb-2" style={{ color: C.inkSoft }}>
+                Mais comum → Menos comum
+              </p>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={field.top_values.slice(0, 12)} margin={{ top: 8, right: 12, left: 0, bottom: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.rule} vertical={false} />
+                    <XAxis
+                      dataKey="value"
+                      tick={{ fill: C.inkSoft, fontSize: 9 }}
+                      angle={-25}
+                      textAnchor="end"
+                      interval={0}
+                      height={60}
+                    />
+                    <YAxis tick={{ fill: C.inkSoft, fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{ background: "#fff", border: `1px solid ${C.rule}`, borderRadius: 6, fontSize: 12 }}
+                    />
+                    <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                      {field.top_values.slice(0, 12).map((_, i) => (
+                        <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto px-5 pb-5">
+              <p className="text-[11px] uppercase tracking-widest mb-2 mt-2" style={{ color: C.inkSoft }}>
+                Lista completa (clique para ver leads)
+              </p>
+              <ul className="space-y-1">
+                {field.top_values.map((v, i) => {
+                  const max = field.top_values[0]?.count ?? 1;
+                  const pct = Math.round((v.count / max) * 100);
+                  return (
+                    <li
+                      key={v.value}
+                      onClick={() => onDrillValue(v.value)}
+                      className="flex items-center gap-3 rounded-md p-2 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <div className="w-44 truncate text-[12px]" style={{ color: C.ink }} title={v.value}>
+                        {v.value}
+                      </div>
+                      <div className="flex-1 h-2 rounded-full" style={{ background: C.rule }}>
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${Math.max(3, pct)}%`, background: PALETTE[i % PALETTE.length] }}
+                        />
+                      </div>
+                      <div className="w-12 text-right text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
+                        {formatNumber(v.count)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </>
         )}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={stroke}
-          fill="none"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-        <text
-          x={size / 2}
-          y={size / 2}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize="16"
-          fontWeight="700"
-          fill={filled ? "#fff" : color}
-        >
-          {pct}%
-        </text>
-      </svg>
-      <span className="mt-1 text-[10.5px] text-center" style={{ color: C.inkSoft }}>
-        {label}
-      </span>
+      </div>
     </div>
   );
 }
 
 function EmptyMini({ text }: { text: string }) {
   return (
-    <div className="h-full grid place-items-center text-[12px]" style={{ color: C.inkSoft }}>
+    <div className="grid place-items-center text-[12px] py-4" style={{ color: C.inkSoft }}>
       {text}
     </div>
   );
 }
 
-function shortLabel(s: string, max: number): string {
-  if (!s) return "";
-  if (s.length <= max) return s;
-  return s.slice(0, max - 1) + "…";
+/**
+ * Resolve o field_id pelo nome (vem dos campos sincronizados) pra abrir o drill-down
+ * sem precisar saber o id antes. Casa por substring case-insensitive.
+ */
+function drillByFieldName(
+  setDrill: (t: KpiDrillTarget) => void,
+  label: string,
+  nameNeedle: string,
+  value: string,
+  allFields: CustomFieldSummary[],
+) {
+  const needle = nameNeedle.toLowerCase();
+  const found = allFields.find((f) => f.field_name.toLowerCase().includes(needle));
+  if (!found) return;
+  setDrill({
+    kpiKey: `field_${found.field_id}`,
+    label: `${label}: ${value}`,
+    source: {
+      source_type: "custom_field_count",
+      config: { fieldId: found.field_id, fieldCode: found.field_code, matchValues: [value] },
+    },
+  });
 }
+
