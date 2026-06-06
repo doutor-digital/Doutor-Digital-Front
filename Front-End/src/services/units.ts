@@ -93,9 +93,14 @@ export const unitsService = {
    * pipeline do webhook (idempotente). Aceita o token via body ou usa o
    * que ja esteja salvo na unidade.
    */
+  /**
+   * Por padrão usa fast=true (pula re-fetch de custom_fields nulos), que evita
+   * o timeout de 5min do gateway do Railway em unidades grandes. Passa
+   * `deep: true` em opts pra rodar o modo completo (lento, pode 502).
+   */
   async syncFromKommo(
     unitId: number | string,
-    opts: { accessToken?: string; persistToken?: boolean; maxLeads?: number } = {},
+    opts: { accessToken?: string; persistToken?: boolean; maxLeads?: number; deep?: boolean } = {},
   ): Promise<{
     success: boolean;
     error?: string | null;
@@ -107,6 +112,7 @@ export const unitsService = {
   }> {
     const id = toInt(unitId);
     if (!id) throw new Error("id inválido para sync");
+    const fast = !opts.deep; // default = fast
     const { data } = await api.post(
       `/units/${id}/sync-from-kommo`,
       {
@@ -114,9 +120,11 @@ export const unitsService = {
         persistToken: opts.persistToken ?? true,
         maxLeads: opts.maxLeads,
       },
-      // Sync pode demorar — pagina 250/vez na Kommo + busca contatos em lote.
-      // 5k leads ≈ 1-3 min; o backend roda até 10min mesmo se a conexão cair.
-      { timeout: 600_000 },
+      {
+        params: fast ? { fast: true } : undefined,
+        // Sync rápido completa em <1min, modo deep pode levar até 10min.
+        timeout: opts.deep ? 600_000 : 120_000,
+      },
     );
     return data;
   },
