@@ -64,6 +64,22 @@ export function KpiSourceButton({
     onError: () => toast.error("Falha ao salvar a fonte."),
   });
 
+  /**
+   * Restaura o KPI pra fonte padrão (criados no período) removendo o
+   * mapeamento custom salvo. Útil quando o analista configurou errado
+   * (ex.: setou 'Etapa da Kommo' pra 'Total de leads' achando que era isso).
+   */
+  const reset = useMutation({
+    mutationFn: () => kpiConfigService.remove(unitId!, kpiKey),
+    onSuccess: () => {
+      toast.success(`"${label}" voltou ao padrão (criados no período).`);
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+      qc.invalidateQueries({ queryKey: ["kpi-config", unitId] });
+      setOpen(false);
+    },
+    onError: () => toast.error("Falha ao restaurar."),
+  });
+
   const selectedField = useMemo(
     () => customFields.find((f) => f.id === config.fieldId),
     [customFields, config.fieldId],
@@ -264,6 +280,19 @@ export function KpiSourceButton({
             {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             Salvar e aplicar
           </button>
+
+          {saved && (
+            <button
+              type="button"
+              onClick={() => reset.mutate()}
+              disabled={reset.isPending}
+              title="Volta o KPI pra fonte padrão (leads criados no período)"
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/[0.04] px-3 py-1.5 text-[11.5px] font-medium text-slate-300 ring-1 ring-inset ring-white/[0.08] transition hover:bg-white/[0.08] hover:text-white disabled:opacity-60"
+            >
+              {reset.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "↺"}
+              Restaurar padrão (criados no período)
+            </button>
+          )}
           </div>
         </div>,
         document.body,
