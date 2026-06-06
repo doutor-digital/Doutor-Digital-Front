@@ -199,25 +199,35 @@ export default function BuscarLeadsPage() {
                   Nenhum lead encontrado pra esses filtros.
                 </p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[12px]">
-                    <thead style={{ background: "#F9FAFB" }}>
-                      <tr style={{ color: C.inkSoft }}>
-                        <th className="text-left px-3 py-2 font-medium">Nome</th>
-                        <th className="text-left px-3 py-2 font-medium">Telefone</th>
-                        <th className="text-left px-3 py-2 font-medium">Etapa</th>
-                        <th className="text-left px-3 py-2 font-medium">Origem</th>
-                        <th className="text-left px-3 py-2 font-medium">Criado</th>
-                        <th className="text-right px-3 py-2 font-medium"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {search.data.leads.map((l) => (
-                        <LeadRow key={l.id} lead={l} />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Desktop: tabela ≥ md */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-[12px]">
+                      <thead style={{ background: "#F9FAFB" }}>
+                        <tr style={{ color: C.inkSoft }}>
+                          <th className="text-left px-3 py-2 font-medium">Nome</th>
+                          <th className="text-left px-3 py-2 font-medium">Telefone</th>
+                          <th className="text-left px-3 py-2 font-medium">Etapa</th>
+                          <th className="text-left px-3 py-2 font-medium">Origem</th>
+                          <th className="text-left px-3 py-2 font-medium">Criado</th>
+                          <th className="text-right px-3 py-2 font-medium"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {search.data.leads.map((l) => (
+                          <LeadRow key={l.id} lead={l} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile: cards < md */}
+                  <ul className="md:hidden divide-y" style={{ borderColor: C.rule }}>
+                    {search.data.leads.map((l) => (
+                      <LeadCard key={l.id} lead={l} />
+                    ))}
+                  </ul>
+                </>
               )}
             </section>
           </>
@@ -248,6 +258,12 @@ function FilterChip({ filter, ignored }: { filter: FilterEntry; ignored: boolean
   );
 }
 
+function stageLabel(lead: LeadResultDto): string {
+  if (lead.currentStageName) return lead.currentStageName;
+  if (lead.currentStage && !/^\d+$/.test(lead.currentStage)) return lead.currentStage;
+  return "—";
+}
+
 function LeadRow({ lead }: { lead: LeadResultDto }) {
   return (
     <tr className="border-t hover:bg-slate-50" style={{ borderColor: C.rule, color: C.ink }}>
@@ -261,7 +277,14 @@ function LeadRow({ lead }: { lead: LeadResultDto }) {
         </a>
       </td>
       <td className="px-3 py-2 tabular-nums">{lead.phone || "—"}</td>
-      <td className="px-3 py-2">{lead.currentStage || "—"}</td>
+      <td className="px-3 py-2">
+        <span
+          className="inline-block rounded px-2 py-0.5 text-[11px] font-medium"
+          style={{ background: "#EEF2FF", color: C.primary }}
+        >
+          {stageLabel(lead)}
+        </span>
+      </td>
       <td className="px-3 py-2">
         {lead.source}
         {lead.campaign && <span style={{ color: C.inkSoft }}> · {lead.campaign}</span>}
@@ -279,5 +302,39 @@ function LeadRow({ lead }: { lead: LeadResultDto }) {
         </a>
       </td>
     </tr>
+  );
+}
+
+function LeadCard({ lead }: { lead: LeadResultDto }) {
+  return (
+    <li className="px-4 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <a
+          href={`/leads/${lead.id}`}
+          className="flex-1 min-w-0 font-semibold text-[13px] truncate"
+          style={{ color: C.primary }}
+        >
+          {lead.name || "(sem nome)"}
+        </a>
+        <span
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+          style={{ background: "#EEF2FF", color: C.primary }}
+        >
+          {stageLabel(lead)}
+        </span>
+      </div>
+      <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px]">
+        <span style={{ color: C.inkSoft }}>
+          📞 <span className="tabular-nums" style={{ color: C.ink }}>{lead.phone || "—"}</span>
+        </span>
+        <span style={{ color: C.inkSoft }}>
+          📅 <span className="tabular-nums" style={{ color: C.ink }}>{formatDate(lead.createdAt)}</span>
+        </span>
+        <span className="col-span-2 truncate" style={{ color: C.inkSoft }}>
+          🎯 <span style={{ color: C.ink }}>{lead.source}</span>
+          {lead.campaign && <span> · {lead.campaign}</span>}
+        </span>
+      </div>
+    </li>
   );
 }

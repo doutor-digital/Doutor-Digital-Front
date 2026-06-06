@@ -20,6 +20,8 @@ export interface LeadResultDto {
   email?: string | null;
   currentStage?: string | null;
   currentStageId?: number | null;
+  /** Nome humano resolvido via Kommo pipelines (ex.: "Lead de entrada"). */
+  currentStageName?: string | null;
   source?: string | null;
   campaign?: string | null;
   price?: number | null;
