@@ -132,6 +132,7 @@ const navGroups: NavGroup[] = [
       { to: "/ia", label: "I.A. · agente-Dt", icon: Bot, iconUrl: "/ai-icon.png", badge: "Novo" },
       { to: "/conversas", label: "Conversas & Atendimento", icon: Radio, badge: "Novo" },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, badge: "Novo" },
+      { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, badge: "Novo" },
       { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users, iconUrl: "/nav-icons/revisar.png" },
       {
         label: "Performance",
