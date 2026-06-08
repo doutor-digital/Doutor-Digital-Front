@@ -39,6 +39,12 @@ const leadTypeLabel = (t?: string | null) => {
   return t;
 };
 
+const isCadastroLead = (l: KpiLeadItem) => {
+  const t = (l.lead_type || "").toLowerCase();
+  return !t || t.includes("cadastro") || t.includes("novo");
+};
+const isResgateLead = (l: KpiLeadItem) => (l.lead_type || "").toLowerCase().includes("resgate");
+
 /** Linhas de detalhe por KPI — chips embaixo do card do lead. */
 function detailChipsFor(kpiKey: string, l: KpiLeadItem): Array<{ key: string; label: string; tone?: "ok" | "warn" | "neutral" }> {
   const out: Array<{ key: string; label: string; tone?: "ok" | "warn" | "neutral" }> = [];
@@ -68,12 +74,15 @@ function detailChipsFor(kpiKey: string, l: KpiLeadItem): Array<{ key: string; la
         tone: l.has_payment ? "ok" : "neutral",
       });
       break;
-    case "tratamentos":
+    case "tratamentos": {
+      const vTrat = moneyBR(l.treatment_value);
       if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
       if (fisio) out.push({ key: "fisio", label: `Fechou: ${fisio}`, tone: "ok" });
       if (trat) out.push({ key: "trat", label: `Tratamento: ${trat}` });
-      if (vConsulta) out.push({ key: "valor", label: `Valor: ${vConsulta}`, tone: "ok" });
+      if (vConsulta) out.push({ key: "vc", label: `Consulta: ${vConsulta}`, tone: "ok" });
+      if (vTrat) out.push({ key: "vt", label: `Tratamento: ${vTrat}`, tone: "ok" });
       break;
+    }
     case "consultas":
       if (tipo) out.push({ key: "tipo", label: tipo });
       if (ag) out.push({ key: "ag", label: `Agendado: ${ag}` });
@@ -84,6 +93,184 @@ function detailChipsFor(kpiKey: string, l: KpiLeadItem): Array<{ key: string; la
       break;
   }
   return out;
+}
+
+type Pair = { label: string; count: number };
+const sortDesc = (a: Pair, b: Pair) => b.count - a.count;
+
+/** Resumo agregado, calculado dos itens da lista. */
+function DrillSummary({ kpiKey, items }: { kpiKey: string; items: KpiLeadItem[] }) {
+  if (!items.length) return null;
+
+  const originOf = (l: KpiLeadItem) => l.origem_custom || l.source || "—";
+
+  // ── Cadastro: origem × top motivo de não agendamento ───────────────
+  if (kpiKey === "cadastro") {
+    const byOrigem = new Map<string, { total: number; motivos: Map<string, number> }>();
+    for (const l of items) {
+      const o = originOf(l);
+      const row = byOrigem.get(o) ?? { total: 0, motivos: new Map() };
+      row.total++;
+      const m = l.motivo_nao_agendamento?.trim();
+      if (m) row.motivos.set(m, (row.motivos.get(m) ?? 0) + 1);
+      byOrigem.set(o, row);
+    }
+    const rows = Array.from(byOrigem.entries())
+      .map(([origem, v]) => {
+        const topMotivo = Array.from(v.motivos.entries()).sort((a, b) => b[1] - a[1])[0];
+        return { origem, total: v.total, motivo: topMotivo?.[0] ?? null, motivoCount: topMotivo?.[1] ?? 0 };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    return (
+      <SummaryShell title="Cadastros por origem">
+        <ul className="space-y-1.5">
+          {rows.map((r) => (
+            <li key={r.origem} className="flex items-start justify-between gap-3 text-[12px]">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-slate-100">{r.origem}</p>
+                {r.motivo && (
+                  <p className="truncate text-[10.5px] text-amber-200/80">
+                    Sem agendar: {r.motivo} ({r.motivoCount})
+                  </p>
+                )}
+              </div>
+              <span className="shrink-0 tabular-nums text-slate-200">{r.total}</span>
+            </li>
+          ))}
+        </ul>
+      </SummaryShell>
+    );
+  }
+
+  // ── Resgate: tipo + origens ────────────────────────────────────────
+  if (kpiKey === "resgate") {
+    const tipos = new Map<string, number>();
+    const origens = new Map<string, number>();
+    for (const l of items) {
+      tipos.set(l.lead_type || "resgate", (tipos.get(l.lead_type || "resgate") ?? 0) + 1);
+      origens.set(originOf(l), (origens.get(originOf(l)) ?? 0) + 1);
+    }
+    return (
+      <SummaryShell title={`${items.length} resgates`}>
+        <BreakdownRow label="Tipo" pairs={mapPairs(tipos)} />
+        <BreakdownRow label="Origem" pairs={mapPairs(origens)} />
+      </SummaryShell>
+    );
+  }
+
+  // ── Agendados: tipo + origens + pagamento ──────────────────────────
+  if (kpiKey === "agendados") {
+    let cadastro = 0, resgate = 0, pago = 0, semPag = 0;
+    const origens = new Map<string, number>();
+    for (const l of items) {
+      if (isResgateLead(l)) resgate++; else if (isCadastroLead(l)) cadastro++;
+      if (l.has_payment) pago++; else semPag++;
+      origens.set(originOf(l), (origens.get(originOf(l)) ?? 0) + 1);
+    }
+    return (
+      <SummaryShell title={`${items.length} agendamentos`}>
+        <BreakdownRow label="Tipo" pairs={[
+          { label: "Cadastro", count: cadastro },
+          { label: "Resgate", count: resgate },
+        ].filter((p) => p.count > 0)} />
+        <BreakdownRow label="Pagamento" pairs={[
+          { label: "Antecipado", count: pago },
+          { label: "Sem antecipado", count: semPag },
+        ].filter((p) => p.count > 0)} />
+        <BreakdownRow label="Origem" pairs={mapPairs(origens)} />
+      </SummaryShell>
+    );
+  }
+
+  // ── Tratamentos: origem + fisio + valores ──────────────────────────
+  if (kpiKey === "tratamentos") {
+    const origens = new Map<string, number>();
+    const fisios = new Map<string, number>();
+    let totalConsulta = 0, totalTratamento = 0;
+    for (const l of items) {
+      origens.set(originOf(l), (origens.get(originOf(l)) ?? 0) + 1);
+      const f = l.responsavel_agendamento?.trim();
+      if (f) fisios.set(f, (fisios.get(f) ?? 0) + 1);
+      if (l.consultation_value) totalConsulta += l.consultation_value;
+      if (l.treatment_value) totalTratamento += l.treatment_value;
+    }
+    return (
+      <SummaryShell title={`${items.length} tratamentos`}>
+        <BreakdownRow label="Origem" pairs={mapPairs(origens)} />
+        {fisios.size > 0 && <BreakdownRow label="Fechou" pairs={mapPairs(fisios)} />}
+        {(totalConsulta > 0 || totalTratamento > 0) && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {totalConsulta > 0 && (
+              <span className="rounded-full bg-emerald-400/[0.1] px-2.5 py-1 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                Consulta: {moneyBR(totalConsulta)}
+              </span>
+            )}
+            {totalTratamento > 0 && (
+              <span className="rounded-full bg-emerald-400/[0.1] px-2.5 py-1 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                Tratamento: {moneyBR(totalTratamento)}
+              </span>
+            )}
+          </div>
+        )}
+      </SummaryShell>
+    );
+  }
+
+  // ── Consultas: tipo + valor total ──────────────────────────────────
+  if (kpiKey === "consultas") {
+    let cadastro = 0, resgate = 0, totalValor = 0;
+    for (const l of items) {
+      if (isResgateLead(l)) resgate++; else if (isCadastroLead(l)) cadastro++;
+      if (l.consultation_value) totalValor += l.consultation_value;
+    }
+    return (
+      <SummaryShell title={`${items.length} consultas`}>
+        <BreakdownRow label="Tipo" pairs={[
+          { label: "Cadastro", count: cadastro },
+          { label: "Resgate", count: resgate },
+        ].filter((p) => p.count > 0)} />
+        {totalValor > 0 && (
+          <div className="pt-1">
+            <span className="rounded-full bg-emerald-400/[0.1] px-2.5 py-1 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+              Valor total: {moneyBR(totalValor)}
+            </span>
+          </div>
+        )}
+      </SummaryShell>
+    );
+  }
+
+  return null;
+}
+
+function SummaryShell({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300/80">{title}</p>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function BreakdownRow({ label, pairs }: { label: string; pairs: Pair[] }) {
+  if (pairs.length === 0) return null;
+  return (
+    <div className="flex items-start gap-2 text-[11.5px]">
+      <span className="mt-0.5 w-16 shrink-0 text-[10px] font-medium uppercase tracking-wide text-white/50">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {pairs.slice(0, 6).map((p) => (
+          <span key={p.label} className="rounded-full bg-white/[0.04] px-2 py-0.5 text-slate-200 ring-1 ring-inset ring-white/[0.06]">
+            {p.label} · <span className="tabular-nums text-white">{p.count}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function mapPairs(m: Map<string, number>): Pair[] {
+  return Array.from(m.entries()).map(([label, count]) => ({ label, count })).sort(sortDesc);
 }
 
 export interface KpiDrillTarget {
@@ -188,6 +375,8 @@ export function KpiDrillDown({
               Nenhum lead neste KPI no período.
             </div>
           ) : (
+            <>
+            <DrillSummary kpiKey={target!.kpiKey} items={data!.items} />
             <ul className="space-y-1.5">
               {data!.items.map((l) => (
                 <li key={l.id}>
@@ -248,6 +437,7 @@ export function KpiDrillDown({
                 </li>
               ))}
             </ul>
+            </>
           )}
         </div>
       </aside>

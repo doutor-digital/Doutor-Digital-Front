@@ -102,6 +102,7 @@ export interface KpiLeadItem {
   responsavel_agendamento?: string | null;
   qualificacao?: string | null;
   origem_custom?: string | null;
+  treatment_value?: number | null;
 }
 
 export interface KpiLeadsResult {
