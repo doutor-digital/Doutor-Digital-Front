@@ -234,6 +234,7 @@ export interface LeadProfileFieldConfig {
   valor_tratamento_field_id?: number | null;
   tratamento_fechado_field_id?: number | null;
   qualificacao_field_id?: number | null;
+  tipo_field_id?: number | null;
 }
 
 export interface LeadProfileAnalytics {
