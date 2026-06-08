@@ -19,6 +19,7 @@ import { unitsService } from "@/services/units";
 import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
 import { assignmentsService } from "@/services/assignments";
 import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
+import { channelVisual } from "@/lib/channelIcons";
 import type { FunnelGroup } from "@/types";
 
 // Helper de ícones Flaticon UIcons (CSS carregado no index.html).
@@ -376,10 +377,16 @@ export default function DashboardPage() {
 
   // ─── Canais (origens com cor + barra proporcional) ────────────────────
   const channels = useMemo(() => {
-    const arr = (ov?.origens ?? []).filter((o) => (o.quantidade ?? 0) > 0);
-    const sorted = [...arr].sort(
-      (a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0),
-    );
+    // Prefere o breakdown do KPI de origens (campo customizado: Instagram/Facebook/…),
+    // que traz as origens REAIS. Cai pra ov.origens só se não houver KPI configurado —
+    // ov.origens agrupa Lead.Source, que pra leads da Kommo é sempre "Kommo".
+    const sourceKpi = ov?.custom_kpis?.find((k) => k.display_type === "source_chart");
+    const arr = sourceKpi?.breakdown?.length
+      ? sourceKpi.breakdown.map((b) => ({ origem: b.label, quantidade: b.value }))
+      : (ov?.origens ?? []);
+    const sorted = [...arr]
+      .filter((o) => (o.quantidade ?? 0) > 0)
+      .sort((a, b) => (b.quantidade ?? 0) - (a.quantidade ?? 0));
     const top = sorted.slice(0, 5);
     const otherTotal = sorted.slice(5).reduce(
       (s, o) => s + (o.quantidade ?? 0),
@@ -388,10 +395,11 @@ export default function DashboardPage() {
     const items = top.map((o) => ({
       name: o.origem ?? "—",
       value: o.quantidade ?? 0,
-      color: channelColor(o.origem ?? ""),
+      color: channelVisual(o.origem ?? "").color,
+      iconUrl: channelVisual(o.origem ?? "").iconUrl,
     }));
     if (otherTotal > 0) {
-      items.push({ name: "Other", value: otherTotal, color: "#64748b" });
+      items.push({ name: "Outros", value: otherTotal, color: "#64748b", iconUrl: undefined });
     }
     return items;
   }, [ov]);
@@ -903,12 +911,20 @@ export default function DashboardPage() {
                   Origens de Leads
                 </p>
                 <div className="mt-4 flex items-center justify-between gap-3">
-                  <ul className="flex-1 space-y-1.5 text-[11px]">
+                  <ul className="flex-1 space-y-2 text-[11px]">
                     {channels.length === 0 && <li className="text-white/40">Sem dados</li>}
                     {channels.map((c) => (
-                      <li key={c.name} className="flex items-center gap-2 truncate" style={{ color: c.color }}>
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                        <span className="truncate uppercase tracking-wide">{c.name}</span>
+                      <li key={c.name} className="flex items-center gap-2 truncate">
+                        {c.iconUrl ? (
+                          <span
+                            className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-0.5"
+                          >
+                            <img src={c.iconUrl} alt="" className="h-full w-full object-contain" />
+                          </span>
+                        ) : (
+                          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        )}
+                        <span className="truncate uppercase tracking-wide" style={{ color: c.color }}>{c.name}</span>
                       </li>
                     ))}
                   </ul>

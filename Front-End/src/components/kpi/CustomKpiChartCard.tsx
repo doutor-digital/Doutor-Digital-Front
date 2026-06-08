@@ -75,7 +75,7 @@ export function CustomKpiChartCard({
                 >
                   {/* ícone do canal */}
                   <span
-                    className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-md"
+                    className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg p-0.5"
                     style={{ background: vis.iconUrl ? "#fff" : vis.color }}
                   >
                     {vis.iconUrl ? (
@@ -83,7 +83,7 @@ export function CustomKpiChartCard({
                     ) : null}
                   </span>
                   {/* nome */}
-                  <span className="w-24 shrink-0 truncate text-[11.5px] text-white/75 group-hover:text-white">
+                  <span className="w-24 shrink-0 truncate text-[12px] text-white/75 group-hover:text-white">
                     {b.label}
                   </span>
                   {/* barra horizontal */}
