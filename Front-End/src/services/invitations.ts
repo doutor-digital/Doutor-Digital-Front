@@ -6,6 +6,8 @@ export interface InvitationCreatePayload {
   email: string;
   unitId: number;
   role: Role;
+  /** Conceder acesso a todas as unidades do tenant (ex.: trafego_pago). */
+  allUnits?: boolean;
 }
 
 export interface InvitationCreateResponse {

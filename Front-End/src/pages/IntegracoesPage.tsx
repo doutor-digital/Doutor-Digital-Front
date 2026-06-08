@@ -128,6 +128,7 @@ export default function IntegracoesPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteUnitId, setInviteUnitId] = useState<number | "">(unitId ?? "");
   const [inviteRole, setInviteRole] = useState<Role>("unit_user");
+  const [inviteAllUnits, setInviteAllUnits] = useState(false);
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
   const isPrivileged = useMemo(() => canInvite(user?.role), [user?.role]);
@@ -188,8 +189,11 @@ export default function IntegracoesPage() {
         email: inviteEmail.trim().toLowerCase(),
         unitId: inviteUnitId,
         role: inviteRole,
+        allUnits: inviteAllUnits,
       });
-      toast.success("Convite enviado!");
+      toast.success(
+        inviteAllUnits ? "Convite enviado (todas as unidades)!" : "Convite enviado!",
+      );
       setInviteEmail("");
       try {
         await navigator.clipboard.writeText(res.acceptUrl);
@@ -310,7 +314,11 @@ export default function IntegracoesPage() {
                 </label>
                 <select
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as any)}
+                  onChange={(e) => {
+                    const r = e.target.value as Role;
+                    setInviteRole(r);
+                    if (r !== "trafego_pago") setInviteAllUnits(false);
+                  }}
                   className="mt-1.5 h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.03] px-2 text-[13px] text-slate-100 focus:border-emerald-400/30 focus:outline-none"
                 >
                   <option value="unit_user">Usuário (só esta unidade)</option>
@@ -323,6 +331,24 @@ export default function IntegracoesPage() {
                 </select>
               </div>
             </div>
+
+            {inviteRole === "trafego_pago" && (
+              <label className="mt-3 flex cursor-pointer select-none items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={inviteAllUnits}
+                  onChange={(e) => setInviteAllUnits(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-emerald-500"
+                />
+                <span className="text-[12px] text-slate-300">
+                  Todas as unidades
+                  <span className="block text-[11px] text-slate-500">
+                    Vê os números de todas as unidades do tenant (inclusive as criadas depois).
+                    A unidade acima serve só pra identificar a clínica.
+                  </span>
+                </span>
+              </label>
+            )}
 
             <div className="mt-4 flex items-center gap-2">
               <Button
