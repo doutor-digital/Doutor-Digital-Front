@@ -263,7 +263,7 @@ export default function CustomFieldsPage() {
                       <div key={row.sexo}>
                         <div className="flex items-center justify-between text-[12px]" style={{ color: C.ink }}>
                           <span className="flex items-center gap-2 font-medium">
-                            <IconDot url={sexoIcon(row.sexo)} color={C.rose} />
+                            <IconDot url={sexoIcon(row.sexo)} color={C.rose} glyph={sexoGlyph(row.sexo)} />
                             {row.sexo}
                           </span>
                           <span className="tabular-nums" style={{ color: C.inkSoft }}>
@@ -300,6 +300,7 @@ export default function CustomFieldsPage() {
                 color={C.teal}
                 dateLabel={dateRangeLabel}
                 icon={tratamentoIcon}
+                glyph={() => "✚"}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Tratamento Indicado", "Tratamento indicado", value, allFields)
@@ -325,6 +326,7 @@ export default function CustomFieldsPage() {
                 color={C.green}
                 dateLabel={dateRangeLabel}
                 icon={tratamentoIcon}
+                glyph={() => "✚"}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Tratamento Fechado", "Tratamento fechado", value, allFields)
@@ -521,11 +523,22 @@ function sexoIcon(value: string): string | null {
   return null;
 }
 
+/** Símbolo de fallback do sexo (enquanto o PNG não está em /public/icons/). */
+function sexoGlyph(value: string): string | undefined {
+  const v = stripAccent(value);
+  if (v.startsWith("f")) return "♀";
+  if (v.startsWith("m")) return "♂";
+  return undefined;
+}
+
 /** Ícone de tratamento — o mesmo pra todos os itens (pedido do cliente). */
 const tratamentoIcon = (): string => "/icons/tratamento.png";
 
-/** <img> do ícone; se a imagem não existir/cai em erro, mostra uma bolinha colorida. */
-function IconDot({ url, color }: { url?: string | null; color: string }) {
+/**
+ * <img> do ícone; se a imagem não existir/cai em erro, usa um símbolo (♀/♂/✚)
+ * num círculo colorido; sem símbolo, cai numa bolinha colorida.
+ */
+function IconDot({ url, color, glyph }: { url?: string | null; color: string; glyph?: string }) {
   const [err, setErr] = useState(false);
   if (url && !err) {
     return (
@@ -535,6 +548,16 @@ function IconDot({ url, color }: { url?: string | null; color: string }) {
         className="h-5 w-5 shrink-0 rounded-full object-cover"
         onError={() => setErr(true)}
       />
+    );
+  }
+  if (glyph) {
+    return (
+      <span
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold leading-none text-white"
+        style={{ background: color }}
+      >
+        {glyph}
+      </span>
     );
   }
   return <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />;
@@ -547,6 +570,7 @@ function KommoWidget({
   color,
   dateLabel,
   icon,
+  glyph,
   className,
   onClick,
 }: {
@@ -555,6 +579,7 @@ function KommoWidget({
   color: string;
   dateLabel: string;
   icon?: (value: string) => string | null;
+  glyph?: (value: string) => string | undefined;
   className?: string;
   onClick?: (value: string) => void;
 }) {
@@ -593,7 +618,7 @@ function KommoWidget({
               )}
               style={{ borderColor: C.rule }}
             >
-              <IconDot url={icon?.(v.value)} color={color} />
+              <IconDot url={icon?.(v.value)} color={color} glyph={glyph?.(v.value)} />
               <span className="flex-1 truncate text-[12px]" style={{ color: C.ink }} title={v.value}>
                 {v.value}
               </span>
