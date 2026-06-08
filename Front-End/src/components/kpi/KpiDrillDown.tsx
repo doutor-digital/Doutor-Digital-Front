@@ -14,11 +14,77 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import {
   kpiConfigService,
+  type KpiLeadItem,
   type KpiSourceConfig,
   type KpiSourceType,
 } from "@/services/kpiConfig";
 import { useStageNames } from "@/hooks/useStageNames";
-import { cn, formatDate, formatNumber } from "@/lib/utils";
+import { formatDate, formatNumber } from "@/lib/utils";
+
+const moneyBR = (v?: number | null) =>
+  v == null ? null : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+const dateTimeBR = (iso?: string | null) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+const leadTypeLabel = (t?: string | null) => {
+  if (!t) return null;
+  const v = t.toLowerCase();
+  if (v.includes("resgate")) return "Resgate";
+  if (v.includes("cadastro") || v.includes("novo")) return "Cadastro";
+  return t;
+};
+
+/** Linhas de detalhe por KPI — chips embaixo do card do lead. */
+function detailChipsFor(kpiKey: string, l: KpiLeadItem): Array<{ key: string; label: string; tone?: "ok" | "warn" | "neutral" }> {
+  const out: Array<{ key: string; label: string; tone?: "ok" | "warn" | "neutral" }> = [];
+  const origem = l.origem_custom || l.source;
+  const tipo = leadTypeLabel(l.lead_type);
+  const ag = dateTimeBR(l.appointment_at);
+  const motivo = l.motivo_nao_agendamento;
+  const fisio = l.responsavel_agendamento;
+  const trat = l.tratamento_fechado;
+  const vConsulta = moneyBR(l.consultation_value);
+
+  switch (kpiKey) {
+    case "cadastro":
+      if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
+      if (motivo) out.push({ key: "motivo", label: `Sem agendar: ${motivo}`, tone: "warn" });
+      break;
+    case "resgate":
+      if (tipo) out.push({ key: "tipo", label: tipo });
+      if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
+      break;
+    case "agendados":
+      if (tipo) out.push({ key: "tipo", label: tipo });
+      if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
+      out.push({
+        key: "pago",
+        label: l.has_payment ? "Pagamento antecipado" : "Sem pagamento antecipado",
+        tone: l.has_payment ? "ok" : "neutral",
+      });
+      break;
+    case "tratamentos":
+      if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
+      if (fisio) out.push({ key: "fisio", label: `Fechou: ${fisio}`, tone: "ok" });
+      if (trat) out.push({ key: "trat", label: `Tratamento: ${trat}` });
+      if (vConsulta) out.push({ key: "valor", label: `Valor: ${vConsulta}`, tone: "ok" });
+      break;
+    case "consultas":
+      if (tipo) out.push({ key: "tipo", label: tipo });
+      if (ag) out.push({ key: "ag", label: `Agendado: ${ag}` });
+      if (vConsulta) out.push({ key: "valor", label: `Valor: ${vConsulta}`, tone: "ok" });
+      break;
+    default:
+      if (origem) out.push({ key: "origem", label: origem });
+      break;
+  }
+  return out;
+}
 
 export interface KpiDrillTarget {
   kpiKey: string;
@@ -156,11 +222,22 @@ export function KpiDrillDown({
                       <Badge tone="slate">
                         {resolveStage(l.current_stage, l.current_stage_id)}
                       </Badge>
-                      {l.source && (
-                        <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-400 ring-1 ring-inset ring-white/[0.06]">
-                          {l.source}
-                        </span>
-                      )}
+                      {detailChipsFor(target!.kpiKey, l).map((c) => {
+                        const cls =
+                          c.tone === "ok"
+                            ? "bg-emerald-400/[0.1] text-emerald-200 ring-emerald-400/20"
+                            : c.tone === "warn"
+                              ? "bg-amber-400/[0.1] text-amber-100 ring-amber-400/20"
+                              : "bg-white/[0.04] text-slate-300 ring-white/[0.06]";
+                        return (
+                          <span
+                            key={c.key}
+                            className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide ring-1 ring-inset ${cls}`}
+                          >
+                            {c.label}
+                          </span>
+                        );
+                      })}
                       {l.matched_value && (
                         <span className="flex items-center gap-1 rounded-full bg-cyan-400/[0.1] px-2 py-0.5 text-[10px] text-cyan-200 ring-1 ring-inset ring-cyan-400/20">
                           <Tag className="h-2.5 w-2.5" /> {l.matched_value}

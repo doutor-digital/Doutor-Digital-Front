@@ -298,6 +298,18 @@ export default function DashboardPage() {
     enabled: unitId != null,
     retry: false,
   });
+
+  // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
+  const crossAnalysis = useQuery({
+    queryKey: ["dash-amo", "cross-analysis", unitId, range.from, range.to],
+    queryFn: () =>
+      kpiConfigService.customFieldsCrossAnalysis(unitId, {
+        date_from: range.from,
+        date_to: range.to,
+      }),
+    enabled: unitId != null,
+    staleTime: 60_000,
+  });
   const savedKpiByKey = useMemo(() => {
     const m = new Map<string, KpiConfigItem>();
     for (const it of savedKpis.data ?? []) m.set(it.kpi_key, it);
@@ -575,6 +587,29 @@ export default function DashboardPage() {
       saved={savedKpiByKey.get(key)}
     />
   );
+
+  // Pizza Qualificação dos Leads — Quente/Morno/Frio (custom field).
+  const QUALIF_COLORS: Record<string, string> = {
+    quente: "#f87171",
+    morno: "#fbbf24",
+    frio: "#60a5fa",
+  };
+  const qualificacaoData = useMemo(() => {
+    const rows = crossAnalysis.data?.qualificacao ?? [];
+    return rows
+      .filter((r) => (r.count ?? 0) > 0)
+      .map((r, i) => {
+        const k = (r.value || "").toLowerCase();
+        const matched = Object.keys(QUALIF_COLORS).find((key) => k.includes(key));
+        const fallback = ["#a78bfa", "#22d3ee", "#34d399", "#f472b6"][i % 4];
+        return {
+          name: r.value || "—",
+          value: r.count ?? 0,
+          color: matched ? QUALIF_COLORS[matched] : fallback,
+        };
+      });
+  }, [crossAnalysis.data]);
+  const qualificacaoTotal = qualificacaoData.reduce((s, d) => s + d.value, 0);
 
   const origensLeadsRows = useMemo(
     () => (ov?.origens ?? []).map((o) => ({ origem: o.origem ?? "—", quantidade: o.quantidade ?? 0 })),
@@ -1089,12 +1124,33 @@ export default function DashboardPage() {
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("consultas", "Consultas")}
               </DarkCard>
-              <DarkCard accent="#22d3ee">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Interações</p>
-                <EditableKpiValue okey={kpiKey(unitId, "interacoes")} live={kpiLive("interacoes", funnelLeads.interacoes)} valueClass="text-cyan-300" format={nf} onDrill={() => setDrill({ kpiKey: "interacoes", label: "Interações" })} />
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
+              <DarkCard accent="#f472b6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Qualificação dos Leads
+                </p>
+                {qualificacaoData.length === 0 ? (
+                  <p className="mt-6 text-[12px] text-white/40">
+                    {crossAnalysis.isLoading ? "carregando…" : "Sem dados de qualificação no período."}
+                  </p>
+                ) : (
+                  <div className="mt-4 flex items-center gap-4">
+                    <DonutChart data={qualificacaoData} size={132} thickness={20} />
+                    <ul className="flex-1 space-y-1.5 text-[11px]">
+                      {qualificacaoData.map((d) => {
+                        const pct = qualificacaoTotal > 0 ? Math.round((d.value / qualificacaoTotal) * 100) : 0;
+                        return (
+                          <li key={d.name} className="flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: d.color }} />
+                            <span className="flex-1 truncate font-medium uppercase tracking-wide text-white/80">{d.name}</span>
+                            <span className="shrink-0 tabular-nums text-white/70">{nf(d.value)}</span>
+                            <span className="w-9 shrink-0 text-right tabular-nums text-white/40">{pct}%</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                {srcBtn("interacoes", "Interações")}
               </DarkCard>
             </div>
 

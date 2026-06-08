@@ -94,6 +94,14 @@ export interface KpiLeadItem {
   has_payment: boolean;
   created_at: string;
   matched_value?: string | null;
+  appointment_at?: string | null;
+  consultation_value?: number | null;
+  closed_treatment?: boolean | null;
+  motivo_nao_agendamento?: string | null;
+  tratamento_fechado?: string | null;
+  responsavel_agendamento?: string | null;
+  qualificacao?: string | null;
+  origem_custom?: string | null;
 }
 
 export interface KpiLeadsResult {
