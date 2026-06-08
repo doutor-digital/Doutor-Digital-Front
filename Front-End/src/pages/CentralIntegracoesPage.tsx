@@ -26,7 +26,7 @@ const PROVIDERS: ProviderMeta[] = [
   {
     id: "meta",
     name: "Meta Ads",
-    logoUrl: "https://png.pngtree.com/png-clipart/20181003/ourmid/pngtree-facebook-logo-facebook-icon-png-image_3654755.png",
+    logoUrl: "/source-icons/facebook.png",
     desc: "Puxa o investimento por campanha/dia do Meta Ads (Facebook/Instagram).",
     ring: "ring-blue-500/25",
     btn: "bg-blue-500/15 text-blue-100 hover:bg-blue-500/25 ring-1 ring-inset ring-blue-400/25",
@@ -34,7 +34,7 @@ const PROVIDERS: ProviderMeta[] = [
   {
     id: "google",
     name: "Google Ads",
-    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Google_Ads_logo.svg/240px-Google_Ads_logo.svg.png",
+    logoUrl: "/source-icons/google.png",
     desc: "Puxa o investimento por campanha/dia do Google Ads (Search/Display).",
     ring: "ring-amber-500/25",
     btn: "bg-amber-500/15 text-amber-100 hover:bg-amber-500/25 ring-1 ring-inset ring-amber-400/25",
