@@ -33,6 +33,18 @@ export function isReadOnly(role?: string | null): boolean {
   return r === "trafego_pago" || r === "trafego-pago";
 }
 
+/**
+ * Rotas que o papel somente-leitura (trafego_pago) pode acessar — "só os números".
+ * Tudo fora daqui fica não-clicável na sidebar e bloqueado por URL.
+ */
+export const READONLY_ALLOWED_PATHS = ["/", "/desempenho", "/analytics", "/evolution", "/sources"] as const;
+
+/** A rota é permitida pro papel somente-leitura? (exata ou sub-rota). */
+export function isPathAllowedForReadOnly(path: string): boolean {
+  if (path === "/") return true;
+  return READONLY_ALLOWED_PATHS.some((p) => p !== "/" && (path === p || path.startsWith(`${p}/`)));
+}
+
 /** Pode ver o painel de logs/auditoria avançada. */
 export function canViewAdvancedLogs(role?: string | null): boolean {
   return isAdminLevel(role);

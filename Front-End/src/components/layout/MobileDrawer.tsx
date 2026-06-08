@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Bell,
@@ -29,6 +29,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { isReadOnly, READONLY_ALLOWED_PATHS } from "@/lib/roles";
 
 type NavItem = {
   to: string;
@@ -273,6 +274,15 @@ export function MobileDrawer({
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
 
+  // trafego_pago: só os números. Filtra o menu pras rotas permitidas.
+  const groups = useMemo(() => {
+    if (!isReadOnly(user?.role)) return navGroups;
+    const allowed = new Set<string>(READONLY_ALLOWED_PATHS);
+    return navGroups
+      .map((g) => ({ ...g, items: g.items.filter((it) => "to" in it && allowed.has(it.to)) }))
+      .filter((g) => g.items.length > 0);
+  }, [user?.role]);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -334,7 +344,7 @@ export function MobileDrawer({
         </div>
 
         <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {group.label}

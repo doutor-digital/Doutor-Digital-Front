@@ -27,7 +27,14 @@ export function NotificationsBell() {
   const query = useQuery({
     queryKey: ["recent-leads", "notifications", clinicId],
     queryFn: () =>
-      webhooksService.recentLeads({ clinicId, hours: 24, limit: 10 }),
+      // /webhooks/recent valida tenant via clinicId — tem que ser o tenant real
+      // (não o unitId). Passa unitId separado pra filtrar a unidade.
+      webhooksService.recentLeads({
+        clinicId: tenantId ?? unitId ?? undefined,
+        unitId: unitId ?? undefined,
+        hours: 24,
+        limit: 10,
+      }),
     enabled: !!clinicId,
     refetchInterval: 30_000,
     refetchIntervalInBackground: true,

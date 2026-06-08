@@ -32,6 +32,7 @@ import {
   LifeBuoy,
   LineChart,
   ListChecks,
+  Lock,
   type LucideIcon,
   Map,
   Network,
@@ -70,6 +71,8 @@ type NavItem = {
   iconUrl?: string;
   end?: boolean;
   badge?: string;
+  /** Item visível porém não-clicável (ex.: trafego_pago sem acesso). */
+  disabled?: boolean;
 };
 
 type NavEntry =
@@ -339,7 +342,20 @@ function NavBadge({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItemLink({ to, label, icon: Icon, iconUrl, end, badge }: NavItem) {
+function NavItemLink({ to, label, icon: Icon, iconUrl, end, badge, disabled }: NavItem) {
+  if (disabled) {
+    return (
+      <div
+        aria-disabled
+        title="Você não é habilitado pra ver isso"
+        className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-slate-600 opacity-60"
+      >
+        <NavGlyph icon={Icon} iconUrl={iconUrl} active={false} />
+        <span className="truncate">{label}</span>
+        <Lock className="ml-auto h-3 w-3 shrink-0 text-slate-600" />
+      </div>
+    );
+  }
   return (
     <NavLink
       to={to}
@@ -473,9 +489,24 @@ export function Sidebar() {
 
   const groups = useMemo(() => {
     const role = user?.role;
-    // trafego_pago: só os números (Visão geral), somente leitura.
+    // trafego_pago: só os números. As páginas permitidas ficam clicáveis; o resto
+    // aparece desabilitado (cinza + cadeado) pra deixar claro que não é habilitado.
     if (isReadOnly(role)) {
-      return navGroups.filter((g) => g.label === "Visão geral");
+      return [
+        {
+          label: "Visão geral",
+          items: [
+            { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+            { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
+            { to: "/analytics", label: "Analytics", icon: BarChart3 },
+            { to: "/evolution", label: "Evolução", icon: LineChart },
+            { to: "/sources", label: "Origens", icon: Filter },
+            { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, disabled: true },
+            { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, disabled: true },
+            { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, disabled: true },
+          ],
+        },
+      ];
     }
     // super_admin / analista_ti: tudo + Configurações Técnicas + Logs avançados + Chef.
     if (isAdminLevel(role)) {
