@@ -103,50 +103,63 @@ function channelColor(name: string) {
 }
 
 // ─── Donut concêntrico (LEAD SOURCES) ─────────────────────────────────────
-function ConcentricDonut({
+/**
+ * Donut de origens: um único anel com fatias proporcionais por origem e o total no
+ * centro. Substitui os anéis concêntricos (que estouravam o card e viravam "espiral").
+ */
+function DonutChart({
   data,
-  size = 240,
+  size = 168,
+  thickness = 22,
 }: {
   data: Array<{ name: string; value: number; color: string }>;
   size?: number;
+  thickness?: number;
 }) {
-  const max = Math.max(1, ...data.map((d) => d.value));
+  const total = data.reduce((s, d) => s + d.value, 0);
   const center = size / 2;
-  const ringGap = 6;
-  const ringWidth = 10;
-  const innerRadius = 36;
+  const radius = (size - thickness) / 2;
+  const circ = 2 * Math.PI * radius;
+  const positive = data.filter((d) => d.value > 0);
+  // gap visual entre fatias (só quando há mais de uma origem).
+  const gap = positive.length > 1 ? 3 : 0;
+
+  let acc = 0;
+  const segments = total > 0
+    ? positive.map((d) => {
+        const len = (d.value / total) * circ;
+        const seg = { color: d.color, dash: Math.max(0.001, len - gap), rest: circ - Math.max(0.001, len - gap), off: -acc };
+        acc += len;
+        return seg;
+      })
+    : [];
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {data.map((d, i) => {
-        const r = innerRadius + i * (ringWidth + ringGap);
-        const circ = 2 * Math.PI * r;
-        const ratio = Math.min(1, d.value / max);
-        const dash = ratio * circ;
-        return (
-          <g key={i} transform={`rotate(-90 ${center} ${center})`}>
-            <circle
-              cx={center}
-              cy={center}
-              r={r}
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth={ringWidth}
-            />
-            <circle
-              cx={center}
-              cy={center}
-              r={r}
-              fill="none"
-              stroke={d.color}
-              strokeWidth={ringWidth}
-              strokeLinecap="round"
-              strokeDasharray={`${dash} ${circ - dash}`}
-            />
-          </g>
-        );
-      })}
-    </svg>
+    <div className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={thickness} />
+        {segments.map((s, i) => (
+          <circle
+            key={i}
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={thickness}
+            strokeLinecap="butt"
+            strokeDasharray={`${s.dash} ${s.rest}`}
+            strokeDashoffset={s.off}
+          />
+        ))}
+      </svg>
+      <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+        <div>
+          <div className="text-2xl font-bold leading-none text-white">{nf(total)}</div>
+          <div className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/45">leads</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -428,6 +441,11 @@ export default function DashboardPage() {
     }
     return items;
   }, [ov]);
+
+  const channelsTotal = useMemo(
+    () => channels.reduce((s, c) => s + c.value, 0),
+    [channels],
+  );
 
   const channelMax = useMemo(
     () => Math.max(1, ...channels.map((c) => c.value)),
@@ -994,36 +1012,46 @@ export default function DashboardPage() {
                 {srcBtn("resgate", "Resgate")}
               </DarkCard>
 
-              {/* Col 4 (tall): Origens de Leads — ConcentricDonut */}
+              {/* Col 4 (tall): Origens de Leads — DonutChart */}
               <DarkCard className="lg:row-span-2" accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                   Origens de Leads
                 </p>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <ul className="flex-1 space-y-2 text-[11px]">
-                    {channels.length === 0 && <li className="text-white/40">Sem dados</li>}
-                    {channels.map((c) => (
-                      <li key={c.name} className="flex items-center gap-2 truncate">
-                        {c.iconUrl ? (
-                          <span
-                            className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-0.5"
-                          >
-                            <img src={c.iconUrl} alt="" className="h-full w-full object-contain" />
-                          </span>
-                        ) : (
-                          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                        )}
-                        <span className="truncate uppercase tracking-wide" style={{ color: c.color }}>{c.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="shrink-0">
-                    <ConcentricDonut
-                      data={channels.length ? channels : [{ name: "—", value: 1, color: "#1e293b" }]}
-                      size={200}
-                    />
+
+                {channels.length === 0 ? (
+                  <p className="mt-6 text-[12px] text-white/40">Sem dados de origem no período.</p>
+                ) : (
+                  <div className="mt-5 flex flex-col items-center gap-5">
+                    <DonutChart data={channels} size={172} thickness={24} />
+
+                    <ul className="w-full space-y-2 text-[11px]">
+                      {channels.map((c) => {
+                        const pct = channelsTotal > 0 ? Math.round((c.value / channelsTotal) * 100) : 0;
+                        return (
+                          <li key={c.name} className="flex items-center gap-2.5">
+                            {c.iconUrl ? (
+                              <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-0.5">
+                                <img src={c.iconUrl} alt="" className="h-full w-full object-contain" />
+                              </span>
+                            ) : (
+                              <span className="grid h-6 w-6 shrink-0 place-items-center">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
+                              </span>
+                            )}
+                            <span
+                              className="flex-1 truncate text-[11px] font-medium uppercase tracking-wide"
+                              style={{ color: c.color }}
+                            >
+                              {c.name}
+                            </span>
+                            <span className="shrink-0 tabular-nums text-white/75">{nf(c.value)}</span>
+                            <span className="w-9 shrink-0 text-right tabular-nums text-white/40">{pct}%</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
-                </div>
+                )}
               </DarkCard>
 
               {/* Col 2 row 2: Agendados */}
