@@ -11,8 +11,10 @@ export interface AssignmentLeadHistoryItem {
 }
 
 export const assignmentsService = {
-  async listAttendants(): Promise<Attendant[]> {
-    const { data } = await api.get<Attendant[]>("/assignments/attendants");
+  async listAttendants(unitId?: number | string): Promise<Attendant[]> {
+    const { data } = await api.get<Attendant[]>("/assignments/attendants", {
+      params: cleanParams({ unitId: toInt(unitId) }),
+    });
     return asArray<Attendant>(data);
   },
 

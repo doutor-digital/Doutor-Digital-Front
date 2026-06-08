@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Cog, Loader2, Pencil, Plus } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -217,6 +217,7 @@ export default function DashboardPage() {
 
   // ─── Filtros avançados ─────────────────────────────────────────────
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("");
   const [attendantFilter, setAttendantFilter] = useState<string>("");
   const [stageFilter, setStageFilter] = useState<Set<string>>(new Set());
@@ -239,8 +240,8 @@ export default function DashboardPage() {
   });
 
   const attendants = useQuery({
-    queryKey: ["dash-amo", "attendants"],
-    queryFn: () => assignmentsService.listAttendants(),
+    queryKey: ["dash-amo", "attendants", unitId],
+    queryFn: () => assignmentsService.listAttendants(unitId ?? undefined),
     staleTime: 5 * 60_000,
   });
 
@@ -330,6 +331,18 @@ export default function DashboardPage() {
   });
 
   const ov = overview.data;
+
+  // Ao trocar de unidade, o atendente selecionado pode não pertencer à nova unidade.
+  // Limpa o filtro pra não mostrar números de um usuário que sumiu da lista.
+  useEffect(() => {
+    setAttendantFilter("");
+    setUserMenuOpen(false);
+  }, [unitId]);
+
+  // Usuário (atendente) selecionado no seletor rápido — usado pra rotular o botão.
+  const selectedAttendant = (attendants.data ?? []).find(
+    (a) => String(a.id) === attendantFilter
+  );
 
   // Negócios (leads) para o board de funil estilo CRM — agrupados por etapa.
   const leadsBoard = useQuery({
@@ -638,31 +651,99 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
               <button
                 type="button"
-                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900"
+                onClick={() => {
+                  setAttendantFilter("");
+                  setUserMenuOpen(false);
+                }}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                  attendantFilter === ""
+                    ? "bg-white text-slate-900"
+                    : "text-white/70 hover:text-white"
+                }`}
               >
                 Todos
               </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white/70 hover:text-white"
-              >
-                Selecionar usuário
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  className="opacity-70"
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs transition ${
+                    attendantFilter !== ""
+                      ? "bg-white font-semibold text-slate-900"
+                      : "text-white/70 hover:text-white"
+                  }`}
                 >
-                  <path
-                    d="M3 4.5L6 7.5L9 4.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
+                  {selectedAttendant ? selectedAttendant.name : "Selecionar usuário"}
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    className="opacity-70"
+                  >
+                    <path
+                      d="M3 4.5L6 7.5L9 4.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                {userMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-hidden
+                      tabIndex={-1}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="fixed inset-0 z-10 cursor-default"
+                    />
+                    <div className="absolute right-0 z-20 mt-2 max-h-72 w-64 overflow-auto rounded-xl border border-white/10 bg-slate-900 p-1 shadow-xl">
+                      {unitId == null ? (
+                        <p className="px-3 py-2 text-[11px] text-white/50">
+                          Selecione uma unidade para ver os usuários.
+                        </p>
+                      ) : attendants.isLoading ? (
+                        <p className="px-3 py-2 text-[11px] text-white/50">Carregando…</p>
+                      ) : (attendants.data ?? []).length === 0 ? (
+                        <p className="px-3 py-2 text-[11px] text-white/50">
+                          Nenhum usuário nesta unidade.
+                        </p>
+                      ) : (
+                        (attendants.data ?? []).map((a) => (
+                          <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => {
+                              setAttendantFilter(String(a.id));
+                              setUserMenuOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition hover:bg-white/10 ${
+                              String(a.id) === attendantFilter
+                                ? "bg-white/10 text-white"
+                                : "text-white/80"
+                            }`}
+                          >
+                            <span className="truncate">{a.name}</span>
+                            {String(a.id) === attendantFilter && (
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <path
+                                  d="M2.5 6.5L5 9L9.5 3.5"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <button
               type="button"
