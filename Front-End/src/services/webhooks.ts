@@ -291,6 +291,7 @@ export const webhooksService = {
     unitId?: number | string;
     attendantId?: number | string;
     source?: string;
+    responsibleUser?: string;
   }): Promise<DashboardOverview> {
     const { data } = await api.get<DashboardOverview>("/webhooks/dashboard-overview", {
       params: cleanParams({
@@ -300,6 +301,10 @@ export const webhooksService = {
         unitId: toInt(params.unitId),
         attendantId: toInt(params.attendantId),
         source: params.source && params.source.length > 0 ? params.source : undefined,
+        responsibleUser:
+          params.responsibleUser && params.responsibleUser.length > 0
+            ? params.responsibleUser
+            : undefined,
       }),
     });
     return data;
@@ -397,6 +402,17 @@ export const webhooksService = {
 
   async distinctSources(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<string[]> {
     const { data } = await api.get<string[]>("/webhooks/sources", {
+      params: cleanParams({
+        clinicId: toInt(params.clinicId),
+        unitId: toInt(params.unitId),
+      }),
+    });
+    return Array.isArray(data) ? data : [];
+  },
+
+  // SDRs responsáveis (valores do custom field "Usuário responsável") para o seletor de usuário.
+  async responsibleUsers(params: { clinicId?: number | string; unitId?: number | string } = {}): Promise<string[]> {
+    const { data } = await api.get<string[]>("/webhooks/responsible-users", {
       params: cleanParams({
         clinicId: toInt(params.clinicId),
         unitId: toInt(params.unitId),
