@@ -64,6 +64,7 @@ export default function CustomFieldsPage() {
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
   const dateFrom = useMemo(() => isoDaysAgo(days), [days]);
   const dateTo = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const dateRangeLabel = `${dateFrom} → ${dateTo}`;
 
   const summary = useQuery({
     queryKey: ["custom-fields-summary", unitId, dateFrom, dateTo],
@@ -261,7 +262,10 @@ export default function CustomFieldsPage() {
                     return (
                       <div key={row.sexo}>
                         <div className="flex items-center justify-between text-[12px]" style={{ color: C.ink }}>
-                          <span className="font-medium">{row.sexo}</span>
+                          <span className="flex items-center gap-2 font-medium">
+                            <IconDot url={sexoIcon(row.sexo)} color={C.rose} />
+                            {row.sexo}
+                          </span>
                           <span className="tabular-nums" style={{ color: C.inkSoft }}>
                             {row.fechou} / {row.total} ({pct}%)
                           </span>
@@ -277,11 +281,12 @@ export default function CustomFieldsPage() {
               </Panel>
 
               {/* Origem */}
-              <BarPanel
+              <KommoWidget
                 title="Origem"
-                subtitle="De onde os leads vieram"
                 data={cross.data?.origem ?? []}
                 color={C.primary}
+                dateLabel={dateRangeLabel}
+                icon={sourceIcon}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Origem", "Origem", value, allFields)
@@ -289,11 +294,12 @@ export default function CustomFieldsPage() {
               />
 
               {/* Tratamento indicado */}
-              <BarPanel
+              <KommoWidget
                 title="Tratamento Indicado"
-                subtitle="Quais tratamentos a SDR mais indica"
                 data={cross.data?.tratamento_indicado ?? []}
                 color={C.teal}
+                dateLabel={dateRangeLabel}
+                icon={tratamentoIcon}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Tratamento Indicado", "Tratamento indicado", value, allFields)
@@ -301,11 +307,11 @@ export default function CustomFieldsPage() {
               />
 
               {/* Motivo do não agendamento */}
-              <BarPanel
+              <KommoWidget
                 title="Motivo do Não Agendamento"
-                subtitle="Por que os leads não agendaram"
                 data={cross.data?.motivo_nao_agendamento ?? []}
                 color={C.amber}
+                dateLabel={dateRangeLabel}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Motivo do não agendamento", "Motivo do não agendamento", value, allFields)
@@ -313,11 +319,12 @@ export default function CustomFieldsPage() {
               />
 
               {/* Tratamento fechado */}
-              <BarPanel
+              <KommoWidget
                 title="Tratamento Fechado"
-                subtitle="O que os leads acabam contratando"
                 data={cross.data?.tratamento_fechado ?? []}
                 color={C.green}
+                dateLabel={dateRangeLabel}
+                icon={tratamentoIcon}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Tratamento Fechado", "Tratamento fechado", value, allFields)
@@ -325,11 +332,11 @@ export default function CustomFieldsPage() {
               />
 
               {/* Profissão */}
-              <BarPanel
+              <KommoWidget
                 title="Profissão"
-                subtitle="Top profissões dos leads"
                 data={cross.data?.profissao ?? []}
                 color={C.purple}
+                dateLabel={dateRangeLabel}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Profissão", "Profissão", value, allFields)
@@ -337,11 +344,11 @@ export default function CustomFieldsPage() {
               />
 
               {/* Qualificação do lead */}
-              <BarPanel
+              <KommoWidget
                 title="Qualificação do Lead"
-                subtitle="Quente / Morno / Frio"
                 data={cross.data?.qualificacao ?? []}
                 color={C.rose}
+                dateLabel={dateRangeLabel}
                 className="col-span-12 lg:col-span-6"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Qualificação do lead", "Qualificação do lead", value, allFields)
@@ -349,11 +356,11 @@ export default function CustomFieldsPage() {
               />
 
               {/* Responsável agendamento */}
-              <BarPanel
+              <KommoWidget
                 title="Responsável pelo Agendamento"
-                subtitle="Atendente que mais agendou"
                 data={cross.data?.responsavel_agendamento ?? []}
                 color={C.cyan}
+                dateLabel={dateRangeLabel}
                 className="col-span-12"
                 onClick={(value) =>
                   drillByFieldName(setDrill, "Responsável agendamento", "Responsável agendamento", value, allFields)
@@ -490,55 +497,114 @@ function Panel({
   );
 }
 
-function BarPanel({
+// ─── Estilo Kommo: card com total + lista (ícone/bolinha · rótulo · valor) ──────
+
+function stripAccent(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+/** Ícone da origem (reaproveita os PNGs de /public/source-icons). */
+function sourceIcon(value: string): string {
+  const v = stripAccent(value);
+  if (v.includes("instagram")) return "/source-icons/instagram.png";
+  if (v.includes("facebook") || v.includes("meta")) return "/source-icons/facebook.png";
+  if (v.includes("google")) return "/source-icons/google.png";
+  if (v.includes("indica")) return "/source-icons/indicacao.png";
+  return "/source-icons/sem-origem.png";
+}
+
+/** Ícone do sexo. Os PNGs devem estar em /public/icons/. */
+function sexoIcon(value: string): string | null {
+  const v = stripAccent(value);
+  if (v.startsWith("f")) return "/icons/sexo-feminino.png";
+  if (v.startsWith("m")) return "/icons/sexo-masculino.png";
+  return null;
+}
+
+/** Ícone de tratamento — o mesmo pra todos os itens (pedido do cliente). */
+const tratamentoIcon = (): string => "/icons/tratamento.png";
+
+/** <img> do ícone; se a imagem não existir/cai em erro, mostra uma bolinha colorida. */
+function IconDot({ url, color }: { url?: string | null; color: string }) {
+  const [err, setErr] = useState(false);
+  if (url && !err) {
+    return (
+      <img
+        src={url}
+        alt=""
+        className="h-5 w-5 shrink-0 rounded-full object-cover"
+        onError={() => setErr(true)}
+      />
+    );
+  }
+  return <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />;
+}
+
+/** Widget no estilo da dashboard da Kommo: título, total grande (verde), período e lista. */
+function KommoWidget({
   title,
-  subtitle,
   data,
   color,
+  dateLabel,
+  icon,
   className,
   onClick,
 }: {
   title: string;
-  subtitle: string;
   data: ValueCount[];
   color: string;
+  dateLabel: string;
+  icon?: (value: string) => string | null;
   className?: string;
   onClick?: (value: string) => void;
 }) {
+  const total = data.reduce((s, d) => s + d.count, 0);
   return (
-    <Panel title={title} subtitle={subtitle} className={className}>
+    <section
+      className={cn("flex flex-col rounded-xl shadow-sm", className)}
+      style={{ background: C.panel, border: `1px solid ${C.rule}` }}
+    >
+      <div className="px-4 pt-3 pb-2.5">
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.inkSoft }}>
+            {title}
+          </span>
+          <span className="text-[26px] font-bold leading-none tabular-nums" style={{ color: C.green }}>
+            {formatNumber(total)}
+          </span>
+        </div>
+        <p className="mt-1 text-[10px]" style={{ color: C.inkSoft }}>
+          {dateLabel}
+        </p>
+      </div>
       {data.length === 0 ? (
-        <div className="h-44 grid place-items-center">
-          <EmptyMini text="Sem dados — campo não preenchido em leads do período" />
+        <div className="grid h-28 place-items-center">
+          <EmptyMini text="Sem dados no período" />
         </div>
       ) : (
-        <div className="px-4 py-3 max-h-72 overflow-y-auto">
-          <ul className="space-y-1.5">
-            {data.map((v) => {
-              const max = data[0]?.count ?? 1;
-              const pct = Math.round((v.count / max) * 100);
-              return (
-                <li
-                  key={v.value}
-                  onClick={() => onClick?.(v.value)}
-                  className={cn("flex items-center gap-3 rounded-md p-1.5", onClick && "hover:bg-slate-50 cursor-pointer")}
-                >
-                  <div className="w-44 truncate text-[12px]" style={{ color: C.ink }} title={v.value}>
-                    {v.value}
-                  </div>
-                  <div className="flex-1 h-2 rounded-full" style={{ background: C.rule }}>
-                    <div className="h-full rounded-full" style={{ width: `${Math.max(3, pct)}%`, background: color }} />
-                  </div>
-                  <div className="w-12 text-right text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
-                    {formatNumber(v.count)}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <ul className="max-h-72 overflow-y-auto">
+          {data.map((v) => (
+            <li
+              key={v.value}
+              onClick={() => onClick?.(v.value)}
+              className={cn(
+                "flex items-center gap-2.5 border-t px-4 py-2",
+                onClick && "cursor-pointer hover:bg-slate-50",
+              )}
+              style={{ borderColor: C.rule }}
+            >
+              <IconDot url={icon?.(v.value)} color={color} />
+              <span className="flex-1 truncate text-[12px]" style={{ color: C.ink }} title={v.value}>
+                {v.value}
+              </span>
+              <span className="text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
+                {formatNumber(v.count)}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
-    </Panel>
+    </section>
   );
 }
 

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Bell,
-  Bot,
   Brain,
   Building2,
   ChevronDown,
@@ -79,8 +78,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
-      { to: "/ia", label: "I.A. · agente-Dt", icon: Bot, iconUrl: "/ai-icon.png" },
-      { to: "/conversas", label: "Conversas & Atendimento", icon: Radio },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain },
       { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch },
       { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users2, iconUrl: "/nav-icons/revisar.png" },

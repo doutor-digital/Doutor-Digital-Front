@@ -17,7 +17,6 @@ const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
-const AgentPage        = lazy(() => import("@/pages/AgentPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
 const LeadsPage        = lazy(() => import("@/pages/LeadsPage"));
@@ -48,7 +47,6 @@ const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
-const ConversasAtendimentoPage = lazy(() => import("@/pages/ConversasAtendimentoPage"));
 const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
 const BuscarLeadsPage = lazy(() => import("@/pages/BuscarLeadsPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
@@ -192,7 +190,6 @@ export default function App() {
         >
           <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
-          <Route path="/ia"                element={<AgentPage />}        />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
           <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />
           <Route path="/leads"             element={<LeadsPage />}        />
@@ -217,7 +214,6 @@ export default function App() {
           <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
           <Route path="/mudancas-etapas"   element={<MudancasEtapasPage />} />
           <Route path="/conversao"         element={<ConversaoPage />}    />
-          <Route path="/conversas"         element={<ConversasAtendimentoPage />} />
           <Route path="/ia-analytics"      element={<IaAnalyticsPage />} />
           <Route path="/buscar-leads"      element={<BuscarLeadsPage />} />
           <Route path="/contacts"          element={<ContactsPage />}     />
