@@ -165,7 +165,9 @@ function DonutChart({
 
 // ─── Breakdown inline nos KPI cards ──────────────────────────────────────
 function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: number; tone?: "ok" | "warn" | "neutral" }>; max?: number }) {
-  if (!items.length) return null;
+  if (!items.length) {
+    return <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>;
+  }
   return (
     <div className="mt-2 flex flex-wrap gap-1">
       {items.slice(0, max).map((c, i) => {
@@ -1080,9 +1082,9 @@ export default function DashboardPage() {
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
                 <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
-                {(bd?.cadastro.origens?.length ?? 0) > 0 && (
-                  <div className="mt-3">
-                    <KpiBreakdownHeading>Por origem · motivo de não agendamento</KpiBreakdownHeading>
+                <div className="mt-3">
+                  <KpiBreakdownHeading>Por origem · motivo de não agendamento</KpiBreakdownHeading>
+                  {(bd?.cadastro.origens?.length ?? 0) > 0 ? (
                     <ul className="mt-1.5 space-y-1">
                       {bd!.cadastro.origens.slice(0, 4).map((o) => (
                         <li key={o.origem} className="text-[11px]">
@@ -1090,16 +1092,22 @@ export default function DashboardPage() {
                             <span className="truncate font-medium text-white/85">{o.origem}</span>
                             <span className="shrink-0 tabular-nums text-white/70">{nf(o.count)}</span>
                           </div>
-                          {o.top_motivo && (
+                          {o.top_motivo ? (
                             <p className="truncate text-[10px] text-amber-200/80">
                               Sem agendar: {o.top_motivo} ({o.top_motivo_count})
+                            </p>
+                          ) : (
+                            <p className="truncate text-[10px] italic text-white/30">
+                              sem motivo registrado
                             </p>
                           )}
                         </li>
                       ))}
                     </ul>
-                  </div>
-                )}
+                  ) : (
+                    <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
+                  )}
+                </div>
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("cadastro", "Cadastro")}
@@ -1109,18 +1117,10 @@ export default function DashboardPage() {
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
-                {(bd?.resgate.tipos?.length ?? 0) > 0 && (
-                  <>
-                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                    <KpiChips items={bd!.resgate.tipos.map((t) => ({ label: t.value, count: t.count }))} />
-                  </>
-                )}
-                {(bd?.resgate.origens?.length ?? 0) > 0 && (
-                  <>
-                    <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                    <KpiChips items={bd!.resgate.origens.map((o) => ({ label: o.value, count: o.count }))} />
-                  </>
-                )}
+                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                <KpiChips items={(bd?.resgate.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("resgate", "Resgate")}
@@ -1172,30 +1172,22 @@ export default function DashboardPage() {
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
-                {bd?.agendados && bd.agendados.total > 0 && (
-                  <>
-                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                    <KpiChips
-                      items={[
-                        { label: "Cadastro", count: bd.agendados.cadastro },
-                        { label: "Resgate", count: bd.agendados.resgate },
-                      ].filter((c) => c.count > 0)}
-                    />
-                    <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
-                    <KpiChips
-                      items={[
-                        { label: "Sim", count: bd.agendados.com_pagamento, tone: "ok" as const },
-                        { label: "Não", count: bd.agendados.sem_pagamento, tone: "warn" as const },
-                      ].filter((c) => c.count > 0)}
-                    />
-                    {bd.agendados.origens.length > 0 && (
-                      <>
-                        <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                        <KpiChips items={bd.agendados.origens.map((o) => ({ label: o.value, count: o.count }))} />
-                      </>
-                    )}
-                  </>
-                )}
+                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                <KpiChips
+                  items={[
+                    { label: "Cadastro", count: bd?.agendados.cadastro ?? 0 },
+                    { label: "Resgate", count: bd?.agendados.resgate ?? 0 },
+                  ].filter((c) => c.count > 0)}
+                />
+                <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
+                <KpiChips
+                  items={[
+                    { label: "Sim", count: bd?.agendados.com_pagamento ?? 0, tone: "ok" as const },
+                    { label: "Não", count: bd?.agendados.sem_pagamento ?? 0, tone: "warn" as const },
+                  ].filter((c) => c.count > 0)}
+                />
+                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                <KpiChips items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
@@ -1216,39 +1208,19 @@ export default function DashboardPage() {
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
                 <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
-                {bd?.tratamentos && bd.tratamentos.total > 0 && (
-                  <>
-                    {bd.tratamentos.origens.length > 0 && (
-                      <>
-                        <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                        <KpiChips items={bd.tratamentos.origens.map((o) => ({ label: o.value, count: o.count }))} />
-                      </>
-                    )}
-                    {bd.tratamentos.fisios.length > 0 && (
-                      <>
-                        <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
-                        <KpiChips items={bd.tratamentos.fisios.map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
-                      </>
-                    )}
-                    {(bd.tratamentos.valor_consulta_total > 0 || bd.tratamentos.valor_tratamento_total > 0) && (
-                      <>
-                        <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
-                          {bd.tratamentos.valor_consulta_total > 0 && (
-                            <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                              Consulta: {moneyBR(bd.tratamentos.valor_consulta_total)}
-                            </span>
-                          )}
-                          {bd.tratamentos.valor_tratamento_total > 0 && (
-                            <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                              Tratamento: {moneyBR(bd.tratamentos.valor_tratamento_total)}
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
+                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                <KpiChips items={(bd?.tratamentos.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
+                <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
+                <KpiChips items={(bd?.tratamentos.fisios ?? []).map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
+                <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
+                <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                    Consulta: {moneyBR(bd?.tratamentos.valor_consulta_total ?? 0)}
+                  </span>
+                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                    Tratamento: {moneyBR(bd?.tratamentos.valor_tratamento_total ?? 0)}
+                  </span>
+                </div>
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("tratamentos", "Tratamentos")}
@@ -1256,39 +1228,31 @@ export default function DashboardPage() {
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
                 <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
-                {bd?.consultas && bd.consultas.total > 0 && (
-                  <>
-                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                    <KpiChips
-                      items={[
-                        { label: "Cadastro", count: bd.consultas.cadastro },
-                        { label: "Resgate", count: bd.consultas.resgate },
-                      ].filter((c) => c.count > 0)}
-                    />
-                    {bd.consultas.valor_total > 0 && (
-                      <>
-                        <KpiBreakdownHeading>Valor total</KpiBreakdownHeading>
-                        <div className="mt-1.5">
-                          <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                            {moneyBR(bd.consultas.valor_total)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    {bd.consultas.agendamentos.length > 0 && (
-                      <>
-                        <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>
-                        <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
-                          {bd.consultas.agendamentos.slice(0, 5).map((a, i) => (
-                            <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
-                              <span className="truncate text-white/80">{a.name || "—"}</span>
-                              <span className="shrink-0 tabular-nums text-white/55">{dateHourBR(a.when)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </>
+                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                <KpiChips
+                  items={[
+                    { label: "Cadastro", count: bd?.consultas.cadastro ?? 0 },
+                    { label: "Resgate", count: bd?.consultas.resgate ?? 0 },
+                  ].filter((c) => c.count > 0)}
+                />
+                <KpiBreakdownHeading>Valor total</KpiBreakdownHeading>
+                <div className="mt-1.5">
+                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                    {moneyBR(bd?.consultas.valor_total ?? 0)}
+                  </span>
+                </div>
+                <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>
+                {(bd?.consultas.agendamentos.length ?? 0) > 0 ? (
+                  <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
+                    {bd!.consultas.agendamentos.slice(0, 5).map((a, i) => (
+                      <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
+                        <span className="truncate text-white/80">{a.name || "—"}</span>
+                        <span className="shrink-0 tabular-nums text-white/55">{dateHourBR(a.when)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
                 )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
