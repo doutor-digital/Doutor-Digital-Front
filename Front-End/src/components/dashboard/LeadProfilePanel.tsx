@@ -229,6 +229,12 @@ function LeadProfileConfigModal({
         birthdate_field_id: loaded.birthdate_field_id ?? null,
         appointment_field_id: loaded.appointment_field_id ?? null,
         doctor_field_id: loaded.doctor_field_id ?? null,
+        origem_field_id: loaded.origem_field_id ?? null,
+        motivo_nao_agendamento_field_id: loaded.motivo_nao_agendamento_field_id ?? null,
+        fisioterapeuta_field_id: loaded.fisioterapeuta_field_id ?? null,
+        valor_tratamento_field_id: loaded.valor_tratamento_field_id ?? null,
+        tratamento_fechado_field_id: loaded.tratamento_fechado_field_id ?? null,
+        qualificacao_field_id: loaded.qualificacao_field_id ?? null,
       });
   }, [loaded]);
 
@@ -262,8 +268,8 @@ function LeadProfileConfigModal({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div className="relative w-full max-w-md space-y-3 rounded-2xl border border-white/12 bg-[#0a0f1f] p-5 shadow-2xl ring-1 ring-white/5">
-        <div className="flex items-center justify-between">
+      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-white/12 bg-[#0a0f1f] shadow-2xl ring-1 ring-white/5">
+        <div className="flex items-center justify-between border-b border-white/5 p-5">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-200">
             Escolher campos do perfil
           </p>
@@ -271,6 +277,7 @@ function LeadProfileConfigModal({
             <X className="h-4 w-4" />
           </button>
         </div>
+        <div className="space-y-3 overflow-y-auto p-5">
 
         {fields.isLoading || current.isLoading ? (
           <div className="grid h-24 place-items-center text-white/40">
@@ -285,6 +292,15 @@ function LeadProfileConfigModal({
             <Row label="Campo de nascimento (idade)" k="birthdate_field_id" hint="nascimento" />
             <Row label="Campo de data de agendamento (alerta)" k="appointment_field_id" hint="agendamento" />
             <Row label="Campo do doutor responsável" k="doctor_field_id" hint="responsável/doutor" />
+            <div className="pt-1 text-[10.5px] font-semibold uppercase tracking-wider text-emerald-300/70">
+              Breakdowns dos KPI cards
+            </div>
+            <Row label="Origem do lead" k="origem_field_id" hint="origem" />
+            <Row label="Motivo do não agendamento" k="motivo_nao_agendamento_field_id" hint="motivo + agendamento" />
+            <Row label="Fisioterapeuta que fechou" k="fisioterapeuta_field_id" hint="fisio/doutor/responsável" />
+            <Row label="Valor do tratamento" k="valor_tratamento_field_id" hint="valor + tratamento" />
+            <Row label="Tratamento fechado" k="tratamento_fechado_field_id" hint="tratamento + fechado" />
+            <Row label="Qualificação do lead" k="qualificacao_field_id" hint="quente/morno/frio" />
             <button
               type="button"
               onClick={() => save.mutate()}
@@ -295,6 +311,7 @@ function LeadProfileConfigModal({
             </button>
           </>
         )}
+        </div>
       </div>
     </div>,
     document.body,

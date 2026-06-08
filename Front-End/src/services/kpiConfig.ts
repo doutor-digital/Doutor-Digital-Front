@@ -227,6 +227,13 @@ export interface LeadProfileFieldConfig {
   birthdate_field_id?: number | null;
   appointment_field_id?: number | null;
   doctor_field_id?: number | null;
+  // ── Mapeamentos p/ os breakdowns dos KPI cards ──────────
+  origem_field_id?: number | null;
+  motivo_nao_agendamento_field_id?: number | null;
+  fisioterapeuta_field_id?: number | null;
+  valor_tratamento_field_id?: number | null;
+  tratamento_fechado_field_id?: number | null;
+  qualificacao_field_id?: number | null;
 }
 
 export interface LeadProfileAnalytics {
