@@ -147,6 +147,57 @@ export interface ValueCount {
   count: number;
 }
 
+// ── Breakdowns por KPI do dashboard principal ─────────────────────────────
+export interface OrigemMotivo {
+  origem: string;
+  count: number;
+  top_motivo?: string | null;
+  top_motivo_count?: number;
+}
+export interface CadastroBreakdown {
+  total: number;
+  origens: OrigemMotivo[];
+}
+export interface TipoOrigemBreakdown {
+  total: number;
+  tipos: ValueCount[];
+  origens: ValueCount[];
+}
+export interface AgendadosBreakdown {
+  total: number;
+  cadastro: number;
+  resgate: number;
+  com_pagamento: number;
+  sem_pagamento: number;
+  origens: ValueCount[];
+}
+export interface TratamentosBreakdown {
+  total: number;
+  origens: ValueCount[];
+  fisios: ValueCount[];
+  valor_consulta_total: number;
+  valor_tratamento_total: number;
+}
+export interface AgendamentoItem {
+  name: string;
+  when?: string | null;
+  tipo?: string | null;
+}
+export interface ConsultasBreakdown {
+  total: number;
+  cadastro: number;
+  resgate: number;
+  valor_total: number;
+  agendamentos: AgendamentoItem[];
+}
+export interface KpiBreakdowns {
+  cadastro: CadastroBreakdown;
+  resgate: TipoOrigemBreakdown;
+  agendados: AgendadosBreakdown;
+  tratamentos: TratamentosBreakdown;
+  consultas: ConsultasBreakdown;
+}
+
 export interface CustomFieldsCrossAnalysis {
   total_leads: number;
   sexo_by_outcome: SexoOutcomeRow[];
@@ -253,6 +304,25 @@ export const kpiConfigService = {
       total: data?.total ?? 0,
       truncated: Boolean(data?.truncated),
       note: data?.note ?? null,
+    };
+  },
+
+  /** Breakdowns por KPI do dashboard principal (cadastro/resgate/agendados/tratamentos/consultas). */
+  async kpiBreakdowns(
+    unitId: number | string | null | undefined,
+    range?: { date_from?: string; date_to?: string },
+  ): Promise<KpiBreakdowns> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<KpiBreakdowns>(
+      "/webhooks/dashboard/kpi-breakdowns",
+      { params: { ...(id ? { unitId: id } : {}), dateFrom: range?.date_from, dateTo: range?.date_to } },
+    );
+    return {
+      cadastro: data?.cadastro ?? { total: 0, origens: [] },
+      resgate: data?.resgate ?? { total: 0, tipos: [], origens: [] },
+      agendados: data?.agendados ?? { total: 0, cadastro: 0, resgate: 0, com_pagamento: 0, sem_pagamento: 0, origens: [] },
+      tratamentos: data?.tratamentos ?? { total: 0, origens: [], fisios: [], valor_consulta_total: 0, valor_tratamento_total: 0 },
+      consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, agendamentos: [] },
     };
   },
 

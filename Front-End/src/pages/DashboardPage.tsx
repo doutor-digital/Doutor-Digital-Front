@@ -163,6 +163,40 @@ function DonutChart({
   );
 }
 
+// ─── Breakdown inline nos KPI cards ──────────────────────────────────────
+function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: number; tone?: "ok" | "warn" | "neutral" }>; max?: number }) {
+  if (!items.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {items.slice(0, max).map((c, i) => {
+        const tone =
+          c.tone === "ok" ? "bg-emerald-400/[0.12] text-emerald-200 ring-emerald-400/20"
+          : c.tone === "warn" ? "bg-amber-400/[0.12] text-amber-100 ring-amber-400/20"
+          : "bg-white/[0.04] text-white/75 ring-white/10";
+        return (
+          <span key={`${c.label}-${i}`} className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide ring-1 ring-inset ${tone}`}>
+            <span className="truncate">{c.label}</span> · <span className="tabular-nums text-white">{c.count}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function KpiBreakdownHeading({ children }: { children: React.ReactNode }) {
+  return <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">{children}</p>;
+}
+
+const moneyBR = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
+
+const dateHourBR = (iso?: string | null) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
+
 // ─── Card escuro (base navy) ──────────────────────────────────────────────
 function DarkCard({
   children,
@@ -310,6 +344,19 @@ export default function DashboardPage() {
     enabled: unitId != null,
     staleTime: 60_000,
   });
+
+  // Breakdowns por KPI — renderizados inline em cada card do dashboard.
+  const kpiBreakdowns = useQuery({
+    queryKey: ["dash-amo", "kpi-breakdowns", unitId, range.from, range.to],
+    queryFn: () =>
+      kpiConfigService.kpiBreakdowns(unitId, {
+        date_from: range.from,
+        date_to: range.to,
+      }),
+    enabled: unitId != null,
+    staleTime: 60_000,
+  });
+  const bd = kpiBreakdowns.data;
   const savedKpiByKey = useMemo(() => {
     const m = new Map<string, KpiConfigItem>();
     for (const it of savedKpis.data ?? []) m.set(it.kpi_key, it);
@@ -1033,6 +1080,26 @@ export default function DashboardPage() {
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
                 <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                {(bd?.cadastro.origens?.length ?? 0) > 0 && (
+                  <div className="mt-3">
+                    <KpiBreakdownHeading>Por origem · motivo de não agendamento</KpiBreakdownHeading>
+                    <ul className="mt-1.5 space-y-1">
+                      {bd!.cadastro.origens.slice(0, 4).map((o) => (
+                        <li key={o.origem} className="text-[11px]">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-medium text-white/85">{o.origem}</span>
+                            <span className="shrink-0 tabular-nums text-white/70">{nf(o.count)}</span>
+                          </div>
+                          {o.top_motivo && (
+                            <p className="truncate text-[10px] text-amber-200/80">
+                              Sem agendar: {o.top_motivo} ({o.top_motivo_count})
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("cadastro", "Cadastro")}
@@ -1042,6 +1109,18 @@ export default function DashboardPage() {
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                {(bd?.resgate.tipos?.length ?? 0) > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    <KpiChips items={bd!.resgate.tipos.map((t) => ({ label: t.value, count: t.count }))} />
+                  </>
+                )}
+                {(bd?.resgate.origens?.length ?? 0) > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                    <KpiChips items={bd!.resgate.origens.map((o) => ({ label: o.value, count: o.count }))} />
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("resgate", "Resgate")}
@@ -1093,6 +1172,30 @@ export default function DashboardPage() {
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                {bd?.agendados && bd.agendados.total > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    <KpiChips
+                      items={[
+                        { label: "Cadastro", count: bd.agendados.cadastro },
+                        { label: "Resgate", count: bd.agendados.resgate },
+                      ].filter((c) => c.count > 0)}
+                    />
+                    <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
+                    <KpiChips
+                      items={[
+                        { label: "Sim", count: bd.agendados.com_pagamento, tone: "ok" as const },
+                        { label: "Não", count: bd.agendados.sem_pagamento, tone: "warn" as const },
+                      ].filter((c) => c.count > 0)}
+                    />
+                    {bd.agendados.origens.length > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                        <KpiChips items={bd.agendados.origens.map((o) => ({ label: o.value, count: o.count }))} />
+                      </>
+                    )}
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
@@ -1113,6 +1216,39 @@ export default function DashboardPage() {
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
                 <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
+                {bd?.tratamentos && bd.tratamentos.total > 0 && (
+                  <>
+                    {bd.tratamentos.origens.length > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                        <KpiChips items={bd.tratamentos.origens.map((o) => ({ label: o.value, count: o.count }))} />
+                      </>
+                    )}
+                    {bd.tratamentos.fisios.length > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
+                        <KpiChips items={bd.tratamentos.fisios.map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
+                      </>
+                    )}
+                    {(bd.tratamentos.valor_consulta_total > 0 || bd.tratamentos.valor_tratamento_total > 0) && (
+                      <>
+                        <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                          {bd.tratamentos.valor_consulta_total > 0 && (
+                            <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                              Consulta: {moneyBR(bd.tratamentos.valor_consulta_total)}
+                            </span>
+                          )}
+                          {bd.tratamentos.valor_tratamento_total > 0 && (
+                            <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                              Tratamento: {moneyBR(bd.tratamentos.valor_tratamento_total)}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("tratamentos", "Tratamentos")}
@@ -1120,6 +1256,40 @@ export default function DashboardPage() {
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
                 <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                {bd?.consultas && bd.consultas.total > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    <KpiChips
+                      items={[
+                        { label: "Cadastro", count: bd.consultas.cadastro },
+                        { label: "Resgate", count: bd.consultas.resgate },
+                      ].filter((c) => c.count > 0)}
+                    />
+                    {bd.consultas.valor_total > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Valor total</KpiBreakdownHeading>
+                        <div className="mt-1.5">
+                          <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                            {moneyBR(bd.consultas.valor_total)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {bd.consultas.agendamentos.length > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>
+                        <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
+                          {bd.consultas.agendamentos.slice(0, 5).map((a, i) => (
+                            <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
+                              <span className="truncate text-white/80">{a.name || "—"}</span>
+                              <span className="shrink-0 tabular-nums text-white/55">{dateHourBR(a.when)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("consultas", "Consultas")}
