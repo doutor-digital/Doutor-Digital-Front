@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { ptBR } from "date-fns/locale";
@@ -794,9 +795,9 @@ export default function DashboardPage() {
                 <Fi name="fi-rr-calendar" />
                 {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
               </button>
-              {dateMenuOpen && (
+              {dateMenuOpen && createPortal(
                 <div
-                  className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16"
+                  className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16"
                   onClick={() => setDateMenuOpen(false)}
                 >
                   <div
@@ -889,7 +890,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div>,
+                document.body,
               )}
             </div>
           </div>
