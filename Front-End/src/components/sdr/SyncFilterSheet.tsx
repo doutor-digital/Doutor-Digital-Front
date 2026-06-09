@@ -160,7 +160,7 @@ export function SyncFilterSheet({
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-semibold text-slate-50">
-              Sincronizar Cloudia
+              Sincronizar Kommo
             </h2>
             <p className="text-[11.5px] text-slate-500">
               Escolha unidade, intervalo e turno antes de puxar os leads.

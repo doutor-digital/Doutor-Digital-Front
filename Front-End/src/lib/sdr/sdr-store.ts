@@ -58,7 +58,7 @@ let initialized = false;
 
 /** Preenche source/status default para leads vindos do seed ou de versões anteriores. */
 function normalizeLead(lead: Partial<SdrLead> & Omit<SdrLead, "source" | "status">): SdrLead {
-  const source: SdrLead["source"] = lead.source ?? (lead.externalId ? "cloudia" : "manual");
+  const source: SdrLead["source"] = lead.source ?? (lead.externalId ? "crm" : "manual");
   const status: SdrLead["status"] =
     lead.status ?? (source === "crm" ? "pendente_revisao" : "aprovado");
   return { ...lead, source, status };

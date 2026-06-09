@@ -65,7 +65,7 @@ export default function BuscarLeadsPage() {
               Buscar Leads
             </h1>
             <p className="text-[10.5px] text-white/70 mt-0.5">
-              Linguagem natural → filtros estruturados (GPT-4o-mini)
+              Busque em linguagem natural — ex.: "leads de Instagram que não agendaram"
             </p>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function BuscarLeadsPage() {
 
               {search.data.observation && (
                 <p className="mt-3 text-[11.5px]" style={{ color: C.inkSoft }}>
-                  💡 Observação da IA: {search.data.observation}
+                  Observação: {search.data.observation}
                 </p>
               )}
             </section>

@@ -85,7 +85,7 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
   const canEditKommo = (schema.data?.length ?? 0) > 0 && !!lead.externalId && !!lead.backendId;
 
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    draft.sourceFields?.includes(k) ? "cloudia" : "manual";
+    draft.sourceFields?.includes(k) ? "crm" : "manual";
 
   const update = <K extends keyof SdrLead>(k: K, v: SdrLead[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
@@ -163,7 +163,7 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
               {draft.sourceProvenance && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
                   <Sparkles className="h-2.5 w-2.5" />
-                  {draft.sourceProvenance.webhookEvent ?? "Cloudia"}
+                  {draft.sourceProvenance.webhookEvent ?? "Kommo"}
                 </span>
               )}
               {draft.sourceProvenance?.receivedAt && (

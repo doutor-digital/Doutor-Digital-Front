@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Activity,
+  type LucideIcon,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -24,12 +24,12 @@ type ActionFilter = "todas" | "review_approved" | "review_rejected" | "created" 
 
 const ACTION_META: Record<
   string,
-  { label: string; tone: "emerald" | "rose" | "sky" | "amber" | "violet" | "slate"; icon: typeof Activity }
+  { label: string; tone: "emerald" | "rose" | "sky" | "amber" | "violet" | "slate"; icon: LucideIcon }
 > = {
   "sdr_lead.review_approved": { label: "Revisão aprovada", tone: "emerald", icon: CheckCircle2 },
   "sdr_lead.review_rejected": { label: "Revisão rejeitada", tone: "rose", icon: XCircle },
   "sdr_lead.created_manual": { label: "Lead manual criado", tone: "sky", icon: Plus },
-  "sdr_lead.created_cloudia": { label: "Lead Cloudia criado", tone: "emerald", icon: Sparkles },
+  "sdr_lead.created_cloudia": { label: "Lead Kommo criado", tone: "emerald", icon: Sparkles },
   "sdr_lead.created_importado": { label: "Lead importado", tone: "amber", icon: Plus },
   "sdr_lead.updated": { label: "Lead editado", tone: "sky", icon: Edit3 },
   "sdr_lead.deleted": { label: "Lead removido", tone: "rose", icon: Trash2 },

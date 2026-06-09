@@ -1121,7 +1121,7 @@ export function buildCloudiaWebhookUrl(
 // ----- Webhook genérico (Meta, N8N, Zapier, Make, etc.) -----
 // Endpoint único, com header x-source que diferencia o provider.
 const PROVIDER_SHORT: Record<IntegrationProvider, ShortProvider> = {
-  cloudia: 'c',
+  crm: 'c',
   kommo: 'k',
   meta: 'm',
   google: 'g',

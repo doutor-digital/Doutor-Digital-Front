@@ -100,9 +100,9 @@ export const sdrService = {
    *
    * Sem filtros, traz os últimos 30 dias do tenant inteiro.
    */
-  async syncFromCloudia(filters: SdrSyncFilters = {}): Promise<SdrSyncSummary> {
+  async syncFromKommo(filters: SdrSyncFilters = {}): Promise<SdrSyncSummary> {
     const r = await api.post<SdrSyncSummary>(
-      "/api/sdr/leads/sync-from-cloudia",
+      "/api/sdr/leads/sync-from-leads",
       filters,
     );
     return r.data;

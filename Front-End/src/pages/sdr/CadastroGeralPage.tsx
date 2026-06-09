@@ -72,9 +72,9 @@ export default function CadastroGeralPage() {
           : filters.shift === "custom"
             ? `${filters.timeStart}–${filters.timeEnd}`
             : "todo o dia");
-    const t = toast.loading(`Sincronizando Cloudia · ${desc}…`);
+    const t = toast.loading(`Sincronizando Kommo · ${desc}…`);
     try {
-      const summary = await sdrService.syncFromCloudia(filters);
+      const summary = await sdrService.syncFromKommo(filters);
       const localLeads = summary.items.map(sdrLeadFromBackend);
       const added = mergeSdrLeadsFromBackend(localLeads);
       setLastSyncInfo({
@@ -158,7 +158,7 @@ export default function CadastroGeralPage() {
               ) : (
                 <>
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Sincronizar Cloudia…
+                  Sincronizar Kommo…
                 </>
               )}
             </button>
@@ -178,7 +178,7 @@ export default function CadastroGeralPage() {
         <Kpi
           tone="emerald"
           icon={<Sparkles className="h-4 w-4" />}
-          label="Via Cloudia"
+          label="Via Kommo"
           value={formatNumber(totalCloudia)}
           hint={`${pct(totalCloudia, pendingLeads.length)}% automáticos`}
         />
@@ -254,7 +254,7 @@ export default function CadastroGeralPage() {
           label="Origem"
           options={[
             { value: "todas", label: "Todas" },
-            { value: "cloudia", label: "Auto · CRM" },
+            { value: "crm", label: "Auto · CRM" },
             { value: "manual", label: "Manual" },
           ]}
           value={filterOrigem}
@@ -287,7 +287,7 @@ export default function CadastroGeralPage() {
             Nenhum lead encontrado
           </h3>
           <p className="mt-1 text-[11.5px] text-slate-500">
-            Ajuste os filtros ou sincronize com o Cloudia.
+            Ajuste os filtros ou sincronize com a Kommo.
           </p>
         </div>
       ) : view === "cards" ? (
@@ -427,7 +427,7 @@ function ViewToggleBtn({
 
 function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    lead.sourceFields?.includes(k) ? "cloudia" : "manual";
+    lead.sourceFields?.includes(k) ? "crm" : "manual";
   const isResgate = lead.tipo === "Resgate";
 
   return (
@@ -458,7 +458,7 @@ function LeadCard({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
             title={`Recebido em ${formatDate(lead.sourceProvenance.receivedAt)}`}
           >
             <Sparkles className="h-2.5 w-2.5" />
-            Cloudia
+            Kommo
           </span>
         )}
       </div>
@@ -643,7 +643,7 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 
 function TableRow({ lead, onReview }: { lead: SdrLead; onReview: () => void }) {
   const isFromSource = (k: SdrSourceFieldKey): "crm" | "manual" =>
-    lead.sourceFields?.includes(k) ? "cloudia" : "manual";
+    lead.sourceFields?.includes(k) ? "crm" : "manual";
   return (
     <tr className="transition-colors hover:bg-white/[0.025]">
       <Td>

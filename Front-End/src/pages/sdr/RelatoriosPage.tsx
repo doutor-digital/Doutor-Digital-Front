@@ -13,6 +13,7 @@ import {
   TrendingUp,
   XCircle,
   AlertTriangle,
+  type LucideIcon,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SourceLegendBanner } from "@/components/sdr/SourceField";
@@ -29,7 +30,7 @@ const TONE_CLASSES: Record<AiInsight["tone"], string> = {
   neutral: "border-white/[0.08] bg-white/[0.02] text-slate-200",
 };
 
-const TONE_ICON: Record<AiInsight["tone"], typeof Brain> = {
+const TONE_ICON: Record<AiInsight["tone"], LucideIcon> = {
   positive: CheckCircle2,
   warning: AlertTriangle,
   alert: XCircle,
@@ -295,19 +296,18 @@ export default function RelatoriosPage() {
 
 function AiCallToActionPanel({ onAnalyze }: { onAnalyze: () => void }) {
   return (
-    <div className="ai-card relative overflow-hidden rounded-xl border border-violet-400/20 bg-gradient-to-br from-violet-400/[0.05] via-violet-400/[0.02] to-transparent p-5">
-      <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-violet-400/[0.08] blur-3xl" />
+    <div className="ai-card relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
       <div className="relative flex items-start gap-3 md:items-center">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-violet-400/30 bg-violet-400/10">
-          <Brain className="h-5 w-5 text-violet-300" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04]">
+          <Brain className="h-5 w-5 text-slate-300" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-[14px] font-semibold text-slate-100">
-            Gere uma análise com IA dos seus dados
+            Análise do período
           </h3>
           <p className="mt-1 text-[11.5px] leading-relaxed text-slate-400">
-            A IA olha todas as 8 seções (Cadastro, Consultas, Tratamentos, Tarefas, Agenda, Metas, Auditoria, Origens),
-            identifica gargalos e sugere ações. Demora ~2 segundos. Depois você pode baixar tudo em PDF.
+            Cruza as 8 seções (Cadastro, Consultas, Tratamentos, Tarefas, Agenda, Metas, Auditoria, Origens),
+            identifica gargalos e sugere ações. Depois você pode baixar tudo em PDF.
           </p>
         </div>
         <button
@@ -625,7 +625,7 @@ function ViewTab({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: typeof Calendar;
+  icon: LucideIcon;
   children: React.ReactNode;
 }) {
   return (

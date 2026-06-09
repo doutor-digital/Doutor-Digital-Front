@@ -150,7 +150,7 @@ function buildInsights(m: AiMetrics): AiInsight[] {
       tone: "neutral",
       title: "Sem leads no período",
       detail:
-        "Ainda não há leads no dashboard SDR. Ative o webhook Kommo ou clique em Sincronizar Cloudia na tela de revisão para puxar leads existentes.",
+        "Ainda não há leads no dashboard SDR. Ative o webhook Kommo ou clique em Sincronizar Kommo na tela de revisão para puxar leads existentes.",
     });
   } else if (m.leadsPendentesRevisao > 0) {
     const tone: AiInsightTone = m.leadsPendentesRevisao > 10 ? "alert" : "warning";

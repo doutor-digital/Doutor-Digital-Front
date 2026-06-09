@@ -1,6 +1,19 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "@/components/icons";
+import {
+  Loader2,
+  BarChart3,
+  Clock,
+  Radio,
+  Zap,
+  TrendingUp,
+  Users,
+  Stethoscope,
+  XCircle,
+  Tag,
+  LineChart,
+} from "@/components/icons";
+import type { ComponentType } from "react";
 import { useClinic } from "@/hooks/useClinic";
 import { aiService } from "@/services/ai";
 import { cn } from "@/lib/utils";
@@ -120,7 +133,7 @@ const PRESETS: Array<{ key: PresetKey; label: string }> = [
 interface PresetQuestion {
   id: string;
   label: string;
-  emoji: string;
+  Icon: ComponentType<{ className?: string }>;
   color: string;
   prompt: string;
 }
@@ -129,7 +142,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "resumo-periodo",
     label: "Resumo do período",
-    emoji: "📊",
+    Icon: BarChart3,
     color: C.primary,
     prompt:
       "Me dá um resumo executivo do período: total de leads, conversão, comparativo com o período anterior, e os 3 destaques principais. Cite números e nomes.",
@@ -137,7 +150,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "melhores-horarios",
     label: "Melhores horários",
-    emoji: "🕒",
+    Icon: Clock,
     color: C.amber,
     prompt:
       "Quais são os MELHORES horários e dias da semana pra captação de leads nesta unidade? Mostre o top 3 horários e top 3 dias. Recomende uma escala de atendimento baseado nisso.",
@@ -145,7 +158,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "campanha-top",
     label: "Campanha mais escolhida",
-    emoji: "📣",
+    Icon: Radio,
     color: C.rose,
     prompt:
       "Qual campanha trouxe MAIS leads no período? Qual delas converteu MAIS em agendamento e fechamento? Mostre o ranking completo das campanhas com leads, agendamentos e fechamentos pra cada uma.",
@@ -153,23 +166,23 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "conversao-rapida",
     label: "Quem converteu mais rápido",
-    emoji: "⚡",
+    Icon: Zap,
     color: C.teal,
     prompt:
       "Quais leads converteram MAIS RÁPIDO da entrada até o agendamento ou fechamento? Liste o top 10 com nome, fonte e tempo de conversão (em horas). Tem algum padrão?",
   },
   {
     id: "atendente-bombando",
-    label: "Atendente bombando",
-    emoji: "🔥",
+    label: "Atendente em destaque",
+    Icon: TrendingUp,
     color: C.purple,
     prompt:
-      "Quem é o atendente/responsável que está BOMBANDO nesta unidade? Top 5 atendentes por: leads atribuídos, agendamentos feitos e fechamentos efetivados. Quem está acima da média?",
+      "Quem é o atendente/responsável que está se DESTACANDO nesta unidade? Top 5 atendentes por: leads atribuídos, agendamentos feitos e fechamentos efetivados. Quem está acima da média?",
   },
   {
     id: "perfil-paciente",
     label: "Perfil do paciente",
-    emoji: "👥",
+    Icon: Users,
     color: C.cyan,
     prompt:
       "Qual o PERFIL do paciente que mais agenda e mais fecha na unidade? Cruze Sexo, Profissão e Qualificação do Lead com o desfecho. Quem é o cliente ideal?",
@@ -177,7 +190,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "tratamentos",
     label: "Tratamentos top",
-    emoji: "💊",
+    Icon: Stethoscope,
     color: C.teal,
     prompt:
       "Quais tratamentos são MAIS indicados vs efetivamente FECHADOS? Mostre o top 8 de cada. Há gaps entre o que é indicado e o que é fechado?",
@@ -185,7 +198,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "motivos-perda",
     label: "Por que perdemos",
-    emoji: "❌",
+    Icon: XCircle,
     color: C.rose,
     prompt:
       "Por que os leads NÃO estão agendando? Liste os top motivos do não agendamento e o que isso revela sobre a operação. Sugira 3 ações específicas pra atacar os maiores motivos.",
@@ -193,7 +206,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "campos-customizados",
     label: "Campos customizados",
-    emoji: "🏷️",
+    Icon: Tag,
     color: C.amber,
     prompt:
       "Analise PROFUNDAMENTE os campos customizados da Kommo no período. Quais campos as SDRs estão preenchendo mais? Quais ficam em branco e por quê isso é um problema? O que os valores revelam sobre os leads?",
@@ -201,7 +214,7 @@ const PRESET_QUESTIONS: PresetQuestion[] = [
   {
     id: "comparativo-anterior",
     label: "vs Período anterior",
-    emoji: "📈",
+    Icon: LineChart,
     color: C.primary,
     prompt:
       "Compare ESTE período com o anterior de mesma duração. O que melhorou? O que piorou? Em que % e por quê? Olhe leads totais, conversão, atendentes, canais.",
@@ -310,7 +323,7 @@ export default function IaAnalyticsPage() {
           </div>
           <div>
             <h1 className="font-display text-[16px] font-semibold tracking-wide text-white">
-              Análise com I.A. · GPT-4o-mini
+              Análise com I.A.
             </h1>
             <p className="text-[10.5px] text-white/70 mt-0.5">
               {unitId ? `Unidade #${unitId}` : "Selecione uma unidade no topo do painel"}
@@ -328,7 +341,7 @@ export default function IaAnalyticsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-[13.5px] font-semibold" style={{ color: C.ink }}>
-                🔑 Chave OpenAI
+                Chave OpenAI
               </h2>
               {settings.isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" style={{ color: C.inkSoft }} />
@@ -428,7 +441,7 @@ export default function IaAnalyticsPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[13.5px] font-semibold" style={{ color: C.ink }}>
-              📅 Período de análise
+              Período de análise
             </h2>
             <span className="text-[11.5px] font-medium" style={{ color: C.primary }}>
               {range.label} · {range.from} → {range.to}
@@ -548,10 +561,10 @@ export default function IaAnalyticsPage() {
                     className="w-full flex items-start gap-3 p-3.5 text-left disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
                   >
                     <span
-                      className="h-9 w-9 shrink-0 rounded-lg grid place-items-center text-[18px]"
+                      className="h-9 w-9 shrink-0 rounded-lg grid place-items-center"
                       style={{ background: `${q.color}15`, color: q.color }}
                     >
-                      {q.emoji}
+                      <q.Icon className="h-[18px] w-[18px]" />
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold" style={{ color: C.ink }}>
@@ -585,7 +598,7 @@ export default function IaAnalyticsPage() {
                               className="text-[9.5px] px-1.5 py-0.5 rounded font-mono"
                               style={{ background: "#E5E7EB", color: C.inkSoft }}
                             >
-                              🔧 {t}
+                              {t}
                             </span>
                           ))}
                         </div>
@@ -627,7 +640,7 @@ export default function IaAnalyticsPage() {
                 style={{ background: C.primary }}
               >
                 {analyze.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {analyze.isPending ? "Analisando…" : "✨ Analisar com I.A."}
+                {analyze.isPending ? "Analisando…" : "Analisar com I.A."}
               </button>
             )}
           </div>

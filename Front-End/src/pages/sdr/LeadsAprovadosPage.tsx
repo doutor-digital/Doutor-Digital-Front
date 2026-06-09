@@ -13,6 +13,7 @@ import {
   UploadCloud,
   Users,
   XCircle,
+  type LucideIcon,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SourceInlineBadge } from "@/components/sdr/SourceField";
@@ -123,7 +124,7 @@ export default function LeadsAprovadosPage() {
           <BentoCell large tone="emerald" icon={Users} label="Total aprovados" value={formatNumber(kpis.total)} subtitle="leads no pipeline">
             <Sparkline values={Array.from({ length: 14 }, (_, i) => Math.max(0, Math.round(Math.sin(i / 2) * 4 + kpis.total / 14 + 2)))} />
           </BentoCell>
-          <BentoCell tone="sky" icon={Sparkles} label="Promovidos · Cloudia" value={formatNumber(kpis.sourcePromoted)} subtitle="passaram por revisão" />
+          <BentoCell tone="sky" icon={Sparkles} label="Promovidos · Kommo" value={formatNumber(kpis.sourcePromoted)} subtitle="passaram por revisão" />
           <BentoCell tone="violet" icon={ClipboardCheck} label="Cadastros manuais" value={formatNumber(kpis.manualEntries)} subtitle="digitados pela SDR" />
           <BentoCell tone="amber" icon={UploadCloud} label="Importados" value={formatNumber(kpis.importedEntries)} subtitle="upload em massa" />
           <BentoCell large tone="emerald" icon={TrendingUp} label="Receita total" value={formatCurrency(kpis.receitaTotal)} subtitle={`${kpis.fechamentos} fechamentos · ${kpis.taxaFechamento.toFixed(1)}% conversão`}>
@@ -333,7 +334,7 @@ function BentoCell({
 }: {
   large?: boolean;
   tone: keyof typeof BENTO_TONES;
-  icon: typeof Activity;
+  icon: LucideIcon;
   label: string;
   value?: string;
   subtitle?: string;
@@ -369,7 +370,7 @@ function Tab({
   active: boolean;
   onClick: () => void;
   count: number;
-  icon: typeof Activity;
+  icon: LucideIcon;
   children: React.ReactNode;
 }) {
   return (

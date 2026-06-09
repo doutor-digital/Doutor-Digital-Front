@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  type LucideIcon,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SourceInlineBadge, SourceLegendBanner } from "@/components/sdr/SourceField";
@@ -495,7 +496,7 @@ function KpiCard({
   label: string;
   value: string;
   sublabel: string;
-  icon: typeof Activity;
+  icon: LucideIcon;
   tone: keyof typeof TONES;
   cloudia?: boolean;
 }) {

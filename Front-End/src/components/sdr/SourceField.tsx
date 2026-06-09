@@ -236,7 +236,7 @@ export function SourceInlineBadge({ className }: { className?: string }) {
       title="Preenchido automaticamente via webhook Kommo"
     >
       <Sparkles className="h-2.5 w-2.5" />
-      Cloudia
+      Kommo
     </span>
   );
 }

@@ -177,17 +177,13 @@ export function InsightsCard({
     <div
       className={cn(
         "relative overflow-hidden rounded-xl",
-        "border border-emerald-400/15 bg-gradient-to-br from-emerald-500/[0.04] via-sky-500/[0.02] to-violet-500/[0.03]",
+        "border border-white/[0.06] bg-white/[0.02]",
       )}
     >
-      {/* Decorative glow */}
-      <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-400/10 blur-3xl" />
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
-
       <div className="relative space-y-4 p-5">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-emerald-400/30 to-sky-500/20 ring-1 ring-inset ring-emerald-400/30">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]">
             <img
               src={INSIGHTS_ICON}
               alt="Insights"
@@ -196,8 +192,8 @@ export function InsightsCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300/80">
-              Insights automáticos
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Resumo do período
             </p>
             <p
               className="mt-1 text-[13px] leading-relaxed text-slate-100"
@@ -283,7 +279,6 @@ export function InsightsCard({
             <TrendingUp className="h-3 w-3" />
             atualizado há instantes
           </span>
-          <span>powered by Doutor Digital Insights</span>
         </div>
       </div>
     </div>
