@@ -274,7 +274,9 @@ export default function DashboardPage() {
   const [stageFilter, setStageFilter] = useState<Set<string>>(new Set());
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const isCustom = customFrom !== "" && customTo !== "";
+  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const range = useMemo(() => {
     if (isCustom) {
@@ -755,9 +757,57 @@ export default function DashboardPage() {
                 {r.label}
               </button>
             ))}
-            <span className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900">
-              {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
-            </span>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDateMenuOpen((o) => !o)}
+                title="Clique para escolher as datas"
+                className="flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-900 hover:bg-white/90"
+              >
+                <Fi name="fi-rr-calendar" />
+                {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
+              </button>
+              {dateMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setDateMenuOpen(false)} />
+                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-white/10 bg-[#0f1024] p-3 shadow-2xl">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/60">
+                      Escolher datas
+                    </p>
+                    <label className="block text-[11px] text-white/60">De</label>
+                    <input
+                      type="date"
+                      value={customFrom}
+                      max={customTo || todayIso}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                      className="mb-2 mt-0.5 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
+                    />
+                    <label className="block text-[11px] text-white/60">Até</label>
+                    <input
+                      type="date"
+                      value={customTo}
+                      min={customFrom || undefined}
+                      max={todayIso}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                      className="mt-0.5 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
+                    />
+                    {isCustom && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomFrom("");
+                          setCustomTo("");
+                          setDateMenuOpen(false);
+                        }}
+                        className="mt-3 w-full rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-medium text-white/70 hover:bg-white/5"
+                      >
+                        Limpar (voltar pro período)
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* All / Select user / Setup */}
