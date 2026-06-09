@@ -147,6 +147,21 @@ export interface ValueCount {
   count: number;
 }
 
+export interface OutcomeRow {
+  label: string;
+  total: number;
+  agendou: number;
+  compareceu: number;
+  fechou: number;
+  faltou: number;
+}
+
+export interface PairCount {
+  group_a: string;
+  group_b: string;
+  count: number;
+}
+
 // ── Breakdowns por KPI do dashboard principal ─────────────────────────────
 export interface OrigemMotivo {
   origem: string;
@@ -208,6 +223,10 @@ export interface CustomFieldsCrossAnalysis {
   origem: ValueCount[];
   responsavel_agendamento: ValueCount[];
   qualificacao: ValueCount[];
+  atendente_by_outcome: OutcomeRow[];
+  origem_by_outcome: OutcomeRow[];
+  qualificacao_by_outcome: OutcomeRow[];
+  motivo_by_atendente: PairCount[];
 }
 
 export interface AgeStat {
@@ -371,6 +390,10 @@ export const kpiConfigService = {
       origem: data?.origem ?? [],
       responsavel_agendamento: data?.responsavel_agendamento ?? [],
       qualificacao: data?.qualificacao ?? [],
+      atendente_by_outcome: data?.atendente_by_outcome ?? [],
+      origem_by_outcome: data?.origem_by_outcome ?? [],
+      qualificacao_by_outcome: data?.qualificacao_by_outcome ?? [],
+      motivo_by_atendente: data?.motivo_by_atendente ?? [],
     };
   },
 

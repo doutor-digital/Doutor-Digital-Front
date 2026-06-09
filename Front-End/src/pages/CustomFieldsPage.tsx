@@ -17,6 +17,8 @@ import {
   kpiConfigService,
   type CustomFieldSummary,
   type ValueCount,
+  type OutcomeRow,
+  type PairCount,
 } from "@/services/kpiConfig";
 import { unitsService } from "@/services/units";
 import { cn, formatNumber } from "@/lib/utils";
@@ -78,6 +80,10 @@ const CROSS_BLOCKS: CrossBlock[] = [
   { id: "profissao", label: "Profissão", col: "col-span-12 lg:col-span-6" },
   { id: "qualificacao", label: "Qualificação do Lead", col: "col-span-12 lg:col-span-6" },
   { id: "responsavel_agendamento", label: "Responsável pelo Agendamento", col: "col-span-12" },
+  { id: "atendente_outcome", label: "Atendente × Desfecho", col: "col-span-12 lg:col-span-6" },
+  { id: "origem_outcome", label: "Origem × Desfecho", col: "col-span-12 lg:col-span-6" },
+  { id: "qualificacao_outcome", label: "Qualificação × Desfecho", col: "col-span-12 lg:col-span-6" },
+  { id: "motivo_atendente", label: "Motivo × Atendente", col: "col-span-12 lg:col-span-6" },
 ];
 
 const BLOCK_CFG_KEY = "cf-blocks-cfg-v1";
@@ -291,6 +297,14 @@ export default function CustomFieldsPage() {
           <KommoWidget key={id} title="Responsável pelo Agendamento" data={cross.data?.responsavel_agendamento ?? []} color={C.cyan} dateLabel={dateRangeLabel} className={col}
             onClick={(value) => drillByFieldName(setDrill, "Responsável agendamento", "Responsável agendamento", value, allFields)} />
         );
+      case "atendente_outcome":
+        return <OutcomeWidget key={id} title="Atendente × Desfecho" subtitle="Quem converte, não só volume" data={cross.data?.atendente_by_outcome ?? []} className={col} />;
+      case "origem_outcome":
+        return <OutcomeWidget key={id} title="Origem × Desfecho" subtitle="Taxa de fechamento por canal" data={cross.data?.origem_by_outcome ?? []} className={col} />;
+      case "qualificacao_outcome":
+        return <OutcomeWidget key={id} title="Qualificação × Desfecho" subtitle="Quanto cada faixa fecha" data={cross.data?.qualificacao_by_outcome ?? []} className={col} />;
+      case "motivo_atendente":
+        return <PairWidget key={id} title="Motivo × Atendente" subtitle="Top combinações de não-agendamento" data={cross.data?.motivo_by_atendente ?? []} className={col} />;
       default:
         return null;
     }
@@ -733,6 +747,100 @@ function KommoWidget({
         </ul>
       )}
     </section>
+  );
+}
+
+/** Widget "rótulo × desfecho": lista com total + taxa de fechamento por linha. */
+function OutcomeWidget({
+  title,
+  subtitle,
+  data,
+  className,
+}: {
+  title: string;
+  subtitle?: string;
+  data: OutcomeRow[];
+  className?: string;
+}) {
+  return (
+    <Panel title={title} subtitle={subtitle} className={className}>
+      {data.length === 0 ? (
+        <div className="grid h-28 place-items-center">
+          <EmptyMini text="Sem dados no período" />
+        </div>
+      ) : (
+        <ul className="max-h-72 overflow-y-auto px-4 py-2">
+          {data.map((row) => {
+            const pct = row.total > 0 ? Math.round((row.fechou / row.total) * 100) : 0;
+            return (
+              <li key={row.label} className="border-t py-2 first:border-t-0" style={{ borderColor: C.rule }}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[12px] font-medium" style={{ color: C.ink }} title={row.label}>
+                    {row.label}
+                  </span>
+                  <span className="shrink-0 text-[12px] font-bold tabular-nums" style={{ color: pct >= 30 ? C.green : C.inkSoft }}>
+                    {pct}% fechou
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center gap-3 text-[10.5px] tabular-nums" style={{ color: C.inkSoft }}>
+                  <span>total {row.total}</span>
+                  <span>ag. {row.agendou}</span>
+                  <span>comp. {row.compareceu}</span>
+                  <span style={{ color: C.green }}>fechou {row.fechou}</span>
+                  <span style={{ color: C.amber }}>faltou {row.faltou}</span>
+                </div>
+                <div className="mt-1 h-1.5 rounded-full" style={{ background: C.rule }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(2, pct)}%`, background: C.green }} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+/** Widget de pares (cruzamento 2D): "Atendente · Motivo" → contagem. */
+function PairWidget({
+  title,
+  subtitle,
+  data,
+  className,
+}: {
+  title: string;
+  subtitle?: string;
+  data: PairCount[];
+  className?: string;
+}) {
+  const max = data.reduce((m, d) => Math.max(m, d.count), 0) || 1;
+  return (
+    <Panel title={title} subtitle={subtitle} className={className}>
+      {data.length === 0 ? (
+        <div className="grid h-28 place-items-center">
+          <EmptyMini text="Sem dados no período" />
+        </div>
+      ) : (
+        <ul className="max-h-72 overflow-y-auto px-4 py-2">
+          {data.map((p) => (
+            <li key={`${p.group_a}|${p.group_b}`} className="border-t py-2 first:border-t-0" style={{ borderColor: C.rule }}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[12px]" style={{ color: C.ink }} title={`${p.group_a} · ${p.group_b}`}>
+                  <span className="font-medium">{p.group_a}</span>
+                  <span style={{ color: C.inkSoft }}> · {p.group_b}</span>
+                </span>
+                <span className="shrink-0 text-[12px] font-semibold tabular-nums" style={{ color: C.ink }}>
+                  {formatNumber(p.count)}
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full" style={{ background: C.rule }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.max(3, Math.round((p.count / max) * 100))}%`, background: C.amber }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
 
