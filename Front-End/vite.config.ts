@@ -17,7 +17,23 @@ export default defineConfig({
         "apple-touch-icon.png",
       ],
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        // NÃO pré-cacheamos os chunks JS/CSS (hash muda a cada build): se o
+        // sw.js novo e os assets do servidor ficam fora de sincronia num deploy,
+        // um único chunk 404 quebrava TODA a instalação do SW
+        // (bad-precaching-response). Pré-cache só do shell + ícones/fontes;
+        // JS/CSS vão por runtime caching (StaleWhileRevalidate) — chunk faltando
+        // cai na rede em vez de brickar o app.
+        globPatterns: ["**/*.{html,svg,png,ico,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/.*\.(?:js|css)$/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "assets",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
         navigateFallbackDenylist: [
           /^\/api\//,
           /^\/webhooks\//,
