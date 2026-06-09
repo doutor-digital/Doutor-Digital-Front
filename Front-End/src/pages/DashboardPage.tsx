@@ -768,19 +768,34 @@ export default function DashboardPage() {
                 {isCustom ? `Personalizado: ${rangeLabel}` : rangeLabel}
               </button>
               {dateMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setDateMenuOpen(false)} />
-                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-white/10 bg-[#0f1024] p-3 shadow-2xl">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/60">
-                      Escolher datas
-                    </p>
+                <div
+                  className="fixed inset-0 z-[100] flex items-start justify-center bg-black/50 p-4 pt-24"
+                  onClick={() => setDateMenuOpen(false)}
+                >
+                  <div
+                    className="w-full max-w-xs rounded-xl border border-white/10 bg-[#0f1024] p-4 shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-white/70">
+                        Escolher datas
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setDateMenuOpen(false)}
+                        className="text-white/50 hover:text-white"
+                        aria-label="Fechar"
+                      >
+                        <Fi name="fi-rr-cross-small" />
+                      </button>
+                    </div>
                     <label className="block text-[11px] text-white/60">De</label>
                     <input
                       type="date"
                       value={customFrom}
                       max={customTo || todayIso}
                       onChange={(e) => setCustomFrom(e.target.value)}
-                      className="mb-2 mt-0.5 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
+                      className="mb-3 mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
                     />
                     <label className="block text-[11px] text-white/60">Até</label>
                     <input
@@ -789,8 +804,15 @@ export default function DashboardPage() {
                       min={customFrom || undefined}
                       max={todayIso}
                       onChange={(e) => setCustomTo(e.target.value)}
-                      className="mt-0.5 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setDateMenuOpen(false)}
+                      className="mt-4 w-full rounded-lg bg-violet-500 px-2 py-2 text-[12px] font-semibold text-white hover:bg-violet-400"
+                    >
+                      Aplicar
+                    </button>
                     {isCustom && (
                       <button
                         type="button"
@@ -799,13 +821,13 @@ export default function DashboardPage() {
                           setCustomTo("");
                           setDateMenuOpen(false);
                         }}
-                        className="mt-3 w-full rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-medium text-white/70 hover:bg-white/5"
+                        className="mt-2 w-full rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-medium text-white/70 hover:bg-white/5"
                       >
                         Limpar (voltar pro período)
                       </button>
                     )}
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
