@@ -318,6 +318,14 @@ export function LeadReviewSheet({ lead, onClose, actor, mode = "sheet" }: Props)
                 className="mt-7"
                 cloudia
               />
+              {schema.isError && !!lead.externalId && (
+                <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11.5px] leading-relaxed text-amber-200">
+                  Não foi possível carregar os campos editáveis da Kommo desta unidade —
+                  normalmente é o token/subdomínio Kommo da unidade ausente ou expirado.
+                  Peça pro analista revisar em <span className="font-semibold">Unidades → Kommo</span>.
+                  Os campos abaixo ficam só em leitura.
+                </div>
+              )}
               {canEditKommo ? (
                 <KommoFieldsEditor lead={lead} schema={schema.data!} fields={allCustomFields} />
               ) : (
