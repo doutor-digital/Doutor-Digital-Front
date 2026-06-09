@@ -53,6 +53,14 @@ function isoEndOfDay(date = new Date()) {
 function fmtDateBr(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
+/** ISO → "yyyy-MM-dd" no fuso LOCAL (pra <input type="date">; evita erro de ±1 dia do UTC). */
+function isoToInputDate(iso: string) {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 // ─── Filtros (pílulas Ano / Mês / Semana / Dia) ───────────────────────────
 type RangeKey = "ano" | "mes" | "semana" | "dia" | "custom";
@@ -792,18 +800,24 @@ export default function DashboardPage() {
                     <label className="block text-[11px] text-white/60">De</label>
                     <input
                       type="date"
-                      value={customFrom}
-                      max={customTo || todayIso}
-                      onChange={(e) => setCustomFrom(e.target.value)}
+                      value={customFrom || isoToInputDate(range.from)}
+                      max={(customTo || isoToInputDate(range.to)) || todayIso}
+                      onChange={(e) => {
+                        setCustomFrom(e.target.value);
+                        if (!customTo) setCustomTo(isoToInputDate(range.to));
+                      }}
                       className="mb-3 mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
                     />
                     <label className="block text-[11px] text-white/60">Até</label>
                     <input
                       type="date"
-                      value={customTo}
-                      min={customFrom || undefined}
+                      value={customTo || isoToInputDate(range.to)}
+                      min={customFrom || isoToInputDate(range.from) || undefined}
                       max={todayIso}
-                      onChange={(e) => setCustomTo(e.target.value)}
+                      onChange={(e) => {
+                        setCustomTo(e.target.value);
+                        if (!customFrom) setCustomFrom(isoToInputDate(range.from));
+                      }}
                       className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
                     />
                     <button
