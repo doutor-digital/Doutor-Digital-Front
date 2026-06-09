@@ -77,7 +77,7 @@ export interface SdrLeadResponseDto {
   rejectionReason?: string;
   sourceFields: string[];
   sourceReceivedAt?: string;
-  cloudiaWebhookEvent?: string;
+  sourceWebhookEvent?: string;
   unitId?: number;
   attendantId?: number;
   importBatchId?: number;
@@ -145,7 +145,7 @@ export function sdrLeadFromBackend(dto: SdrLeadResponseDto): SdrLead {
     sourceProvenance: dto.sourceReceivedAt
       ? {
           receivedAt: dto.sourceReceivedAt,
-          webhookEvent: dto.cloudiaWebhookEvent,
+          webhookEvent: dto.sourceWebhookEvent,
           tenantId: dto.tenantId,
         }
       : undefined,
