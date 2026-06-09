@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { DayPicker, type DateRange } from "react-day-picker";
+import { ptBR } from "date-fns/locale";
+import "react-day-picker/style.css";
 import { Cog, Loader2, Pencil, Plus } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
@@ -53,14 +56,31 @@ function isoEndOfDay(date = new Date()) {
 function fmtDateBr(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
-/** ISO → "yyyy-MM-dd" no fuso LOCAL (pra <input type="date">; evita erro de ±1 dia do UTC). */
-function isoToInputDate(iso: string) {
-  const d = new Date(iso);
+/** Date → "yyyy-MM-dd" no fuso LOCAL. */
+function dateToInput(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+/** ISO → "yyyy-MM-dd" no fuso LOCAL (evita erro de ±1 dia do UTC). */
+function isoToInputDate(iso: string) {
+  return dateToInput(new Date(iso));
+}
+/** "yyyy-MM-dd" → Date no fuso LOCAL (sem shift de UTC). */
+function inputToDate(s: string) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
+/** Atalhos do seletor de datas. Cada um devolve {from,to} como Date local. */
+const DATE_PRESETS: Array<{ key: string; label: string; range: () => { from: Date; to: Date } }> = [
+  { key: "hoje", label: "Hoje", range: () => { const d = new Date(); return { from: d, to: d }; } },
+  { key: "ontem", label: "Ontem", range: () => { const d = new Date(); d.setDate(d.getDate() - 1); return { from: d, to: d }; } },
+  { key: "7d", label: "Últimos 7 dias", range: () => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 6); return { from, to }; } },
+  { key: "30d", label: "Últimos 30 dias", range: () => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 29); return { from, to }; } },
+  { key: "mes-passado", label: "Mês passado", range: () => { const now = new Date(); const from = new Date(now.getFullYear(), now.getMonth() - 1, 1); const to = new Date(now.getFullYear(), now.getMonth(), 0); return { from, to }; } },
+];
 
 // ─── Filtros (pílulas Ano / Mês / Semana / Dia) ───────────────────────────
 type RangeKey = "ano" | "mes" | "semana" | "dia" | "custom";
@@ -284,7 +304,6 @@ export default function DashboardPage() {
   const [customTo, setCustomTo] = useState<string>("");
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const isCustom = customFrom !== "" && customTo !== "";
-  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const range = useMemo(() => {
     if (isCustom) {
@@ -777,69 +796,98 @@ export default function DashboardPage() {
               </button>
               {dateMenuOpen && (
                 <div
-                  className="fixed inset-0 z-[100] flex items-start justify-center bg-black/50 p-4 pt-24"
+                  className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16"
                   onClick={() => setDateMenuOpen(false)}
                 >
                   <div
-                    className="w-full max-w-xs rounded-xl border border-white/10 bg-[#0f1024] p-4 shadow-2xl"
+                    className="w-full max-w-[640px] rounded-2xl bg-white p-4 text-slate-900 shadow-2xl sm:p-5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-[12px] font-semibold uppercase tracking-wider text-white/70">
-                        Escolher datas
-                      </p>
+                      <p className="text-[13px] font-semibold text-slate-900">Escolher período</p>
                       <button
                         type="button"
                         onClick={() => setDateMenuOpen(false)}
-                        className="text-white/50 hover:text-white"
+                        className="rounded-md px-1.5 text-[18px] leading-none text-slate-400 hover:text-slate-700"
                         aria-label="Fechar"
                       >
-                        <Fi name="fi-rr-cross-small" />
+                        ×
                       </button>
                     </div>
-                    <label className="block text-[11px] text-white/60">De</label>
-                    <input
-                      type="date"
-                      value={customFrom || isoToInputDate(range.from)}
-                      max={(customTo || isoToInputDate(range.to)) || todayIso}
-                      onChange={(e) => {
-                        setCustomFrom(e.target.value);
-                        if (!customTo) setCustomTo(isoToInputDate(range.to));
-                      }}
-                      className="mb-3 mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
-                    />
-                    <label className="block text-[11px] text-white/60">Até</label>
-                    <input
-                      type="date"
-                      value={customTo || isoToInputDate(range.to)}
-                      min={customFrom || isoToInputDate(range.from) || undefined}
-                      max={todayIso}
-                      onChange={(e) => {
-                        setCustomTo(e.target.value);
-                        if (!customFrom) setCustomFrom(isoToInputDate(range.from));
-                      }}
-                      className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-white outline-none focus:border-violet-400/50 [color-scheme:dark]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setDateMenuOpen(false)}
-                      className="mt-4 w-full rounded-lg bg-violet-500 px-2 py-2 text-[12px] font-semibold text-white hover:bg-violet-400"
-                    >
-                      Aplicar
-                    </button>
-                    {isCustom && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomFrom("");
-                          setCustomTo("");
-                          setDateMenuOpen(false);
-                        }}
-                        className="mt-2 w-full rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-medium text-white/70 hover:bg-white/5"
-                      >
-                        Limpar (voltar pro período)
-                      </button>
-                    )}
+
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      {/* Atalhos */}
+                      <div className="flex shrink-0 flex-row flex-wrap gap-1.5 sm:w-40 sm:flex-col">
+                        {DATE_PRESETS.map((p) => (
+                          <button
+                            key={p.key}
+                            type="button"
+                            onClick={() => {
+                              const r = p.range();
+                              setCustomFrom(dateToInput(r.from));
+                              setCustomTo(dateToInput(r.to));
+                            }}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-left text-[12px] font-medium text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Calendário real (range) */}
+                      <div className="flex-1">
+                        <DayPicker
+                          mode="range"
+                          locale={ptBR}
+                          numberOfMonths={1}
+                          defaultMonth={inputToDate(customFrom || isoToInputDate(range.from))}
+                          disabled={{ after: new Date() }}
+                          selected={{
+                            from: inputToDate(customFrom || isoToInputDate(range.from)),
+                            to: inputToDate(customTo || isoToInputDate(range.to)),
+                          } as DateRange}
+                          onSelect={(r) => {
+                            if (r?.from) setCustomFrom(dateToInput(r.from));
+                            if (r?.from) setCustomTo(dateToInput(r.to ?? r.from));
+                          }}
+                          styles={{ root: { margin: 0 } }}
+                          classNames={{
+                            today: "font-bold text-violet-600",
+                            selected: "!bg-violet-500 !text-white",
+                            range_start: "!bg-violet-600 !text-white rounded-l-full",
+                            range_end: "!bg-violet-600 !text-white rounded-r-full",
+                            range_middle: "!bg-violet-100 !text-violet-900",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                      <span className="text-[12px] text-slate-500">
+                        {isCustom ? rangeLabel : `Atual: ${rangeLabel}`}
+                      </span>
+                      <div className="flex gap-2">
+                        {isCustom && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomFrom("");
+                              setCustomTo("");
+                            }}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-50"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDateMenuOpen(false)}
+                          className="rounded-lg bg-violet-600 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-violet-500"
+                        >
+                          Aplicar
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
