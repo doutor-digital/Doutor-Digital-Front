@@ -39,25 +39,6 @@ const pctStr = (num: number, den: number, digits = 0) =>
 const nf = (n?: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("pt-BR").format(n);
 
-function isoDaysAgo(days: number) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-function isoStartOfDay(date = new Date()) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-function isoEndOfDay(date = new Date()) {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
-}
-function fmtDateBr(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR");
-}
 /** Date → "yyyy-MM-dd" no fuso LOCAL. */
 function dateToInput(d: Date) {
   const y = d.getFullYear();
@@ -65,14 +46,41 @@ function dateToInput(d: Date) {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
-/** ISO → "yyyy-MM-dd" no fuso LOCAL (evita erro de ±1 dia do UTC). */
-function isoToInputDate(iso: string) {
-  return dateToInput(new Date(iso));
-}
 /** "yyyy-MM-dd" → Date no fuso LOCAL (sem shift de UTC). */
 function inputToDate(s: string) {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
+// ─── Dia comercial: vira às 19h ───────────────────────────────────────────
+// O "dia" da clínica vai das 19h de uma noite até as 19h da noite seguinte.
+// Ex.: "dia 11" = de 10 às 19h até 11 às 19h. Lead que chega depois das 19h
+// conta como o dia seguinte; madrugada (00h–19h) conta como o próprio dia.
+const BIZ_CUTOFF_HOUR = 19;
+
+/** Data (meia-noite local) → ISO do INÍCIO do dia comercial (véspera às 19h). */
+function isoBizStart(dayMidnight: Date) {
+  const d = new Date(dayMidnight);
+  d.setDate(d.getDate() - 1);
+  d.setHours(BIZ_CUTOFF_HOUR, 0, 0, 0);
+  return d.toISOString();
+}
+/** Data (meia-noite local) → ISO do FIM EXCLUSIVO do dia comercial (próprio dia às 19h). */
+function isoBizEnd(dayMidnight: Date) {
+  const d = new Date(dayMidnight);
+  d.setHours(BIZ_CUTOFF_HOUR, 0, 0, 0);
+  return d.toISOString();
+}
+/** Data comercial (meia-noite local) que contém o instante `ref`. Após 19h já é o dia seguinte. */
+function bizDateOf(ref: Date) {
+  const d = new Date(ref);
+  if (d.getHours() >= BIZ_CUTOFF_HOUR) d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+/** Date local → "dd/mm/aaaa" (rótulo). */
+function fmtDateLocalBr(d: Date) {
+  return d.toLocaleDateString("pt-BR");
 }
 
 /** Atalhos do seletor de datas. Cada um devolve {from,to} como Date local. */
@@ -94,17 +102,19 @@ const RANGES: Array<{ key: RangeKey; label: string; icon: string }> = [
   { key: "dia",    label: "Dia",    icon: "fi-rr-time-quarter-past" },
 ];
 
-function computeRange(key: RangeKey): { from: string; to: string } {
-  const now = new Date();
-  if (key === "dia") return { from: isoStartOfDay(now), to: isoEndOfDay(now) };
-  if (key === "semana") return { from: isoDaysAgo(6), to: isoEndOfDay(now) };
-  if (key === "mes") return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
-  if (key === "ano") {
-    const d = new Date(now);
-    d.setFullYear(d.getFullYear() - 1);
-    return { from: isoStartOfDay(d), to: isoEndOfDay(now) };
-  }
-  return { from: isoDaysAgo(29), to: isoEndOfDay(now) };
+type ComputedRange = { from: string; to: string; fromDate: Date; toDate: Date };
+function computeRange(key: RangeKey): ComputedRange {
+  // Tudo em "dia comercial" (corte às 19h): a janela vai da véspera 19h até o dia 19h.
+  const today = bizDateOf(new Date()); // data comercial de hoje
+  const win = (fromDate: Date, toDate: Date): ComputedRange => ({
+    from: isoBizStart(fromDate), to: isoBizEnd(toDate), fromDate, toDate,
+  });
+  const back = (days: number) => { const d = new Date(today); d.setDate(d.getDate() - days); return d; };
+  if (key === "dia") return win(today, today);
+  if (key === "semana") return win(back(6), today);
+  if (key === "mes") return win(back(29), today);
+  if (key === "ano") { const d = new Date(today); d.setFullYear(d.getFullYear() - 1); return win(d, today); }
+  return win(back(29), today);
 }
 
 // ─── Cores por canal (matching amoCRM) ────────────────────────────────────
@@ -307,13 +317,17 @@ export default function DashboardPage() {
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const isCustom = customFrom !== "" && customTo !== "";
 
-  const range = useMemo(() => {
+  const range = useMemo<ComputedRange>(() => {
     if (isCustom) {
-      return { from: isoStartOfDay(inputToDate(customFrom)), to: isoEndOfDay(inputToDate(customTo)) };
+      const fromDate = inputToDate(customFrom);
+      const toDate = inputToDate(customTo);
+      // Janela comercial: da véspera do 1º dia 19h até o último dia 19h (corte 19h).
+      return { from: isoBizStart(fromDate), to: isoBizEnd(toDate), fromDate, toDate };
     }
     return computeRange(rangeKey);
   }, [rangeKey, customFrom, customTo, isCustom]);
-  const rangeLabel = `${fmtDateBr(range.from)} - ${fmtDateBr(range.to)}`;
+  // Rótulo mostra as DATAS COMERCIAIS escolhidas (não o início 19h da véspera).
+  const rangeLabel = `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
 
   const units = useQuery({
     queryKey: ["dash-amo", "units"],
@@ -842,11 +856,11 @@ export default function DashboardPage() {
                           mode="range"
                           locale={ptBR}
                           numberOfMonths={1}
-                          defaultMonth={inputToDate(customFrom || isoToInputDate(range.from))}
+                          defaultMonth={customFrom ? inputToDate(customFrom) : range.fromDate}
                           disabled={{ after: new Date() }}
                           selected={{
-                            from: inputToDate(customFrom || isoToInputDate(range.from)),
-                            to: inputToDate(customTo || isoToInputDate(range.to)),
+                            from: customFrom ? inputToDate(customFrom) : range.fromDate,
+                            to: customTo ? inputToDate(customTo) : range.toDate,
                           } as DateRange}
                           onSelect={(r) => {
                             if (r?.from) setCustomFrom(dateToInput(r.from));
