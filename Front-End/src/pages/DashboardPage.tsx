@@ -309,7 +309,7 @@ export default function DashboardPage() {
 
   const range = useMemo(() => {
     if (isCustom) {
-      return { from: isoStartOfDay(new Date(customFrom)), to: isoEndOfDay(new Date(customTo)) };
+      return { from: isoStartOfDay(inputToDate(customFrom)), to: isoEndOfDay(inputToDate(customTo)) };
     }
     return computeRange(rangeKey);
   }, [rangeKey, customFrom, customTo, isCustom]);

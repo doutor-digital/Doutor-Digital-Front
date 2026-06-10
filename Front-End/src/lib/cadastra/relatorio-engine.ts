@@ -76,6 +76,12 @@ function endOfDay(d: Date): Date {
   return x
 }
 
+/** "yyyy-MM-dd" → Date no fuso LOCAL (new Date(s) interpretaria como UTC e geraria shift de ±1 dia). */
+function parseDateLocal(s: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s)
+}
+
 export function periodWindowFor(
   periodo: Periodo,
   customFrom?: string,
@@ -100,8 +106,8 @@ export function periodWindowFor(
     case 'tudo':
       return { start: new Date(0), end: endOfDay(new Date()), label: 'desde o início' }
     case 'custom': {
-      const from = customFrom ? startOfDay(new Date(customFrom)) : today
-      const to = customTo ? endOfDay(new Date(customTo)) : endOfDay(new Date())
+      const from = customFrom ? startOfDay(parseDateLocal(customFrom)) : today
+      const to = customTo ? endOfDay(parseDateLocal(customTo)) : endOfDay(new Date())
       return { start: from, end: to, label: `${formatDateBR(from)} – ${formatDateBR(to)}` }
     }
   }

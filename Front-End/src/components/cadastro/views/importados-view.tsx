@@ -95,7 +95,9 @@ function tri(value: boolean | null | undefined, want: Tri): boolean {
 
 function parseDateOnly(s: string): Date | null {
   if (!s) return null
-  const d = new Date(s)
+  // "yyyy-MM-dd" no fuso LOCAL (new Date(s) interpretaria como UTC e geraria shift de ±1 dia)
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s)
   return isNaN(d.getTime()) ? null : d
 }
 
