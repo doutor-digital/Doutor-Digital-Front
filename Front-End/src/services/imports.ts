@@ -46,6 +46,27 @@ export interface CloudiaRevertResult {
   duration_ms: number;
 }
 
+export type KommoPatchField =
+  | "tipo_lead" | "data_criacao" | "origem" | "interacao"
+  | "motivo" | "tipo_resgate" | "data_agendamento"
+  | "sexo" | "qualificacao" | "observacao";
+
+export interface CloudiaKommoJob {
+  id: string;
+  batch_id: number;
+  unit_id: number;
+  status: "queued" | "running" | "completed" | "failed" | "cancelling" | "cancelled";
+  total: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  error_message?: string | null;
+  created_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  cancel_requested?: boolean;
+}
+
 export interface ImportCloudiaParams {
   file: File;
   unitId: number;
@@ -89,5 +110,24 @@ export const importsService = {
       { timeout: 300_000 }
     );
     return data;
+  },
+
+  async startKommoPatch(batchId: number, fields: KommoPatchField[]): Promise<{ job_id: string; status: string; total: number }> {
+    const { data } = await api.post(`/api/imports/cloudia-csv/batches/${batchId}/kommo-patch`, { fields });
+    return data;
+  },
+
+  async getKommoJob(jobId: string): Promise<CloudiaKommoJob> {
+    const { data } = await api.get<CloudiaKommoJob>(`/api/imports/cloudia-csv/kommo-jobs/${jobId}`);
+    return data;
+  },
+
+  async listKommoJobs(unitId: number): Promise<CloudiaKommoJob[]> {
+    const { data } = await api.get<CloudiaKommoJob[]>(`/api/imports/cloudia-csv/kommo-jobs`, { params: { unitId } });
+    return Array.isArray(data) ? data : [];
+  },
+
+  async cancelKommoJob(jobId: string): Promise<void> {
+    await api.post(`/api/imports/cloudia-csv/kommo-jobs/${jobId}/cancel`);
   },
 };
