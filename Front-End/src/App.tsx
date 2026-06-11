@@ -34,6 +34,7 @@ const WebhookMonitorPage = lazy(() => import("@/pages/WebhookMonitorPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const TechnicalSettingsPage = lazy(() => import("@/pages/TechnicalSettingsPage"));
+const ImportCloudiaPage = lazy(() => import("@/pages/ImportCloudiaPage"));
 const CustomFieldsPage = lazy(() => import("@/pages/CustomFieldsPage"));
 const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
@@ -248,6 +249,7 @@ export default function App() {
           {/* Logs avançados — super_admin / analista_ti */}
           <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
             <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
+            <Route path="/admin/import-cloudia" element={<ImportCloudiaPage />} />
             <Route path="/integracoes/ads"  element={<CentralIntegracoesPage />} />
             <Route path="/admin/sessions"  element={<LoginSessionsPage />}    />
             <Route path="/admin/locations" element={<LocationConsentsPage />} />
