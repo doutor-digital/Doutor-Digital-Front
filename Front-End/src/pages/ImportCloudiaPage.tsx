@@ -1,23 +1,33 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Upload, FileText, AlertCircle, CheckCircle2, Loader2,
+  Upload, FileText, AlertCircle, CheckCircle2, Loader2, RotateCcw, History,
 } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { unitsService } from "@/services/units";
-import { importsService, type CloudiaImportResult } from "@/services/imports";
-import { cn } from "@/lib/utils";
+import {
+  importsService,
+  type CloudiaImportResult, type CloudiaImportBatch,
+} from "@/services/imports";
+import { cn, formatDate } from "@/lib/utils";
 
 export default function ImportCloudiaPage() {
+  const qc = useQueryClient();
   const [unitId, setUnitId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [updateLeadType, setUpdateLeadType] = useState(true);
   const [result, setResult] = useState<CloudiaImportResult | null>(null);
 
   const units = useQuery({ queryKey: ["units"], queryFn: () => unitsService.list() });
+
+  const batches = useQuery({
+    queryKey: ["cloudia-batches", unitId],
+    queryFn: () => importsService.listBatches(unitId!),
+    enabled: !!unitId,
+  });
 
   const dryRun = useMutation({
     mutationFn: () => importsService.cloudiaCsv({
@@ -31,8 +41,21 @@ export default function ImportCloudiaPage() {
     mutationFn: () => importsService.cloudiaCsv({
       file: file!, unitId: unitId!, dryRun: false, updateLeadType,
     }),
-    onSuccess: (r) => { setResult(r); toast.success(`Aplicado! ${r.updated} leads corrigidos`); },
+    onSuccess: (r) => {
+      setResult(r);
+      toast.success(`Aplicado! ${r.updated} leads corrigidos`);
+      qc.invalidateQueries({ queryKey: ["cloudia-batches", unitId] });
+    },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao aplicar"),
+  });
+
+  const revert = useMutation({
+    mutationFn: (batchId: number) => importsService.revertBatch(batchId),
+    onSuccess: (r) => {
+      toast.success(`Revertido! ${r.leads_restored} leads restaurados`);
+      qc.invalidateQueries({ queryKey: ["cloudia-batches", unitId] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao reverter"),
   });
 
   const busy = dryRun.isPending || apply.isPending;
@@ -138,7 +161,92 @@ export default function ImportCloudiaPage() {
       </Card>
 
       {result && <ResultCard result={result} unitName={unitName} />}
+
+      {/* Histórico de imports da unidade selecionada — com botão de revert */}
+      {unitId && (
+        <Card>
+          <CardHeader title={
+            <span className="flex items-center gap-2">
+              <History className="w-4 h-4"/> Histórico de imports — {unitName}
+            </span>
+          } />
+          <CardBody>
+            {batches.isLoading && <div className="text-sm text-slate-400">Carregando…</div>}
+            {!batches.isLoading && (batches.data?.length ?? 0) === 0 && (
+              <div className="text-sm text-slate-400">Nenhum import aplicado ainda.</div>
+            )}
+            {(batches.data?.length ?? 0) > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase text-slate-400 border-b border-white/10">
+                      <th className="py-2 px-2">Data</th>
+                      <th className="py-2 px-2">Arquivo</th>
+                      <th className="py-2 px-2 text-right">Atualizados</th>
+                      <th className="py-2 px-2">Status</th>
+                      <th className="py-2 px-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {batches.data!.map(b => (
+                      <BatchRow
+                        key={b.id} batch={b}
+                        revertingId={revert.isPending && revert.variables === b.id ? b.id : null}
+                        onRevert={() => {
+                          if (!confirm(`Reverter o batch #${b.id}? Vai restaurar ${b.updated} leads aos valores anteriores.`)) return;
+                          revert.mutate(b.id);
+                        }}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
     </div>
+  );
+}
+
+function BatchRow({ batch, revertingId, onRevert }: {
+  batch: CloudiaImportBatch;
+  revertingId: number | null;
+  onRevert: () => void;
+}) {
+  const isReverted = batch.status === "reverted";
+  return (
+    <tr className="border-b border-white/5 last:border-0">
+      <td className="py-2 px-2 text-slate-300">{formatDate(batch.created_at)}</td>
+      <td className="py-2 px-2 text-slate-400">{batch.filename ?? "—"}</td>
+      <td className="py-2 px-2 text-right font-medium">{batch.updated.toLocaleString("pt-BR")}</td>
+      <td className="py-2 px-2">
+        {isReverted ? (
+          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-amber-500/10 text-amber-400 px-2 py-0.5">
+            revertido
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400 px-2 py-0.5">
+            aplicado
+          </span>
+        )}
+      </td>
+      <td className="py-2 px-2 text-right">
+        {!isReverted && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRevert}
+            disabled={revertingId === batch.id}
+          >
+            {revertingId === batch.id
+              ? <Loader2 className="w-3 h-3 animate-spin"/>
+              : <RotateCcw className="w-3 h-3"/>}
+            Reverter
+          </Button>
+        )}
+      </td>
+    </tr>
   );
 }
 

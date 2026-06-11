@@ -22,6 +22,28 @@ export interface CloudiaImportResult {
   sample_duplicates: string[];
   sample_missed: string[];
   duration_ms: number;
+  batch_id?: number | null;
+}
+
+export interface CloudiaImportBatch {
+  id: number;
+  unit_id: number;
+  filename?: string | null;
+  status: "applied" | "reverted";
+  total_rows: number;
+  matched: number;
+  updated: number;
+  update_lead_type: boolean;
+  created_at: string;
+  uploaded_by_user_id?: number | null;
+  reverted_at?: string | null;
+  reverted_by_user_id?: number | null;
+}
+
+export interface CloudiaRevertResult {
+  batch_id: number;
+  leads_restored: number;
+  duration_ms: number;
 }
 
 export interface ImportCloudiaParams {
@@ -48,6 +70,23 @@ export const importsService = {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 300_000,
       }
+    );
+    return data;
+  },
+
+  async listBatches(unitId: number): Promise<CloudiaImportBatch[]> {
+    const { data } = await api.get<CloudiaImportBatch[]>(
+      `/api/imports/cloudia-csv/batches`,
+      { params: { unitId } }
+    );
+    return Array.isArray(data) ? data : [];
+  },
+
+  async revertBatch(batchId: number): Promise<CloudiaRevertResult> {
+    const { data } = await api.post<CloudiaRevertResult>(
+      `/api/imports/cloudia-csv/batches/${batchId}/revert`,
+      undefined,
+      { timeout: 300_000 }
     );
     return data;
   },
