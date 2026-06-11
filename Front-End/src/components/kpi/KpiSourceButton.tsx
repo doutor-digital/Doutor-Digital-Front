@@ -21,8 +21,12 @@ const SOURCE_LABELS: Record<KpiSourceType, string> = {
   custom_field_count: "Campo (contagem por valor)",
   custom_field_sum: "Campo (soma numérica)",
   stage_field_filter: "Etapa + campo",
+  recovery_attempt: "Tentativa de resgate (data do evento)",
 };
 // "created" não aparece no seletor — é o default implícito de "criados no período".
+// "recovery_attempt" não usa stage nem campo: conta leads distintos cujo field
+// "Tentativas de resgastes" foi preenchido na Kommo dentro do período (data do evento,
+// não da criação do lead). Ideal pro card "Resgate" porque reflete o trabalho do dia.
 
 /**
  * Botão compacto no card do KPI que abre um popover para o ANALISTA escolher, na

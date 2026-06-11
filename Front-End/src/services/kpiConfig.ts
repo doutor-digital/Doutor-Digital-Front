@@ -6,7 +6,8 @@ export type KpiSourceType =
   | "kommo_stage"
   | "custom_field_count"
   | "custom_field_sum"
-  | "stage_field_filter";
+  | "stage_field_filter"
+  | "recovery_attempt";
 
 /** Parâmetros da fonte — o shape usado varia conforme o source_type. */
 export interface KpiSourceConfig {

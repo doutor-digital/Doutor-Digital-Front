@@ -20,6 +20,7 @@ const SOURCE_LABELS: Record<KpiSourceType, string> = {
   custom_field_count: "Campo (contagem por valor)",
   custom_field_sum: "Campo (soma numérica)",
   stage_field_filter: "Etapa + campo (filtro)",
+  recovery_attempt: "Tentativa de resgate (data do evento)",
 };
 
 /** Paleta de cores para a borda superior do card. */

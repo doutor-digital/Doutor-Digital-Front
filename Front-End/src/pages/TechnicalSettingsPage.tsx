@@ -31,6 +31,7 @@ const SOURCE_LABELS: Record<KpiSourceType, string> = {
   custom_field_count: "Campo customizado (contagem por valor)",
   custom_field_sum: "Campo customizado (soma numérica)",
   stage_field_filter: "Etapa + campo (filtro combinado)",
+  recovery_attempt: "Tentativa de resgate (data do evento)",
 };
 
 type Draft = { sourceType: KpiSourceType; config: KpiSourceConfig };
@@ -172,6 +173,8 @@ function isConfigured(d: Draft): boolean {
   if (d.sourceType === "kommo_stage") return (c.stageIds?.length ?? 0) > 0;
   if (d.sourceType === "stage_field_filter")
     return (c.stageIds?.length ?? 0) > 0 || c.fieldId != null;
+  // recovery_attempt não tem parâmetros — basta escolher a fonte.
+  if (d.sourceType === "recovery_attempt") return true;
   return c.fieldId != null; // custom_field_*
 }
 
