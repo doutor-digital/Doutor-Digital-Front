@@ -54,18 +54,37 @@ function inputToDate(s: string) {
 }
 
 /**
- * Combina um Date (dia) com uma string "HH:mm" e devolve ISO UTC literal,
- * ex.: "2026-06-01T00:00:00.000Z". Tratamos o dia/hora digitados pelo usuário
- * como se fossem UTC — sem o shift de fuso do `setHours+toISOString` (que em
- * BRT empurra "01/06 00:00" pra "2026-06-01T03:00:00Z" e acaba arrastando 3
- * horas do dia 31/05 pra dentro do filtro de 01/06).
+ * Combina um Date (dia) com uma string "HH:mm" e devolve ISO no fuso local.
+ * "01/06 00:00" no Brasil (BRT) vira "2026-06-01T03:00:00Z" — o que está CORRETO:
+ * o filtro `>= esse instante` exclui leads criados antes das 00h BRT do dia 1.
  */
 function combineDateAndTime(day: Date, hhmm: string): string {
-  const y = day.getFullYear();
-  const mo = String(day.getMonth() + 1).padStart(2, "0");
-  const d = String(day.getDate()).padStart(2, "0");
-  const hm = (hhmm || "00:00").trim();
-  return `${y}-${mo}-${d}T${hm}:00.000Z`;
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(day);
+  d.setHours(h ?? 0, m ?? 0, 0, 0);
+  return d.toISOString();
+}
+
+/**
+ * Início do dia no fuso local: 00:00:00 LOCAL como ISO UTC.
+ * Diferente do `isoBizStart` (que volta 1 dia + 19h pro "dia comercial").
+ * Usado no modo custom SEM hora digitada — calendário puro.
+ */
+function isoLocalDayStart(dayMidnight: Date) {
+  const d = new Date(dayMidnight);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+/**
+ * Fim EXCLUSIVO do dia no fuso local: meia-noite do dia seguinte.
+ * Garante que o dia inteiro entra no filtro `< fim` (até 23:59:59.999 LOCAL).
+ */
+function isoLocalDayEnd(dayMidnight: Date) {
+  const d = new Date(dayMidnight);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
 }
 
 // ─── Dia comercial: vira às 19h ───────────────────────────────────────────
@@ -352,8 +371,10 @@ export default function DashboardPage() {
           toDate,
         };
       }
-      // Janela comercial: da véspera do 1º dia 19h até o último dia 19h (corte 19h).
-      return { from: isoBizStart(fromDate), to: isoBizEnd(toDate), fromDate, toDate };
+      // Sem hora digitada: calendário puro — 00:00 do 1º dia até 00:00 do dia seguinte
+      // ao último (fim exclusivo). NÃO usa corte comercial das 19h porque isso arrastava
+      // 5 horas do dia anterior (das 19h às 23:59 da véspera) pra dentro do filtro.
+      return { from: isoLocalDayStart(fromDate), to: isoLocalDayEnd(toDate), fromDate, toDate };
     }
     return computeRange(rangeKey);
   }, [rangeKey, customFrom, customTo, customFromTime, customToTime, isCustom, hasCustomTime]);
