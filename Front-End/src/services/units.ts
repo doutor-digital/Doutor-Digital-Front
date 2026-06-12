@@ -166,6 +166,35 @@ export const unitsService = {
   },
 
   /**
+   * Dispara o backfill do KPI Agendados sob demanda (sem esperar o job de 24h).
+   * Puxa os eventos lead_status_changed da API da Kommo e grava LeadStageHistory
+   * com a data REAL de entrada na etapa. Idempotente — rerodar não duplica.
+   */
+  async runAgendadosBackfill(
+    unitId: number | string,
+    opts: { maxPages?: number } = {},
+  ): Promise<{
+    unit: { id: number; name: string };
+    scanned: number;
+    inserted: number;
+    hitCap: boolean;
+    oldest: string | null;
+    error?: string | null;
+  }> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("id inválido para agendados-backfill");
+    const { data } = await api.post(
+      `/api/admin/agendados-backfill/${id}`,
+      null,
+      {
+        params: cleanParams({ maxPages: opts.maxPages }),
+        timeout: 120_000,
+      },
+    );
+    return data;
+  },
+
+  /**
    * Popula Lead.AppointmentScheduledAt e Lead.ConsultationValue dos leads existentes
    * a partir do CustomFieldsJson que já está no banco (sem chamar a Kommo). Usa o
    * mapeamento atual de 'Data de agendamento' / 'Valor da consulta' do Perfil do Lead.

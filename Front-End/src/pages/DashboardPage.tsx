@@ -409,6 +409,19 @@ export default function DashboardPage() {
     retry: false,
   });
 
+  // Card Agendados "Atualizar": dispara o backfill dos eventos de mudança de etapa
+  // (lead_status_changed) da Kommo sob demanda. Sem isso, leads agendados ao longo do
+  // dia só aparecem no card após o job de 24h. Idempotente.
+  const agendadosBackfill = useMutation({
+    mutationFn: () => unitsService.runAgendadosBackfill(unitId!),
+    onSuccess: (r) => {
+      if (r.error) toast.error(`Falha ao atualizar: ${r.error}`);
+      else toast.success(`Agendados atualizados: +${r.inserted} novas transições (de ${r.scanned} eventos).`);
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+    },
+    onError: (e) => toast.error(`Falha ao atualizar Agendados: ${(e as Error).message}`),
+  });
+
   // Card Consultas "Atualizar": aplica os campos mapeados (Data de agendamento +
   // Valor da consulta) nos leads existentes a partir do CustomFieldsJson que já
   // está no banco. NÃO chama a Kommo — só processa local. Pra leads ANTIGOS
@@ -1424,7 +1437,23 @@ export default function DashboardPage() {
 
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                  <button
+                    type="button"
+                    onClick={() => agendadosBackfill.mutate()}
+                    disabled={agendadosBackfill.isPending || unitId == null}
+                    title="Buscar mudanças de etapa da Kommo agora (sem esperar o sync de 24h)"
+                    className="inline-flex items-center gap-1 rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] font-medium text-sky-300 ring-1 ring-inset ring-sky-400/20 transition hover:bg-sky-400/20 disabled:opacity-50"
+                  >
+                    {agendadosBackfill.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Atualizar
+                  </button>
+                </div>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
                 <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                 <KpiChips
