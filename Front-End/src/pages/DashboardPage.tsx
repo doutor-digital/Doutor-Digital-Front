@@ -991,7 +991,8 @@ export default function DashboardPage() {
 
           {/* All / Select user / Setup */}
           <div className="flex items-center gap-2">
-            <SyncDashboardButton />
+            {/* Sync da Kommo escondido das SDRs — só admin vê pra evitar clique acidental. */}
+            {isAdminLevel(user?.role) && <SyncDashboardButton />}
             <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
               <button
                 type="button"
