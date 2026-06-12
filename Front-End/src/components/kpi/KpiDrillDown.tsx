@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   ArrowUpRight,
   Calendar,
@@ -18,8 +19,14 @@ import {
   type KpiSourceConfig,
   type KpiSourceType,
 } from "@/services/kpiConfig";
+import { kpiExclusionsService } from "@/services/kpiExclusions";
 import { useStageNames } from "@/hooks/useStageNames";
+import { useAuth } from "@/hooks/useAuth";
+import { isAdminLevel } from "@/lib/roles";
 import { formatDate, formatNumber } from "@/lib/utils";
+
+// KPIs que suportam exclusão manual via kpi_exclusions (admin marca "não contar").
+const EXCLUDABLE_KPIS = new Set<string>(["agendados"]);
 
 const moneyBR = (v?: number | null) =>
   v == null ? null : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -323,6 +330,27 @@ export function KpiDrillDown({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Exclusão admin ("não contar"): SDR não vê o botão.
+  const { user } = useAuth();
+  const isAdmin = isAdminLevel(user?.role);
+  const qc = useQueryClient();
+  const canExclude = isAdmin && unitId != null && target?.kpiKey != null && EXCLUDABLE_KPIS.has(target!.kpiKey);
+
+  const toggle = useMutation({
+    mutationFn: async (vars: { leadId: number; nowExcluded: boolean }) => {
+      if (vars.nowExcluded) {
+        return kpiExclusionsService.remove({ unitId: unitId!, kpiKey: target!.kpiKey, leadId: vars.leadId });
+      }
+      return kpiExclusionsService.add({ unitId: unitId!, kpiKey: target!.kpiKey, leadId: vars.leadId });
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(vars.nowExcluded ? "Lead voltou a contar no KPI." : "Lead marcado como 'não contar'.");
+      qc.invalidateQueries({ queryKey: ["kpi-drill"] });
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+    },
+    onError: (e) => toast.error(`Falha ao atualizar exclusão: ${(e as Error).message}`),
+  });
+
   if (!open) return null;
 
   const data = leads.data;
@@ -379,16 +407,39 @@ export function KpiDrillDown({
             <DrillSummary kpiKey={target!.kpiKey} items={data!.items} />
             <ul className="space-y-1.5">
               {data!.items.map((l) => (
-                <li key={l.id}>
-                  <Link
-                    to={`/leads/${l.id}`}
-                    className="group flex flex-col gap-1 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition hover:border-white/[0.12] hover:bg-white/[0.04]"
-                  >
+                <li key={l.id} className={l.excluded ? "opacity-50" : ""}>
+                  <div className="group flex flex-col gap-1 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition hover:border-white/[0.12] hover:bg-white/[0.04]">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13px] font-medium text-slate-100">
+                      <Link
+                        to={`/leads/${l.id}`}
+                        className={`truncate text-[13px] font-medium text-slate-100 hover:text-emerald-300 ${l.excluded ? "line-through decoration-red-400/60" : ""}`}
+                      >
                         {l.name || "(sem nome)"}
-                      </span>
-                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-600 transition group-hover:text-emerald-300" />
+                      </Link>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {canExclude && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggle.mutate({ leadId: l.id, nowExcluded: !!l.excluded });
+                            }}
+                            disabled={toggle.isPending}
+                            title={l.excluded ? "Voltar a contar este lead no KPI" : "Marcar como 'não contar' neste KPI (SDR errou)"}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-medium ring-1 ring-inset transition disabled:opacity-50 ${
+                              l.excluded
+                                ? "bg-emerald-400/[0.1] text-emerald-200 ring-emerald-400/30 hover:bg-emerald-400/20"
+                                : "bg-red-400/[0.08] text-red-300/90 ring-red-400/25 hover:bg-red-400/20"
+                            }`}
+                          >
+                            {l.excluded ? "↺ voltar" : "🚫 não contar"}
+                          </button>
+                        )}
+                        <Link to={`/leads/${l.id}`}>
+                          <ArrowUpRight className="h-3.5 w-3.5 text-slate-600 transition hover:text-emerald-300" />
+                        </Link>
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
@@ -433,7 +484,7 @@ export function KpiDrillDown({
                         </span>
                       )}
                     </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -104,6 +104,8 @@ export interface KpiLeadItem {
   qualificacao?: string | null;
   origem_custom?: string | null;
   treatment_value?: number | null;
+  /** Lead marcado como "não contar" pelo admin neste KPI (kpi_exclusions). */
+  excluded?: boolean;
 }
 
 export interface KpiLeadsResult {
