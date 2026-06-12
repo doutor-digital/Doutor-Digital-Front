@@ -165,6 +165,35 @@ export const unitsService = {
     return data;
   },
 
+  /**
+   * Dispara o backfill do KPI Resgate sob demanda (em vez de esperar o job de 24h).
+   * Lê os eventos de mudança do campo "Tentativas de resgastes" da Kommo e grava
+   * em recovery_attempts. Idempotente — rerodar não duplica.
+   */
+  async runResgateBackfill(
+    unitId: number | string,
+    opts: { maxPages?: number } = {},
+  ): Promise<{
+    unit: { id: number; name: string };
+    scanned: number;
+    inserted: number;
+    hitCap: boolean;
+    oldest: string | null;
+    error?: string | null;
+  }> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("id inválido para resgate-backfill");
+    const { data } = await api.post(
+      `/api/admin/resgate-backfill/${id}`,
+      null,
+      {
+        params: cleanParams({ maxPages: opts.maxPages }),
+        timeout: 120_000,
+      },
+    );
+    return data;
+  },
+
   async quantityLeads(clinicId?: number | string): Promise<number> {
     const { data } = await api.get<ApiCountPayload | number>("/units/quantity-leads", {
       params: cleanParams({ clinicId: toInt(clinicId) }),

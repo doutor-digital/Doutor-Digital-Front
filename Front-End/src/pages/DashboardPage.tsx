@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { ptBR } from "date-fns/locale";
 import "react-day-picker/style.css";
-import { Cog, Loader2, Pencil, Plus } from "@/components/icons";
+import { Cog, Loader2, Pencil, Plus, RefreshCw } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
 import { kpiKey } from "@/hooks/useKpiOverrides";
@@ -297,6 +298,7 @@ function MetricCard({
 // ─── Main ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { tenantId, unitId } = useClinic();
+  const qc = useQueryClient();
   const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
   // Modal de KPI custom: null = fechado; { existing } = abrindo p/ criar (undefined) ou editar.
   const [kpiModal, setKpiModal] = useState<{ existing: KpiConfigItem | null } | null>(null);
@@ -378,6 +380,19 @@ export default function DashboardPage() {
     queryFn: () => kpiConfigService.list(unitId!),
     enabled: unitId != null,
     retry: false,
+  });
+
+  // KPI Resgate "Atualizar agora": dispara o backfill da Kommo sob demanda (sem
+  // esperar o job 24h). Invalida queries do dashboard pra ver o número novo.
+  const resgateBackfill = useMutation({
+    mutationFn: () => unitsService.runResgateBackfill(unitId!),
+    onSuccess: (r) => {
+      if (r.error) toast.error(`Falha ao atualizar: ${r.error}`);
+      else toast.success(`Resgate atualizado: +${r.inserted} novas tentativas (de ${r.scanned} eventos).`);
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+      qc.invalidateQueries({ queryKey: ["kpi-config"] });
+    },
+    onError: (e) => toast.error(`Falha ao atualizar Resgate: ${(e as Error).message}`),
   });
 
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
@@ -1267,7 +1282,23 @@ export default function DashboardPage() {
 
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
+                  <button
+                    type="button"
+                    onClick={() => resgateBackfill.mutate()}
+                    disabled={resgateBackfill.isPending || unitId == null}
+                    title="Buscar tentativas de resgate da Kommo agora (sem esperar o sync de 24h)"
+                    className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-inset ring-amber-400/20 transition hover:bg-amber-400/20 disabled:opacity-50"
+                  >
+                    {resgateBackfill.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Atualizar
+                  </button>
+                </div>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                 <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
