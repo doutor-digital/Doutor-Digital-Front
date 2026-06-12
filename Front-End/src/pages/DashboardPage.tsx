@@ -53,6 +53,17 @@ function inputToDate(s: string) {
   return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
 
+/**
+ * Combina um Date (dia) com uma string "HH:mm" e devolve ISO no fuso local.
+ * Usado pra montar o range comercial customizado com hora exata (sem o corte 19h).
+ */
+function combineDateAndTime(day: Date, hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(day);
+  d.setHours(h ?? 0, m ?? 0, 0, 0);
+  return d.toISOString();
+}
+
 // ─── Dia comercial: vira às 19h ───────────────────────────────────────────
 // O "dia" da clínica vai das 19h de uma noite até as 19h da noite seguinte.
 // Ex.: "dia 11" = de 10 às 19h até 11 às 19h. Lead que chega depois das 19h
@@ -316,20 +327,36 @@ export default function DashboardPage() {
   const [stageFilter, setStageFilter] = useState<Set<string>>(new Set());
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  // Hora opcional ("HH:mm" ou ""). Quando preenchida, o range usa o instante literal
+  // (sem o corte comercial das 19h) — pra puxar só leads de um intervalo de horas no dia.
+  const [customFromTime, setCustomFromTime] = useState<string>("");
+  const [customToTime, setCustomToTime] = useState<string>("");
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const isCustom = customFrom !== "" && customTo !== "";
+  const hasCustomTime = customFromTime !== "" && customToTime !== "";
 
   const range = useMemo<ComputedRange>(() => {
     if (isCustom) {
       const fromDate = inputToDate(customFrom);
       const toDate = inputToDate(customTo);
+      if (hasCustomTime) {
+        // Hora exata: ignora o corte comercial, usa o instante literal do usuário.
+        return {
+          from: combineDateAndTime(fromDate, customFromTime),
+          to: combineDateAndTime(toDate, customToTime),
+          fromDate,
+          toDate,
+        };
+      }
       // Janela comercial: da véspera do 1º dia 19h até o último dia 19h (corte 19h).
       return { from: isoBizStart(fromDate), to: isoBizEnd(toDate), fromDate, toDate };
     }
     return computeRange(rangeKey);
-  }, [rangeKey, customFrom, customTo, isCustom]);
-  // Rótulo mostra as DATAS COMERCIAIS escolhidas (não o início 19h da véspera).
-  const rangeLabel = `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
+  }, [rangeKey, customFrom, customTo, customFromTime, customToTime, isCustom, hasCustomTime]);
+  // Rótulo mostra as DATAS COMERCIAIS escolhidas. Quando há horas, anexa o intervalo HH:mm.
+  const rangeLabel = hasCustomTime && isCustom
+    ? `${fmtDateLocalBr(range.fromDate)} ${customFromTime} – ${fmtDateLocalBr(range.toDate)} ${customToTime}`
+    : `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
 
   const units = useQuery({
     queryKey: ["dash-amo", "units"],
@@ -534,6 +561,8 @@ export default function DashboardPage() {
     setStageFilter(new Set());
     setCustomFrom("");
     setCustomTo("");
+    setCustomFromTime("");
+    setCustomToTime("");
   };
 
   const toggleStage = (stage: string) => {
@@ -821,6 +850,8 @@ export default function DashboardPage() {
                   setRangeKey(r.key);
                   setCustomFrom("");
                   setCustomTo("");
+                  setCustomFromTime("");
+                  setCustomToTime("");
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition ${
                   !isCustom && rangeKey === r.key
@@ -921,6 +952,8 @@ export default function DashboardPage() {
                             onClick={() => {
                               setCustomFrom("");
                               setCustomTo("");
+                              setCustomFromTime("");
+                              setCustomToTime("");
                             }}
                             className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-50"
                           >
@@ -1128,6 +1161,27 @@ export default function DashboardPage() {
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
                   />
                 </div>
+                {/* Horas opcionais — sem preencher, usa o corte comercial (19h às 19h). */}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <input
+                    type="time"
+                    value={customFromTime}
+                    onChange={(e) => setCustomFromTime(e.target.value)}
+                    title="Hora de início (opcional)"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  />
+                  <span className="text-white/40">–</span>
+                  <input
+                    type="time"
+                    value={customToTime}
+                    onChange={(e) => setCustomToTime(e.target.value)}
+                    title="Hora de fim (opcional)"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-white/40">
+                  Hora opcional. Vazio = corte comercial (19h–19h).
+                </p>
               </div>
             </div>
 
