@@ -166,6 +166,29 @@ export const unitsService = {
   },
 
   /**
+   * Popula Lead.AppointmentScheduledAt e Lead.ConsultationValue dos leads existentes
+   * a partir do CustomFieldsJson que já está no banco (sem chamar a Kommo). Usa o
+   * mapeamento atual de 'Data de agendamento' / 'Valor da consulta' do Perfil do Lead.
+   * Pra leads ANTIGOS aparecerem no card Consultas depois que o analista mapeou o campo.
+   * Idempotente.
+   */
+  async runConsultasBackfill(unitId: number | string): Promise<{
+    scanned: number;
+    appointments_set: number;
+    values_set: number;
+    error?: string | null;
+  }> {
+    const id = toInt(unitId);
+    if (!id) throw new Error("id inválido para consultas-backfill");
+    const { data } = await api.post(
+      `/api/admin/consultas-backfill/${id}`,
+      null,
+      { timeout: 120_000 },
+    );
+    return data;
+  },
+
+  /**
    * Dispara o backfill do KPI Resgate sob demanda (em vez de esperar o job de 24h).
    * Lê os eventos de mudança do campo "Tentativas de resgastes" da Kommo e grava
    * em recovery_attempts. Idempotente — rerodar não duplica.
