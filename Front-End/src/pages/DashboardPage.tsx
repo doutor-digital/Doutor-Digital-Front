@@ -1230,7 +1230,7 @@ export default function DashboardPage() {
                   Total de Leads
                 </p>
                 <EditableKpiValue
-                  okey={kpiKey(unitId, "total_leads")}
+                  okey={kpiKey(unitId, "total_leads", range.from, range.to)}
                   live={kpiLive("total_leads", funnelLeads.total)}
                   valueClass="text-6xl text-emerald-400"
                   align="right"
@@ -1265,7 +1265,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro")} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
                 <div className="mt-3">
                   <KpiBreakdownHeading>Por origem · motivo de não agendamento</KpiBreakdownHeading>
                   {(bd?.cadastro.origens?.length ?? 0) > 0 ? (
@@ -1316,7 +1316,7 @@ export default function DashboardPage() {
                     Atualizar
                   </button>
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate")} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                 <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
                 <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
@@ -1371,7 +1371,7 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
-                <EditableKpiValue okey={kpiKey(unitId, "agendados")} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
                 <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                 <KpiChips
                   items={[
@@ -1396,7 +1396,7 @@ export default function DashboardPage() {
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("no_show", "No-show")}
@@ -1407,7 +1407,7 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
-                <EditableKpiValue okey={kpiKey(unitId, "tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
                 <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
                 <KpiChips items={(bd?.tratamentos.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                 <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
@@ -1443,7 +1443,7 @@ export default function DashboardPage() {
                     Atualizar
                   </button>
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas")} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
                 <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                 <KpiChips
                   items={[
@@ -1571,7 +1571,7 @@ export default function DashboardPage() {
                             )}
                           </div>
                           <EditableKpiValue
-                            okey={kpiKey(unitId, k.key)}
+                            okey={kpiKey(unitId, k.key, range.from, range.to)}
                             live={k.value}
                             format={nf}
                             onDrill={() => setDrill({ kpiKey: k.key, label: k.label })}
