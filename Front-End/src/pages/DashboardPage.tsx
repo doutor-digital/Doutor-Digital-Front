@@ -1330,6 +1330,20 @@ export default function DashboardPage() {
                   format={nf}
                   onDrill={() => setDrill({ kpiKey: "total_leads", label: "Total de Leads" })}
                 />
+                {/* Quebra ativos vs deletados — pra SDR entender quantos sumiram do funil
+                    sem precisar bater com a Kommo manualmente. Total do card = só ativos. */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[10.5px]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    Ativos {nf(funnelLeads.total)}
+                  </span>
+                  {(ov?.total_leads_deleted ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-400/[0.10] px-2 py-0.5 text-red-200/90 ring-1 ring-inset ring-red-400/20" title="Leads que estavam no funil mas foram deletados na Kommo durante o período">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                      Deletados {nf(ov?.total_leads_deleted ?? 0)}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("total_leads", "Total de Leads")}
                 <div className="mt-5 h-px w-full bg-white/10" />

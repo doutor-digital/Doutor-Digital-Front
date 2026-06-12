@@ -721,6 +721,8 @@ export interface DashboardOverview {
   date_from: string;
   date_to: string;
   total_leads: number;
+  /** Leads deletados na Kommo dentro do período (Status="deleted"). */
+  total_leads_deleted?: number;
   consultas: number;
   com_pagamento: number;
   sem_pagamento: number;
