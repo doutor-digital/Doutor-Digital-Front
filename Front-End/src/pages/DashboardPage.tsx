@@ -9,7 +9,6 @@ import { Cog, Loader2, Pencil, Plus, RefreshCw } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
 import { kpiKey } from "@/hooks/useKpiOverrides";
-import SyncDashboardButton from "@/components/SyncDashboardButton";
 import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
@@ -1016,8 +1015,6 @@ export default function DashboardPage() {
 
           {/* All / Select user / Setup */}
           <div className="flex items-center gap-2">
-            {/* Sync da Kommo escondido das SDRs — só admin vê pra evitar clique acidental. */}
-            {isAdminLevel(user?.role) && <SyncDashboardButton />}
             <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
               <button
                 type="button"
