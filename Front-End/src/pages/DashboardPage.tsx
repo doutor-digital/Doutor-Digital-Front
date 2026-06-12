@@ -477,6 +477,8 @@ export default function DashboardPage() {
   });
 
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
+  // staleTime 15s + refetchInterval 30s: quando a SDR preenche o custom field, o
+  // dashboard reflete em até 30s sem precisar clicar "Atualizar".
   const crossAnalysis = useQuery({
     queryKey: ["dash-amo", "cross-analysis", unitId, range.from, range.to],
     queryFn: () =>
@@ -485,7 +487,9 @@ export default function DashboardPage() {
         date_to: range.to,
       }),
     enabled: unitId != null,
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Breakdowns por KPI — renderizados inline em cada card do dashboard.
@@ -497,7 +501,9 @@ export default function DashboardPage() {
         date_to: range.to,
       }),
     enabled: unitId != null,
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
   const bd = kpiBreakdowns.data;
   const savedKpiByKey = useMemo(() => {
@@ -558,7 +564,9 @@ export default function DashboardPage() {
         responsibleUser: responsibleFilter || undefined,
       }),
     enabled: tenantId != null,
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const ov = overview.data;
@@ -583,7 +591,9 @@ export default function DashboardPage() {
         pageSize: 500,
       }),
     enabled: tenantId != null,
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const hasActiveFilters =
@@ -1492,13 +1502,9 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
-                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                <KpiChips
-                  items={[
-                    { label: "Cadastro", count: bd?.agendados.cadastro ?? 0 },
-                    { label: "Resgate", count: bd?.agendados.resgate ?? 0 },
-                  ].filter((c) => c.count > 0)}
-                />
+                {/* Cadastro/Resgate (tipo do LEAD) removidos do card Agendados —
+                    o tipo aqui é do AGENDAMENTO (consulta/retorno/avaliação...),
+                    renderizado em "Tipo de agendamento" abaixo via custom field. */}
                 <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
                 <KpiChips
                   items={[
