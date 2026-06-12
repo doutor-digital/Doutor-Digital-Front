@@ -187,6 +187,8 @@ export interface AgendadosBreakdown {
   resgate: number;
   com_pagamento: number;
   sem_pagamento: number;
+  /** Leads que já eram agendados antes do período e só fizeram 04↔05 dentro dele. */
+  reclassificacoes?: number;
   origens: ValueCount[];
   /** Quebra por "Tipo de agendamento" (consulta/retorno/avaliação...). */
   tipos_agendamento?: ValueCount[];
@@ -357,7 +359,7 @@ export const kpiConfigService = {
     return {
       cadastro: data?.cadastro ?? { total: 0, origens: [] },
       resgate: data?.resgate ?? { total: 0, tipos: [], origens: [] },
-      agendados: data?.agendados ?? { total: 0, cadastro: 0, resgate: 0, com_pagamento: 0, sem_pagamento: 0, origens: [] },
+      agendados: data?.agendados ?? { total: 0, cadastro: 0, resgate: 0, com_pagamento: 0, sem_pagamento: 0, reclassificacoes: 0, origens: [] },
       tratamentos: data?.tratamentos ?? { total: 0, origens: [], fisios: [], valor_consulta_total: 0, valor_tratamento_total: 0 },
       consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, agendamentos: [] },
     };

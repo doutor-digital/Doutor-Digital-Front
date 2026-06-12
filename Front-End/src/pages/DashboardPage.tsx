@@ -1502,6 +1502,14 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                {(bd?.agendados.reclassificacoes ?? 0) > 0 && (
+                  <p
+                    className="mt-1 text-[10.5px] text-amber-200/90"
+                    title="Leads que já eram agendados antes do período e só mudaram de 04↔05 dentro dele — não somam como agendamento novo."
+                  >
+                    +{bd!.agendados.reclassificacoes} reclassificação{bd!.agendados.reclassificacoes! > 1 ? "ões" : ""} de pagamento (não contam)
+                  </p>
+                )}
                 {/* Cadastro/Resgate (tipo do LEAD) removidos do card Agendados —
                     o tipo aqui é do AGENDAMENTO (consulta/retorno/avaliação...),
                     renderizado em "Tipo de agendamento" abaixo via custom field. */}
