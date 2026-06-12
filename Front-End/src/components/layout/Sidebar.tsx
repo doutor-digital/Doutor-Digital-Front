@@ -42,6 +42,7 @@ import {
   Route as RouteIcon,
   ScrollText,
   ShieldAlert,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Stethoscope,
@@ -279,6 +280,7 @@ const advancedLogsGroup: NavGroup = {
     { to: "/admin/sessions",  label: "Sessões de login", icon: History,    iconUrl: "/nav-icons/sessoes.png" },
     { to: "/admin/locations", label: "Localizações",      icon: Map,        iconUrl: "/nav-icons/localizacoes.png" },
     { to: "/admin/changes",   label: "Alterações",         icon: ScrollText, iconUrl: "/nav-icons/alteracoes.png" },
+    { to: "/admin/auditoria-movimentacoes", label: "Auditoria de movimentações", icon: ShieldCheck },
   ],
 };
 
