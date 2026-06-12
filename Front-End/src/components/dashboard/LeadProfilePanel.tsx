@@ -233,6 +233,7 @@ function LeadProfileConfigModal({
         motivo_nao_agendamento_field_id: loaded.motivo_nao_agendamento_field_id ?? null,
         fisioterapeuta_field_id: loaded.fisioterapeuta_field_id ?? null,
         valor_tratamento_field_id: loaded.valor_tratamento_field_id ?? null,
+        valor_consulta_field_id: loaded.valor_consulta_field_id ?? null,
         tratamento_fechado_field_id: loaded.tratamento_fechado_field_id ?? null,
         qualificacao_field_id: loaded.qualificacao_field_id ?? null,
         tipo_field_id: loaded.tipo_field_id ?? null,
@@ -301,6 +302,7 @@ function LeadProfileConfigModal({
             <Row label="Motivo do não agendamento" k="motivo_nao_agendamento_field_id" hint="motivo + agendamento" />
             <Row label="Fisioterapeuta que fechou" k="fisioterapeuta_field_id" hint="fisio/doutor/responsável" />
             <Row label="Valor do tratamento" k="valor_tratamento_field_id" hint="valor + tratamento" />
+            <Row label="Valor da consulta" k="valor_consulta_field_id" hint="valor + consulta" />
             <Row label="Tratamento fechado" k="tratamento_fechado_field_id" hint="tratamento + fechado" />
             <Row label="Qualificação do lead" k="qualificacao_field_id" hint="quente/morno/frio" />
             <button

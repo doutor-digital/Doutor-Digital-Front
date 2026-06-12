@@ -252,6 +252,7 @@ export interface LeadProfileFieldConfig {
   motivo_nao_agendamento_field_id?: number | null;
   fisioterapeuta_field_id?: number | null;
   valor_tratamento_field_id?: number | null;
+  valor_consulta_field_id?: number | null;
   tratamento_fechado_field_id?: number | null;
   qualificacao_field_id?: number | null;
   tipo_field_id?: number | null;
