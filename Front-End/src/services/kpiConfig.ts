@@ -188,6 +188,8 @@ export interface AgendadosBreakdown {
   com_pagamento: number;
   sem_pagamento: number;
   origens: ValueCount[];
+  /** Quebra por "Tipo de agendamento" (consulta/retorno/avaliação...). */
+  tipos_agendamento?: ValueCount[];
 }
 export interface TratamentosBreakdown {
   total: number;
@@ -195,6 +197,8 @@ export interface TratamentosBreakdown {
   fisios: ValueCount[];
   valor_consulta_total: number;
   valor_tratamento_total: number;
+  /** Quebra por "Tipo de tratamento" (fisioterapia/pilates/...). */
+  tipos_tratamento?: ValueCount[];
 }
 export interface AgendamentoItem {
   name: string;
@@ -258,6 +262,8 @@ export interface LeadProfileFieldConfig {
   tratamento_fechado_field_id?: number | null;
   qualificacao_field_id?: number | null;
   tipo_field_id?: number | null;
+  tipo_agendamento_field_id?: number | null;
+  tipo_tratamento_field_id?: number | null;
 }
 
 export interface LeadProfileAnalytics {

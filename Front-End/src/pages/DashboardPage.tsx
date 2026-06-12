@@ -1511,6 +1511,12 @@ export default function DashboardPage() {
                 />
                 <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
                 <KpiChips items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
+                {(bd?.agendados.tipos_agendamento?.length ?? 0) > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Tipo de agendamento</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.agendados.tipos_agendamento ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
@@ -1535,6 +1541,12 @@ export default function DashboardPage() {
                 <KpiChips items={(bd?.tratamentos.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                 <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
                 <KpiChips items={(bd?.tratamentos.fisios ?? []).map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
+                {(bd?.tratamentos.tipos_tratamento?.length ?? 0) > 0 && (
+                  <>
+                    <KpiBreakdownHeading>Tipo de tratamento</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.tratamentos.tipos_tratamento ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                  </>
+                )}
                 <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
                 <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
                   <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">

@@ -237,6 +237,8 @@ function LeadProfileConfigModal({
         tratamento_fechado_field_id: loaded.tratamento_fechado_field_id ?? null,
         qualificacao_field_id: loaded.qualificacao_field_id ?? null,
         tipo_field_id: loaded.tipo_field_id ?? null,
+        tipo_agendamento_field_id: loaded.tipo_agendamento_field_id ?? null,
+        tipo_tratamento_field_id: loaded.tipo_tratamento_field_id ?? null,
       });
   }, [loaded]);
 
@@ -298,6 +300,8 @@ function LeadProfileConfigModal({
               Breakdowns dos KPI cards
             </div>
             <Row label="Tipo (resgate/ligação/mensagem)" k="tipo_field_id" hint="tipo" />
+            <Row label="Tipo de agendamento (Agendados card)" k="tipo_agendamento_field_id" hint="tipo + agendamento" />
+            <Row label="Tipo de tratamento (Tratamentos card)" k="tipo_tratamento_field_id" hint="tipo + tratamento" />
             <Row label="Origem do lead" k="origem_field_id" hint="origem" />
             <Row label="Motivo do não agendamento" k="motivo_nao_agendamento_field_id" hint="motivo + agendamento" />
             <Row label="Fisioterapeuta que fechou" k="fisioterapeuta_field_id" hint="fisio/doutor/responsável" />
