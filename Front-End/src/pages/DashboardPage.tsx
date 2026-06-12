@@ -54,14 +54,18 @@ function inputToDate(s: string) {
 }
 
 /**
- * Combina um Date (dia) com uma string "HH:mm" e devolve ISO no fuso local.
- * Usado pra montar o range comercial customizado com hora exata (sem o corte 19h).
+ * Combina um Date (dia) com uma string "HH:mm" e devolve ISO UTC literal,
+ * ex.: "2026-06-01T00:00:00.000Z". Tratamos o dia/hora digitados pelo usuário
+ * como se fossem UTC — sem o shift de fuso do `setHours+toISOString` (que em
+ * BRT empurra "01/06 00:00" pra "2026-06-01T03:00:00Z" e acaba arrastando 3
+ * horas do dia 31/05 pra dentro do filtro de 01/06).
  */
 function combineDateAndTime(day: Date, hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const d = new Date(day);
-  d.setHours(h ?? 0, m ?? 0, 0, 0);
-  return d.toISOString();
+  const y = day.getFullYear();
+  const mo = String(day.getMonth() + 1).padStart(2, "0");
+  const d = String(day.getDate()).padStart(2, "0");
+  const hm = (hhmm || "00:00").trim();
+  return `${y}-${mo}-${d}T${hm}:00.000Z`;
 }
 
 // ─── Dia comercial: vira às 19h ───────────────────────────────────────────
