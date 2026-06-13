@@ -35,6 +35,7 @@ export const stageHistoryAuditService = {
     dateFrom: string;
     dateTo: string;
     kpiKey?: string;
+    stageLabel?: string;
     leadName?: string;
     limit?: number;
   }): Promise<StageHistoryAuditResult> {
@@ -46,6 +47,7 @@ export const stageHistoryAuditService = {
           dateFrom: params.dateFrom,
           dateTo: params.dateTo,
           kpiKey: params.kpiKey || undefined,
+          stageLabel: params.stageLabel || undefined,
           leadName: params.leadName || undefined,
           limit: params.limit ?? 500,
         },

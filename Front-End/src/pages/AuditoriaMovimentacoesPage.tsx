@@ -28,13 +28,24 @@ import {
 import { kpiExclusionsService } from "@/services/kpiExclusions";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
-type KpiFilter = "all" | "agendados" | "no_show" | "tratamentos";
+// Filtro por etapa específica (as 6 etapas canônicas que a trilha guarda). "all" = todas.
+type StageFilter =
+  | "all"
+  | "04_AGENDADO_SEM_PAGAMENTO"
+  | "05_AGENDADO_COM_PAGAMENTO"
+  | "07_FALTOU"
+  | "08_NAO_FECHOU_TRATAMENTO"
+  | "09_FECHOU_TRATAMENTO"
+  | "10_EM_TRATAMENTO";
 
-const KPI_FILTERS: { value: KpiFilter; label: string }[] = [
+const STAGE_FILTERS: { value: StageFilter; label: string }[] = [
   { value: "all", label: "Todas" },
-  { value: "agendados", label: "Agendados" },
-  { value: "no_show", label: "No-show" },
-  { value: "tratamentos", label: "Tratamentos" },
+  { value: "04_AGENDADO_SEM_PAGAMENTO", label: "Agendado sem pagamento" },
+  { value: "05_AGENDADO_COM_PAGAMENTO", label: "Agendado com pagamento" },
+  { value: "07_FALTOU", label: "Faltou" },
+  { value: "08_NAO_FECHOU_TRATAMENTO", label: "Não fechou tratamento" },
+  { value: "09_FECHOU_TRATAMENTO", label: "Fechou tratamento" },
+  { value: "10_EM_TRATAMENTO", label: "Em tratamento" },
 ];
 
 function isoDaysAgo(days: number): string {
@@ -73,20 +84,20 @@ export default function AuditoriaMovimentacoesPage() {
 
   const [dateFrom, setDateFrom] = useState(isoDaysAgo(30));
   const [dateTo, setDateTo] = useState(todayIso());
-  const [kpiFilter, setKpiFilter] = useState<KpiFilter>("all");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [leadName, setLeadName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editReason, setEditReason] = useState("");
 
   const audit = useQuery({
-    queryKey: ["stage-history-audit", unitId, dateFrom, dateTo, kpiFilter, leadName],
+    queryKey: ["stage-history-audit", unitId, dateFrom, dateTo, stageFilter, leadName],
     queryFn: () =>
       stageHistoryAuditService.audit({
         unitId: unitId!,
         dateFrom,
         dateTo,
-        kpiKey: kpiFilter === "all" ? undefined : kpiFilter,
+        stageLabel: stageFilter === "all" ? undefined : stageFilter,
         leadName: leadName.trim() || undefined,
       }),
     enabled: unitId != null,
@@ -216,13 +227,13 @@ export default function AuditoriaMovimentacoesPage() {
           />
         </label>
         <label className="flex flex-col gap-1 text-[11px] text-slate-300">
-          KPI
+          Etapa
           <select
-            value={kpiFilter}
-            onChange={(e) => setKpiFilter(e.target.value as KpiFilter)}
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value as StageFilter)}
             className="rounded-md border border-white/10 bg-slate-950 px-2 py-1.5 text-[13px] text-slate-100"
           >
-            {KPI_FILTERS.map((f) => (
+            {STAGE_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>
                 {f.label}
               </option>
@@ -281,7 +292,7 @@ export default function AuditoriaMovimentacoesPage() {
             <EmptyState
               icon={<GitBranch className="h-8 w-8" />}
               title="Nenhuma transição no período"
-              description="Ajuste o filtro de data ou KPI."
+              description="Ajuste o filtro de data ou etapa."
             />
           ) : (
             <div className="overflow-x-auto">
