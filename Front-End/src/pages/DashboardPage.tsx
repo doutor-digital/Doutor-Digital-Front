@@ -8,8 +8,9 @@ import "react-day-picker/style.css";
 import { Cog, Loader2, Pencil, Plus, RefreshCw } from "@/components/icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useClinic } from "@/hooks/useClinic";
-import { kpiKey } from "@/hooks/useKpiOverrides";
+import { kpiKey, useKpiOverrides } from "@/hooks/useKpiOverrides";
 import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
+import { EditableKpiChips } from "@/components/kpi/EditableKpiChips";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
@@ -778,6 +779,25 @@ export default function DashboardPage() {
   const kpiLive = (key: string, fallback: number): number =>
     ov?.kpi_overrides?.[key] ?? fallback;
 
+  // "Origem manda na soma" no card Agendados: quando o usuário edita manualmente
+  // alguma origem, o número grande passa a ser a SOMA das origens (override ??
+  // automático) — se forem 10 + 10, o card mostra 20. Sem nenhuma edição de origem,
+  // mantém o valor automático. O override direto do número (engrenagem) ainda fica
+  // por cima, dentro do EditableKpiValue.
+  const overrides = useKpiOverrides((s) => s.overrides);
+  const agendadosOrigemKey = (label: string) =>
+    kpiKey(unitId, `agendados_origem_${label}`, range.from, range.to);
+  const agendadosOrigens = bd?.agendados.origens ?? [];
+  const agendadosOrigemEdited = agendadosOrigens.some(
+    (o) => overrides[agendadosOrigemKey(o.value)] != null,
+  );
+  const agendadosLive = agendadosOrigemEdited
+    ? agendadosOrigens.reduce(
+        (sum, o) => sum + (overrides[agendadosOrigemKey(o.value)] ?? o.count),
+        0,
+      )
+    : kpiLive("agendados", funnelLeads.agendados);
+
   // Botão de fonte (analista) reutilizável por card.
   const srcBtn = (key: string, label: string) => (
     <KpiSourceButton
@@ -1414,7 +1434,7 @@ export default function DashboardPage() {
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Resgate</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tentativas de resgastes</p>
                   <button
                     type="button"
                     onClick={() => resgateBackfill.mutate()}
@@ -1501,7 +1521,7 @@ export default function DashboardPage() {
                     Atualizar
                   </button>
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={kpiLive("agendados", funnelLeads.agendados)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={agendadosLive} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
                 {(bd?.agendados.reclassificacoes ?? 0) > 0 && (
                   <p
                     className="mt-1 text-[10.5px] text-amber-200/90"
@@ -1514,20 +1534,23 @@ export default function DashboardPage() {
                     o tipo aqui é do AGENDAMENTO (consulta/retorno/avaliação...),
                     renderizado em "Tipo de agendamento" abaixo via custom field. */}
                 <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
-                <KpiChips
+                <EditableKpiChips
                   items={[
                     { label: "Sim", count: bd?.agendados.com_pagamento ?? 0, tone: "ok" as const },
                     { label: "Não", count: bd?.agendados.sem_pagamento ?? 0, tone: "warn" as const },
-                  ].filter((c) => c.count > 0)}
+                  ]}
+                  okeyFor={(label) => kpiKey(unitId, `agendados_pgto_${label}`, range.from, range.to)}
                 />
                 <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                <KpiChips items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
-                {(bd?.agendados.tipos_agendamento?.length ?? 0) > 0 && (
-                  <>
-                    <KpiBreakdownHeading>Tipo de agendamento</KpiBreakdownHeading>
-                    <KpiChips items={(bd?.agendados.tipos_agendamento ?? []).map((t) => ({ label: t.value, count: t.count }))} />
-                  </>
-                )}
+                <EditableKpiChips
+                  items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))}
+                  okeyFor={(label) => kpiKey(unitId, `agendados_origem_${label}`, range.from, range.to)}
+                />
+                <KpiBreakdownHeading>Tipo de agendamento</KpiBreakdownHeading>
+                <EditableKpiChips
+                  items={(bd?.agendados.tipos_agendamento ?? []).map((t) => ({ label: t.value, count: t.count }))}
+                  okeyFor={(label) => kpiKey(unitId, `agendados_tipo_${label}`, range.from, range.to)}
+                />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
