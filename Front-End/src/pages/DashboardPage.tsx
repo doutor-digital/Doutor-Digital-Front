@@ -264,6 +264,21 @@ function KpiBreakdownHeading({ children }: { children: React.ReactNode }) {
   return <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">{children}</p>;
 }
 
+/**
+ * Nota que substitui os chips de origem/tipo/fisio quando o card está com
+ * valor manual. Os agrupamentos vêm do cálculo automático do backend e não
+ * batem com o número manual ajustado — esconder evita confundir a chefe.
+ */
+function ManualBreakdownNote() {
+  return (
+    <div className="mt-3 rounded-lg border border-violet-400/20 bg-violet-500/[0.06] p-2.5 text-[10.5px] leading-relaxed text-violet-100/90">
+      Detalhamento (origem, tipo, valor) ocultado — o número está em ajuste manual
+      e o agrupamento automático não bate. Volta a aparecer quando o card sair do
+      modo manual ou no fim do mês após a reconciliação por CSV.
+    </div>
+  );
+}
+
 const moneyBR = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
 
@@ -785,6 +800,19 @@ export default function DashboardPage() {
   // mantém o valor automático. O override direto do número (engrenagem) ainda fica
   // por cima, dentro do EditableKpiValue.
   const overrides = useKpiOverrides((s) => s.overrides);
+
+  // Quando o admin override o número grande do card, o detalhamento (origem,
+  // tipo, fisio, valor) que vem do backend NÃO bate mais com o número manual —
+  // poluiria visualmente e induziria a chefe ao erro. Esconde tudo isso em
+  // modo manual e mostra uma nota explicando.
+  const isKpiManual = (kpi: string) =>
+    overrides[kpiKey(unitId, kpi, range.from, range.to)] != null;
+  const tratamentosManual = isKpiManual("tratamentos");
+  const agendadosManual = isKpiManual("agendados");
+  const cadastroManual = isKpiManual("cadastro");
+  const resgateManual = isKpiManual("resgate");
+  const consultasManual = isKpiManual("consultas");
+
   const agendadosOrigemKey = (label: string) =>
     kpiKey(unitId, `agendados_origem_${label}`, range.from, range.to);
   const agendadosOrigens = bd?.agendados.origens ?? [];
@@ -1400,6 +1428,9 @@ export default function DashboardPage() {
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
                 <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                {cadastroManual ? (
+                  <ManualBreakdownNote />
+                ) : (
                 <div className="mt-3">
                   <KpiBreakdownHeading>Por origem · motivo de não agendamento</KpiBreakdownHeading>
                   {(bd?.cadastro.origens?.length ?? 0) > 0 ? (
@@ -1426,6 +1457,7 @@ export default function DashboardPage() {
                     <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
                   )}
                 </div>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("cadastro", "Cadastro")}
@@ -1451,10 +1483,16 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
-                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
-                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                <KpiChips items={(bd?.resgate.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
+                {resgateManual ? (
+                  <ManualBreakdownNote />
+                ) : (
+                  <>
+                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                    <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.resgate.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
+                  </>
+                )}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("resgate", "Resgate")}
@@ -1522,35 +1560,41 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={agendadosLive} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
-                {(bd?.agendados.reclassificacoes ?? 0) > 0 && (
-                  <p
-                    className="mt-1 text-[10.5px] text-amber-200/90"
-                    title="Leads que já eram agendados antes do período e só mudaram de 04↔05 dentro dele — não somam como agendamento novo."
-                  >
-                    +{bd!.agendados.reclassificacoes} reclassificação{bd!.agendados.reclassificacoes! > 1 ? "ões" : ""} de pagamento (não contam)
-                  </p>
+                {agendadosManual ? (
+                  <ManualBreakdownNote />
+                ) : (
+                  <>
+                    {(bd?.agendados.reclassificacoes ?? 0) > 0 && (
+                      <p
+                        className="mt-1 text-[10.5px] text-amber-200/90"
+                        title="Leads que já eram agendados antes do período e só mudaram de 04↔05 dentro dele — não somam como agendamento novo."
+                      >
+                        +{bd!.agendados.reclassificacoes} reclassificação{bd!.agendados.reclassificacoes! > 1 ? "ões" : ""} de pagamento (não contam)
+                      </p>
+                    )}
+                    {/* Cadastro/Resgate (tipo do LEAD) removidos do card Agendados —
+                        o tipo aqui é do AGENDAMENTO (consulta/retorno/avaliação...),
+                        renderizado em "Tipo de agendamento" abaixo via custom field. */}
+                    <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
+                    <EditableKpiChips
+                      items={[
+                        { label: "Sim", count: bd?.agendados.com_pagamento ?? 0, tone: "ok" as const },
+                        { label: "Não", count: bd?.agendados.sem_pagamento ?? 0, tone: "warn" as const },
+                      ]}
+                      okeyFor={(label) => kpiKey(unitId, `agendados_pgto_${label}`, range.from, range.to)}
+                    />
+                    <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                    <EditableKpiChips
+                      items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))}
+                      okeyFor={(label) => kpiKey(unitId, `agendados_origem_${label}`, range.from, range.to)}
+                    />
+                    <KpiBreakdownHeading>Tipo de agendamento</KpiBreakdownHeading>
+                    <EditableKpiChips
+                      items={(bd?.agendados.tipos_agendamento ?? []).map((t) => ({ label: t.value, count: t.count }))}
+                      okeyFor={(label) => kpiKey(unitId, `agendados_tipo_${label}`, range.from, range.to)}
+                    />
+                  </>
                 )}
-                {/* Cadastro/Resgate (tipo do LEAD) removidos do card Agendados —
-                    o tipo aqui é do AGENDAMENTO (consulta/retorno/avaliação...),
-                    renderizado em "Tipo de agendamento" abaixo via custom field. */}
-                <KpiBreakdownHeading>Pagamento antecipado</KpiBreakdownHeading>
-                <EditableKpiChips
-                  items={[
-                    { label: "Sim", count: bd?.agendados.com_pagamento ?? 0, tone: "ok" as const },
-                    { label: "Não", count: bd?.agendados.sem_pagamento ?? 0, tone: "warn" as const },
-                  ]}
-                  okeyFor={(label) => kpiKey(unitId, `agendados_pgto_${label}`, range.from, range.to)}
-                />
-                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                <EditableKpiChips
-                  items={(bd?.agendados.origens ?? []).map((o) => ({ label: o.value, count: o.count }))}
-                  okeyFor={(label) => kpiKey(unitId, `agendados_origem_${label}`, range.from, range.to)}
-                />
-                <KpiBreakdownHeading>Tipo de agendamento</KpiBreakdownHeading>
-                <EditableKpiChips
-                  items={(bd?.agendados.tipos_agendamento ?? []).map((t) => ({ label: t.value, count: t.count }))}
-                  okeyFor={(label) => kpiKey(unitId, `agendados_tipo_${label}`, range.from, range.to)}
-                />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
@@ -1571,25 +1615,31 @@ export default function DashboardPage() {
               <DarkCard accent="#34d399">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
                 <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
-                <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
-                <KpiChips items={(bd?.tratamentos.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
-                <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
-                <KpiChips items={(bd?.tratamentos.fisios ?? []).map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
-                {(bd?.tratamentos.tipos_tratamento?.length ?? 0) > 0 && (
+                {tratamentosManual ? (
+                  <ManualBreakdownNote />
+                ) : (
                   <>
-                    <KpiBreakdownHeading>Tipo de tratamento</KpiBreakdownHeading>
-                    <KpiChips items={(bd?.tratamentos.tipos_tratamento ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                    <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.tratamentos.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
+                    <KpiBreakdownHeading>Fechou (fisio)</KpiBreakdownHeading>
+                    <KpiChips items={(bd?.tratamentos.fisios ?? []).map((f) => ({ label: f.value, count: f.count, tone: "ok" as const }))} />
+                    {(bd?.tratamentos.tipos_tratamento?.length ?? 0) > 0 && (
+                      <>
+                        <KpiBreakdownHeading>Tipo de tratamento</KpiBreakdownHeading>
+                        <KpiChips items={(bd?.tratamentos.tipos_tratamento ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                      </>
+                    )}
+                    <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                      <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                        Consulta: {moneyBR(bd?.tratamentos.valor_consulta_total ?? 0)}
+                      </span>
+                      <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                        Tratamento: {moneyBR(bd?.tratamentos.valor_tratamento_total ?? 0)}
+                      </span>
+                    </div>
                   </>
                 )}
-                <KpiBreakdownHeading>Valor</KpiBreakdownHeading>
-                <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
-                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                    Consulta: {moneyBR(bd?.tratamentos.valor_consulta_total ?? 0)}
-                  </span>
-                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                    Tratamento: {moneyBR(bd?.tratamentos.valor_tratamento_total ?? 0)}
-                  </span>
-                </div>
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("tratamentos", "Tratamentos")}
@@ -1613,19 +1663,25 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
-                <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                <KpiChips
-                  items={[
-                    { label: "Cadastro", count: bd?.consultas.cadastro ?? 0 },
-                    { label: "Resgate", count: bd?.consultas.resgate ?? 0 },
-                  ].filter((c) => c.count > 0)}
-                />
-                <KpiBreakdownHeading>Valor total</KpiBreakdownHeading>
-                <div className="mt-1.5">
-                  <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
-                    {moneyBR(bd?.consultas.valor_total ?? 0)}
-                  </span>
-                </div>
+                {consultasManual ? (
+                  <ManualBreakdownNote />
+                ) : (
+                  <>
+                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    <KpiChips
+                      items={[
+                        { label: "Cadastro", count: bd?.consultas.cadastro ?? 0 },
+                        { label: "Resgate", count: bd?.consultas.resgate ?? 0 },
+                      ].filter((c) => c.count > 0)}
+                    />
+                    <KpiBreakdownHeading>Valor total</KpiBreakdownHeading>
+                    <div className="mt-1.5">
+                      <span className="rounded-full bg-emerald-400/[0.12] px-2 py-0.5 text-[11px] text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                        {moneyBR(bd?.consultas.valor_total ?? 0)}
+                      </span>
+                    </div>
+                  </>
+                )}
                 <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>
                 {(bd?.consultas.agendamentos.length ?? 0) > 0 ? (
                   <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
