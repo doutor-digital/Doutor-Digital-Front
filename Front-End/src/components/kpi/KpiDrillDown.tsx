@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowUpRight,
   Calendar,
+  Check,
   CreditCard,
   Loader2,
+  Pencil,
   Phone as PhoneIcon,
   Tag,
   Users,
@@ -20,13 +22,26 @@ import {
   type KpiSourceType,
 } from "@/services/kpiConfig";
 import { kpiExclusionsService } from "@/services/kpiExclusions";
+import { stageHistoryAuditService } from "@/services/stageHistoryAudit";
 import { useStageNames } from "@/hooks/useStageNames";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
 import { formatDate, formatNumber } from "@/lib/utils";
 
 // KPIs que suportam exclusão manual via kpi_exclusions (admin marca "não contar").
-const EXCLUDABLE_KPIS = new Set<string>(["agendados"]);
+const EXCLUDABLE_KPIS = new Set<string>(["agendados", "tratamentos"]);
+// KPIs que suportam edição inline da data da transição (PATCH stage-history corrected-date).
+// Só faz sentido para fontes KommoStage (history_id volta populado no DTO).
+const DATE_EDITABLE_KPIS = new Set<string>(["agendados", "tratamentos"]);
+
+function isoForDateInput(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 const moneyBR = (v?: number | null) =>
   v == null ? null : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -335,6 +350,13 @@ export function KpiDrillDown({
   const isAdmin = isAdminLevel(user?.role);
   const qc = useQueryClient();
   const canExclude = isAdmin && unitId != null && target?.kpiKey != null && EXCLUDABLE_KPIS.has(target!.kpiKey);
+  const canEditDate = isAdmin && unitId != null && target?.kpiKey != null && DATE_EDITABLE_KPIS.has(target!.kpiKey);
+
+  // Editor inline de data da transição (PATCH /api/admin/stage-history/{id}/corrected-date).
+  // editingHistoryId guarda o id da transição que está aberta pra edição.
+  const [editingHistoryId, setEditingHistoryId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [editReason, setEditReason] = useState("");
 
   const toggle = useMutation({
     mutationFn: async (vars: { leadId: number; nowExcluded: boolean }) => {
@@ -350,6 +372,40 @@ export function KpiDrillDown({
     },
     onError: (e) => toast.error(`Falha ao atualizar exclusão: ${(e as Error).message}`),
   });
+
+  const correctDate = useMutation({
+    mutationFn: async (vars: { id: number; correctedAt: string; reason?: string }) =>
+      stageHistoryAuditService.correctDate(vars),
+    onSuccess: () => {
+      toast.success("Data corrigida. KPI passa a contar no dia certo.");
+      setEditingHistoryId(null);
+      setEditValue("");
+      setEditReason("");
+      qc.invalidateQueries({ queryKey: ["kpi-drill"] });
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+    },
+    onError: (e) => toast.error(`Falha ao corrigir data: ${(e as Error).message}`),
+  });
+
+  const startEditDate = (item: KpiLeadItem) => {
+    if (item.history_id == null) return;
+    setEditingHistoryId(item.history_id);
+    setEditValue(isoForDateInput(item.effective_changed_at ?? item.created_at));
+    setEditReason("");
+  };
+  const cancelEditDate = () => {
+    setEditingHistoryId(null);
+    setEditValue("");
+    setEditReason("");
+  };
+  const saveEditDate = (historyId: number) => {
+    if (!editValue) {
+      toast.error("Informe a data corrigida.");
+      return;
+    }
+    const iso = new Date(editValue).toISOString();
+    correctDate.mutate({ id: historyId, correctedAt: iso, reason: editReason.trim() || undefined });
+  };
 
   if (!open) return null;
 
@@ -406,7 +462,10 @@ export function KpiDrillDown({
             <>
             <DrillSummary kpiKey={target!.kpiKey} items={data!.items} />
             <ul className="space-y-1.5">
-              {data!.items.map((l) => (
+              {data!.items.map((l) => {
+                const isEditingDate = editingHistoryId != null && l.history_id === editingHistoryId;
+                const hasHistory = l.history_id != null;
+                return (
                 <li key={l.id} className={l.excluded ? "opacity-50" : ""}>
                   <div className="group flex flex-col gap-1 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition hover:border-white/[0.12] hover:bg-white/[0.04]">
                     <div className="flex items-center justify-between gap-2">
@@ -417,6 +476,20 @@ export function KpiDrillDown({
                         {l.name || "(sem nome)"}
                       </Link>
                       <div className="flex shrink-0 items-center gap-2">
+                        {canEditDate && hasHistory && !isEditingDate && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              startEditDate(l);
+                            }}
+                            title="Corrigir a data efetiva desta transição no KPI"
+                            className="inline-flex items-center gap-1 rounded-full bg-sky-400/[0.08] px-2 py-0.5 text-[9.5px] font-medium text-sky-200 ring-1 ring-inset ring-sky-400/25 transition hover:bg-sky-400/20"
+                          >
+                            <Pencil className="h-2.5 w-2.5" /> corrigir data
+                          </button>
+                        )}
                         {canExclude && (
                           <button
                             type="button"
@@ -441,6 +514,44 @@ export function KpiDrillDown({
                         </Link>
                       </div>
                     </div>
+
+                    {isEditingDate && (
+                      <div className="mt-1 flex flex-col gap-1.5 rounded-md border border-sky-400/20 bg-sky-400/[0.05] p-2">
+                        <p className="text-[10px] text-sky-200/80">
+                          Data efetiva (quando o tratamento aconteceu de verdade):
+                        </p>
+                        <input
+                          type="datetime-local"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="rounded-md border border-white/10 bg-slate-950 px-2 py-1 text-[12px] text-slate-100"
+                        />
+                        <input
+                          type="text"
+                          value={editReason}
+                          onChange={(e) => setEditReason(e.target.value)}
+                          placeholder="motivo (opcional)"
+                          className="rounded-md border border-white/10 bg-slate-950 px-2 py-1 text-[11px] text-slate-100"
+                        />
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => saveEditDate(editingHistoryId!)}
+                            disabled={correctDate.isPending}
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.1] px-2 py-0.5 text-[10.5px] font-medium text-emerald-200 ring-1 ring-inset ring-emerald-400/30 hover:bg-emerald-400/20 disabled:opacity-50"
+                          >
+                            <Check className="h-3 w-3" /> Salvar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditDate}
+                            className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-0.5 text-[10.5px] text-slate-300 ring-1 ring-inset ring-white/[0.06] hover:bg-white/[0.08]"
+                          >
+                            <X className="h-3 w-3" /> Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                       {l.phone && (
@@ -486,7 +597,8 @@ export function KpiDrillDown({
                     </div>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             </>
           )}

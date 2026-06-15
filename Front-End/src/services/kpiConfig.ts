@@ -106,6 +106,11 @@ export interface KpiLeadItem {
   treatment_value?: number | null;
   /** Lead marcado como "não contar" pelo admin neste KPI (kpi_exclusions). */
   excluded?: boolean;
+  /** Id da transição de etapa mais recente (LeadStageHistory) — só para fontes KommoStage.
+   *  Permite o drill-down chamar PATCH /api/admin/stage-history/{id}/corrected-date direto. */
+  history_id?: number | null;
+  /** Data efetiva da transição (corrigida ou original) — o que o KPI usa pra contar. */
+  effective_changed_at?: string | null;
 }
 
 export interface KpiLeadsResult {
