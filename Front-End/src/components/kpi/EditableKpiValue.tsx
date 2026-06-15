@@ -69,9 +69,10 @@ export function EditableKpiValue({
           <span>
             <b>Editar valor manualmente.</b>
             <br />
-            Use quando a SDR moveu leads na etapa/dia errado e o número do CRM
-            estiver divergindo do relatório real. Pra um ajuste definitivo, suba
-            o CSV em <i>Reconciliação por CSV</i>.
+            Use quando a SDR moveu leads na etapa/dia errado e a Kommo
+            contabilizou no dia errado. O dashboard só passa a bater
+            sozinho no fim do mês, quando a reconciliação por CSV
+            consolida as métricas certas.
           </span>
         }
       >
@@ -115,10 +116,15 @@ export function EditableKpiValue({
               content={
                 <span>
                   Esse número foi <b>ajustado pelo admin</b> porque a SDR moveu
-                  leads na etapa/dia errado no CRM. O cálculo automático ainda é{" "}
-                  <b>{format(live)}</b>, mas o card mostra o valor manual pra
-                  bater com o relatório oficial até a reconciliação por CSV ser
-                  aplicada.
+                  leads na etapa/dia errado no CRM. A Kommo contabilizou esses
+                  leads <b>no dia em que a SDR mexeu</b>, não no dia em que o
+                  atendimento aconteceu de verdade — por isso o cálculo
+                  automático (<b>{format(live)}</b>) está torto.
+                  <br />
+                  <br />
+                  Depois que o mês encerrar, a reconciliação por CSV consolida
+                  tudo e o dashboard volta a bater 100% com o relatório
+                  oficial — aí dá pra tirar as métricas certas.
                 </span>
               }
             >
@@ -126,8 +132,8 @@ export function EditableKpiValue({
                 manual
               </span>
             </RichTooltip>
-            <span className="text-[10px] text-white/45">
-              ajustado por movimentação errada da SDR
+            <span className="text-[10px] leading-tight text-white/45">
+              Kommo contabilizou no dia errado · normaliza no fim do mês
             </span>
           </div>
         )}
