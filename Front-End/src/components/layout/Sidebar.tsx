@@ -23,6 +23,7 @@ import {
   FileBarChart,
   FileSearch,
   FileText,
+  FileUp,
   Filter,
   Flame,
   Gauge,
@@ -281,6 +282,7 @@ const advancedLogsGroup: NavGroup = {
     { to: "/admin/locations", label: "Localizações",      icon: Map,        iconUrl: "/nav-icons/localizacoes.png" },
     { to: "/admin/changes",   label: "Alterações",         icon: ScrollText, iconUrl: "/nav-icons/alteracoes.png" },
     { to: "/admin/auditoria-movimentacoes", label: "Auditoria de movimentações", icon: ShieldCheck },
+    { to: "/admin/reconciliacao-csv", label: "Reconciliação por CSV", icon: FileUp },
   ],
 };
 

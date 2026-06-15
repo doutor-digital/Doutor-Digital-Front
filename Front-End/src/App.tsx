@@ -47,6 +47,7 @@ const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
 const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const AuditoriaMovimentacoesPage = lazy(() => import("@/pages/AuditoriaMovimentacoesPage"));
+const ReconciliacaoCsvPage = lazy(() => import("@/pages/ReconciliacaoCsvPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
@@ -256,6 +257,7 @@ export default function App() {
             <Route path="/admin/locations" element={<LocationConsentsPage />} />
             <Route path="/admin/changes"   element={<EntityChangesPage />}    />
             <Route path="/admin/auditoria-movimentacoes" element={<AuditoriaMovimentacoesPage />} />
+            <Route path="/admin/reconciliacao-csv" element={<ReconciliacaoCsvPage />} />
           </Route>
           <Route path="/perfil"             element={<PerfilPage />}          />
 
