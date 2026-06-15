@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Cog, RotateCcw, Users, X } from "@/components/icons";
 import { useKpiOverrides } from "@/hooks/useKpiOverrides";
+import { RichTooltip } from "@/components/ui/RichTooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,19 +58,35 @@ export function EditableKpiValue({
 
   return (
     <>
-      {/* Engrenagem (canto superior direito do card) */}
-      <button
-        type="button"
-        onClick={() => (editing ? setEditing(false) : open())}
-        title="Editar valor manualmente"
-        className={`absolute right-3 top-3 z-10 rounded-full p-1.5 transition ${
-          isManual
-            ? "bg-violet-500/20 text-violet-200 hover:bg-violet-500/30"
-            : "text-white/30 hover:bg-white/10 hover:text-white/80"
-        }`}
+      {/* Engrenagem (canto superior direito do card) — abre o editor manual.
+          O tooltip explica POR QUE alguém usaria isso: quando a SDR move o lead
+          na etapa/dia errado, o número automático fica torto e precisa de ajuste
+          manual até a Reconciliação por CSV ser aplicada. */}
+      <RichTooltip
+        side="left"
+        className="absolute right-3 top-3 z-10"
+        content={
+          <span>
+            <b>Editar valor manualmente.</b>
+            <br />
+            Use quando a SDR moveu leads na etapa/dia errado e o número do CRM
+            estiver divergindo do relatório real. Pra um ajuste definitivo, suba
+            o CSV em <i>Reconciliação por CSV</i>.
+          </span>
+        }
       >
-        <Cog className="h-4 w-4" />
-      </button>
+        <button
+          type="button"
+          onClick={() => (editing ? setEditing(false) : open())}
+          className={`rounded-full p-1.5 transition ${
+            isManual
+              ? "bg-violet-500/20 text-violet-200 hover:bg-violet-500/30"
+              : "text-white/30 hover:bg-white/10 hover:text-white/80"
+          }`}
+        >
+          <Cog className="h-4 w-4" />
+        </button>
+      </RichTooltip>
 
       <div className={align === "right" ? "text-right" : ""}>
         {onDrill ? (
@@ -92,9 +109,27 @@ export function EditableKpiValue({
           </p>
         )}
         {isManual && (
-          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-200">
-            manual
-          </span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <RichTooltip
+              side="bottom"
+              content={
+                <span>
+                  Esse número foi <b>ajustado pelo admin</b> porque a SDR moveu
+                  leads na etapa/dia errado no CRM. O cálculo automático ainda é{" "}
+                  <b>{format(live)}</b>, mas o card mostra o valor manual pra
+                  bater com o relatório oficial até a reconciliação por CSV ser
+                  aplicada.
+                </span>
+              }
+            >
+              <span className="inline-flex cursor-help items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-200">
+                manual
+              </span>
+            </RichTooltip>
+            <span className="text-[10px] text-white/45">
+              ajustado por movimentação errada da SDR
+            </span>
+          </div>
         )}
       </div>
 
