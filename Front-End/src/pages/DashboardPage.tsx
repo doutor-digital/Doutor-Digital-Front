@@ -18,6 +18,7 @@ import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { DashboardAiReport } from "@/components/dashboard/DashboardAiReport";
+import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -946,6 +947,11 @@ export default function DashboardPage() {
           {agencyName}
         </h1>
 
+        {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
+        <div className="mt-6">
+          <ConsultasHojeBanner tenantId={tenantId} unitId={unitId} />
+        </div>
+
         {/* ─── FILTROS ─────────────────────────────────────────────────── */}
         <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
           {/* Pílulas — rolam na horizontal no mobile (sem quebrar linha) */}
@@ -1678,11 +1684,19 @@ export default function DashboardPage() {
                     Atualizar
                   </button>
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", funnelLeads.consultas)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", bd?.consultas.do_dia ?? 0)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
                 {consultasManual ? (
                   <ManualBreakdownNote />
                 ) : (
                   <>
+                    <KpiBreakdownHeading>Desfecho no período</KpiBreakdownHeading>
+                    <KpiChips
+                      items={[
+                        { label: "Compareceu", count: bd?.consultas.compareceu ?? 0 },
+                        { label: "Faltou", count: bd?.consultas.faltou ?? 0 },
+                        { label: "Aguardando", count: bd?.consultas.aguardando ?? 0 },
+                      ].filter((c) => c.count > 0)}
+                    />
                     <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
                     <KpiChips
                       items={[
@@ -1696,6 +1710,9 @@ export default function DashboardPage() {
                         {moneyBR(bd?.consultas.valor_total ?? 0)}
                       </span>
                     </div>
+                    <p className="mt-2 text-[10px] text-white/40">
+                      Marcadas no período (produtividade SDR): {nf(bd?.consultas.total ?? 0)}
+                    </p>
                   </>
                 )}
                 <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>

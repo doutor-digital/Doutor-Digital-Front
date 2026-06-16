@@ -217,7 +217,21 @@ export interface ConsultasBreakdown {
   cadastro: number;
   resgate: number;
   valor_total: number;
+  /** Consultas cuja DATA DA CONSULTA cai no período (número principal do card). */
+  do_dia: number;
+  compareceu: number;
+  faltou: number;
+  aguardando: number;
   agendamentos: AgendamentoItem[];
+}
+
+/** Item da faixa "consultas de hoje" (nome + hora + desfecho). */
+export interface ConsultaDiaItem {
+  name: string;
+  when?: string | null;
+  tipo?: string | null;
+  outcome: "compareceu" | "faltou" | "aguardando";
+  phone?: string | null;
 }
 export interface KpiBreakdowns {
   cadastro: CadastroBreakdown;
@@ -366,8 +380,21 @@ export const kpiConfigService = {
       resgate: data?.resgate ?? { total: 0, tipos: [], origens: [] },
       agendados: data?.agendados ?? { total: 0, cadastro: 0, resgate: 0, com_pagamento: 0, sem_pagamento: 0, reclassificacoes: 0, origens: [] },
       tratamentos: data?.tratamentos ?? { total: 0, origens: [], fisios: [], valor_consulta_total: 0, valor_tratamento_total: 0 },
-      consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, agendamentos: [] },
+      consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, do_dia: 0, compareceu: 0, faltou: 0, aguardando: 0, agendamentos: [] },
     };
+  },
+
+  /** Consultas cuja DATA DA CONSULTA cai no range (default: hoje). Alimenta a faixa de alerta. */
+  async consultasDoDia(
+    unitId: number | string | null | undefined,
+    range?: { date_from?: string; date_to?: string },
+  ): Promise<ConsultaDiaItem[]> {
+    const id = toInt(unitId ?? 0);
+    const { data } = await api.get<ConsultaDiaItem[]>(
+      "/webhooks/dashboard/consultas-do-dia",
+      { params: { ...(id ? { unitId: id } : {}), dateFrom: range?.date_from, dateTo: range?.date_to } },
+    );
+    return Array.isArray(data) ? data : [];
   },
 
   /** Métricas de todos os campos customizados do período (perfil do lead). */
