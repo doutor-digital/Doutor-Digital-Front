@@ -62,14 +62,22 @@ export const aiService = {
   },
 
   async analyzeUnit(payload: {
-    unitId: number;
+    unitId: number | null;
     dateFrom?: string;
     dateTo?: string;
+    tenantId?: number | null;
   }): Promise<AiAnalyzeResponse> {
     const { data } = await api.post<AiAnalyzeResponse>(
       "/api/ai/analyze",
-      payload,
-      { timeout: 180_000 },
+      {
+        unitId: payload.unitId ?? null,
+        dateFrom: payload.dateFrom,
+        dateTo: payload.dateTo,
+      },
+      {
+        timeout: 180_000,
+        params: payload.tenantId ? { tenantId: payload.tenantId } : {},
+      },
     );
     return {
       markdown: data?.markdown ?? "",
