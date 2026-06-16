@@ -7,6 +7,8 @@ import { empresasApi, leadsApi, type EmpresaDto, type LeadsStatsResponse } from 
 import { AnimatedNumber } from '@/cadastra-ui/animated-number'
 import { cn } from '@/lib/utils'
 import type { DashboardFilters, Consulta, Tratamento } from '@/types/cadastra'
+import { Sparkles } from '@/components/icons'
+import { AiReportModal, type DashboardSnapshot } from '@/components/cadastro/dashboard/ai-report-modal'
 
 const dayMs = 24 * 60 * 60 * 1000
 
@@ -202,7 +204,9 @@ export function DashboardView() {
   const [empresas, setEmpresas] = useState<EmpresaDto[]>([])
   const [apiAgg, setApiAgg] = useState<ApiAggregated>(emptyApiAggregated())
   const [statsLoading, setStatsLoading] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const reqIdRef = useRef(0)
+  const dashboardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const id = setInterval(() => setTickNow(Date.now()), 60_000)
@@ -308,6 +312,7 @@ export function DashboardView() {
       />
 
       <main className="px-4 md:px-8 py-6 md:py-8 max-w-[1280px] mx-auto">
+        <div ref={dashboardRef}>
         <motion.div
           className="grid grid-cols-1 md:grid-cols-6 gap-3 [grid-auto-rows:auto] md:[grid-auto-rows:160px]"
           initial={{ opacity: 0, y: 8 }}
@@ -477,6 +482,42 @@ export function DashboardView() {
             )}
           </div>
         </motion.div>
+        </div>
+
+        {/* Card de análise da I.A. — fora do ref do screenshot pra não vazar
+            o próprio botão pra dentro da imagem capturada. */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="mt-5 rounded-3xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-6 text-cyan-50"
+          style={{ background: 'linear-gradient(135deg, #0e7490 0%, #075985 60%, #0c4a6e 100%)' }}
+        >
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <div className="h-12 w-12 rounded-2xl bg-white/15 grid place-items-center shrink-0">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/80">
+                Análise com I.A.
+              </p>
+              <h3 className="text-[18px] md:text-[20px] font-bold tracking-tight leading-tight">
+                Gere um relatório do dashboard do dia
+              </h3>
+              <p className="text-[12.5px] text-cyan-100/85 mt-1">
+                A I.A. lê os números acima (leads, cadastro, agendados, no-show, tratamentos, origens,
+                atendentes) e devolve um diagnóstico com recomendações + foto ao vivo do dash.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setReportOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-white text-slate-900 text-[13.5px] font-bold hover:bg-cyan-50 transition-colors shadow-lg shadow-black/20 shrink-0"
+          >
+            <Sparkles className="h-4 w-4" />
+            Gerar Relatório
+          </button>
+        </motion.div>
 
         {m.leads === 0 && (
           <motion.div
@@ -491,6 +532,35 @@ export function DashboardView() {
           </motion.div>
         )}
       </main>
+
+      <AiReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        dashboardRef={dashboardRef}
+        snapshot={{
+          periodo: filters.periodo,
+          fonte,
+          empresasCount: empresas.length,
+          receita: m.receita,
+          prevReceita: m.prevReceita,
+          leads: m.leads,
+          prevLeads: m.prevLeads,
+          leadsManuais: m.leadsManuais,
+          leadsImportados: m.leadsImportados,
+          agendados: m.agendados,
+          consultas: m.consultas,
+          prevConsultas: m.prevConsultas,
+          comparecidas: m.comparecidas,
+          prevComparecidas: m.prevComparecidas,
+          tratamentos: m.tratamentos,
+          prevTratamentos: m.prevTratamentos,
+          ticketMedio: m.ticketMedio,
+          origens: m.origens,
+          planos: m.planos,
+          formas: m.formas,
+          responsaveis: m.responsaveis,
+        } satisfies DashboardSnapshot}
+      />
     </div>
   )
 }
