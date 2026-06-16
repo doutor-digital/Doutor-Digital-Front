@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from "recharts";
 import {
   Loader2,
@@ -9,9 +9,12 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  Sparkles,
   X,
 } from "@/components/icons";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
+import { MarkdownLite } from "@/components/MarkdownLite";
+import { aiService } from "@/services/ai";
 import { useClinic } from "@/hooks/useClinic";
 import {
   kpiConfigService,
@@ -57,6 +60,17 @@ function isoDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Combina "yyyy-MM-dd" + "HH:mm" (hora LOCAL) e devolve ISO UTC.
+ * O back-end (ResolveDashboardRange) usa o instante literal quando a hora ≠ 00:00;
+ * mandar UTC garante que 09:00 BRT vire o filtro correto (12:00Z).
+ */
+function combineDateAndTime(ymd: string, hhmm: string): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const [h, min] = hhmm.split(":").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, h ?? 0, min ?? 0, 0, 0).toISOString();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,11 +140,16 @@ function saveBlockCfg(cfg: BlockCfg) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CustomFieldsPage() {
-  const { unitId } = useClinic();
+  const { unitId, tenantId } = useClinic();
   const queryClient = useQueryClient();
   const [rangeKey, setRangeKey] = useState("30");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  // Hora opcional ("HH:mm" ou ""), só no modo Personalizado. Preenchida, recorta
+  // a janela de horas dentro do dia — ex.: qualificações de hoje das 9h às 12h.
+  const [customFromTime, setCustomFromTime] = useState("");
+  const [customToTime, setCustomToTime] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [drill, setDrill] = useState<KpiDrillTarget | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -147,15 +166,29 @@ export default function CustomFieldsPage() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
   const isCustom = rangeKey === "custom";
+  // Hora só vale no modo Personalizado e quando as duas estão preenchidas.
+  const hasCustomTime = isCustom && customFromTime !== "" && customToTime !== "";
   const dateFrom = useMemo(
-    () => (isCustom ? customFrom || today : isoDaysAgo(days)),
-    [isCustom, customFrom, today, days],
+    () =>
+      isCustom
+        ? hasCustomTime
+          ? combineDateAndTime(customFrom || today, customFromTime)
+          : customFrom || today
+        : isoDaysAgo(days),
+    [isCustom, hasCustomTime, customFrom, customFromTime, today, days],
   );
   const dateTo = useMemo(
-    () => (isCustom ? customTo || today : today),
-    [isCustom, customTo, today],
+    () =>
+      isCustom
+        ? hasCustomTime
+          ? combineDateAndTime(customTo || today, customToTime)
+          : customTo || today
+        : today,
+    [isCustom, hasCustomTime, customTo, customToTime, today],
   );
-  const dateRangeLabel = `${dateFrom} → ${dateTo}`;
+  const dateRangeLabel = hasCustomTime
+    ? `${customFrom || today} ${customFromTime} → ${customTo || today} ${customToTime}`
+    : `${customFrom || dateFrom} → ${customTo || dateTo}`;
 
   const summary = useQuery({
     queryKey: ["custom-fields-summary", unitId, dateFrom, dateTo],
@@ -169,6 +202,19 @@ export default function CustomFieldsPage() {
     queryFn: () =>
       kpiConfigService.customFieldsCrossAnalysis(unitId, { date_from: dateFrom, date_to: dateTo }),
     enabled: unitId != null,
+  });
+
+  // Análise com I.A. — reusa /api/ai/analyze (já cruza qualificação, origem,
+  // tratamento, motivo etc. do período). Respeita o filtro de data atual.
+  const aiSettings = useQuery({
+    queryKey: ["ai-settings", tenantId],
+    queryFn: () => aiService.getSettings(tenantId),
+    staleTime: 5 * 60_000,
+  });
+  const hasAiKey = aiSettings.data?.hasKey ?? false;
+  const analyze = useMutation({
+    mutationFn: () =>
+      aiService.analyzeUnit({ unitId: unitId!, dateFrom, dateTo }),
   });
 
   const total = summary.data?.total_leads ?? 0;
@@ -363,6 +409,20 @@ export default function CustomFieldsPage() {
             placeholder="Filtrar campo…"
             className="w-56 rounded-md bg-white px-3 py-1.5 text-[12px] text-slate-700 placeholder-slate-400 outline-none"
           />
+          {hasAiKey && (
+            <button
+              type="button"
+              onClick={() => {
+                setAiOpen(true);
+                if (!analyze.data && !analyze.isPending) analyze.mutate();
+              }}
+              disabled={!unitId}
+              className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-[12px] font-semibold text-indigo-700 hover:bg-white/90 disabled:opacity-50"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Analisar com I.A.
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowBlockCfg(true)}
@@ -426,12 +486,20 @@ export default function CustomFieldsPage() {
               </button>
             </div>
             {isCustom && (
-              <div className="inline-flex items-center gap-1.5 text-[11.5px]" style={{ color: C.inkSoft }}>
+              <div className="inline-flex flex-wrap items-center gap-1.5 text-[11.5px]" style={{ color: C.inkSoft }}>
                 <input
                   type="date"
                   value={customFrom}
                   max={customTo || today}
                   onChange={(e) => setCustomFrom(e.target.value)}
+                  className="rounded-md border px-2 py-1 text-[12px] outline-none"
+                  style={{ borderColor: C.rule, background: C.panel, color: C.ink }}
+                />
+                <input
+                  type="time"
+                  value={customFromTime}
+                  onChange={(e) => setCustomFromTime(e.target.value)}
+                  title="Hora de início (opcional)"
                   className="rounded-md border px-2 py-1 text-[12px] outline-none"
                   style={{ borderColor: C.rule, background: C.panel, color: C.ink }}
                 />
@@ -445,6 +513,17 @@ export default function CustomFieldsPage() {
                   className="rounded-md border px-2 py-1 text-[12px] outline-none"
                   style={{ borderColor: C.rule, background: C.panel, color: C.ink }}
                 />
+                <input
+                  type="time"
+                  value={customToTime}
+                  onChange={(e) => setCustomToTime(e.target.value)}
+                  title="Hora de fim (opcional)"
+                  className="rounded-md border px-2 py-1 text-[12px] outline-none"
+                  style={{ borderColor: C.rule, background: C.panel, color: C.ink }}
+                />
+                <span className="w-full text-[10px]" style={{ color: C.inkSoft }}>
+                  Hora opcional — vazio = dia inteiro. Preencha as duas para recortar a janela (ex.: 09:00–12:00).
+                </span>
               </div>
             )}
           </div>
@@ -554,6 +633,18 @@ export default function CustomFieldsPage() {
               },
             })
           }
+        />
+      )}
+
+      {aiOpen && (
+        <AiAnalysisModal
+          dateLabel={dateRangeLabel}
+          loading={analyze.isPending}
+          error={analyze.isError ? String((analyze.error as Error)?.message ?? "falha na análise") : null}
+          markdown={analyze.data?.markdown ?? null}
+          durationSec={analyze.data?.durationSec ?? null}
+          onRetry={() => analyze.mutate()}
+          onClose={() => setAiOpen(false)}
         />
       )}
 
@@ -1039,6 +1130,74 @@ function BlockConfigModal({
             Pronto
           </button>
         </footer>
+      </div>
+    </div>
+  );
+}
+
+/** Modal com a análise gerada pela I.A. (markdown) do período filtrado. */
+function AiAnalysisModal({
+  dateLabel,
+  loading,
+  error,
+  markdown,
+  durationSec,
+  onRetry,
+  onClose,
+}: {
+  dateLabel: string;
+  loading: boolean;
+  error: string | null;
+  markdown: string | null;
+  durationSec: number | null;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl flex flex-col" style={{ background: C.panel }}>
+        <header className="flex items-start justify-between px-5 py-3 border-b" style={{ borderColor: C.rule }}>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" style={{ color: C.primary }} />
+            <div>
+              <h2 className="font-display text-[18px] font-semibold tracking-tight" style={{ color: C.ink }}>
+                Análise com I.A.
+              </h2>
+              <p className="text-[11px] mt-0.5" style={{ color: C.inkSoft }}>
+                {dateLabel}
+                {durationSec != null && !loading ? ` · ${durationSec.toFixed(1)}s` : ""}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[20px] leading-none hover:opacity-60 px-2" style={{ color: C.inkSoft }} aria-label="Fechar">
+            ×
+          </button>
+        </header>
+
+        <div className="overflow-y-auto px-5 py-4" style={{ color: C.ink }}>
+          {loading ? (
+            <div className="grid h-48 place-items-center gap-2" style={{ color: C.inkSoft }}>
+              <Loader2 className="h-7 w-7 animate-spin" />
+              <span className="text-[12px]">Analisando o período…</span>
+            </div>
+          ) : error ? (
+            <div className="space-y-3">
+              <p className="text-[12.5px]" style={{ color: "#DC2626" }}>Erro: {error}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-md px-4 py-1.5 text-[12px] font-semibold text-white"
+                style={{ background: C.primary }}
+              >
+                Tentar de novo
+              </button>
+            </div>
+          ) : markdown ? (
+            <MarkdownLite text={markdown} />
+          ) : (
+            <EmptyMini text="Sem análise." />
+          )}
+        </div>
       </div>
     </div>
   );
