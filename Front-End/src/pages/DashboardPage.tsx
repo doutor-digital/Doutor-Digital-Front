@@ -391,10 +391,21 @@ export default function DashboardPage() {
       // 5 horas do dia anterior (das 19h às 23:59 da véspera) pra dentro do filtro.
       return { from: isoLocalDayStart(fromDate), to: isoLocalDayEnd(toDate), fromDate, toDate };
     }
-    return computeRange(rangeKey);
+    const base = computeRange(rangeKey);
+    // Hora aplicada sobre o preset (Dia/Semana/Mês/Ano): recorta a janela de horas
+    // dentro do período. Ex.: pílula "Dia" + 09:00–12:00 = só leads das 9h às 12h de hoje.
+    if (hasCustomTime) {
+      return {
+        from: combineDateAndTime(base.fromDate, customFromTime),
+        to: combineDateAndTime(base.toDate, customToTime),
+        fromDate: base.fromDate,
+        toDate: base.toDate,
+      };
+    }
+    return base;
   }, [rangeKey, customFrom, customTo, customFromTime, customToTime, isCustom, hasCustomTime]);
   // Rótulo mostra as DATAS COMERCIAIS escolhidas. Quando há horas, anexa o intervalo HH:mm.
-  const rangeLabel = hasCustomTime && isCustom
+  const rangeLabel = hasCustomTime
     ? `${fmtDateLocalBr(range.fromDate)} ${customFromTime} – ${fmtDateLocalBr(range.toDate)} ${customToTime}`
     : `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
 
@@ -616,7 +627,8 @@ export default function DashboardPage() {
     sourceFilter !== "" ||
     attendantFilter !== "" ||
     stageFilter.size > 0 ||
-    isCustom;
+    isCustom ||
+    hasCustomTime;
 
   const resetFilters = () => {
     setSourceFilter("");
@@ -943,10 +955,10 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => {
                   setRangeKey(r.key);
+                  // Sai do modo custom mas MANTÉM as horas: a janela de horas passa a
+                  // recortar o período do preset (ex.: "Dia" + 09:00–12:00).
                   setCustomFrom("");
                   setCustomTo("");
-                  setCustomFromTime("");
-                  setCustomToTime("");
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition ${
                   !isCustom && rangeKey === r.key
@@ -1180,7 +1192,8 @@ export default function DashboardPage() {
                 (sourceFilter ? 1 : 0) +
                 (attendantFilter ? 1 : 0) +
                 stageFilter.size +
-                (isCustom ? 1 : 0)
+                (isCustom ? 1 : 0) +
+                (hasCustomTime ? 1 : 0)
               })` : ""}
             </button>
           </div>
@@ -1255,7 +1268,8 @@ export default function DashboardPage() {
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
                   />
                 </div>
-                {/* Horas opcionais — sem preencher, usa o corte comercial (19h às 19h). */}
+                {/* Horas opcionais — recortam a janela de horas DENTRO do período ativo
+                    (pílula Dia/Semana/Mês/Ano ou período customizado). */}
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <input
                     type="time"
@@ -1274,7 +1288,8 @@ export default function DashboardPage() {
                   />
                 </div>
                 <p className="mt-1 text-[10px] text-white/40">
-                  Hora opcional. Vazio = corte comercial (19h–19h).
+                  Hora opcional — recorta o período ativo (ex.: pílula <b>Dia</b> + 09:00–12:00 = só
+                  leads das 9h às 12h de hoje). Vazio = corte comercial (19h–19h).
                 </p>
               </div>
             </div>
