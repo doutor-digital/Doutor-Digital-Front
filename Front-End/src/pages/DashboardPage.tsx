@@ -18,6 +18,7 @@ import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { DashboardAiReport } from "@/components/dashboard/DashboardAiReport";
+import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
@@ -410,6 +411,25 @@ export default function DashboardPage() {
   const rangeLabel = hasCustomTime
     ? `${fmtDateLocalBr(range.fromDate)} ${customFromTime} – ${fmtDateLocalBr(range.toDate)} ${customToTime}`
     : `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
+
+  // Atalhos de data prontos para a análise com I.A. (mesma janela comercial dos cards).
+  const analysisPresets = useMemo<AnalysisPreset[]>(
+    () =>
+      DATE_PRESETS.map((p) => {
+        const r = p.range();
+        const same = dateToInput(r.from) === dateToInput(r.to);
+        return {
+          key: p.key,
+          label: p.label,
+          from: isoBizStart(r.from),
+          to: isoBizEnd(r.to),
+          rangeLabel: same
+            ? fmtDateLocalBr(r.from)
+            : `${fmtDateLocalBr(r.from)} - ${fmtDateLocalBr(r.to)}`,
+        };
+      }),
+    [],
+  );
 
   const units = useQuery({
     queryKey: ["dash-amo", "units"],
@@ -941,7 +961,7 @@ export default function DashboardPage() {
         }}
       />
 
-      <div className="relative mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
+      <div id="dashboard-capture" className="relative mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-10">
         {/* ─── HEADER: Título ─────────────────────────────────────────── */}
         <h1 className="text-center text-2xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
           {agencyName}
@@ -1089,6 +1109,15 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* Análise com I.A. + Relatório, ao lado do seletor de datas */}
+          <AiAnalysisLauncher
+            tenantId={tenantId}
+            unitId={unitId}
+            unitName={unitId == null ? null : agencyName}
+            presets={analysisPresets}
+            captureTargetId="dashboard-capture"
+          />
 
           {/* All / Select user / Setup */}
           <div className="flex items-center gap-2">
