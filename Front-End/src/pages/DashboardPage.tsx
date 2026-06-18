@@ -17,7 +17,6 @@ import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
-import { DashboardAiReport } from "@/components/dashboard/DashboardAiReport";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
@@ -1789,18 +1788,6 @@ export default function DashboardPage() {
                 )}
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
-            </div>
-
-            {/* ─── Análise com I.A. + Gerar relatório ──────────────────── */}
-            <div className="mt-6">
-              <DashboardAiReport
-                tenantId={tenantId}
-                unitId={unitId}
-                dateFrom={dateToInput(range.fromDate)}
-                dateTo={dateToInput(range.toDate)}
-                rangeLabel={rangeLabel}
-                unitName={unitId == null ? null : agencyName}
-              />
             </div>
 
             {/* ─── Meus KPIs (criados pelo analista) ──────────────────── */}
