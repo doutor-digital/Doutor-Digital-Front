@@ -1,9 +1,7 @@
 import { ReactElement, Suspense } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
-import { unitsService } from "@/services/units";
 import { Loader2 } from "@/components/icons";
 import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -18,7 +16,6 @@ const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
 const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
-const JuridicoDashboardPage = lazy(() => import("@/pages/JuridicoDashboardPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
@@ -150,24 +147,6 @@ function RequireWritable({ children }: { children: ReactElement }) {
   return children;
 }
 
-// Roteia o "/" pelo segmento da unidade ativa: jurídico (Advocacia) renderiza o dashboard
-// jurídico; demais (saúde) mantêm o dashboard clínico de sempre. Mesmo layout, KPIs distintos.
-function DashboardRouter() {
-  const { tenantId, unitId } = useClinic();
-  const { data: units, isLoading } = useQuery({
-    queryKey: ["units", "switcher"],
-    queryFn: () => unitsService.list(),
-  });
-
-  if (isLoading) return <RouteLoader />;
-
-  const active = unitId != null
-    ? units?.find((u) => Number(u.id) === Number(unitId))
-    : units?.find((u) => Number(u.clinicId) === Number(tenantId));
-
-  return active?.segment === "juridico" ? <JuridicoDashboardPage /> : <DashboardPage />;
-}
-
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -212,7 +191,7 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route index path="/"            element={<DashboardRouter />} />
+          <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
           <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />

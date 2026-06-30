@@ -25,6 +25,7 @@ import { isAdminLevel } from "@/lib/roles";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
+import { juridicoService } from "@/services/juridico";
 import { assignmentsService } from "@/services/assignments";
 import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
 import { channelVisual } from "@/lib/channelIcons";
@@ -676,8 +677,62 @@ export default function DashboardPage() {
     return u?.name ?? "Dashboard";
   }, [unitId, units.data]);
 
+  // ─── Segmento da unidade ativa ────────────────────────────────────────
+  // "juridico" (advocacia) reusa ESTE mesmo layout, só trocando a fonte dos números
+  // e os rótulos dos cards. "saude" (default) mantém tudo como sempre.
+  const segment = useMemo(() => {
+    const u = unitId != null
+      ? units.data?.find((x) => String(x.id) === String(unitId))
+      : units.data?.find((x) => String(x.clinicId) === String(tenantId));
+    return u?.segment ?? "saude";
+  }, [units.data, unitId, tenantId]);
+  const isJuridico = segment === "juridico";
+
+  // Rótulos dos cards por segmento (mesmo layout, KPIs diferentes).
+  const L = isJuridico
+    ? {
+        cadastro: "Qualificados",
+        resgate: "Desqualificados",
+        origens: "Área do caso",
+        tratamentos: "Contratos",
+        consultas: "Compareceram",
+        qualificacao: "Qualificado × Desqualificado",
+      }
+    : {
+        cadastro: "Cadastro",
+        resgate: "Tentativas de resgastes",
+        origens: "Origens de Leads",
+        tratamentos: "Tratamentos",
+        consultas: "Consultas",
+        qualificacao: "Qualificação dos Leads",
+      };
+
+  // Dados do dashboard jurídico (só quando a unidade é do segmento jurídico).
+  const juridico = useQuery({
+    queryKey: ["dash-amo", "juridico", tenantId, unitId, range.from, range.to],
+    queryFn: () =>
+      juridicoService.dashboard({
+        clinicId: tenantId as number,
+        unitId: unitId ?? undefined,
+        from: range.from,
+        to: range.to,
+      }),
+    enabled: tenantId != null && isJuridico,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+  const jd = juridico.data;
+
   // ─── Canais (origens com cor + barra proporcional) ────────────────────
   const channels = useMemo(() => {
+    // Jurídico: a "origem" vira a distribuição por ÁREA do caso.
+    if (isJuridico) {
+      const cores = ["#22d3ee", "#a78bfa", "#34d399", "#fbbf24", "#f472b6", "#60a5fa"];
+      return (jd?.areaCaso ?? [])
+        .filter((a) => a.leads > 0)
+        .slice(0, 6)
+        .map((a, i) => ({ name: a.area, value: a.leads, color: cores[i % cores.length], iconUrl: undefined as string | undefined }));
+    }
     // Prefere o breakdown do KPI de origens (campo customizado: Instagram/Facebook/…),
     // que traz as origens REAIS. Cai pra ov.origens só se não houver KPI configurado —
     // ov.origens agrupa Lead.Source, que pra leads da Kommo é sempre "Kommo".
@@ -703,7 +758,7 @@ export default function DashboardPage() {
       items.push({ name: "Outros", value: otherTotal, color: "#64748b", iconUrl: undefined });
     }
     return items;
-  }, [ov]);
+  }, [ov, isJuridico, jd]);
 
   const channelsTotal = useMemo(
     () => channels.reduce((s, c) => s + c.value, 0),
@@ -818,14 +873,31 @@ export default function DashboardPage() {
 
 
   // ─── Derivados da nova estrutura (funnel + origens + semanas) ──────
-  const funnelLeads = ov?.funnel_leads ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
-  const funnelCadastro = ov?.funnel_cadastro ?? funnelLeads;
-  const funnelResgate = ov?.funnel_resgate ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
+  // Jurídico: o funil vem do /api/juridico/dashboard (lead→qualificado→agendado→
+  // compareceu→contrato), mapeado nos MESMOS slots de card (Cadastro=Qualificados,
+  // Resgate=Desqualificados, Tratamentos=Contratos, Consultas=Compareceram).
+  const funnelLeads = isJuridico
+    ? {
+        total: jd?.totalLeads ?? 0,
+        interacoes: jd?.ia.leadsAtendidos ?? 0,
+        agendados: jd?.conversao.agendado ?? 0,
+        consultas: jd?.conversao.compareceu ?? 0,
+        tratamentos: jd?.conversao.contrato ?? 0,
+        no_show: Math.max(0, (jd?.conversao.agendado ?? 0) - (jd?.conversao.compareceu ?? 0)),
+      }
+    : ov?.funnel_leads ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
+  const funnelCadastro = isJuridico
+    ? { ...funnelLeads, total: jd?.qualificacao.qualificados ?? 0 }
+    : ov?.funnel_cadastro ?? funnelLeads;
+  const funnelResgate = isJuridico
+    ? { ...funnelLeads, total: jd?.qualificacao.desqualificados ?? 0 }
+    : ov?.funnel_resgate ?? { total: 0, interacoes: 0, agendados: 0, consultas: 0, tratamentos: 0, no_show: 0 };
 
   // Prefere o valor mapeado nas Configurações Técnicas (kpi_overrides), quando existir;
   // senão usa o cálculo padrão. O override manual (localStorage) ainda fica por cima.
+  // No jurídico não há kpi_overrides de saúde — usa direto o fallback (valor jurídico).
   const kpiLive = (key: string, fallback: number): number =>
-    ov?.kpi_overrides?.[key] ?? fallback;
+    isJuridico ? fallback : ov?.kpi_overrides?.[key] ?? fallback;
 
   // "Origem manda na soma" no card Agendados: quando o usuário edita manualmente
   // alguma origem, o número grande passa a ser a SOMA das origens (override ??
@@ -852,7 +924,9 @@ export default function DashboardPage() {
   const agendadosOrigemEdited = agendadosOrigens.some(
     (o) => overrides[agendadosOrigemKey(o.value)] != null,
   );
-  const agendadosLive = agendadosOrigemEdited
+  const agendadosLive = isJuridico
+    ? funnelLeads.agendados
+    : agendadosOrigemEdited
     ? agendadosOrigens.reduce(
         (sum, o) => sum + (overrides[agendadosOrigemKey(o.value)] ?? o.count),
         0,
@@ -860,7 +934,7 @@ export default function DashboardPage() {
     : kpiLive("agendados", funnelLeads.agendados);
 
   // Botão de fonte (analista) reutilizável por card.
-  const srcBtn = (key: string, label: string) => (
+  const srcBtn = (key: string, label: string) => isJuridico ? null : (
     <KpiSourceButton
       unitId={unitId}
       kpiKey={key}
@@ -878,6 +952,15 @@ export default function DashboardPage() {
     frio: "#60a5fa",
   };
   const qualificacaoData = useMemo(() => {
+    // Jurídico: pizza Qualificado × Desqualificado.
+    if (isJuridico) {
+      const q = jd?.qualificacao;
+      if (!q) return [];
+      return [
+        { name: "Qualificados", value: q.qualificados, color: "#34d399" },
+        { name: "Desqualificados", value: q.desqualificados, color: "#f87171" },
+      ].filter((d) => d.value > 0);
+    }
     const rows = crossAnalysis.data?.qualificacao ?? [];
     return rows
       .filter((r) => (r.count ?? 0) > 0)
@@ -891,7 +974,7 @@ export default function DashboardPage() {
           color: matched ? QUALIF_COLORS[matched] : fallback,
         };
       });
-  }, [crossAnalysis.data]);
+  }, [crossAnalysis.data, isJuridico, jd]);
   const qualificacaoTotal = qualificacaoData.reduce((s, d) => s + d.value, 0);
 
   const origensLeadsRows = useMemo(
@@ -936,7 +1019,7 @@ export default function DashboardPage() {
     qtd: d.quantidade,
   }));
 
-  const isLoading = overview.isLoading && !ov;
+  const isLoading = isJuridico ? juridico.isLoading && !jd : overview.isLoading && !ov;
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
@@ -967,9 +1050,11 @@ export default function DashboardPage() {
         </h1>
 
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
-        <div className="mt-6">
-          <ConsultasHojeBanner tenantId={tenantId} unitId={unitId} />
-        </div>
+        {!isJuridico && (
+          <div className="mt-6">
+            <ConsultasHojeBanner tenantId={tenantId} unitId={unitId} />
+          </div>
+        )}
 
         {/* ─── FILTROS ─────────────────────────────────────────────────── */}
         <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
@@ -1474,11 +1559,11 @@ export default function DashboardPage() {
                 </ul>
               </DarkCard>
 
-              {/* Col 2 row 1: Cadastro */}
+              {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Cadastro</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={() => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
-                {cadastroManual ? (
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                {isJuridico ? null : cadastroManual ? (
                   <ManualBreakdownNote />
                 ) : (
                 <div className="mt-3">
@@ -1516,7 +1601,8 @@ export default function DashboardPage() {
               {/* Col 3 row 1: Resgate */}
               <DarkCard accent="#fbbf24">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tentativas de resgastes</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
+                  {!isJuridico && (
                   <button
                     type="button"
                     onClick={() => resgateBackfill.mutate()}
@@ -1531,9 +1617,10 @@ export default function DashboardPage() {
                     )}
                     Atualizar
                   </button>
+                  )}
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={() => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
-                {resgateManual ? (
+                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                {isJuridico ? null : resgateManual ? (
                   <ManualBreakdownNote />
                 ) : (
                   <>
@@ -1551,7 +1638,7 @@ export default function DashboardPage() {
               {/* Col 4 (tall): Origens de Leads — DonutChart */}
               <DarkCard className="lg:row-span-2" accent="#22d3ee">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Origens de Leads
+                  {L.origens}
                 </p>
 
                 {channels.length === 0 ? (
@@ -1594,6 +1681,7 @@ export default function DashboardPage() {
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                  {!isJuridico && (
                   <button
                     type="button"
                     onClick={() => agendadosBackfill.mutate()}
@@ -1608,9 +1696,10 @@ export default function DashboardPage() {
                     )}
                     Atualizar
                   </button>
+                  )}
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={agendadosLive} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
-                {agendadosManual ? (
+                <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={agendadosLive} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                {isJuridico ? null : agendadosManual ? (
                   <ManualBreakdownNote />
                 ) : (
                   <>
@@ -1653,7 +1742,7 @@ export default function DashboardPage() {
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "no_show", label: "No-show" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("no_show", "No-show")}
@@ -1663,9 +1752,9 @@ export default function DashboardPage() {
             {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Tratamentos</p>
-                <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={() => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
-                {tratamentosManual ? (
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.tratamentos}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
+                {isJuridico ? null : tratamentosManual ? (
                   <ManualBreakdownNote />
                 ) : (
                   <>
@@ -1696,7 +1785,8 @@ export default function DashboardPage() {
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Consultas</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.consultas}</p>
+                  {!isJuridico && (
                   <button
                     type="button"
                     onClick={() => consultasBackfill.mutate()}
@@ -1711,9 +1801,10 @@ export default function DashboardPage() {
                     )}
                     Atualizar
                   </button>
+                  )}
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", bd?.consultas.do_dia ?? 0)} valueClass="text-sky-400" format={nf} onDrill={() => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
-                {consultasManual ? (
+                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", isJuridico ? funnelLeads.consultas : (bd?.consultas.do_dia ?? 0))} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                {isJuridico ? null : consultasManual ? (
                   <ManualBreakdownNote />
                 ) : (
                   <>
@@ -1743,8 +1834,8 @@ export default function DashboardPage() {
                     </p>
                   </>
                 )}
-                <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>
-                {(bd?.consultas.agendamentos.length ?? 0) > 0 ? (
+                {!isJuridico && <KpiBreakdownHeading>Próximos agendamentos</KpiBreakdownHeading>}
+                {!isJuridico && ((bd?.consultas.agendamentos.length ?? 0) > 0 ? (
                   <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
                     {bd!.consultas.agendamentos.slice(0, 5).map((a, i) => (
                       <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
@@ -1755,14 +1846,14 @@ export default function DashboardPage() {
                   </ul>
                 ) : (
                   <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
-                )}
+                ))}
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("consultas", "Consultas")}
               </DarkCard>
               <DarkCard accent="#f472b6">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Qualificação dos Leads
+                  {L.qualificacao}
                 </p>
                 {qualificacaoData.length === 0 ? (
                   <p className="mt-6 text-[12px] text-white/40">
@@ -1919,7 +2010,9 @@ export default function DashboardPage() {
             </DarkCard>
 
             {/* ─── Perfil avançado do lead (idade/alertas/doutor) ───── */}
-            <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
+            {!isJuridico && (
+              <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
+            )}
 
             {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
             <CustomFieldsPanel
