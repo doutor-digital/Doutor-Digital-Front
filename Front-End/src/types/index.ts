@@ -163,6 +163,9 @@ export interface Unit {
   name?: string | null;
   leadsCount?: number;
 
+  /** Segmento de negócio: "saude" (clínicas) ou "juridico" (advocacia). Define o dashboard renderizado. */
+  segment?: "saude" | "juridico" | string;
+
   // ─── Cadastro / multi-tenant (webhook por unidade) ──────────────
   slug?: string | null;
   email?: string | null;
