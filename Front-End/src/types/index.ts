@@ -195,6 +195,8 @@ export interface Unit {
 
 export interface CreateUnitInput {
   name: string;
+  /** Segmento de negócio: "saude" (padrão) ou "juridico" (advocacia). */
+  segment?: "saude" | "juridico" | string;
   email?: string;
   cnpj?: string;
   phone?: string;

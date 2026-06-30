@@ -19,6 +19,7 @@ const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type FormState = {
   name: string;
+  segment: string;
   email: string;
   cnpj: string;
   phone: string;
@@ -34,6 +35,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   name: "",
+  segment: "saude",
   email: "",
   cnpj: "",
   phone: "",
@@ -115,6 +117,7 @@ export default function UnitCreatePage() {
     try {
       const payload: CreateUnitInput = {
         name: form.name.trim(),
+        segment: form.segment,
         email: form.email.trim() || undefined,
         cnpj: form.cnpj.trim() || undefined,
         phone: form.phone.trim() || undefined,
@@ -259,6 +262,22 @@ export default function UnitCreatePage() {
                 onChange={(e) => setField("name", e.target.value)}
                 placeholder="Ex.: Unidade Araguaína"
               />
+            </div>
+
+            <div>
+              <label className={labelClass}>Segmento</label>
+              <select
+                className={inputClass}
+                value={form.segment}
+                onChange={(e) => setField("segment", e.target.value)}
+              >
+                <option value="saude">Saúde (clínicas)</option>
+                <option value="juridico">Jurídico (advocacia)</option>
+              </select>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Define o conjunto de KPIs do dashboard. Jurídico para escritórios de advocacia
+                (ex.: Advocacia Magalhães).
+              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
