@@ -1597,7 +1597,7 @@ export default function DashboardPage() {
                 ) : (
                   <>
                     <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
-                    <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} />
+                    <KpiChips items={(bd?.resgate.tipos ?? []).map((t) => ({ label: t.value, count: t.count }))} max={6} />
                     <KpiBreakdownHeading>Origem</KpiBreakdownHeading>
                     <KpiChips items={(bd?.resgate.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                   </>

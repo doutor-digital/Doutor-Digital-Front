@@ -135,7 +135,9 @@ function detailChipsFor(kpiKey: string, l: KpiLeadItem): Array<{ key: string; la
       if (motivo) out.push({ key: "motivo", label: `Sem agendar: ${motivo}`, tone: "warn" });
       break;
     case "resgate":
-      if (tipo) out.push({ key: "tipo", label: tipo });
+      // Fonte = campo (contagem por valor): mostra o valor do campo (ex.: "Resgate 1 - 24h").
+      if (l.matched_value) out.push({ key: "etapa", label: l.matched_value });
+      else if (tipo) out.push({ key: "tipo", label: tipo });
       if (origem) out.push({ key: "origem", label: `Origem: ${origem}` });
       break;
     case "agendados":
@@ -218,15 +220,20 @@ function DrillSummary({ kpiKey, items }: { kpiKey: string; items: KpiLeadItem[] 
 
   // ── Resgate: tipo + origens ────────────────────────────────────────
   if (kpiKey === "resgate") {
+    // Quando o card foi mapeado pra "Campo (contagem por valor)", o backend devolve
+    // matched_value com o valor do campo (ex.: "Resgate 1 - 24h") — agrupa por ele e rotula
+    // "Etapa". Senão cai no lead_type (comportamento clássico por Tipo).
+    const hasMatched = items.some((l) => l.matched_value);
     const tipos = new Map<string, number>();
     const origens = new Map<string, number>();
     for (const l of items) {
-      tipos.set(l.lead_type || "resgate", (tipos.get(l.lead_type || "resgate") ?? 0) + 1);
+      const key = hasMatched ? (l.matched_value || "—") : (l.lead_type || "resgate");
+      tipos.set(key, (tipos.get(key) ?? 0) + 1);
       origens.set(originOf(l), (origens.get(originOf(l)) ?? 0) + 1);
     }
     return (
       <SummaryShell title={`${items.length} resgates`}>
-        <BreakdownRow label="Tipo" pairs={mapPairs(tipos)} />
+        <BreakdownRow label={hasMatched ? "Etapa" : "Tipo"} pairs={mapPairs(tipos)} />
         <BreakdownRow label="Origem" pairs={mapPairs(origens)} />
       </SummaryShell>
     );
