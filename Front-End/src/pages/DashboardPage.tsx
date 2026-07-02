@@ -512,6 +512,21 @@ export default function DashboardPage() {
     onError: (e) => toast.error(`Falha ao atualizar Consultas: ${(e as Error).message}`),
   });
 
+  // Card Cadastro "Atualizar": sync DEEP da Kommo. A paginação da Kommo devolve
+  // custom_fields_values=null pra boa parte dos leads, e o sync rápido não recupera —
+  // então o "Tipo de lead" (que classifica Cadastro/Resgate) fica sem ser salvo e o card
+  // subconta. O deep re-busca lead a lead os que vieram null e grava o tipo. Pode levar
+  // 1-3min; roda até o fim no back mesmo se o request expirar.
+  const cadastroSync = useMutation({
+    mutationFn: () => unitsService.syncFromKommo(unitId!, { deep: true }),
+    onSuccess: (r) => {
+      if (r.error) toast.error(`Falha ao atualizar: ${r.error}`);
+      else toast.success(`Cadastro atualizado: ${r.leadsPersisted} leads sincronizados da Kommo.`);
+      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+    },
+    onError: (e) => toast.error(`Falha ao atualizar Cadastro: ${(e as Error).message}`),
+  });
+
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
   // staleTime 15s + refetchInterval 30s: quando a SDR preenche o custom field, o
   // dashboard reflete em até 30s sem precisar clicar "Atualizar".
@@ -1548,7 +1563,25 @@ export default function DashboardPage() {
 
               {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
+                  {!isJuridico && (
+                  <button
+                    type="button"
+                    onClick={() => cadastroSync.mutate()}
+                    disabled={cadastroSync.isPending || unitId == null}
+                    title="Puxar o 'Tipo de lead' de todos os leads da Kommo (sync completo). Pode levar 1-3min."
+                    className="inline-flex items-center gap-1 rounded-full bg-violet-400/10 px-2 py-0.5 text-[10px] font-medium text-violet-300 ring-1 ring-inset ring-violet-400/20 transition hover:bg-violet-400/20 disabled:opacity-50"
+                  >
+                    {cadastroSync.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Atualizar
+                  </button>
+                  )}
+                </div>
                 {/* Número vem do MESMO objeto do breakdown (bd.cadastro.total), sem passar pelo
     kpi_override de fonte — assim o número e o "Por origem" são sempre o mesmo
     conjunto (tipo=cadastro). Jurídico mantém o funil próprio. */}
