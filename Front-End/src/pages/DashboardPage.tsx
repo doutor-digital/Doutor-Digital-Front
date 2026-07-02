@@ -1549,7 +1549,10 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", isJuridico ? funnelCadastro.total : (bd?.cadastro.total ?? 0))} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                {/* Número vem do MESMO objeto do breakdown (bd.cadastro.total), sem passar pelo
+    kpi_override de fonte — assim o número e o "Por origem" são sempre o mesmo
+    conjunto (tipo=cadastro). Jurídico mantém o funil próprio. */}
+<EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={isJuridico ? funnelCadastro.total : (bd?.cadastro.total ?? 0)} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
                 {isJuridico ? null : cadastroManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -1588,7 +1591,7 @@ export default function DashboardPage() {
               {/* Col 3 row 1: Resgate (leads do tipo=resgate — campo "Tipo" mapeado) */}
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0))} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 {isJuridico ? null : resgateManual ? (
                   <ManualBreakdownNote />
                 ) : (
