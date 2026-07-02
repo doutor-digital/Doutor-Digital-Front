@@ -518,13 +518,17 @@ export default function DashboardPage() {
   // subconta. O deep re-busca lead a lead os que vieram null e grava o tipo. Pode levar
   // 1-3min; roda até o fim no back mesmo se o request expirar.
   const cadastroSync = useMutation({
-    mutationFn: () => unitsService.syncFromKommo(unitId!, { deep: true }),
-    onSuccess: (r) => {
-      if (r.error) toast.error(`Falha ao atualizar: ${r.error}`);
-      else toast.success(`Cadastro atualizado: ${r.leadsPersisted} leads sincronizados da Kommo.`);
-      qc.invalidateQueries({ queryKey: ["dash-amo"] });
+    // background=true: o back dispara o sync deep e responde na hora (202) — sem 502 do
+    // gateway do Railway em request longo. O sync termina em 1-3min no servidor e a gente
+    // reconsulta o dashboard algumas vezes pra pegar o número novo sem o usuário recarregar.
+    mutationFn: () => unitsService.syncFromKommo(unitId!, { deep: true, background: true }),
+    onSuccess: () => {
+      toast.success("Sincronização iniciada — puxando o 'Tipo de lead' da Kommo. O número atualiza em 1-3 min.");
+      [30_000, 60_000, 120_000, 180_000].forEach((ms) =>
+        setTimeout(() => qc.invalidateQueries({ queryKey: ["dash-amo"] }), ms),
+      );
     },
-    onError: (e) => toast.error(`Falha ao atualizar Cadastro: ${(e as Error).message}`),
+    onError: (e) => toast.error(`Falha ao iniciar sincronização: ${(e as Error).message}`),
   });
 
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.

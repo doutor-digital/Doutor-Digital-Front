@@ -100,7 +100,7 @@ export const unitsService = {
    */
   async syncFromKommo(
     unitId: number | string,
-    opts: { accessToken?: string; persistToken?: boolean; maxLeads?: number; deep?: boolean } = {},
+    opts: { accessToken?: string; persistToken?: boolean; maxLeads?: number; deep?: boolean; background?: boolean } = {},
   ): Promise<{
     success: boolean;
     error?: string | null;
@@ -113,6 +113,9 @@ export const unitsService = {
     const id = toInt(unitId);
     if (!id) throw new Error("id inválido para sync");
     const fast = !opts.deep; // default = fast
+    const params: Record<string, boolean> = {};
+    if (fast) params.fast = true;
+    if (opts.background) params.background = true;
     const { data } = await api.post(
       `/units/${id}/sync-from-kommo`,
       {
@@ -121,9 +124,9 @@ export const unitsService = {
         maxLeads: opts.maxLeads,
       },
       {
-        params: fast ? { fast: true } : undefined,
-        // Sync rápido completa em <1min, modo deep pode levar até 10min.
-        timeout: opts.deep ? 600_000 : 120_000,
+        params: Object.keys(params).length ? params : undefined,
+        // Background responde na hora (202). Senão: rápido <1min, deep até 10min.
+        timeout: opts.background ? 30_000 : opts.deep ? 600_000 : 120_000,
       },
     );
     return data;
