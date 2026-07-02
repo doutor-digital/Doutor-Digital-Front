@@ -6,6 +6,8 @@ import {
   ArrowUpRight,
   Calendar,
   Check,
+  ChevronDown,
+  Copy,
   CreditCard,
   Loader2,
   Pencil,
@@ -17,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import {
   kpiConfigService,
+  type KpiLeadField,
   type KpiLeadItem,
   type KpiSourceConfig,
   type KpiSourceType,
@@ -52,6 +55,54 @@ const dateTimeBR = (iso?: string | null) => {
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
+
+async function copyText(text: string, label = "Copiado") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(label);
+  } catch {
+    toast.error("Não consegui copiar.");
+  }
+}
+
+/** Botãozinho de copiar — mostra check por 1 tick via toast (sem estado local). */
+function CopyButton({ text, title, label }: { text: string; title: string; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void copyText(text, label);
+      }}
+      title={title}
+      className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-0.5 text-[9.5px] font-medium text-slate-300 ring-1 ring-inset ring-white/[0.08] transition hover:bg-white/[0.1] hover:text-slate-100"
+    >
+      <Copy className="h-2.5 w-2.5" /> copiar
+    </button>
+  );
+}
+
+/** Seção recolhível "Campos preenchidos" — todos os custom fields não vazios do lead. */
+function FilledFields({ fields }: { fields?: KpiLeadField[] }) {
+  if (!fields || fields.length === 0) return null;
+  return (
+    <details className="group/ff mt-1">
+      <summary className="flex cursor-pointer list-none items-center gap-1 text-[10.5px] font-medium text-slate-400 transition hover:text-slate-200">
+        <ChevronDown className="h-3 w-3 transition group-open/ff:rotate-180" />
+        Campos preenchidos ({fields.length})
+      </summary>
+      <dl className="mt-1.5 grid grid-cols-[minmax(0,auto)_1fr] gap-x-3 gap-y-1 rounded-md border border-white/[0.05] bg-white/[0.015] px-2.5 py-2 text-[11px]">
+        {fields.map((f, i) => (
+          <div key={`${f.name}-${i}`} className="contents">
+            <dt className="truncate text-slate-500">{f.name}</dt>
+            <dd className="min-w-0 break-words text-slate-200">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
 
 const leadTypeLabel = (t?: string | null) => {
   if (!t) return null;
@@ -411,41 +462,49 @@ export function KpiDrillDown({
 
   const data = leads.data;
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      {/* backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
+  // Copiar TODOS os nomes da lista (uma por linha) — atalho pra gerente montar lista.
+  const allNames = (data?.items ?? []).map((l) => l.name || "(sem nome)").join("\n");
 
-      {/* painel */}
-      <aside className="relative flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[#0a0a0d] shadow-2xl">
-        <header className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
-          <div>
+  return (
+    <div className="fixed inset-0 z-50 bg-[#0a0a0d]">
+      {/* painel em tela cheia */}
+      <aside className="relative mx-auto flex h-full w-full max-w-6xl flex-col">
+        <header className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-5 py-4 sm:px-8">
+          <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
               Leads do KPI
             </p>
-            <h2 className="mt-0.5 text-lg font-semibold text-slate-50">{target!.label}</h2>
-            <p className="mt-1 flex items-center gap-1.5 text-[11.5px] text-slate-400">
-              <Users className="h-3.5 w-3.5" />
-              {leads.isLoading
-                ? "carregando…"
-                : `${formatNumber(data?.total ?? 0)} lead${(data?.total ?? 0) === 1 ? "" : "s"}`}
+            <h2 className="mt-0.5 text-xl font-semibold text-slate-50">{target!.label}</h2>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                {leads.isLoading
+                  ? "carregando…"
+                  : `${formatNumber(data?.total ?? 0)} lead${(data?.total ?? 0) === 1 ? "" : "s"}`}
+              </span>
               {data?.truncated && <span className="text-amber-300">· mostrando os primeiros 500</span>}
+              {(data?.items.length ?? 0) > 0 && (
+                <button
+                  type="button"
+                  onClick={() => void copyText(allNames, `${data!.items.length} nome(s) copiados`)}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10.5px] font-medium text-slate-300 ring-1 ring-inset ring-white/[0.08] transition hover:bg-white/[0.1] hover:text-slate-100"
+                >
+                  <Copy className="h-2.5 w-2.5" /> copiar todos os nomes
+                </button>
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-slate-100"
+            title="Fechar (ESC)"
+            className="shrink-0 rounded-full p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-slate-100"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-8">
           {leads.isLoading ? (
             <div className="grid h-40 place-items-center text-slate-500">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -461,20 +520,25 @@ export function KpiDrillDown({
           ) : (
             <>
             <DrillSummary kpiKey={target!.kpiKey} items={data!.items} />
-            <ul className="space-y-1.5">
+            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
               {data!.items.map((l) => {
                 const isEditingDate = editingHistoryId != null && l.history_id === editingHistoryId;
                 const hasHistory = l.history_id != null;
                 return (
                 <li key={l.id} className={l.excluded ? "opacity-50" : ""}>
-                  <div className="group flex flex-col gap-1 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition hover:border-white/[0.12] hover:bg-white/[0.04]">
+                  <div className="group flex h-full flex-col gap-1 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition hover:border-white/[0.12] hover:bg-white/[0.04]">
                     <div className="flex items-center justify-between gap-2">
-                      <Link
-                        to={`/leads/${l.id}`}
-                        className={`truncate text-[13px] font-medium text-slate-100 hover:text-emerald-300 ${l.excluded ? "line-through decoration-red-400/60" : ""}`}
-                      >
-                        {l.name || "(sem nome)"}
-                      </Link>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <Link
+                          to={`/leads/${l.id}`}
+                          className={`truncate text-[13px] font-medium text-slate-100 hover:text-emerald-300 ${l.excluded ? "line-through decoration-red-400/60" : ""}`}
+                        >
+                          {l.name || "(sem nome)"}
+                        </Link>
+                        {l.name && (
+                          <CopyButton text={l.name} title="Copiar o nome do lead" label="Nome copiado" />
+                        )}
+                      </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {canEditDate && hasHistory && !isEditingDate && (
                           <button
@@ -595,6 +659,8 @@ export function KpiDrillDown({
                         </span>
                       )}
                     </div>
+
+                    <FilledFields fields={l.custom_fields} />
                   </div>
                 </li>
                 );

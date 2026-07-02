@@ -111,6 +111,14 @@ export interface KpiLeadItem {
   history_id?: number | null;
   /** Data efetiva da transição (corrigida ou original) — o que o KPI usa pra contar. */
   effective_changed_at?: string | null;
+  /** Todos os campos customizados preenchidos do lead (nome + valor), pro drill mostrar
+   *  "campos preenchidos" sem abrir o lead. */
+  custom_fields?: KpiLeadField[];
+}
+
+export interface KpiLeadField {
+  name: string;
+  value: string;
 }
 
 export interface KpiLeadsResult {
