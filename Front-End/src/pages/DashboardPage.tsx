@@ -512,19 +512,6 @@ export default function DashboardPage() {
     onError: (e) => toast.error(`Falha ao atualizar Consultas: ${(e as Error).message}`),
   });
 
-  // KPI Resgate "Atualizar agora": dispara o backfill da Kommo sob demanda (sem
-  // esperar o job 24h). Invalida queries do dashboard pra ver o número novo.
-  const resgateBackfill = useMutation({
-    mutationFn: () => unitsService.runResgateBackfill(unitId!),
-    onSuccess: (r) => {
-      if (r.error) toast.error(`Falha ao atualizar: ${r.error}`);
-      else toast.success(`Resgate atualizado: +${r.inserted} novas tentativas (de ${r.scanned} eventos).`);
-      qc.invalidateQueries({ queryKey: ["dash-amo"] });
-      qc.invalidateQueries({ queryKey: ["kpi-config"] });
-    },
-    onError: (e) => toast.error(`Falha ao atualizar Resgate: ${(e as Error).message}`),
-  });
-
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
   // staleTime 15s + refetchInterval 30s: quando a SDR preenche o custom field, o
   // dashboard reflete em até 30s sem precisar clicar "Atualizar".
@@ -1562,7 +1549,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
-                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", funnelCadastro.total)} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={kpiLive("cadastro", isJuridico ? funnelCadastro.total : (bd?.cadastro.total ?? 0))} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
                 {isJuridico ? null : cadastroManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -1598,28 +1585,10 @@ export default function DashboardPage() {
                 {srcBtn("cadastro", "Cadastro")}
               </DarkCard>
 
-              {/* Col 3 row 1: Resgate */}
+              {/* Col 3 row 1: Resgate (leads do tipo=resgate — campo "Tipo" mapeado) */}
               <DarkCard accent="#fbbf24">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
-                  {!isJuridico && (
-                  <button
-                    type="button"
-                    onClick={() => resgateBackfill.mutate()}
-                    disabled={resgateBackfill.isPending || unitId == null}
-                    title="Buscar tentativas de resgate da Kommo agora (sem esperar o sync de 24h)"
-                    className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-inset ring-amber-400/20 transition hover:bg-amber-400/20 disabled:opacity-50"
-                  >
-                    {resgateBackfill.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    Atualizar
-                  </button>
-                  )}
-                </div>
-                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", funnelResgate.total)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
+                <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={kpiLive("resgate", isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0))} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 {isJuridico ? null : resgateManual ? (
                   <ManualBreakdownNote />
                 ) : (
