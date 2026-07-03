@@ -531,6 +531,22 @@ export default function DashboardPage() {
     onError: (e) => toast.error(`Falha ao iniciar sincronização: ${(e as Error).message}`),
   });
 
+  // Card Tratamentos "Atualizar": sync DEEP da Kommo. Quando a etapa "Fechou
+  // tratamento" é movida na Kommo mas o webhook não chega (ou chega sem os custom
+  // fields), o card subconta. O deep re-busca lead a lead e regrava etapa/campos,
+  // então o fechamento passa a contabilizar. Ex.: Doutor Hérnia Balsas movia a
+  // etapa e o número não subia. Idêntico ao cadastroSync (background, sem 502).
+  const tratamentosSync = useMutation({
+    mutationFn: () => unitsService.syncFromKommo(unitId!, { deep: true, background: true }),
+    onSuccess: () => {
+      toast.success("Sincronização iniciada — puxando os tratamentos fechados da Kommo. O número atualiza em 1-3 min.");
+      [30_000, 60_000, 120_000, 180_000].forEach((ms) =>
+        setTimeout(() => qc.invalidateQueries({ queryKey: ["dash-amo"] }), ms),
+      );
+    },
+    onError: (e) => toast.error(`Falha ao iniciar sincronização: ${(e as Error).message}`),
+  });
+
   // Cross-analysis dos custom fields — usado pra pizza de Qualificação dos leads.
   // staleTime 15s + refetchInterval 30s: quando a SDR preenche o custom field, o
   // dashboard reflete em até 30s sem precisar clicar "Atualizar".
@@ -1761,7 +1777,25 @@ export default function DashboardPage() {
             {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.tratamentos}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.tratamentos}</p>
+                  {!isJuridico && (
+                  <button
+                    type="button"
+                    onClick={() => tratamentosSync.mutate()}
+                    disabled={tratamentosSync.isPending || unitId == null}
+                    title="Puxa os tratamentos fechados da Kommo (sync completo). Use quando a etapa 'Fechou tratamento' foi movida mas o card não contabilizou. Pode levar 1-3min."
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-inset ring-emerald-400/20 transition hover:bg-emerald-400/20 disabled:opacity-50"
+                  >
+                    {tratamentosSync.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Atualizar
+                  </button>
+                  )}
+                </div>
                 <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
                 {isJuridico ? null : tratamentosManual ? (
                   <ManualBreakdownNote />
