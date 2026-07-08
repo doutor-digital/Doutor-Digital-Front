@@ -1071,6 +1071,53 @@ export default function DashboardPage() {
           {agencyName}
         </h1>
 
+        {/* ─── Atalhos de horário — evita ter que abrir o "customizado" ── */}
+        {(() => {
+          const isDiaInteiro = customFromTime === "00:00" && customToTime === "23:59";
+          const isComercial = customFromTime === "07:00" && customToTime === "19:00";
+          const isCustomTime = hasCustomTime && !isDiaInteiro && !isComercial;
+          const pill = (active: boolean) =>
+            `rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+              active
+                ? "border-white/30 bg-white text-slate-900"
+                : "border-white/15 bg-white/5 text-white/70 hover:border-white/25 hover:text-white"
+            }`;
+          return (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setCustomFromTime("00:00"); setCustomToTime("23:59"); }}
+                className={pill(isDiaInteiro)}
+              >
+                Dia inteiro · 00:00–23:59
+              </button>
+              <button
+                type="button"
+                onClick={() => { setCustomFromTime("07:00"); setCustomToTime("19:00"); }}
+                className={pill(isComercial)}
+              >
+                Comercial · 07:00–19:00
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(true)}
+                className={pill(isCustomTime)}
+              >
+                Customizado
+              </button>
+              {hasCustomTime && (
+                <button
+                  type="button"
+                  onClick={() => { setCustomFromTime(""); setCustomToTime(""); }}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium text-white/50 hover:text-white/80"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
         {!isJuridico && (
           <div className="mt-6">
