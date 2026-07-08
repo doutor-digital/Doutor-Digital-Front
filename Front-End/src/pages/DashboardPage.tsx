@@ -25,6 +25,7 @@ import { isAdminLevel } from "@/lib/roles";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
+import { savedFiltersService, type SavedFilterPayload } from "@/services/savedFilters";
 import { juridicoService } from "@/services/juridico";
 import { assignmentsService } from "@/services/assignments";
 import { stageLabel as fallbackStageLabel } from "@/lib/stageLabels";
@@ -356,6 +357,8 @@ export default function DashboardPage() {
   const [kpiModal, setKpiModal] = useState<{ existing: KpiConfigItem | null } | null>(null);
   const { user } = useAuth();
   const canEditKpis = isAdminLevel(user?.role) && unitId != null;
+  // Filtros dinâmicos globais (topo): só analista cria/edita/remove; todos aplicam.
+  const canManageFilters = isAdminLevel(user?.role);
   const [rangeKey, setRangeKey] = useState<RangeKey>("mes");
 
   // ─── Filtros avançados ─────────────────────────────────────────────
@@ -375,6 +378,11 @@ export default function DashboardPage() {
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const isCustom = customFrom !== "" && customTo !== "";
   const hasCustomTime = customFromTime !== "" && customToTime !== "";
+
+  // Editor de filtro salvo (modal). null = fechado. filter = payload que será salvo.
+  const [filterEditor, setFilterEditor] = useState<
+    { id: number | null; name: string; filter: SavedFilterPayload } | null
+  >(null);
 
   const range = useMemo<ComputedRange>(() => {
     if (isCustom) {
@@ -411,6 +419,64 @@ export default function DashboardPage() {
   const rangeLabel = hasCustomTime
     ? `${fmtDateLocalBr(range.fromDate)} ${customFromTime} – ${fmtDateLocalBr(range.toDate)} ${customToTime}`
     : `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
+
+  // ─── Filtros dinâmicos salvos (globais) ──────────────────────────────
+  // Captura o estado atual de todos os filtros da tela num payload serializável.
+  const buildCurrentFilterPayload = (): SavedFilterPayload => ({
+    rangeKey: (rangeKey === "custom" ? "mes" : rangeKey) as SavedFilterPayload["rangeKey"],
+    customFrom,
+    customTo,
+    customFromTime,
+    customToTime,
+    sourceFilter,
+    attendantFilter,
+    responsibleFilter,
+    stageFilter: Array.from(stageFilter),
+  });
+
+  // Restaura todos os filtros a partir de um payload salvo (1 clique na pílula).
+  const applyFilter = (f: SavedFilterPayload) => {
+    setRangeKey((f.rangeKey ?? "mes") as RangeKey);
+    setCustomFrom(f.customFrom ?? "");
+    setCustomTo(f.customTo ?? "");
+    setCustomFromTime(f.customFromTime ?? "");
+    setCustomToTime(f.customToTime ?? "");
+    setSourceFilter(f.sourceFilter ?? "");
+    setAttendantFilter(f.attendantFilter ?? "");
+    setResponsibleFilter(f.responsibleFilter ?? "");
+    setStageFilter(new Set(f.stageFilter ?? []));
+  };
+
+  // A pílula fica destacada quando o estado atual bate exatamente com o filtro salvo.
+  const isFilterActive = (f: SavedFilterPayload) => {
+    const stages = f.stageFilter ?? [];
+    return (
+      rangeKey === (f.rangeKey ?? "mes") &&
+      customFrom === (f.customFrom ?? "") &&
+      customTo === (f.customTo ?? "") &&
+      customFromTime === (f.customFromTime ?? "") &&
+      customToTime === (f.customToTime ?? "") &&
+      sourceFilter === (f.sourceFilter ?? "") &&
+      attendantFilter === (f.attendantFilter ?? "") &&
+      responsibleFilter === (f.responsibleFilter ?? "") &&
+      stageFilter.size === stages.length &&
+      stages.every((s) => stageFilter.has(s))
+    );
+  };
+
+  // Resumo curto do que o filtro captura (mostrado no tooltip e no editor).
+  const describeFilter = (f: SavedFilterPayload): string => {
+    const periodLbl: Record<string, string> = { ano: "Ano", mes: "Mês", semana: "Semana", dia: "Dia" };
+    const parts: string[] = [];
+    if (f.customFrom && f.customTo) parts.push(`${f.customFrom} – ${f.customTo}`);
+    else parts.push(periodLbl[f.rangeKey] ?? f.rangeKey);
+    if (f.customFromTime && f.customToTime) parts.push(`${f.customFromTime}–${f.customToTime}`);
+    if (f.sourceFilter) parts.push(`origem: ${f.sourceFilter}`);
+    if (f.attendantFilter) parts.push("atendente");
+    if (f.responsibleFilter) parts.push("responsável");
+    if (f.stageFilter?.length) parts.push(`${f.stageFilter.length} etapa(s)`);
+    return parts.join(" · ") || "Sem filtros";
+  };
 
   // Atalhos de data prontos para a análise com I.A. (mesma janela comercial dos cards).
   const analysisPresets = useMemo<AnalysisPreset[]>(
@@ -480,6 +546,36 @@ export default function DashboardPage() {
     queryFn: () => kpiConfigService.list(unitId!),
     enabled: unitId != null,
     retry: false,
+  });
+
+  // Filtros dinâmicos salvos — globais (mesmo conjunto em todas as unidades).
+  const savedFilters = useQuery({
+    queryKey: ["saved-filters"],
+    queryFn: () => savedFiltersService.list(),
+    staleTime: 60_000,
+  });
+
+  const saveFilterMut = useMutation({
+    mutationFn: (v: { id: number | null; name: string; filter: SavedFilterPayload }) => {
+      const body = { name: v.name, filter: v.filter, sort_order: savedFilters.data?.length ?? 0 };
+      return v.id == null ? savedFiltersService.create(body) : savedFiltersService.update(v.id, body);
+    },
+    onSuccess: () => {
+      toast.success("Filtro salvo.");
+      setFilterEditor(null);
+      qc.invalidateQueries({ queryKey: ["saved-filters"] });
+    },
+    onError: (e) => toast.error(`Falha ao salvar filtro: ${(e as Error).message}`),
+  });
+
+  const deleteFilterMut = useMutation({
+    mutationFn: (id: number) => savedFiltersService.remove(id),
+    onSuccess: () => {
+      toast.success("Filtro removido.");
+      setFilterEditor(null);
+      qc.invalidateQueries({ queryKey: ["saved-filters"] });
+    },
+    onError: (e) => toast.error(`Falha ao remover filtro: ${(e as Error).message}`),
   });
 
   // Card Agendados "Atualizar": dispara o backfill dos eventos de mudança de etapa
@@ -1117,6 +1213,144 @@ export default function DashboardPage() {
             </div>
           );
         })()}
+
+        {/* ─── Filtros dinâmicos salvos (globais) — analista cria, clínicas clicam ── */}
+        {((savedFilters.data?.length ?? 0) > 0 || canManageFilters) && (
+          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
+            {(savedFilters.data ?? []).map((f) => {
+              const active = isFilterActive(f.filter);
+              return (
+                <span key={f.id} className="inline-flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => applyFilter(f.filter)}
+                    title={describeFilter(f.filter)}
+                    className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? "border-violet-400/50 bg-violet-500/25 text-white"
+                        : "border-white/15 bg-white/5 text-white/70 hover:border-white/25 hover:text-white"
+                    } ${canManageFilters ? "rounded-r-none border-r-0" : ""}`}
+                  >
+                    {f.name}
+                  </button>
+                  {canManageFilters && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterEditor({ id: f.id, name: f.name, filter: f.filter })}
+                      title="Editar filtro"
+                      className={`rounded-full rounded-l-none border py-1.5 pl-1.5 pr-2.5 transition ${
+                        active
+                          ? "border-violet-400/50 bg-violet-500/25 text-white/80 hover:text-white"
+                          : "border-white/15 bg-white/5 text-white/50 hover:text-white"
+                      }`}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+            {canManageFilters && (
+              <button
+                type="button"
+                onClick={() => setFilterEditor({ id: null, name: "", filter: buildCurrentFilterPayload() })}
+                title="Cria um filtro com os filtros ativos agora na tela"
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-white/25 px-4 py-1.5 text-xs font-medium text-white/60 transition hover:border-violet-400/50 hover:text-white"
+              >
+                <Plus className="h-3.5 w-3.5" /> Novo filtro
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ─── Editor de filtro salvo (só analista) ────────────────────── */}
+        {filterEditor && canManageFilters && createPortal(
+          <div
+            className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-24"
+            onClick={() => setFilterEditor(null)}
+          >
+            <div
+              className="w-full max-w-[440px] rounded-2xl bg-white p-5 text-slate-900 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[15px] font-semibold">
+                  {filterEditor.id == null ? "Novo filtro" : "Editar filtro"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFilterEditor(null)}
+                  className="rounded-md px-1.5 text-[18px] leading-none text-slate-400 hover:text-slate-700"
+                  aria-label="Fechar"
+                >
+                  ×
+                </button>
+              </div>
+
+              <label className="text-[12px] font-medium text-slate-600">Nome do filtro</label>
+              <input
+                type="text"
+                autoFocus
+                value={filterEditor.name}
+                onChange={(e) => setFilterEditor({ ...filterEditor, name: e.target.value })}
+                placeholder="Ex.: Comercial hoje"
+                maxLength={120}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-violet-400"
+              />
+
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Filtros deste botão</p>
+                <p className="mt-1 text-[13px] text-slate-700">{describeFilter(filterEditor.filter)}</p>
+                <button
+                  type="button"
+                  onClick={() => setFilterEditor({ ...filterEditor, filter: buildCurrentFilterPayload() })}
+                  className="mt-2 text-[12px] font-medium text-violet-600 hover:text-violet-500"
+                >
+                  Usar os filtros ativos agora na tela
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                {filterEditor.id != null ? (
+                  <button
+                    type="button"
+                    onClick={() => deleteFilterMut.mutate(filterEditor.id!)}
+                    disabled={deleteFilterMut.isPending}
+                    className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    Excluir
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterEditor(null)}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      saveFilterMut.mutate({
+                        id: filterEditor.id,
+                        name: filterEditor.name.trim(),
+                        filter: filterEditor.filter,
+                      })
+                    }
+                    disabled={saveFilterMut.isPending || !filterEditor.name.trim()}
+                    className="rounded-lg bg-violet-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+                  >
+                    {saveFilterMut.isPending ? "Salvando…" : "Salvar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
         {!isJuridico && (
