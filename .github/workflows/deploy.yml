@@ -4,11 +4,11 @@ name: deploy-web
 on:
   push:
     branches: [main]
+    # GitHub não aceita paths + paths-ignore no mesmo evento; negação com "!".
     paths:
       - "Front-End/**"
+      - "!Front-End/**/*.md"
       - ".github/workflows/deploy.yml"
-    paths-ignore:
-      - "Front-End/**/*.md"
   workflow_dispatch:
 
 concurrency:
