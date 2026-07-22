@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "logs.doutordigitalconsultoria.com"
+        }
+      ],
+      "destination": "/logs",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!assets/|legal/|sw\\.js|workbox-|registerSW\\.js|manifest\\.webmanifest|favicon|icon-|apple-touch-icon).*)",
