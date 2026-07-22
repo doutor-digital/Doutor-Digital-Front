@@ -28,7 +28,6 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
   logsService,
@@ -112,8 +111,8 @@ function LogsLoginGate({ onAuthed }: { onAuthed: () => void }) {
       >
         <div className="px-6 pt-7 pb-5 border-b border-white/[0.05]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center shadow-lg">
-              <Terminal className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 rounded-lg border border-white/[0.09] bg-white/[0.04] grid place-items-center">
+              <Terminal className="h-5 w-5 text-slate-300" />
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
@@ -319,8 +318,8 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
       <header className="sticky top-0 z-20 border-b border-white/[0.05] bg-[#0a0a0d]/95 backdrop-blur">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center shadow-lg">
-              <Terminal className="h-4.5 w-4.5 text-white" />
+            <div className="h-9 w-9 rounded-lg border border-white/[0.09] bg-white/[0.04] grid place-items-center">
+              <Terminal className="h-4 w-4 text-slate-300" />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
@@ -516,16 +515,28 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
               />
             </div>
           ) : (
-            <div className="space-y-1.5 font-mono text-[12.5px]">
-              {items.map((e) => (
-                <LogRow
-                  key={e.id}
-                  entry={e}
-                  expanded={expanded.has(e.id)}
-                  onToggle={() => toggle(e.id)}
-                  onCopy={() => copyEntry(e)}
-                />
-              ))}
+            /* Painel único com linhas contínuas — um console de verdade lê
+               melhor do que dezenas de cards coloridos soltos. */
+            <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0a0d]">
+              <div className="hidden md:flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.015] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                <span className="w-5" />
+                <span className="w-[68px]">Hora</span>
+                <span className="w-[52px]">Nível</span>
+                <span className="w-[150px]">Origem</span>
+                <span className="flex-1">Mensagem</span>
+                <span className="w-6" />
+              </div>
+              <div className="divide-y divide-white/[0.045]">
+                {items.map((e) => (
+                  <LogRow
+                    key={e.id}
+                    entry={e}
+                    expanded={expanded.has(e.id)}
+                    onToggle={() => toggle(e.id)}
+                    onCopy={() => copyEntry(e)}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -549,64 +560,79 @@ function LogRow({
 }) {
   const meta = LEVEL_META[entry.level] ?? LEVEL_META.Information;
   const hasException = !!entry.exception;
-  const canExpand = hasException || entry.message.length > 200;
+  const canExpand = hasException || entry.message.length > 160;
+  const severe = entry.level === "Error" || entry.level === "Critical";
 
   return (
     <div
       className={cn(
-        "rounded-lg border bg-[#0a0a0d] transition",
-        meta.bg,
-        "hover:bg-white/[0.03]"
+        "group relative transition-colors",
+        // Barra de nível na lateral em vez de pintar a linha inteira: dá pra
+        // varrer a coluna e achar os erros sem o ruído de dezenas de caixas.
+        "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']",
+        meta.dot.replace("bg-", "before:bg-"),
+        severe ? "bg-rose-500/[0.045]" : "bg-transparent",
+        "hover:bg-white/[0.035]",
+        expanded && "bg-white/[0.03]",
       )}
     >
-      <div className="flex items-start gap-2 px-3 py-2">
+      <div className="flex items-start gap-3 py-2 pl-3 pr-2">
         <button
           type="button"
           onClick={onToggle}
           disabled={!canExpand}
+          aria-label={canExpand ? (expanded ? "Recolher" : "Expandir") : undefined}
           className={cn(
-            "h-5 w-5 shrink-0 grid place-items-center rounded text-slate-500 hover:text-slate-200 transition",
-            !canExpand && "opacity-30 cursor-default"
+            "mt-[3px] h-5 w-5 shrink-0 grid place-items-center rounded text-slate-500 transition",
+            canExpand ? "hover:bg-white/[0.06] hover:text-slate-200" : "cursor-default opacity-0",
           )}
         >
-          {canExpand ? (
-            expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />
-          ) : (
-            <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
-          )}
+          {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </button>
 
-        <span className="text-[10.5px] tabular-nums text-slate-500 shrink-0 pt-[1px]">
+        <span className="w-[68px] shrink-0 pt-[3px] text-[11.5px] tabular-nums text-slate-500">
           {formatTime(entry.timestamp)}
         </span>
 
         <span
           className={cn(
-            "shrink-0 rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-widest",
-            meta.text, meta.bg
+            "mt-[2px] w-[52px] shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em]",
+            meta.text,
           )}
         >
           {meta.label}
         </span>
 
-        <span className="truncate text-[11px] text-slate-500 shrink-0 max-w-[200px]">
+        <span
+          className="hidden md:block w-[150px] shrink-0 truncate pt-[3px] text-[11.5px] text-slate-500"
+          title={entry.category}
+        >
           {shortenCategory(entry.category)}
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className={cn("text-slate-200 break-words", !expanded && "line-clamp-2")}>
+          {/* A mensagem é o conteúdo — ganha o maior tamanho da linha. */}
+          <p
+            className={cn(
+              "text-[13px] leading-relaxed break-words",
+              severe ? "text-rose-100" : "text-slate-200",
+              !expanded && "line-clamp-2",
+            )}
+          >
             {entry.message}
           </p>
+
           {(entry.path || entry.traceId) && (
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10.5px] text-slate-500">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
               {entry.method && entry.path && (
-                <Badge tone="slate" className="text-[9.5px]">
-                  {entry.method} {entry.path}
-                </Badge>
+                <span className="rounded border border-white/[0.08] px-1.5 py-[1px] text-[10.5px] text-slate-400">
+                  <span className="font-semibold text-slate-300">{entry.method}</span> {entry.path}
+                </span>
               )}
               {entry.traceId && (
-                <span className="tabular-nums">trace: {entry.traceId.slice(0, 16)}</span>
+                <span className="tabular-nums">trace {entry.traceId.slice(0, 12)}</span>
               )}
+              <span className="md:hidden">{shortenCategory(entry.category)}</span>
             </div>
           )}
         </div>
@@ -615,18 +641,18 @@ function LogRow({
           type="button"
           onClick={onCopy}
           title="Copiar entrada"
-          className="h-6 w-6 shrink-0 grid place-items-center rounded text-slate-500 hover:text-slate-200 hover:bg-white/5 transition"
+          className="mt-[2px] h-6 w-6 shrink-0 grid place-items-center rounded text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-white/[0.06] hover:text-slate-200 focus:opacity-100"
         >
           <Copy className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {expanded && hasException && (
-        <div className="border-t border-white/[0.05] px-3 py-2">
-          <p className="mb-1 text-[9.5px] font-bold uppercase tracking-widest text-rose-300">
+        <div className="border-t border-white/[0.06] bg-black/30 px-3 py-3 pl-11">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-300/80">
             Stack trace
           </p>
-          <pre className="overflow-auto max-h-80 whitespace-pre-wrap text-[11px] leading-relaxed text-rose-200/90">
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-white/[0.05] bg-black/40 p-3 text-[11.5px] leading-[1.65] text-rose-200/80">
             {entry.exception}
           </pre>
         </div>
