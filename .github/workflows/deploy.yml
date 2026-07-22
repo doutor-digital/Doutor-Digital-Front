@@ -1,14 +1,12 @@
-name: deploy-web
+name: deploy-web (self-host — desativado)
 
-# O projeto vive em Front-End/, mas o Actions só lê workflows da raiz do repo.
+# O dashboard roda na VERCEL (dashboard.doutordigitalconsultoria.com), que é melhor
+# para uma SPA estática: CDN global, rollback instantâneo e preview por PR.
+#
+# A stack `ddweb` na VPS foi REMOVIDA — este workflow fica só como plano B e roda
+# apenas sob demanda (Actions → Run workflow). Antes de reativar, recrie a stack
+# (o compose continua em Front-End/docker-compose.yml).
 on:
-  push:
-    branches: [main]
-    # GitHub não aceita paths + paths-ignore no mesmo evento; negação com "!".
-    paths:
-      - "Front-End/**"
-      - "!Front-End/**/*.md"
-      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 concurrency:
