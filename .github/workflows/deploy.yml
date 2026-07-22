@@ -1,10 +1,14 @@
 name: deploy-web
 
+# O projeto vive em Front-End/, mas o Actions só lê workflows da raiz do repo.
 on:
   push:
     branches: [main]
+    paths:
+      - "Front-End/**"
+      - ".github/workflows/deploy.yml"
     paths-ignore:
-      - "**/*.md"
+      - "Front-End/**/*.md"
   workflow_dispatch:
 
 concurrency:
@@ -41,7 +45,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./Front-End
           push: true
           # Vite "assa" a URL da API em build-time → vem de uma Variable do repo.
           build-args: |
@@ -64,8 +68,9 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: docker-compose.yml
+          source: Front-End/docker-compose.yml
           target: ${{ env.REMOTE_DIR }}
+          strip_components: 1
 
       - name: Rolling update sem downtime
         uses: appleboy/ssh-action@v1.2.0
@@ -102,8 +107,7 @@ jobs:
                 --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}')
               case "$STATE" in
                 completed)
-                  echo "✓ rollout concluído"
-                  exit 0 ;;
+                  echo "✓ rollout concluído"; exit 0 ;;
                 rollback_started|rollback_completed|paused|rollback_paused)
                   echo "✗ rollout falhou (estado: $STATE) — Swarm reverteu"
                   docker service ps "$SVC" --no-trunc | head -20
@@ -111,7 +115,6 @@ jobs:
               esac
               sleep 5
             done
-
             echo "✗ timeout esperando a convergência"
             docker service ps "$SVC" --no-trunc | head -20
             exit 1
@@ -122,8 +125,6 @@ jobs:
             CODE=$(curl -s -o /dev/null -w "%{http_code}" \
               "https://${{ vars.WEB_DOMAIN }}/healthz" --max-time 10 || echo 000)
             [ "$CODE" = "200" ] && { echo "✓ /healthz respondeu 200"; exit 0; }
-            echo "tentativa $i: HTTP $CODE"
-            sleep 6
+            echo "tentativa $i: HTTP $CODE"; sleep 6
           done
-          echo "✗ /healthz não respondeu 200"
-          exit 1
+          echo "✗ /healthz não respondeu 200"; exit 1
