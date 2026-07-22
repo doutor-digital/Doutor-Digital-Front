@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useClinic } from "@/hooks/useClinic";
 import {
   Calendar,
   DollarSign,
@@ -141,9 +142,11 @@ export default function DesempenhoPage() {
     return periodoFromKey(periodKey);
   }, [periodKey, custom.inicio, custom.fim]);
 
+  const { tenantId } = useClinic();
+
   const { data, isLoading } = useQuery({
-    queryKey: ["desempenho", periodo.key, periodo.inicio, periodo.fim],
-    queryFn: () => carregarDados(periodo),
+    queryKey: ["desempenho", periodo.key, periodo.inicio, periodo.fim, tenantId],
+    queryFn: () => carregarDados(periodo, tenantId),
   });
 
   const totais = useMemo(() => (data ? agregar(data.origens) : null), [data]);

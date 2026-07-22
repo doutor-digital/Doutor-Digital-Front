@@ -256,7 +256,10 @@ const escalarMotivos = (m: MotivoPerda[], f: number): MotivoPerda[] =>
  *  - casar cada campanha com a `origem` da Kommo pelo nome/UTM.
  * O contrato de retorno (`DadosDashboard`) permanece igual — só troque o corpo abaixo.
  */
-export async function carregarDados(periodo: Periodo): Promise<DadosDashboard> {
+export async function carregarDados(
+  periodo: Periodo,
+  clinicId?: number | null,
+): Promise<DadosDashboard> {
   // Simula latência de rede pra exercitar o estado de carregamento.
   await new Promise((r) => setTimeout(r, 350));
 
@@ -266,7 +269,13 @@ export async function carregarDados(periodo: Periodo): Promise<DadosDashboard> {
   // Investimento REAL: vem da Central de Integrações (Meta/Google Ads → nosso banco).
   // Casa cada campanha com a origem por nome; se não houver gasto/permissão, mantém o mock.
   try {
-    const { items } = await integrationsService.spend({ from: periodo.inicio, to: periodo.fim });
+    // clinicId é obrigatório pra super_admin (TenantId nulo no token) — sem ele
+    // o endpoint devolve 400 e o investimento cai silenciosamente no mock.
+    const { items } = await integrationsService.spend({
+      clinicId,
+      from: periodo.inicio,
+      to: periodo.fim,
+    });
     if (items.length) origens = aplicarInvestimentoReal(origens, items);
   } catch {
     /* sem integração/sem permissão — segue com o investimento mock */
