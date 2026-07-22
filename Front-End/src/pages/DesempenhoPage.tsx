@@ -22,16 +22,19 @@ import { TabelaOrigens } from "@/components/desempenho/TabelaOrigens";
 import { MotivosPerda } from "@/components/desempenho/MotivosPerda";
 import {
   agregar,
-  cac,
   carregarDados,
+  cpc,
   cpl,
+  cpm,
+  ctr,
+  custoPorConversa,
   fmtBRL,
   fmtInt,
+  fmtPct,
   fmtRoas,
   PERIODO_PRESETS,
   periodoFromKey,
   roas,
-  ticketMedio,
   type Periodo,
   type PeriodoKey,
 } from "@/services/desempenho";
@@ -182,21 +185,36 @@ export default function DesempenhoPage() {
       ) : (
         <>
           {/* ─── Linha de KPIs (agregação de todas as origens) ─── */}
+          {/* Entrega — 100% real, vem do Meta junto com o gasto. */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <KpiDesempenhoCard label="Investimento" value={fmtBRL(totais.investimento)} icon={DollarSign} hint="Total em mídia paga" />
-            <KpiDesempenhoCard label="Receita" value={fmtBRL(totais.receita)} icon={TrendingUp} hint="Tratamentos fechados" />
+            <KpiDesempenhoCard label="Investimento" value={fmtBRL(totais.investimento)} icon={DollarSign} hint="Gasto real no período" />
+            <KpiDesempenhoCard label="Impressões" value={fmtInt(totais.impressoes)} icon={TrendingUp} hint="Vezes que o anúncio apareceu" />
+            <KpiDesempenhoCard label="Cliques" value={fmtInt(totais.cliques)} icon={Users} hint="Cliques no anúncio" />
+            <KpiDesempenhoCard label="CTR" value={fmtPct(ctr(totais.cliques, totais.impressoes))} icon={Filter} hint="Cliques ÷ impressões" />
+            <KpiDesempenhoCard label="CPC" value={fmtBRL(cpc(totais.investimento, totais.cliques))} icon={Wallet} hint="Custo por clique" />
+            <KpiDesempenhoCard label="CPM" value={fmtBRL(cpm(totais.investimento, totais.impressoes))} icon={DollarSign} hint="Custo por mil impressões" />
+            <KpiDesempenhoCard label="Conversas" value={fmtInt(totais.conversas)} icon={UserCheck} hint="WhatsApp iniciados (Meta)" />
+            <KpiDesempenhoCard
+              label="Custo/conversa"
+              value={fmtBRL(custoPorConversa(totais.investimento, totais.conversas))}
+              icon={Target}
+              destaque
+              hint="Investimento ÷ conversas"
+            />
+          </div>
+
+          {/* Negócio — depende de atribuir lead→campanha (CTWA). Ainda não ligado:
+              mostramos "—" em vez de número inventado. */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <KpiDesempenhoCard label="Leads (CRM)" value={fmtInt(totais.leads || null)} icon={Users} hint="Requer atribuição CTWA" />
+            <KpiDesempenhoCard label="CPL real" value={fmtBRL(cpl(totais.investimento, totais.leads))} icon={Filter} hint="Requer atribuição CTWA" />
+            <KpiDesempenhoCard label="Receita" value={fmtBRL(totais.receita || null)} icon={TrendingUp} hint="Requer atribuição CTWA" />
             <KpiDesempenhoCard
               label="ROAS"
               value={fmtRoas(roas(totais.receita, totais.investimento))}
               icon={Target}
-              destaque
-              hint="Receita ÷ investimento"
+              hint="Requer atribuição CTWA"
             />
-            <KpiDesempenhoCard label="Leads" value={fmtInt(totais.leads)} icon={Users} hint="Total no período" />
-            <KpiDesempenhoCard label="CPL" value={fmtBRL(cpl(totais.investimento, totais.leads))} icon={Filter} hint="Custo por lead" />
-            <KpiDesempenhoCard label="Vendas" value={fmtInt(totais.fechados)} icon={UserCheck} hint="Tratamentos fechados" />
-            <KpiDesempenhoCard label="CAC" value={fmtBRL(cac(totais.investimento, totais.fechados))} icon={Wallet} hint="Custo por cliente" />
-            <KpiDesempenhoCard label="Ticket médio" value={fmtBRL(ticketMedio(totais.receita, totais.fechados))} icon={DollarSign} hint="Receita ÷ vendas" />
           </div>
 
           {/* ─── Funil horizontal ─── */}

@@ -26,6 +26,12 @@ export interface OrigemDesempenho {
   indicados: number;
   fechados: number;
   receita: number;
+
+  // ── Entrega (vem do Meta junto com o gasto) ──────────────────────────────
+  impressoes: number;
+  cliques: number;
+  /** Conversas de WhatsApp iniciadas — o "lead" na visão do Meta. */
+  conversas: number;
 }
 
 export interface MotivoPerda {
@@ -100,6 +106,18 @@ export const taxaQualificacao = (qualificados: number, leads: number) => div(qua
 export const taxaNoShow = (agendados: number, compareceram: number) =>
   div(agendados - compareceram, agendados);
 
+// ── Entrega. Sempre razão de somas (somar CTR de vários dias daria média errada).
+/** Taxa de cliques (0–1). */
+export const ctr = (cliques: number, impressoes: number) => div(cliques, impressoes);
+/** Custo por clique. */
+export const cpc = (investimento: number, cliques: number) => div(investimento, cliques);
+/** Custo por mil impressões. */
+export const cpm = (investimento: number, impressoes: number) =>
+  impressoes > 0 ? (investimento / impressoes) * 1000 : null;
+/** Custo por conversa iniciada — o "CPL" na visão do Meta. */
+export const custoPorConversa = (investimento: number, conversas: number) =>
+  div(investimento, conversas);
+
 /** Soma campo a campo todas as origens → totais do topo do dashboard. */
 export function agregar(origens: OrigemDesempenho[]): Omit<OrigemDesempenho, "nome" | "canal"> {
   return origens.reduce(
@@ -112,6 +130,9 @@ export function agregar(origens: OrigemDesempenho[]): Omit<OrigemDesempenho, "no
       indicados: acc.indicados + o.indicados,
       fechados: acc.fechados + o.fechados,
       receita: acc.receita + o.receita,
+      impressoes: acc.impressoes + o.impressoes,
+      cliques: acc.cliques + o.cliques,
+      conversas: acc.conversas + o.conversas,
     }),
     {
       investimento: 0,
@@ -122,6 +143,9 @@ export function agregar(origens: OrigemDesempenho[]): Omit<OrigemDesempenho, "no
       indicados: 0,
       fechados: 0,
       receita: 0,
+      impressoes: 0,
+      cliques: 0,
+      conversas: 0,
     },
   );
 }
@@ -227,6 +251,9 @@ export async function carregarDados(
       indicados: 0,
       fechados: 0,
       receita: 0,
+      impressoes: s.impressions ?? 0,
+      cliques: s.clicks ?? 0,
+      conversas: s.conversations ?? 0,
     }));
   } catch {
     // Sem integração conectada / sem permissão: tabela vazia (nunca dado falso).

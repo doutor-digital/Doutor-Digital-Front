@@ -26,6 +26,11 @@ export interface AdsSpendItem {
   campaign_name?: string | null;
   spend: number;
   currency: string;
+  /** Contadores somados no período (CTR/CPC/CPM são derivados a partir deles). */
+  impressions?: number;
+  clicks?: number;
+  /** Conversas de WhatsApp iniciadas — o "lead" na visão do Meta. */
+  conversations?: number;
 }
 
 /** Estado das credenciais de um provedor (NUNCA traz o segredo em texto). */
