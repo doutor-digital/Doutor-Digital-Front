@@ -333,6 +333,28 @@ function withTechnicalSettings(groups: NavGroup[]): NavGroup[] {
   });
 }
 
+/**
+ * Painel de Parceiros — visão cruzada de TODAS as unidades. O endpoint é restrito a
+ * nível admin, então o item só entra no menu para super_admin / analista_ti.
+ */
+function withPartnersPanel(groups: NavGroup[]): NavGroup[] {
+  return groups.map((g) => ({
+    ...g,
+    items: g.items.map((entry) =>
+      isNestedEntry(entry) && entry.label === "Unidades"
+        ? {
+            ...entry,
+            basePaths: [...entry.basePaths, "/parceiros"],
+            children: [
+              ...entry.children,
+              { to: "/parceiros", label: "Painel de Parceiros", icon: Network },
+            ],
+          }
+        : entry,
+    ),
+  }));
+}
+
 function pathMatches(pathname: string, base: string): boolean {
   if (base === "/") return pathname === "/";
   return pathname === base || pathname.startsWith(`${base}/`);
@@ -514,7 +536,11 @@ export function Sidebar() {
     }
     // super_admin / analista_ti: tudo + Configurações Técnicas + Logs avançados + Chef.
     if (isAdminLevel(role)) {
-      return [...withTechnicalSettings(navGroups), advancedLogsGroup, chefGroup];
+      return [
+        ...withPartnersPanel(withTechnicalSettings(navGroups)),
+        advancedLogsGroup,
+        chefGroup,
+      ];
     }
     return navGroups;
   }, [user?.role]);

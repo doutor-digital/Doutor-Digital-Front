@@ -29,6 +29,7 @@ const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
+const ParceirosPage    = lazy(() => import("@/pages/ParceirosPage"));
 const UnitCreatePage   = lazy(() => import("@/pages/UnitCreatePage"));
 const WebhookMonitorPage = lazy(() => import("@/pages/WebhookMonitorPage"));
 const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
@@ -206,6 +207,7 @@ export default function App() {
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/attendants"        element={<AttendantsPage />}   />
           <Route path="/units"             element={<UnitsPage />}        />
+          <Route path="/parceiros"         element={<ParceirosPage />}    />
           <Route path="/units/new"         element={<UnitCreatePage />}   />
           <Route path="/webhooks-monitor"  element={<WebhookMonitorPage />} />
           <Route path="/reports"           element={<ReportsPage />}      />
