@@ -12,6 +12,7 @@ import {
   Info,
   KeyRound,
   Loader2,
+  Lock,
   LogOut,
   Pause,
   Play,
@@ -123,10 +124,10 @@ function LogsLoginGate({ onAuthed }: { onAuthed: () => void }) {
               </h1>
             </div>
           </div>
-          <p className="mt-4 text-[12.5px] text-slate-400 leading-relaxed">
-            Esta área é isolada do app principal. Informe o usuário e a senha de
-            administrador configurados no backend (seção <code className="text-slate-300">LogsAuth</code> do
-            <code className="ml-1 text-slate-300">appsettings.json</code>).
+          <p className="mt-4 text-[12.5px] leading-relaxed text-slate-400">
+            Console de erros e eventos da API, isolado do dashboard — quem entra
+            aqui não acessa os dados das unidades. Use as credenciais de
+            administrador do backend.
           </p>
         </div>
 
@@ -194,21 +195,16 @@ function LogsLoginGate({ onAuthed }: { onAuthed: () => void }) {
           </Button>
         </form>
 
-        <div className="px-6 pb-6 text-[10.5px] text-slate-500 leading-relaxed border-t border-white/[0.05] pt-4">
-          <p>
-            <strong className="text-slate-400">Como definir a senha:</strong> edite
-            <code className="mx-1 text-slate-300">LeadAnalytics.Api/appsettings.json</code>,
-            seção <code className="text-slate-300">LogsAuth</code>:
-          </p>
-          <pre className="mt-2 rounded bg-black/40 px-2 py-1.5 text-[10.5px] text-slate-400 overflow-x-auto">{`"LogsAuth": {
-  "Username": "admin",
-  "Password": "sua-senha",
-  "SessionTtlMinutes": 120
-}`}</pre>
-          <p className="mt-2">
-            Ou via env vars: <code className="text-slate-300">LogsAuth__Username</code>,
-            <code className="ml-1 text-slate-300">LogsAuth__Password</code>.
-          </p>
+        {/* Rodapé enxuto: instrução de configuração é assunto de servidor, não
+            de tela de acesso — poluía e expunha detalhe interno para quem loga. */}
+        <div className="flex items-center justify-between gap-3 border-t border-white/[0.05] px-6 py-4">
+          <span className="text-[10.5px] text-slate-600">
+            Doutor Digital · Observabilidade
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[10.5px] text-slate-600">
+            <Lock className="h-3 w-3" />
+            Sessão expira em 2 h
+          </span>
         </div>
       </div>
     </div>
@@ -327,9 +323,27 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
               <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
                 Observabilidade · Área restrita
               </p>
-              <h1 className="text-[15px] font-semibold tracking-tight truncate">
-                Logs da API · console ao vivo
-              </h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[15px] font-semibold tracking-tight truncate">
+                  Logs da API
+                </h1>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-2 py-[2px] text-[10px] font-medium",
+                    live
+                      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+                      : "border-white/[0.08] bg-white/[0.03] text-slate-400",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      live ? "bg-emerald-400 animate-pulse" : "bg-slate-500",
+                    )}
+                  />
+                  {live ? "ao vivo" : "pausado"}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -387,43 +401,92 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-5 py-5 space-y-4">
-        {/* KPIs por nível */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-          {levelCounts.map(({ level: lvl, count, meta }) => {
-            const Icon = meta.icon;
-            const selected = level
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-              .includes(lvl);
-            return (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => setLevel(selected ? "" : lvl)}
-                className={cn(
-                  "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left transition",
-                  "hover:bg-white/[0.04]",
-                  selected ? meta.bg : "border-white/[0.06] bg-white/[0.02]"
-                )}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon className={cn("h-4 w-4 shrink-0", meta.text)} />
-                  <span className={cn("text-[10.5px] font-bold uppercase tracking-widest", meta.text)}>
-                    {meta.label}
-                  </span>
-                </div>
-                <span className="text-[15px] font-bold tabular-nums text-slate-100">
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      <main className="max-w-[1400px] mx-auto px-5 py-6 space-y-5">
+        {/* Contagem por nível — clicar filtra. O número é o protagonista:
+            bate o olho e vê onde está o problema. */}
+        <section>
+          <div className="mb-2.5 flex items-baseline justify-between">
+            <h2 className="text-[12px] font-medium uppercase tracking-[0.16em] text-slate-500">
+              Ocorrências por nível
+            </h2>
+            <span className="text-[11.5px] text-slate-600">clique para filtrar</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-6">
+            {levelCounts.map(({ level: lvl, count, meta }) => {
+              const Icon = meta.icon;
+              const selected = level
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+                .includes(lvl);
+              const empty = count === 0;
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setLevel(selected ? "" : lvl)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "group relative overflow-hidden rounded-xl border px-3.5 py-3 text-left transition",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40",
+                    selected
+                      ? "border-white/20 bg-white/[0.07]"
+                      : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]",
+                  )}
+                >
+                  {/* Faixa de cor do nível — some quando não há ocorrência. */}
+                  <span
+                    className={cn(
+                      "absolute inset-x-0 top-0 h-[2px] transition-opacity",
+                      meta.dot,
+                      empty && !selected ? "opacity-25" : "opacity-100",
+                    )}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Icon className={cn("h-3.5 w-3.5 shrink-0", empty ? "text-slate-600" : meta.text)} />
+                    <span
+                      className={cn(
+                        "text-[10px] font-semibold uppercase tracking-[0.12em]",
+                        empty ? "text-slate-600" : meta.text,
+                      )}
+                    >
+                      {meta.label}
+                    </span>
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-1.5 text-[26px] font-semibold leading-none tabular-nums tracking-tight",
+                      empty ? "text-slate-700" : "text-slate-50",
+                    )}
+                  >
+                    {count}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Filtros */}
-        <div className="rounded-xl border border-white/[0.06] bg-[#0c0c10] p-4 space-y-3">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0b0b0f] p-4 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[12px] font-medium uppercase tracking-[0.16em] text-slate-500">
+              Filtros
+            </h2>
+            {isFiltering && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLevel("");
+                  setSearch("");
+                  setSinceMinutes(0);
+                }}
+                className="text-[11.5px] text-slate-400 underline-offset-4 transition hover:text-slate-200 hover:underline"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="md:col-span-6">
               <label className="label">Buscar no texto</label>
@@ -482,24 +545,37 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
               </Select>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.05] pt-3 text-[11.5px]">
+            <div className="flex items-center gap-2 text-slate-400">
               <span
                 className={cn(
-                  "inline-block h-1.5 w-1.5 rounded-full",
-                  live ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
+                  "inline-block h-2 w-2 rounded-full",
+                  live ? "bg-emerald-400 animate-pulse" : "bg-slate-600",
                 )}
               />
-              {live ? `Ao vivo · atualizando a cada ${POLL_MS / 1000}s` : "Pausado"}
+              <span className={live ? "text-emerald-300/90" : "text-slate-500"}>
+                {live ? "Ao vivo" : "Pausado"}
+              </span>
+              <span className="text-slate-600">
+                {live
+                  ? `atualiza a cada ${POLL_MS / 1000}s`
+                  : "clique em “Ao vivo” para retomar"}
+              </span>
               {list.dataUpdatedAt > 0 && live && (
-                <span className="text-slate-500">
-                  · última resposta {timeAgo(new Date(list.dataUpdatedAt).toISOString())}
+                <span className="text-slate-600">
+                  · {timeAgo(new Date(list.dataUpdatedAt).toISOString())}
                 </span>
               )}
             </div>
-            <div className="tabular-nums">
-              {returned} de {total} no buffer
-              {isFiltering && <span className="ml-2 text-emerald-300">filtrado</span>}
+            <div className="flex items-center gap-2 tabular-nums text-slate-400">
+              <span>
+                <span className="font-medium text-slate-200">{returned}</span> de {total} no buffer
+              </span>
+              {isFiltering && (
+                <span className="rounded border border-sky-400/30 bg-sky-400/10 px-1.5 py-[1px] text-[10.5px] text-sky-200">
+                  filtrado
+                </span>
+              )}
             </div>
           </div>
         </div>
