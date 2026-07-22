@@ -58,77 +58,64 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    # Self-hosted runner na VPS: deploy local, sem inbound SSH (Hostinger dropa
+    # IPs de runner hospedado). O build continua no GitHub-hosted acima.
+    runs-on: [self-hosted, linux, vps]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copia o docker-compose.yml para a VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: Front-End/docker-compose.yml
-          target: ${{ env.REMOTE_DIR }}
-          strip_components: 1
-
       - name: Rolling update sem downtime
-        uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE_TAG: ${{ needs.build.outputs.tag }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          envs: IMAGE_TAG
-          script_stop: true
-          # Script ASCII puro: acentos/emoji corrompem no transporte do ssh-action.
-          script: |
-            set -eu
-            cd ${{ env.REMOTE_DIR }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+        run: |
+          set -eu
 
-            echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          cp Front-End/docker-compose.yml ${{ env.REMOTE_DIR }}/docker-compose.yml
+          cd ${{ env.REMOTE_DIR }}
 
-            # Preserva o IMAGE_TAG do CI (SHA) contra o latest do .env.
-            CI_TAG="$IMAGE_TAG"
-            set -a
-            . ./.env
-            set +a
-            IMAGE_TAG="$CI_TAG"
-            export IMAGE_TAG
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
 
-            echo "deploying $IMAGE_TAG"
-            docker stack deploy -c docker-compose.yml --with-registry-auth --prune ${{ env.STACK_NAME }}
+          CI_TAG="$IMAGE_TAG"
+          set -a
+          . ./.env
+          set +a
+          IMAGE_TAG="$CI_TAG"
+          export IMAGE_TAG
 
-            SVC=${{ env.STACK_NAME }}_web
-            n=0
-            while [ "$n" -lt 40 ]; do
-              STATE=$(docker service inspect "$SVC" --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}')
-              echo "state: $STATE"
-              if [ "$STATE" = "completed" ]; then
-                echo "rollout OK"
-                exit 0
-              fi
-              case "$STATE" in
-                rollback_*|paused)
-                  echo "rollout FAILED ($STATE) - swarm reverteu"
-                  docker service ps "$SVC" --no-trunc | head -20
-                  exit 1
-                  ;;
-              esac
-              n=$((n + 1))
-              sleep 5
-            done
-            echo "timeout esperando convergencia"
-            docker service ps "$SVC" --no-trunc | head -20
-            exit 1
+          echo "deploying $IMAGE_TAG"
+          docker stack deploy -c docker-compose.yml --with-registry-auth --prune ${{ env.STACK_NAME }}
 
-      - name: Smoke test público
+          SVC=${{ env.STACK_NAME }}_web
+          n=0
+          while [ "$n" -lt 40 ]; do
+            STATE=$(docker service inspect "$SVC" --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}')
+            echo "state: $STATE"
+            if [ "$STATE" = "completed" ]; then
+              echo "rollout OK"
+              exit 0
+            fi
+            case "$STATE" in
+              rollback_*|paused)
+                echo "rollout FAILED ($STATE) - swarm reverteu"
+                docker service ps "$SVC" --no-trunc | head -20
+                exit 1
+                ;;
+            esac
+            n=$((n + 1))
+            sleep 5
+          done
+          echo "timeout esperando convergencia"
+          docker service ps "$SVC" --no-trunc | head -20
+          exit 1
+
+      - name: Smoke test publico
         run: |
           for i in $(seq 1 10); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" \
               "https://${{ vars.WEB_DOMAIN }}/healthz" --max-time 10 || echo 000)
-            [ "$CODE" = "200" ] && { echo "✓ /healthz respondeu 200"; exit 0; }
+            [ "$CODE" = "200" ] && { echo "healthz respondeu 200"; exit 0; }
             echo "tentativa $i: HTTP $CODE"; sleep 6
           done
-          echo "✗ /healthz não respondeu 200"; exit 1
+          echo "healthz nao respondeu 200"; exit 1
