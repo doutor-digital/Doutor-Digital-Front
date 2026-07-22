@@ -1,0 +1,71 @@
+# Stack do front-end (dashboard React/Vite servido por nginx) na VPS.
+#
+# A VPS roda Docker Swarm. Aplicado com:
+#
+#   set -a && . .env && set +a
+#   docker stack deploy -c docker-compose.yml --with-registry-auth --prune ddweb
+#
+# O bundle é estático e a VITE_API_BASE_URL é "assada" em build-time (no CI),
+# então aqui não há variável de runtime — só o roteamento pelo Traefik.
+#
+# Observação: o dashboard também roda na Vercel hoje. Esta stack é o caminho
+# alternativo na VPS (subdomínio dash-vps.*) para validar antes de qualquer
+# virada de DNS; as duas podem coexistir sem conflito.
+
+version: "3.8"
+
+networks:
+  portainer-next:
+    external: true
+
+services:
+  web:
+    image: ghcr.io/${GHCR_OWNER}/doutordigital-web:${IMAGE_TAG:-latest}
+    networks: [portainer-next]
+
+    # nginx:alpine traz o wget do busybox — serve de healthcheck sem instalar nada.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    deploy:
+      replicas: 1
+
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 5s
+        monitor: 30s
+
+      rollback_config:
+        order: start-first
+        failure_action: pause
+
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=portainer-next
+        - traefik.http.routers.ddweb.rule=Host(`${WEB_DOMAIN}`)
+        - traefik.http.routers.ddweb.entrypoints=websecure
+        - traefik.http.routers.ddweb.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.ddweb.service=ddweb
+        - traefik.http.services.ddweb.loadbalancer.server.port=80
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
