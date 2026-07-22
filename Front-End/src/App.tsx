@@ -3,10 +3,9 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { Loader2 } from "@/components/icons";
-import { RequireCadastraAuth } from "@/components/cadastro/RequireCadastraAuth";
 import { SplashScreen } from "@/components/SplashScreen";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
-import { isAdminLevel, isReadOnly } from "@/lib/roles";
+import { isAdminLevel } from "@/lib/roles";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
@@ -27,7 +26,6 @@ const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
 const EvolutionPage    = lazy(() => import("@/pages/EvolutionPage"));
 const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
-const AttendantsPage   = lazy(() => import("@/pages/AttendantsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
 const ParceirosPage    = lazy(() => import("@/pages/ParceirosPage"));
 const UnitCreatePage   = lazy(() => import("@/pages/UnitCreatePage"));
@@ -37,7 +35,6 @@ const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const TechnicalSettingsPage = lazy(() => import("@/pages/TechnicalSettingsPage"));
 const ImportCloudiaPage = lazy(() => import("@/pages/ImportCloudiaPage"));
 const CustomFieldsPage = lazy(() => import("@/pages/CustomFieldsPage"));
-const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
 const ContactsDuplicatesPage = lazy(() => import("@/pages/ContactsDuplicatesPage"));
@@ -47,8 +44,6 @@ const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
 const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
-const AuditoriaMovimentacoesPage = lazy(() => import("@/pages/AuditoriaMovimentacoesPage"));
-const ReconciliacaoCsvPage = lazy(() => import("@/pages/ReconciliacaoCsvPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
@@ -72,29 +67,10 @@ const NotFoundPage     = lazy(() => import("@/pages/NotFoundPage"));
 const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage"));
 const IntegracoesPage  = lazy(() => import("@/pages/IntegracoesPage"));
 const CentralIntegracoesPage = lazy(() => import("@/pages/CentralIntegracoesPage"));
-const ChefAuditPage    = lazy(() => import("@/pages/ChefAuditPage"));
-const LoginSessionsPage   = lazy(() => import("@/pages/admin/LoginSessionsPage"));
-const LocationConsentsPage = lazy(() => import("@/pages/admin/LocationConsentsPage"));
-const EntityChangesPage   = lazy(() => import("@/pages/admin/EntityChangesPage"));
 const PerfilPage       = lazy(() => import("@/pages/PerfilPage"));
-
-// ─── Aceite de convite legado (mantido por compat — para tokens já enviados antes da migração)
-const CadastroPublicLayout  = lazy(() => import("@/components/cadastro/CadastroPublicLayout"));
-const AceitarConvitePage    = lazy(() => import("@/pages/cadastro/AceitarConvitePage"));
-
-// ─── SDR Unificado (/sdr/*) — pages dentro do DashboardLayout principal ────
-const PainelSdrPage          = lazy(() => import("@/pages/sdr/PainelSdrPage"));
-const CadastroGeralPage      = lazy(() => import("@/pages/sdr/CadastroGeralPage"));
-const RevisarLeadSdrPage     = lazy(() => import("@/pages/sdr/RevisarLeadSdrPage"));
-const SdrLeadsAprovadosPage  = lazy(() => import("@/pages/sdr/LeadsAprovadosPage"));
-const SdrConsultasPage       = lazy(() => import("@/pages/sdr/ConsultasPage"));
-const SdrTratamentosPage     = lazy(() => import("@/pages/sdr/TratamentosPage"));
-const SdrTarefasPage         = lazy(() => import("@/pages/sdr/TarefasPage"));
-const SdrAgendaPage          = lazy(() => import("@/pages/sdr/AgendaPage"));
-const SdrMetasPage           = lazy(() => import("@/pages/sdr/MetasPage"));
-const SdrAuditoriaPage       = lazy(() => import("@/pages/sdr/AuditoriaPage"));
-const SdrRelatoriosPage      = lazy(() => import("@/pages/sdr/RelatoriosPage"));
-const SdrListasDominioPage   = lazy(() => import("@/pages/sdr/ListasDominioPage"));
+// Console de logs da API — rota pública com login próprio (LogsAuth), fora do
+// dashboard. Serve o subdomínio logs.doutordigitalconsultoria.com.
+const LogsPage         = lazy(() => import("@/pages/LogsPage"));
 
 // ─── Fullscreen loader ────────────────────────────────────────────────────────
 
@@ -141,13 +117,6 @@ function RequireAdminLevel({ children }: { children: ReactElement }) {
   return children;
 }
 
-// Bloqueia papéis somente-leitura (trafego_pago) em telas operacionais.
-function RequireWritable({ children }: { children: ReactElement }) {
-  const { user } = useAuth();
-  if (isReadOnly(user?.role)) return <Navigate to="/" replace />;
-  return children;
-}
-
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -163,14 +132,7 @@ export default function App() {
         <Route path="/verify-code" element={<VerifyResetCodePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
-
-        {/* Painel de logs — rota isolada, autenticação própria (admin + senha configurada no backend) */}
         <Route path="/logs" element={<LogsPage />} />
-
-        {/* Aceite de convite legado (compat) — novos convites usam /invite/:token */}
-        <Route element={<CadastroPublicLayout />}>
-          <Route path="/cadastro/aceitar-convite/:token" element={<AceitarConvitePage />} />
-        </Route>
 
         {/* Seleção de unidade — requer login, mas não clínica */}
         <Route
@@ -205,7 +167,6 @@ export default function App() {
           <Route path="/evolution"         element={<EvolutionPage />}    />
           <Route path="/analytics"         element={<AnalyticsPage />}    />
           <Route path="/alerts"            element={<AlertsPage />}       />
-          <Route path="/attendants"        element={<AttendantsPage />}   />
           <Route path="/units"             element={<UnitsPage />}        />
           <Route path="/parceiros"         element={<ParceirosPage />}    />
           <Route path="/units/new"         element={<UnitCreatePage />}   />
@@ -228,38 +189,14 @@ export default function App() {
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />
           <Route path="/contacts/:id"      element={<ContactDetailPage />} />
 
-          {/* SDR Unificado — operacional, bloqueado para papéis somente-leitura */}
-          <Route element={<RequireWritable><Outlet /></RequireWritable>}>
-            <Route path="/sdr"                 element={<PainelSdrPage />}         />
-            <Route path="/sdr/cadastro-geral"     element={<CadastroGeralPage />}     />
-            <Route path="/sdr/cadastro-geral/:id" element={<RevisarLeadSdrPage />}    />
-            <Route path="/sdr/leads-aprovados"    element={<SdrLeadsAprovadosPage />} />
-            <Route path="/sdr/consultas"       element={<SdrConsultasPage />}      />
-            <Route path="/sdr/tratamentos"     element={<SdrTratamentosPage />}    />
-            <Route path="/sdr/tarefas"         element={<SdrTarefasPage />}        />
-            <Route path="/sdr/agenda"          element={<SdrAgendaPage />}         />
-            <Route path="/sdr/metas"           element={<SdrMetasPage />}          />
-            <Route path="/sdr/auditoria"       element={<SdrAuditoriaPage />}      />
-            <Route path="/sdr/listas"          element={<SdrListasDominioPage />}  />
-            <Route path="/sdr/relatorios"      element={<SdrRelatoriosPage />}     />
-          </Route>
-
           {/* Convites da equipe */}
           <Route path="/integracoes"        element={<IntegracoesPage />}     />
 
-          {/* Chef (auditoria global) + Perfil */}
-          <Route path="/chef/audit-logs"    element={<RequireAdminLevel><ChefAuditPage /></RequireAdminLevel>} />
-
-          {/* Logs avançados — super_admin / analista_ti */}
+          {/* Rotas admin-level — super_admin / analista_ti */}
           <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
             <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
             <Route path="/admin/import-cloudia" element={<ImportCloudiaPage />} />
             <Route path="/integracoes/ads"  element={<CentralIntegracoesPage />} />
-            <Route path="/admin/sessions"  element={<LoginSessionsPage />}    />
-            <Route path="/admin/locations" element={<LocationConsentsPage />} />
-            <Route path="/admin/changes"   element={<EntityChangesPage />}    />
-            <Route path="/admin/auditoria-movimentacoes" element={<AuditoriaMovimentacoesPage />} />
-            <Route path="/admin/reconciliacao-csv" element={<ReconciliacaoCsvPage />} />
           </Route>
           <Route path="/perfil"             element={<PerfilPage />}          />
 

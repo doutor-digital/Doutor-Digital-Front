@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertOctagon,
@@ -226,6 +226,8 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
   const [limit, setLimit] = useState<number>(500);
   const [live, setLive] = useState<boolean>(true);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  /** Entrada aberta no painel lateral — é onde se investiga um erro de fato. */
+  const [detail, setDetail] = useState<LogEntry | null>(null);
 
   const list = useQuery({
     queryKey: ["logs", "list", level, search, sinceMinutes, limit],
@@ -331,6 +333,22 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Atalho mais usado ao investigar: isolar só o que quebrou. */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setLevel((v) => (v === "Error,Critical" ? "" : "Error,Critical"))
+              }
+              className={cn(
+                level === "Error,Critical" &&
+                  "border-rose-500/40 bg-rose-500/10 text-rose-200",
+              )}
+              title="Mostrar apenas erros e falhas críticas"
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Só erros
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -534,6 +552,8 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
                     expanded={expanded.has(e.id)}
                     onToggle={() => toggle(e.id)}
                     onCopy={() => copyEntry(e)}
+                    onOpen={() => setDetail(e)}
+                    selected={detail?.id === e.id}
                   />
                 ))}
               </div>
@@ -541,6 +561,150 @@ function LogsConsole({ onLogout }: { onLogout: () => void }) {
           )}
         </div>
       </main>
+
+      <LogDetailPanel
+        entry={detail}
+        onClose={() => setDetail(null)}
+        onCopy={copyEntry}
+        onFilterTrace={(traceId) => {
+          setSearch(traceId);
+          setLevel("");
+          setDetail(null);
+          toast.success("Filtrando por este request");
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─── Painel de detalhe ──────────────────────────────────────────────────
+ * Investigar um erro exige ver a entrada inteira: mensagem sem corte, stack
+ * trace legível, rota, request. Numa linha de lista isso não cabe — por isso
+ * um painel lateral, que abre ao clicar e não perde a lista de vista.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+function LogDetailPanel({
+  entry,
+  onClose,
+  onCopy,
+  onFilterTrace,
+}: {
+  entry: LogEntry | null;
+  onClose: () => void;
+  onCopy: (e: LogEntry) => void;
+  onFilterTrace: (traceId: string) => void;
+}) {
+  // Fecha no Esc — quem debuga vive no teclado.
+  useEffect(() => {
+    if (!entry) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [entry, onClose]);
+
+  if (!entry) return null;
+
+  const meta = LEVEL_META[entry.level] ?? LEVEL_META.Information;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px]"
+        onClick={onClose}
+        aria-hidden
+      />
+      <aside className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[560px] flex-col border-l border-white/[0.08] bg-[#0b0b0f] shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+        <header className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+              <span className={cn("text-[11px] font-semibold uppercase tracking-[0.14em]", meta.text)}>
+                {meta.label}
+              </span>
+            </div>
+            <h2 className="mt-1.5 text-[15px] font-semibold tracking-tight text-slate-100">
+              Detalhe da ocorrência
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onCopy(entry)}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose} title="Fechar (Esc)">
+              Fechar
+            </Button>
+          </div>
+        </header>
+
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+          <Field label="Mensagem">
+            <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-slate-100">
+              {entry.message}
+            </p>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Quando">
+              <p className="text-[12.5px] tabular-nums text-slate-300">
+                {new Date(entry.timestamp).toLocaleString("pt-BR")}
+              </p>
+            </Field>
+            <Field label="Origem">
+              <p className="break-all text-[12.5px] text-slate-300">{entry.category}</p>
+            </Field>
+          </div>
+
+          {(entry.method || entry.path) && (
+            <Field label="Requisição">
+              <p className="break-all text-[12.5px] text-slate-300">
+                <span className="font-semibold text-slate-100">{entry.method}</span>{" "}
+                {entry.path}
+              </p>
+            </Field>
+          )}
+
+          {entry.traceId && (
+            <Field label="Trace">
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="break-all rounded bg-black/40 px-2 py-1 text-[11.5px] text-slate-300">
+                  {entry.traceId}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onFilterTrace(entry.traceId!)}
+                  title="Ver todos os logs desta mesma requisição"
+                >
+                  <Search className="mr-2 h-3.5 w-3.5" />
+                  Ver o request inteiro
+                </Button>
+              </div>
+            </Field>
+          )}
+
+          {entry.exception && (
+            <Field label="Stack trace">
+              <pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap rounded-md border border-white/[0.06] bg-black/40 p-3 text-[11.5px] leading-[1.7] text-rose-200/85">
+                {entry.exception}
+              </pre>
+            </Field>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </p>
+      {children}
     </div>
   );
 }
@@ -552,11 +716,15 @@ function LogRow({
   expanded,
   onToggle,
   onCopy,
+  onOpen,
+  selected,
 }: {
   entry: LogEntry;
   expanded: boolean;
   onToggle: () => void;
   onCopy: () => void;
+  onOpen: () => void;
+  selected: boolean;
 }) {
   const meta = LEVEL_META[entry.level] ?? LEVEL_META.Information;
   const hasException = !!entry.exception;
@@ -574,12 +742,26 @@ function LogRow({
         severe ? "bg-rose-500/[0.045]" : "bg-transparent",
         "hover:bg-white/[0.035]",
         expanded && "bg-white/[0.03]",
+        selected && "bg-sky-500/[0.08] ring-1 ring-inset ring-sky-400/30",
       )}
     >
-      <div className="flex items-start gap-3 py-2 pl-3 pr-2">
+      {/* Clicar em qualquer lugar da linha abre o detalhe — é o gesto natural
+          de quem está investigando. Os botões param a propagação. */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen();
+          }
+        }}
+        className="flex cursor-pointer items-start gap-3 py-2 pl-3 pr-2 outline-none focus-visible:bg-white/[0.05]"
+      >
         <button
           type="button"
-          onClick={onToggle}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
           disabled={!canExpand}
           aria-label={canExpand ? (expanded ? "Recolher" : "Expandir") : undefined}
           className={cn(
@@ -639,7 +821,7 @@ function LogRow({
 
         <button
           type="button"
-          onClick={onCopy}
+          onClick={(e) => { e.stopPropagation(); onCopy(); }}
           title="Copiar entrada"
           className="mt-[2px] h-6 w-6 shrink-0 grid place-items-center rounded text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-white/[0.06] hover:text-slate-200 focus:opacity-100"
         >
