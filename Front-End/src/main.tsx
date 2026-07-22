@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./index.css";
@@ -17,22 +17,17 @@ initThemeEarly();
 clearChunkReloadFlag();
 
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  // Atualização do PWA sem precisar reinstalar: avisa quando há versão nova e
-  // checa periodicamente. O usuário só toca em "Atualizar".
-  const updateSW = registerSW({
+  // registerType é "autoUpdate" (vite.config.ts): quando sai versão nova, o SW
+  // assume e a página recarrega sozinha — ninguém fica preso num build antigo
+  // pedindo chunks que não existem mais. Por isso não há mais onNeedRefresh:
+  // com autoUpdate ele não é chamado, e depender de um clique era justamente o
+  // que travava quem já estava com o app quebrado.
+  //
+  // A checagem periódica pega deploys feitos com a aba aberta o dia todo.
+  registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, reg) {
       if (reg) setInterval(() => reg.update().catch(() => {}), 60 * 60_000);
-    },
-    onNeedRefresh() {
-      toast("Atualização disponível", {
-        description: "Há uma nova versão do app.",
-        duration: 30_000,
-        action: {
-          label: "Atualizar",
-          onClick: () => updateSW(true),
-        },
-      });
     },
   });
 }

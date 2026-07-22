@@ -7,7 +7,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
+      // "autoUpdate" (e não "prompt"): com prompt, o usuário só saía do build
+      // antigo se clicasse no toast "Atualizar" — e quando o app já estava
+      // quebrado (index.html em cache pedindo chunks com hash que não existe
+      // mais no servidor) o toast nunca aparecia, deixando a pessoa presa numa
+      // tela de carregamento infinito. Com autoUpdate o SW novo assume e a
+      // página recarrega sozinha, junto com skipWaiting/clientsClaim abaixo.
+      registerType: "autoUpdate",
       includeAssets: [
         "favicon.svg",
         "logo-dd.png",
