@@ -150,7 +150,9 @@ export default function DesempenhoPage() {
   });
 
   const totais = useMemo(() => (data ? agregar(data.origens) : null), [data]);
-  const vazio = !totais || totais.leads === 0;
+  // Passa a considerar investimento: hoje a tela mostra gasto real por campanha,
+  // com o funil ainda zerado — checar só `leads` mandaria tudo pro estado vazio.
+  const vazio = !totais || (totais.leads === 0 && totais.investimento === 0);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">

@@ -186,140 +186,63 @@ export function fmtRoas(v: number | null): string {
   return `${v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x`;
 }
 
-// ─── Mock (base = 30 dias) ─────────────────────────────────────────────────────
-
-const ORIGENS_BASE: OrigemDesempenho[] = [
-  { nome: "Meta · Implante (conversão)", canal: "meta", investimento: 12000, leads: 320, qualificados: 180, agendados: 95, compareceram: 70, indicados: 55, fechados: 28, receita: 168000 },
-  { nome: "Google · Search Marca", canal: "google", investimento: 6000, leads: 140, qualificados: 95, agendados: 60, compareceram: 48, indicados: 38, fechados: 22, receita: 39000 },
-  { nome: "Meta · Lookalike 1%", canal: "meta", investimento: 9000, leads: 260, qualificados: 110, agendados: 50, compareceram: 33, indicados: 22, fechados: 12, receita: 54000 },
-  { nome: "Google · Display Remarketing", canal: "google", investimento: 4500, leads: 90, qualificados: 30, agendados: 12, compareceram: 7, indicados: 5, fechados: 3, receita: 15000 },
-  { nome: "Orgânico · Instagram", canal: "organico", investimento: 0, leads: 80, qualificados: 50, agendados: 30, compareceram: 24, indicados: 20, fechados: 14, receita: 84000 },
-  { nome: "Indicação · Boca a boca", canal: "outro", investimento: 0, leads: 45, qualificados: 38, agendados: 28, compareceram: 25, indicados: 22, fechados: 16, receita: 96000 },
-];
-
-const MOTIVOS_NAO_AGENDA_BASE: MotivoPerda[] = [
-  { motivo: "Sem retorno / não atende", quantidade: 210 },
-  { motivo: "Achou caro", quantidade: 140 },
-  { motivo: "Só pesquisando preço", quantidade: 95 },
-  { motivo: "Distância da clínica", quantidade: 60 },
-  { motivo: "Horário indisponível", quantidade: 38 },
-];
-
-const MOTIVOS_NAO_FECHA_BASE: MotivoPerda[] = [
-  { motivo: "Preço acima do orçamento", quantidade: 64 },
-  { motivo: "Vai pensar / decidir depois", quantidade: 52 },
-  { motivo: "Buscar segunda opinião", quantidade: 31 },
-  { motivo: "Adiou por motivo financeiro", quantidade: 24 },
-  { motivo: "Medo do procedimento", quantidade: 15 },
-];
-
-/** Fator de escala por período, só pra o mock "parecer vivo". */
-const FATOR_PERIODO: Record<PeriodoKey, number> = {
-  hoje: 0.04,
-  "7d": 0.25,
-  "30d": 1,
-  mes: 1.05,
-  custom: 1,
-};
-
-const escalar = (v: number, f: number) => Math.round(v * f);
-
-function escalarOrigens(origens: OrigemDesempenho[], f: number): OrigemDesempenho[] {
-  if (f === 1) return origens.map((o) => ({ ...o }));
-  return origens.map((o) => ({
-    ...o,
-    investimento: escalar(o.investimento, f),
-    leads: escalar(o.leads, f),
-    qualificados: escalar(o.qualificados, f),
-    agendados: escalar(o.agendados, f),
-    compareceram: escalar(o.compareceram, f),
-    indicados: escalar(o.indicados, f),
-    fechados: escalar(o.fechados, f),
-    receita: escalar(o.receita, f),
-  }));
-}
-
-const escalarMotivos = (m: MotivoPerda[], f: number): MotivoPerda[] =>
-  m.map((x) => ({ ...x, quantidade: escalar(x.quantidade, f) }));
-
 // ─── Carregador (ÚNICO ponto de integração) ────────────────────────────────────
 
 /**
- * Carrega os dados do dashboard para um período.
+ * Carrega o desempenho de mídia paga do período.
  *
- * TODO(integração): hoje devolve MOCK. Quando ligar de verdade:
- *  - funil (leads→qualificados→…→fechados) + receita por origem vêm da API da Kommo
- *    (agrupar leads por origem/etapa dentro de [periodo.inicio, periodo.fim]);
- *  - `investimento` por campanha NÃO vem do lead — vem da CENTRAL DE INTEGRAÇÕES: a nossa
- *    API puxa o Meta Ads / Google Ads e grava o gasto por campanha/dia no nosso banco
- *    (ex.: GET /api/integrations/ads/spend?clinicId&from&to → soma por campanha);
- *  - casar cada campanha com a `origem` da Kommo pelo nome/UTM.
- * O contrato de retorno (`DadosDashboard`) permanece igual — só troque o corpo abaixo.
+ * Cada linha é uma CAMPANHA real (Meta/Google), com o gasto que a Central de
+ * Integrações gravou no nosso banco — o n8n puxa do Graph e a API persiste em
+ * `campaign_daily_spend`. Ver GET /api/integrations/ads/spend.
+ *
+ * O funil (leads→qualificados→…→fechados) e a receita por campanha ainda NÃO são
+ * calculados: ligar isso exige atribuir cada lead da Kommo à campanha de origem
+ * (UTM/attribution) e reaproveitar as MESMAS regras de KPI do dashboard
+ * (corte de dia às 19h, cadastro/resgate, datação por stage history) — senão os
+ * números aqui contradizem os da home. Por isso ficam zerados em vez de inventados.
  */
 export async function carregarDados(
   periodo: Periodo,
   clinicId?: number | null,
 ): Promise<DadosDashboard> {
-  // Simula latência de rede pra exercitar o estado de carregamento.
-  await new Promise((r) => setTimeout(r, 350));
+  let origens: OrigemDesempenho[] = [];
 
-  const f = FATOR_PERIODO[periodo.key] ?? 1;
-  let origens = escalarOrigens(ORIGENS_BASE, f);
-
-  // Investimento REAL: vem da Central de Integrações (Meta/Google Ads → nosso banco).
-  // Casa cada campanha com a origem por nome; se não houver gasto/permissão, mantém o mock.
   try {
     // clinicId é obrigatório pra super_admin (TenantId nulo no token) — sem ele
-    // o endpoint devolve 400 e o investimento cai silenciosamente no mock.
+    // o endpoint devolve 400.
     const { items } = await integrationsService.spend({
       clinicId,
       from: periodo.inicio,
       to: periodo.fim,
     });
-    if (items.length) origens = aplicarInvestimentoReal(origens, items);
+
+    origens = items.map((s) => ({
+      nome: s.campaign_name?.trim() || `Campanha ${s.campaign_id}`,
+      canal: canalDoProvider(s.provider),
+      investimento: s.spend,
+      leads: 0,
+      qualificados: 0,
+      agendados: 0,
+      compareceram: 0,
+      indicados: 0,
+      fechados: 0,
+      receita: 0,
+    }));
   } catch {
-    /* sem integração/sem permissão — segue com o investimento mock */
+    // Sem integração conectada / sem permissão: tabela vazia (nunca dado falso).
+    origens = [];
   }
 
   return {
     periodo: { inicio: periodo.inicio, fim: periodo.fim },
     origens,
-    motivosNaoAgendamento: escalarMotivos(MOTIVOS_NAO_AGENDA_BASE, f),
-    motivosNaoFechamento: escalarMotivos(MOTIVOS_NAO_FECHA_BASE, f),
+    motivosNaoAgendamento: [],
+    motivosNaoFechamento: [],
   };
 }
 
-const tokens = (s: string) =>
-  new Set(
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .split(/[^a-z0-9]+/)
-      .filter((t) => t.length > 2),
-  );
-
-/**
- * Substitui o `investimento` de cada origem pela soma do gasto real das campanhas que
- * casam com o nome dela (sobreposição de ≥2 tokens). Origem sem match mantém o mock.
- */
-function aplicarInvestimentoReal(
-  origens: OrigemDesempenho[],
-  spend: AdsSpendItem[],
-): OrigemDesempenho[] {
-  const spendTokens = spend.map((s) => ({ s, t: tokens(s.campaign_name ?? "") }));
-  return origens.map((o) => {
-    const ot = tokens(o.nome);
-    let total = 0;
-    let matched = false;
-    for (const { s, t } of spendTokens) {
-      let overlap = 0;
-      for (const tok of t) if (ot.has(tok)) overlap++;
-      if (overlap >= 2) {
-        total += s.spend;
-        matched = true;
-      }
-    }
-    return matched ? { ...o, investimento: Math.round(total) } : o;
-  });
+function canalDoProvider(p: string): Canal {
+  if (p === "meta") return "meta";
+  if (p === "google") return "google";
+  return "outro";
 }
