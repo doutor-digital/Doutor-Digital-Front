@@ -24,8 +24,10 @@ services:
     networks: [portainer-next]
 
     # nginx:alpine traz o wget do busybox — serve de healthcheck sem instalar nada.
+    # 127.0.0.1 (nao localhost): no busybox, localhost resolve p/ ::1 primeiro e o
+    # nginx so escuta em IPv4 (listen 80) -> wget daria "connection refused".
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5
