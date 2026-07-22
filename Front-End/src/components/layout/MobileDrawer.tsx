@@ -81,7 +81,6 @@ const navGroups: NavGroup[] = [
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain },
       { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch },
-      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users2, iconUrl: "/nav-icons/revisar.png" },
       { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
       { to: "/analytics", label: "Performance", icon: BarChart3, iconUrl: "/nav-icons/performance.png" },
     ],
@@ -95,7 +94,6 @@ const navGroups: NavGroup[] = [
       { to: "/funnel", label: "Funil", icon: Workflow },
       { to: "/sources", label: "Origens", icon: Filter },
       { to: "/evolution", label: "Evolução", icon: LineChart },
-      { to: "/attendants", label: "Atendentes", icon: Users2, iconUrl: "/nav-icons/atendentes.png" },
       {
         label: "Unidades",
         icon: Building2,

@@ -127,8 +127,8 @@ export function InsightsCard({
 
     if (inQueue >= 5) {
       recs.push({
-        text: `Há ${inQueue} leads na fila aguardando atendimento — considere realocar atendentes.`,
-        cta: { label: "Ver atendentes", to: "/attendants" },
+        text: `Há ${inQueue} leads na fila aguardando atendimento — considere realocar a equipe.`,
+        cta: { label: "Ver fila de leads", to: "/leads" },
         tone: "warn",
       });
     }

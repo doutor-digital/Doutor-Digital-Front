@@ -34,7 +34,6 @@ export const useOnboarding = create<OnboardingStore>()(
 
 const STEPS: Array<{ id: StepId; title: string; description: string; to: string }> = [
   { id: "unit",        title: "Configure sua primeira unidade",  description: "Em Unidades, cadastre a clínica e equipe inicial.", to: "/units" },
-  { id: "attendant",   title: "Adicione atendentes",            description: "Atribua leads pra quem realmente conversa com eles.", to: "/attendants" },
   { id: "lead",        title: "Revise seus leads",              description: "Veja como sua base está organizada hoje.", to: "/leads" },
   { id: "report",      title: "Gere o primeiro relatório",      description: "Diário ou mensal — em PDF ou WhatsApp.", to: "/reports" },
   { id: "integration", title: "Configure integrações",          description: "Webhook do Kommo, Meta e mais.", to: "/integracoes" },

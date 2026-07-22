@@ -10,7 +10,7 @@ interface RecentNavStore {
 }
 
 const MAX = 8;
-const IGNORE = ["/login", "/select-unit", "/logs"];
+const IGNORE = ["/login", "/select-unit"];
 
 export const useRecentNav = create<RecentNavStore>()(
   persist(

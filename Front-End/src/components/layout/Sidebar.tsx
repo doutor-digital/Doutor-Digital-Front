@@ -134,7 +134,6 @@ const navGroups: NavGroup[] = [
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, badge: "Novo" },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, badge: "Novo" },
       { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, badge: "Novo" },
-      { to: "/sdr/cadastro-geral", label: "Revisar leads", icon: Users, iconUrl: "/nav-icons/revisar.png" },
       {
         label: "Performance",
         icon: Gauge,
@@ -178,7 +177,6 @@ const navGroups: NavGroup[] = [
         ],
       },
       { to: "/duplicates", label: "Duplicados (leads + contatos)", icon: Copy, badge: "Novo" },
-      { to: "/attendants", label: "Atendentes", icon: Users2, iconUrl: "/nav-icons/atendentes.png" },
       {
         label: "Unidades",
         icon: Building2,
@@ -188,30 +186,6 @@ const navGroups: NavGroup[] = [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
           { to: "/webhooks-monitor", label: "Monitor de webhooks", icon: Webhook },
           { to: "/amanheceu", label: "Amanheceu", icon: Sunrise, badge: "Novo" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Central de Cadastros",
-    items: [
-      {
-        label: "Cadastros · SDR",
-        icon: ClipboardPlus,
-        iconUrl: "/nav-icons/cadastro-sdr.png",
-        basePaths: ["/sdr"],
-        children: [
-          { to: "/sdr",                  label: "Painel SDR",            icon: Sparkles,       end: true },
-          { to: "/sdr/cadastro-geral",   label: "Revisar leads",         icon: Users,          badge: "Novo" },
-          { to: "/sdr/leads-aprovados",  label: "Leads aprovados",        icon: CheckCircle2,   badge: "CRM" },
-          { to: "/sdr/consultas",        label: "Consultas Realizadas",  icon: Stethoscope },
-          { to: "/sdr/tratamentos",      label: "Tratamentos",            icon: Wallet },
-          { to: "/sdr/tarefas",          label: "Tarefas",                icon: ClipboardCheck },
-          { to: "/sdr/agenda",           label: "Agenda / Eventos",       icon: CalendarRange },
-          { to: "/sdr/metas",            label: "Metas das secretárias",  icon: Target },
-          { to: "/sdr/auditoria",        label: "Auditoria",              icon: FileSearch },
-          { to: "/sdr/listas",           label: "Listas de domínio",      icon: BookOpen },
-          { to: "/sdr/relatorios",       label: "Relatórios",             icon: FileBarChart },
         ],
       },
     ],
@@ -257,34 +231,15 @@ const navGroups: NavGroup[] = [
         label: "Configurações",
         icon: Cog,
         iconUrl: "/nav-icons/configuracoes.png",
-        basePaths: ["/settings", "/logs"],
+        basePaths: ["/settings"],
         children: [
           { to: "/settings", label: "Geral", icon: Cog, end: true },
-          { to: "/logs", label: "Logs do sistema", icon: ScrollText },
         ],
         // Filho "Técnicas · KPIs" é injetado só para analista_ti/super_admin (ver groups).
       },
     ],
   },
 ];
-
-const chefGroup: NavGroup = {
-  label: "Chef · Super-admin",
-  items: [
-    { to: "/chef/audit-logs", label: "Auditoria global", icon: ChefHat, iconUrl: "/nav-icons/auditoria.png" },
-  ],
-};
-
-const advancedLogsGroup: NavGroup = {
-  label: "Logs avançados",
-  items: [
-    { to: "/admin/sessions",  label: "Sessões de login", icon: History,    iconUrl: "/nav-icons/sessoes.png" },
-    { to: "/admin/locations", label: "Localizações",      icon: Map,        iconUrl: "/nav-icons/localizacoes.png" },
-    { to: "/admin/changes",   label: "Alterações",         icon: ScrollText, iconUrl: "/nav-icons/alteracoes.png" },
-    { to: "/admin/auditoria-movimentacoes", label: "Auditoria de movimentações", icon: ShieldCheck },
-    { to: "/admin/reconciliacao-csv", label: "Reconciliação por CSV", icon: FileUp },
-  ],
-};
 
 function isNestedEntry(
   entry: NavEntry,
@@ -534,13 +489,9 @@ export function Sidebar() {
         },
       ];
     }
-    // super_admin / analista_ti: tudo + Configurações Técnicas + Logs avançados + Chef.
+    // super_admin / analista_ti: tudo + Configurações Técnicas.
     if (isAdminLevel(role)) {
-      return [
-        ...withPartnersPanel(withTechnicalSettings(navGroups)),
-        advancedLogsGroup,
-        chefGroup,
-      ];
+      return withPartnersPanel(withTechnicalSettings(navGroups));
     }
     return navGroups;
   }, [user?.role]);

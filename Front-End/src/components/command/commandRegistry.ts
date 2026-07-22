@@ -27,12 +27,10 @@ export const PAGE_COMMANDS: CommandItem[] = [
   { id: "nav:funnel", title: "Funil", icon: Workflow, to: "/funnel", group: "Navegação", shortcut: "g f" },
   { id: "nav:sources", title: "Origens", icon: Filter, to: "/sources", group: "Navegação", shortcut: "g o" },
   { id: "nav:evolution", title: "Evolução", icon: LineChart, to: "/evolution", group: "Navegação", shortcut: "g e" },
-  { id: "nav:attendants", title: "Atendentes", icon: Users2, to: "/attendants", group: "Navegação" },
   { id: "nav:units", title: "Unidades", icon: Building2, to: "/units", group: "Navegação", shortcut: "g u" },
   { id: "nav:reports", title: "Relatórios", icon: FileBarChart, to: "/reports", group: "Navegação", shortcut: "g r" },
   { id: "nav:finance", title: "Financeiro", icon: DollarSign, to: "/finance", group: "Navegação" },
   { id: "nav:alerts", title: "Alertas", icon: Bell, to: "/alerts", group: "Navegação" },
-  { id: "nav:logs", title: "Logs", icon: Bell, to: "/logs", group: "Navegação", keywords: ["debug"] },
   { id: "nav:settings", title: "Configurações", icon: Cog, to: "/settings", group: "Navegação", shortcut: "g s" },
 ];
 
