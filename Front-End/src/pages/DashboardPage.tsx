@@ -19,6 +19,7 @@ import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
+import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -2336,6 +2337,19 @@ export default function DashboardPage() {
             {/* ─── Perfil avançado do lead (idade/alertas/doutor) ───── */}
             {!isJuridico && (
               <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
+            )}
+
+            {/* ─── Avaliações reais (agenda do Doutor Hérnia) ─────────
+                Fonte diferente do resto da página: aqui o comparecimento vem do
+                status da agenda da clínica, não do campo preenchido na Kommo.
+                Usa as datas de calendário (fromDate/toDate) — o corte comercial
+                das 19h vale para lead, não para horário de consulta. */}
+            {!isJuridico && (
+              <AvaliacoesReaisCard
+                unitId={unitId ?? undefined}
+                de={dateToInput(range.fromDate)}
+                ate={dateToInput(range.toDate)}
+              />
             )}
 
             {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
