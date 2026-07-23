@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Check, X } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useClinic } from "@/hooks/useClinic";
 import { agendaFranquia, type SpineAgendaItem } from "@/services/spine";
+import { PacienteDrawer } from "@/components/dashboard/PacienteDrawer";
 
 /**
  * Calendário (franquia) — a agenda da clínica como a recepção a vê no sistema
@@ -69,7 +70,17 @@ function nomeCurto(completo: string): string {
 const hhmm = (d: Date) =>
   `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
-function Bloco({ item, largura, offset }: { item: SpineAgendaItem; largura: number; offset: number }) {
+function Bloco({
+  item,
+  largura,
+  offset,
+  onClick,
+}: {
+  item: SpineAgendaItem;
+  largura: number;
+  offset: number;
+  onClick: (nome: string) => void;
+}) {
   const cancelado = item.grupo === "cancelado";
   const faltou = item.grupo === "falta";
   const [borda, fundo, texto] = faltou
@@ -78,8 +89,10 @@ function Bloco({ item, largura, offset }: { item: SpineAgendaItem; largura: numb
   const inicio = new Date(item.inicio);
 
   return (
-    <div
-      className="absolute overflow-hidden rounded-[7px] border-l-[3px] px-1.5 py-[3px] shadow-sm transition hover:z-10 hover:brightness-125"
+    <button
+      type="button"
+      onClick={() => onClick(item.paciente)}
+      className="absolute cursor-pointer overflow-hidden rounded-[7px] border-l-[3px] px-1.5 py-[3px] text-left shadow-sm transition hover:z-10 hover:brightness-125 focus:z-10 focus:outline-none focus:ring-1 focus:ring-white/40"
       style={{
         top: 2,
         height: SLOT_PX - 4,
@@ -106,7 +119,7 @@ function Bloco({ item, largura, offset }: { item: SpineAgendaItem; largura: numb
       <div className="truncate text-[9.5px] leading-[1.3] tabular-nums text-white/35">
         {hhmm(inicio)} · {item.categoria}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -114,6 +127,7 @@ export default function CalendarioFranquiaPage() {
   const { unitId } = useClinic();
   const [ancora, setAncora] = useState(() => segundaDe(new Date()));
   const [dias, setDias] = useState<6 | 7>(6); // seg–sáb, como no sistema da franquia
+  const [pacienteSel, setPacienteSel] = useState<string | null>(null);
 
   const fim = useMemo(() => {
     const f = new Date(ancora);
@@ -354,6 +368,7 @@ export default function CalendarioFranquiaPage() {
                           item={it}
                           largura={100 / itens.length}
                           offset={(i / itens.length) * 100}
+                          onClick={setPacienteSel}
                         />
                       ))}
                     </div>
@@ -375,6 +390,10 @@ export default function CalendarioFranquiaPage() {
         <p className="mt-3 text-[11px] text-white/35">
           {q.data.total} horários no período · fonte: agenda do Doutor Hérnia
         </p>
+      )}
+
+      {unitId != null && (
+        <PacienteDrawer unitId={unitId} nome={pacienteSel} onClose={() => setPacienteSel(null)} />
       )}
     </div>
   );

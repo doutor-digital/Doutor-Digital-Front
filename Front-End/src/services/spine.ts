@@ -99,3 +99,68 @@ export async function agendaFranquia(
   });
   return data;
 }
+
+// ─── Ficha do paciente (clique no calendário) ────────────────────────────────
+
+export interface SpinePacienteHistorico {
+  idSchedule: number;
+  quandoLocal: string;
+  categoria: string | null;
+  profissional: string | null;
+  idStatus: number;
+  situacao: string | null;
+  grupo: GrupoSituacao;
+}
+
+export interface SpinePaciente {
+  idClient: number;
+  nome: string;
+  origem: string | null;
+  status: string | null;
+  nascimento: string | null;
+  idade: number | null;
+  sexo: string | null;
+  telefone: string | null;
+  email: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  uf: string | null;
+  totalAtendimentos: number;
+  totalFaltas: number;
+  primeiroAtendimento: string | null;
+  ultimoAtendimento: string | null;
+  historico: SpinePacienteHistorico[];
+}
+
+export interface SpinePacienteCandidato {
+  idClient: number;
+  nome: string;
+  whatsapp: string | null;
+  cidade: string | null;
+  uf: string | null;
+  origem: string | null;
+}
+
+export interface SpinePacienteResolucao {
+  nomeBuscado: string;
+  /** Preenchido quando há exatamente 1 correspondência exata. */
+  detalhe: SpinePaciente | null;
+  /** Preenchido quando há cadastro duplicado (>1) — usuário escolhe. */
+  candidatos: SpinePacienteCandidato[];
+}
+
+/** Resolve o clique num horário → ficha do paciente, pelo nome que a agenda traz. */
+export async function pacientePorNome(unitId: number, nome: string): Promise<SpinePacienteResolucao> {
+  const { data } = await api.get<SpinePacienteResolucao>("/api/spine/paciente", {
+    params: { unitId, nome },
+  });
+  return data;
+}
+
+/** Ficha pelo idClient — usado quando o usuário escolhe um candidato da colisão. */
+export async function pacientePorId(unitId: number, idClient: number): Promise<SpinePaciente> {
+  const { data } = await api.get<SpinePaciente>(`/api/spine/paciente/${idClient}`, {
+    params: { unitId },
+  });
+  return data;
+}
