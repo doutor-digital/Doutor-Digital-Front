@@ -213,16 +213,24 @@ function Ficha({ p }: { p: SpinePaciente }) {
 }
 
 /**
- * Painel lateral com a ficha completa do paciente, aberto ao clicar num horário
- * do calendário. Resolve o nome da agenda → cadastro no Doutor Hérnia; se houver
- * dois cadastros com o mesmo nome (duplicata), mostra as opções para escolher.
+ * Miolo reutilizável: resolve nome → ficha, trata colisão de cadastro e renderiza
+ * a evolução. Usado tanto no painel lateral (clique no calendário) quanto na
+ * página de busca de paciente (sidebar).
  */
-export function PacienteDrawer({ unitId, nome, onClose }: PacienteDrawerProps) {
+export function PacienteFichaConteudo({ unitId, nome }: { unitId: number; nome: string }) {
   const [idEscolhido, setIdEscolhido] = useState<number | null>(null);
+
+  // Zera a escolha quando muda o nome buscado.
+  const chaveNome = `${unitId}:${nome}`;
+  const [ultimaChave, setUltimaChave] = useState(chaveNome);
+  if (chaveNome !== ultimaChave) {
+    setUltimaChave(chaveNome);
+    setIdEscolhido(null);
+  }
 
   const q = useQuery({
     queryKey: ["spine-paciente-nome", unitId, nome],
-    queryFn: () => pacientePorNome(unitId, nome!),
+    queryFn: () => pacientePorNome(unitId, nome),
     enabled: !!nome && idEscolhido == null,
     retry: false,
   });
@@ -234,12 +242,72 @@ export function PacienteDrawer({ unitId, nome, onClose }: PacienteDrawerProps) {
     retry: false,
   });
 
-  if (!nome) return null;
-
   const detalhe = qId.data ?? q.data?.detalhe ?? null;
   const candidatos = q.data?.candidatos ?? [];
   const carregando = q.isLoading || qId.isLoading;
   const erro = q.isError || qId.isError;
+
+  if (carregando)
+    return (
+      <div className="space-y-3 p-5">
+        <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
+        <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
+        <div className="mt-4 h-24 animate-pulse rounded-xl bg-white/5" />
+      </div>
+    );
+
+  if (erro)
+    return (
+      <p className="p-5 text-[12px] text-white/40">
+        Não foi possível carregar a ficha. Confira o token da unidade.
+      </p>
+    );
+
+  if (detalhe) return <Ficha p={detalhe} />;
+
+  if (candidatos.length > 1)
+    return (
+      <div className="p-5">
+        <p className="mb-3 text-[12px] text-white/50">
+          Há {candidatos.length} cadastros com esse nome. Qual é o paciente?
+        </p>
+        <div className="space-y-2">
+          {candidatos.map((c) => (
+            <button
+              key={c.idClient}
+              onClick={() => setIdEscolhido(c.idClient)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-3 text-left transition hover:bg-white/5"
+            >
+              <div className="text-[13px] font-medium text-white/85">{c.nome}</div>
+              <div className="mt-0.5 text-[11px] text-white/40">
+                {[c.whatsapp, [c.cidade, c.uf].filter(Boolean).join("/"), c.origem]
+                  .filter(Boolean)
+                  .join(" · ")}
+                {" · "}#{c.idClient}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
+  return (
+    <div className="p-5">
+      <p className="text-[13px] text-white/70">{nome}</p>
+      <p className="mt-2 text-[12px] text-white/40">
+        Sem cadastro correspondente no Doutor Hérnia. O nome na agenda pode estar
+        grafado diferente do cadastro.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Painel lateral com a ficha completa do paciente, aberto ao clicar num horário
+ * do calendário. Casca sobre <PacienteFichaConteudo>.
+ */
+export function PacienteDrawer({ unitId, nome, onClose }: PacienteDrawerProps) {
+  if (!nome) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -253,59 +321,7 @@ export function PacienteDrawer({ unitId, nome, onClose }: PacienteDrawerProps) {
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {carregando && (
-          <div className="space-y-3 p-5">
-            <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
-            <div className="mt-4 h-24 animate-pulse rounded-xl bg-white/5" />
-          </div>
-        )}
-
-        {erro && (
-          <p className="p-5 text-[12px] text-white/40">
-            Não foi possível carregar a ficha. Confira o token da unidade.
-          </p>
-        )}
-
-        {!carregando && !erro && detalhe && <Ficha p={detalhe} />}
-
-        {/* Colisão de nome — escolher qual cadastro */}
-        {!carregando && !detalhe && candidatos.length > 1 && (
-          <div className="p-5">
-            <p className="mb-3 text-[12px] text-white/50">
-              Há {candidatos.length} cadastros com esse nome. Qual é o paciente?
-            </p>
-            <div className="space-y-2">
-              {candidatos.map((c) => (
-                <button
-                  key={c.idClient}
-                  onClick={() => setIdEscolhido(c.idClient)}
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-3 text-left transition hover:bg-white/5"
-                >
-                  <div className="text-[13px] font-medium text-white/85">{c.nome}</div>
-                  <div className="mt-0.5 text-[11px] text-white/40">
-                    {[c.whatsapp, [c.cidade, c.uf].filter(Boolean).join("/"), c.origem]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    {" · "}#{c.idClient}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Nenhum cadastro encontrado */}
-        {!carregando && !erro && !detalhe && candidatos.length === 0 && (
-          <div className="p-5">
-            <p className="text-[13px] text-white/70">{nome}</p>
-            <p className="mt-2 text-[12px] text-white/40">
-              Sem cadastro correspondente no Doutor Hérnia. O nome na agenda pode estar
-              grafado diferente do cadastro.
-            </p>
-          </div>
-        )}
+        <PacienteFichaConteudo unitId={unitId} nome={nome} />
       </div>
     </div>
   );
