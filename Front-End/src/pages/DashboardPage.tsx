@@ -20,6 +20,7 @@ import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
+import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -2069,6 +2070,13 @@ export default function DashboardPage() {
                 de={dateToInput(range.fromDate)}
                 ate={dateToInput(range.toDate)}
               />
+            )}
+
+            {/* Tendência longa das avaliações — série preservada no banco (além
+                dos 100 dias do sistema clínico). Independe do filtro de período
+                da página; mostra os últimos 12 meses capturados. */}
+            {!isJuridico && (
+              <HistoricoAvaliacoesCard className="mt-4" unitId={unitId ?? undefined} />
             )}
 
             {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}

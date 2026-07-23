@@ -165,6 +165,31 @@ export async function pacientePorId(unitId: number, idClient: number): Promise<S
   return data;
 }
 
+// ─── Histórico de avaliações (série longa, do nosso banco) ───────────────────
+
+export interface SpineHistoricoMes {
+  competencia: string; // "2026-07"
+  agendadas: number;
+  compareceram: number;
+  naoCompareceram: number;
+  desmarcadas: number;
+  taxaComparecimento: number;
+}
+
+export interface SpineHistorico {
+  unitId: number;
+  /** Dia da primeira captura — antes disso não há série. null = nada capturado ainda. */
+  capturandoDesde: string | null;
+  serie: SpineHistoricoMes[];
+}
+
+export async function historicoAvaliacoes(unitId: number, meses = 12): Promise<SpineHistorico> {
+  const { data } = await api.get<SpineHistorico>("/api/spine/historico", {
+    params: { unitId, meses },
+  });
+  return data;
+}
+
 // ─── Onboarding self-service do token (Central de Integrações) ────────────────
 
 export interface SpineConfigStatus {
