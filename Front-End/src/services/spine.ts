@@ -65,3 +65,37 @@ export const spineService = {
     return data;
   },
 };
+
+export interface SpineAgendaItem {
+  idSchedule: number;
+  idTreatment: number | null;
+  paciente: string;
+  /** Início já no fuso da clínica (o backend converte de UTC). */
+  inicio: string;
+  idCategoria: number;
+  categoria: string;
+  profissional: string;
+  idStatus: number;
+  status: string;
+  grupo: GrupoSituacao;
+}
+
+export interface SpineAgenda {
+  de: string;
+  ate: string;
+  total: number;
+  categorias: string[];
+  itens: SpineAgendaItem[];
+}
+
+/** Agenda da clínica no período — usada pelo Calendário (franquia). */
+export async function agendaFranquia(
+  unitId: number,
+  de: string,
+  ate: string,
+): Promise<SpineAgenda> {
+  const { data } = await api.get<SpineAgenda>("/api/spine/agenda", {
+    params: { unitId, de, ate },
+  });
+  return data;
+}

@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
+  CalendarDays,
   Activity,
   AlertCircle,
   Award,
@@ -131,6 +132,7 @@ const navGroups: NavGroup[] = [
     label: "Visão geral",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+      { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays, badge: "Novo" },
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, badge: "Novo" },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, badge: "Novo" },
       { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, badge: "Novo" },
@@ -478,6 +480,7 @@ export function Sidebar() {
           label: "Visão geral",
           items: [
             { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+            { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays, badge: "Novo" },
             { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
             { to: "/analytics", label: "Analytics", icon: BarChart3 },
             { to: "/evolution", label: "Evolução", icon: LineChart },
