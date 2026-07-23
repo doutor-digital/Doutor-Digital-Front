@@ -16,6 +16,7 @@ const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const CalendarioFranquiaPage = lazy(() => import("@/pages/CalendarioFranquiaPage"));
+const RedeComparativoPage = lazy(() => import("@/pages/RedeComparativoPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
@@ -157,6 +158,7 @@ export default function App() {
         >
           <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/calendario"        element={<CalendarioFranquiaPage />} />
+          <Route path="/rede"              element={<RedeComparativoPage />} />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
           <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />

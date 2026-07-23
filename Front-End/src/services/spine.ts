@@ -175,6 +175,33 @@ export interface SpineConfigStatus {
   previa: string | null;
 }
 
+// ─── Comparativo entre unidades (franqueador master) ─────────────────────────
+
+export interface SpineRedeUnidade {
+  unitId: number;
+  unidade: string;
+  agendadas: number;
+  compareceram: number;
+  naoCompareceram: number;
+  desmarcadas: number;
+  taxaComparecimento: number;
+  pacientesDistintos: number;
+  erro: string | null;
+}
+
+export interface SpineRede {
+  de: string;
+  ate: string;
+  unidades: SpineRedeUnidade[];
+  semToken: { unitId: number; unidade: string }[];
+  totais: { unidades: number; agendadas: number; compareceram: number; taxaComparecimento: number };
+}
+
+export async function redeComparativo(de?: string, ate?: string): Promise<SpineRede> {
+  const { data } = await api.get<SpineRede>("/api/spine/rede/comparativo", { params: { de, ate } });
+  return data;
+}
+
 export const spineConfig = {
   async status(unitId: number): Promise<SpineConfigStatus> {
     const { data } = await api.get<SpineConfigStatus>("/api/spine/config", { params: { unitId } });
