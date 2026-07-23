@@ -14,6 +14,16 @@ interface AvaliacoesReaisCardProps {
   de?: string;
   ate?: string;
   className?: string;
+  /** Título do card. Default "Avaliações". */
+  titulo?: string;
+  /** Fonte dos dados — permite reusar o card para sessões/retornos. */
+  fonte?: (unitId: number, de?: string, ate?: string) => Promise<SpineAvaliacoes>;
+  /** Rótulo do número-herói de realizadas. Default "atendidas". */
+  labelRealizadas?: string;
+  /** Rótulo da taxa. Default "comparecimento". */
+  labelTaxa?: string;
+  /** Chave de cache do react-query. Default "spine-avaliacoes". */
+  queryKeyBase?: string;
 }
 
 /** Janela máxima da API do Doutor Hérnia (99 porque o backend pede 1 dia a mais). */
@@ -86,7 +96,17 @@ function DicaGrafico({ active, payload, label }: any) {
  * Diferente dos demais cards, o dado não passa pela Kommo: é o status que a
  * recepção deu à agenda. Serve de contraprova do campo "Compareceu" do CRM.
  */
-export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesReaisCardProps) {
+export function AvaliacoesReaisCard({
+  unitId,
+  de,
+  ate,
+  className,
+  titulo = "Avaliações",
+  fonte = spineService.avaliacoes,
+  labelRealizadas = "atendidas",
+  labelTaxa = "comparecimento",
+  queryKeyBase = "spine-avaliacoes",
+}: AvaliacoesReaisCardProps) {
   const [preset, setPreset] = useState<Preset>("filtro");
   const [customDe, setCustomDe] = useState(diasAtras(30));
   const [customAte, setCustomAte] = useState(hoje());
@@ -101,8 +121,8 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
   const janela = limitarJanela(bruto.de, bruto.ate);
 
   const q = useQuery({
-    queryKey: ["spine-avaliacoes", unitId, janela.de, janela.ate],
-    queryFn: () => spineService.avaliacoes(unitId!, janela.de, janela.ate),
+    queryKey: [queryKeyBase, unitId, janela.de, janela.ate],
+    queryFn: () => fonte(unitId!, janela.de, janela.ate),
     enabled: !!unitId && !!janela.de && !!janela.ate,
     staleTime: 5 * 60_000,
     retry: false,
@@ -126,7 +146,7 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-            Avaliações
+            {titulo}
           </p>
           <p className="mt-1 text-[11px] text-white/40">
             Agenda do Doutor Hérnia
@@ -141,7 +161,7 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
               <div className="text-4xl font-semibold leading-none tabular-nums text-white/90">
                 {d.realizadas}
               </div>
-              <p className="mt-1 text-[11px] text-white/40">atendidas</p>
+              <p className="mt-1 text-[11px] text-white/40">{labelRealizadas}</p>
             </div>
             <div className="text-right">
               <div
@@ -150,7 +170,7 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
                 {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                 <span className="text-xl opacity-60">%</span>
               </div>
-              <p className="mt-1 text-[11px] text-white/40">comparecimento</p>
+              <p className="mt-1 text-[11px] text-white/40">{labelTaxa}</p>
             </div>
           </div>
         )}
@@ -242,7 +262,7 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
           </div>
 
           <p className="mt-2 text-[10.5px] leading-relaxed text-white/35">
-            Comparecimento = {d.realizadas} atendidas ÷ {d.resolvidas} com desfecho.
+            {labelTaxa[0].toUpperCase() + labelTaxa.slice(1)} = {d.realizadas} {labelRealizadas} ÷ {d.resolvidas} com desfecho.
             {d.total !== d.resolvidas &&
               ` ${d.total - d.resolvidas} ainda não aconteceram e ficam fora da conta.`}
           </p>

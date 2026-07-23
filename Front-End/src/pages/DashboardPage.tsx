@@ -21,6 +21,7 @@ import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
+import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel } from "@/lib/roles";
@@ -2070,6 +2071,35 @@ export default function DashboardPage() {
                 de={dateToInput(range.fromDate)}
                 ate={dateToInput(range.toDate)}
               />
+            )}
+
+            {/* Adesão ao tratamento (sessões) e Retornos — mesma estrutura do card
+                de avaliações, outra categoria da agenda. Sessões é metade da
+                operação clínica que estava invisível; retornos inclui o retorno
+                com exames. */}
+            {!isJuridico && (
+              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <AvaliacoesReaisCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                  titulo="Adesão ao tratamento"
+                  fonte={spineService.sessoes}
+                  labelRealizadas="sessões feitas"
+                  labelTaxa="adesão"
+                  queryKeyBase="spine-sessoes"
+                />
+                <AvaliacoesReaisCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                  titulo="Retornos"
+                  fonte={spineService.retornos}
+                  labelRealizadas="realizados"
+                  labelTaxa="comparecimento"
+                  queryKeyBase="spine-retornos"
+                />
+              </div>
             )}
 
             {/* Tendência longa das avaliações — série preservada no banco (além

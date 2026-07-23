@@ -60,6 +60,22 @@ export const spineService = {
     return data;
   },
 
+  /** Sessões de tratamento (adesão). Mesma estrutura de avaliações. */
+  async sessoes(unitId: number, de?: string, ate?: string): Promise<SpineAvaliacoes> {
+    const { data } = await api.get<SpineAvaliacoes>("/api/spine/sessoes", {
+      params: { unitId, de, ate },
+    });
+    return data;
+  },
+
+  /** Retornos (retorno + com exames + pós-tratamento). */
+  async retornos(unitId: number, de?: string, ate?: string): Promise<SpineAvaliacoes> {
+    const { data } = await api.get<SpineAvaliacoes>("/api/spine/retornos", {
+      params: { unitId, de, ate },
+    });
+    return data;
+  },
+
   async status(): Promise<{ provider: string; online: boolean }> {
     const { data } = await api.get("/api/spine/status");
     return data;
