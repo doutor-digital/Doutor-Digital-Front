@@ -65,6 +65,64 @@ function ItemHistorico({ h }: { h: SpinePacienteHistorico }) {
   );
 }
 
+/**
+ * Evolução do tratamento agrupada por protocolo. Cada protocolo
+ * ("PROTOCOLO 03 MESES - CERVICAL", "RETORNO APÓS TRATAMENTO"…) vira uma linha
+ * com o total de sessões realizadas e o período. É a jornada clínica do paciente
+ * como o dado do Doutor Hérnia permite ver — não inclui a nota de evolução que o
+ * fisioterapeuta escreve por sessão (isso está no módulo Tratamentos, sem acesso).
+ */
+function EvolucaoProtocolo({ historico }: { historico: SpinePacienteHistorico[] }) {
+  const grupos = new Map<string, SpinePacienteHistorico[]>();
+  for (const h of historico) {
+    const chave = h.categoria ?? "—";
+    (grupos.get(chave) ?? grupos.set(chave, []).get(chave)!).push(h);
+  }
+  if (grupos.size === 0) return null;
+
+  // Ordena por primeira sessão de cada protocolo (a ordem em que o tratamento andou).
+  const linhas = [...grupos.entries()]
+    .map(([protocolo, itens]) => {
+      const ordenados = [...itens].sort((a, b) => a.quandoLocal.localeCompare(b.quandoLocal));
+      const feitas = itens.filter((i) => i.grupo === "realizado").length;
+      return {
+        protocolo,
+        feitas,
+        total: itens.length,
+        de: ordenados[0].quandoLocal,
+        ate: ordenados[ordenados.length - 1].quandoLocal,
+      };
+    })
+    .sort((a, b) => a.de.localeCompare(b.de));
+
+  return (
+    <div className="px-5 pb-4">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+        Evolução do tratamento
+      </p>
+      <div className="space-y-2">
+        {linhas.map((l) => (
+          <div key={l.protocolo} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[12.5px] font-medium text-white/85">{l.protocolo}</span>
+              <span className="shrink-0 text-[12px] tabular-nums text-emerald-400">
+                {l.feitas} <span className="text-white/40">sessõe{l.feitas === 1 ? "" : "s"}</span>
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] text-white/40">
+              {dataBR(l.de)}
+              {l.de !== l.ate && ` → ${dataBR(l.ate)}`}
+              {l.total !== l.feitas && (
+                <span className="text-white/30"> · {l.total - l.feitas} não realizada(s)</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Ficha({ p }: { p: SpinePaciente }) {
   return (
     <>
@@ -109,7 +167,7 @@ function Ficha({ p }: { p: SpinePaciente }) {
       <div className="mx-5 mb-4 grid grid-cols-3 gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3">
         <div className="text-center">
           <div className="text-xl font-semibold tabular-nums text-emerald-400">{p.totalAtendimentos}</div>
-          <div className="text-[10px] text-white/40">atendimentos</div>
+          <div className="text-[10px] text-white/40">sessões feitas</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-semibold tabular-nums text-amber-400">{p.totalFaltas}</div>
@@ -120,6 +178,20 @@ function Ficha({ p }: { p: SpinePaciente }) {
           <div className="text-[10px] text-white/40">na agenda</div>
         </div>
       </div>
+
+      {/* Período em tratamento */}
+      {p.primeiroAtendimento && p.ultimoAtendimento && (
+        <div className="mx-5 mb-4 flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-[12px]">
+          <span className="text-white/50">Em tratamento desde</span>
+          <span className="text-white/80">
+            {dataBR(p.primeiroAtendimento)} <span className="text-white/30">→</span>{" "}
+            {dataBR(p.ultimoAtendimento)}
+          </span>
+        </div>
+      )}
+
+      {/* Evolução por protocolo — a jornada clínica agrupada */}
+      <EvolucaoProtocolo historico={p.historico} />
 
       {/* Histórico */}
       <div className="px-5 pb-6">
