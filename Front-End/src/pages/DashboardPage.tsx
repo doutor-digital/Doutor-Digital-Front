@@ -2056,6 +2056,21 @@ export default function DashboardPage() {
               </DarkCard>
             </div>
 
+            {/* ─── Avaliações reais (agenda do Doutor Hérnia) ───────────
+                Fonte diferente do resto da página: o comparecimento vem do status
+                da agenda da clínica, não do campo preenchido na Kommo. Fica logo
+                abaixo dos KPIs porque é a contraprova deles. Recebe as datas de
+                calendário (fromDate/toDate) — o corte comercial das 19h vale para
+                lead, não para horário de consulta — e tem seletor próprio dentro. */}
+            {!isJuridico && (
+              <AvaliacoesReaisCard
+                className="mt-4"
+                unitId={unitId ?? undefined}
+                de={dateToInput(range.fromDate)}
+                ate={dateToInput(range.toDate)}
+              />
+            )}
+
             {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
@@ -2337,19 +2352,6 @@ export default function DashboardPage() {
             {/* ─── Perfil avançado do lead (idade/alertas/doutor) ───── */}
             {!isJuridico && (
               <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
-            )}
-
-            {/* ─── Avaliações reais (agenda do Doutor Hérnia) ─────────
-                Fonte diferente do resto da página: aqui o comparecimento vem do
-                status da agenda da clínica, não do campo preenchido na Kommo.
-                Usa as datas de calendário (fromDate/toDate) — o corte comercial
-                das 19h vale para lead, não para horário de consulta. */}
-            {!isJuridico && (
-              <AvaliacoesReaisCard
-                unitId={unitId ?? undefined}
-                de={dateToInput(range.fromDate)}
-                ate={dateToInput(range.toDate)}
-              />
             )}
 
             {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
