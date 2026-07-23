@@ -25,16 +25,25 @@ const SLOTS_POR_HORA = 2;
 const HORA_MIN_PADRAO = 7;
 const HORA_MAX_PADRAO = 19;
 
-/** borda (identidade) · fundo · texto do nome */
-const COR_CATEGORIA: Record<number, [string, string, string]> = {
-  1: ["#f59e0b", "rgba(245,158,11,0.14)", "#fcd34d"], // Avaliação
-  2: ["#3b82f6", "rgba(59,130,246,0.13)", "#93c5fd"], // Sessão
-  3: ["#10b981", "rgba(16,185,129,0.13)", "#6ee7b7"], // Retorno
-  6: ["#8b5cf6", "rgba(139,92,246,0.13)", "#c4b5fd"], // Retorno com exames
-  7: ["#06b6d4", "rgba(6,182,212,0.13)", "#67e8f9"], // Retorno pós-tratamento
+/**
+ * Cores fiéis ao calendário da franquia (fundo sólido, texto escuro).
+ *
+ * A franquia colore pelo PROTOCOLO do tratamento (02 meses, 03 meses,
+ * descompressão, manutenção, preventivo). O `schedules/search` da integração só
+ * expõe a CATEGORIA (avaliação/sessão/retorno) — o protocolo fino está no módulo
+ * Tratamentos, bloqueado por permissão. Então casamos as cores dominantes por
+ * categoria; toda "sessão" recebe o azul de 03 meses (o predominante na agenda).
+ */
+const CATEGORIA_BG: Record<number, string> = {
+  1: "#f4a63a", // Avaliação  → laranja
+  2: "#5b9bd5", // Sessão     → azul (Protocolo 03 meses, dominante)
+  3: "#8fce7f", // Retorno    → verde claro
+  6: "#8fce7f", // Retorno com exames
+  7: "#8fce7f", // Retorno pós-tratamento
 };
-const COR_PADRAO: [string, string, string] = ["#94a3b8", "rgba(148,163,184,0.12)", "#cbd5e1"];
-const COR_FALTA: [string, string, string] = ["#ef4444", "rgba(239,68,68,0.14)", "#fca5a5"];
+const BG_PADRAO = "#95a5a6"; // N/A → cinza
+const BG_CANCELADO = "#e0503a"; // desmarcado / não compareceu → vermelho (como na franquia)
+const TEXTO_BLOCO = "#16233a"; // texto escuro sobre fundo colorido, igual à franquia
 
 const DIAS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 const MESES = [
@@ -81,26 +90,23 @@ function Bloco({
   offset: number;
   onClick: (nome: string) => void;
 }) {
-  const cancelado = item.grupo === "cancelado";
-  const faltou = item.grupo === "falta";
-  const [borda, fundo, texto] = faltou
-    ? COR_FALTA
-    : COR_CATEGORIA[item.idCategoria] ?? COR_PADRAO;
+  // Vermelho para o que não aconteceu (desmarcado/faltou), como na franquia;
+  // senão, a cor da categoria.
+  const naoAconteceu = item.grupo === "cancelado" || item.grupo === "falta";
+  const fundo = naoAconteceu ? BG_CANCELADO : CATEGORIA_BG[item.idCategoria] ?? BG_PADRAO;
   const inicio = new Date(item.inicio);
 
   return (
     <button
       type="button"
       onClick={() => onClick(item.paciente)}
-      className="absolute cursor-pointer overflow-hidden rounded-[7px] border-l-[3px] px-1.5 py-[3px] text-left shadow-sm transition hover:z-10 hover:brightness-125 focus:z-10 focus:outline-none focus:ring-1 focus:ring-white/40"
+      className="absolute cursor-pointer overflow-hidden rounded-[5px] px-1.5 py-[3px] text-left shadow-sm ring-1 ring-black/10 transition hover:z-10 hover:brightness-105 focus:z-10 focus:outline-none focus:ring-2 focus:ring-white/60"
       style={{
         top: 2,
         height: SLOT_PX - 4,
         left: `calc(${offset}% + 3px)`,
         width: `calc(${largura}% - 6px)`,
         background: fundo,
-        borderLeftColor: borda,
-        opacity: cancelado ? 0.4 : 1,
       }}
       title={`${item.paciente} · ${hhmm(inicio)} · ${item.categoria} · ${item.status}${
         item.profissional ? ` · ${item.profissional}` : ""
@@ -108,15 +114,15 @@ function Bloco({
     >
       <div className="flex items-center gap-1">
         <span
-          className="flex-1 truncate text-[11px] font-medium leading-tight"
-          style={{ color: texto, textDecoration: cancelado ? "line-through" : undefined }}
+          className="flex-1 truncate text-[11px] font-semibold leading-tight"
+          style={{ color: TEXTO_BLOCO }}
         >
           {nomeCurto(item.paciente)}
         </span>
-        {item.grupo === "realizado" && <Check className="h-3 w-3 shrink-0 text-emerald-400" />}
-        {faltou && <X className="h-3 w-3 shrink-0 text-red-400" />}
+        {item.grupo === "realizado" && <Check className="h-3 w-3 shrink-0" style={{ color: TEXTO_BLOCO }} />}
+        {item.grupo === "falta" && <X className="h-3 w-3 shrink-0" style={{ color: TEXTO_BLOCO }} />}
       </div>
-      <div className="truncate text-[9.5px] leading-[1.3] tabular-nums text-white/35">
+      <div className="truncate text-[9.5px] leading-[1.3] tabular-nums" style={{ color: "rgba(22,35,58,0.6)" }}>
         {hhmm(inicio)} · {item.categoria}
       </div>
     </button>
@@ -268,33 +274,25 @@ export default function CalendarioFranquiaPage() {
         </div>
       </div>
 
-      {/* ── Legenda ── */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/45">
+      {/* ── Legenda (cores da franquia) ── */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] text-white/50">
         {[
-          [1, "Avaliação"],
-          [2, "Sessão"],
-          [3, "Retorno"],
-          [6, "Retorno c/ exames"],
-          [7, "Retorno pós-tratamento"],
-        ].map(([id, nome]) => (
-          <span key={id as number} className="inline-flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 rounded-sm"
-              style={{ background: (COR_CATEGORIA[id as number] ?? COR_PADRAO)[0] }}
-            />
-            {nome as string}
+          ["#f4a63a", "Avaliação"],
+          ["#5b9bd5", "Sessão / Protocolo"],
+          ["#8fce7f", "Retorno"],
+          ["#e0503a", "Faltou / Desmarcado"],
+          ["#95a5a6", "N/A"],
+        ].map(([cor, nome]) => (
+          <span
+            key={nome}
+            className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-medium"
+            style={{ background: cor, color: "#16233a" }}
+          >
+            {nome}
           </span>
         ))}
-        <span className="ml-auto inline-flex items-center gap-3">
-          <span className="inline-flex items-center gap-1">
-            <Check className="h-3 w-3 text-emerald-400" /> atendido
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <X className="h-3 w-3 text-red-400" /> faltou
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="line-through opacity-45">riscado</span> desmarcado
-          </span>
+        <span className="ml-auto inline-flex items-center gap-1 text-white/40">
+          <Check className="h-3 w-3" /> atendido
         </span>
       </div>
 
