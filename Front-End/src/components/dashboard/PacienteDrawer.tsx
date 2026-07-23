@@ -140,6 +140,25 @@ function Ficha({ p }: { p: SpinePaciente }) {
         </div>
       </div>
 
+      {/* Lead comercial vinculado (Kommo), casado por telefone */}
+      {p.leadVinculado && (
+        <a
+          href={`/leads/${p.leadVinculado.kommoLeadId}`}
+          className="mx-5 mt-3 flex items-center justify-between rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-4 py-2.5 transition hover:bg-sky-400/10"
+        >
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-sky-300/70">Lead na Kommo</div>
+            <div className="text-[13px] text-white/85">
+              {p.leadVinculado.nome}
+              {p.leadVinculado.etapa && (
+                <span className="ml-2 text-[11px] text-white/40">· {p.leadVinculado.etapa}</span>
+              )}
+            </div>
+          </div>
+          <span className="text-[11px] tabular-nums text-sky-300/60">#{p.leadVinculado.kommoLeadId}</span>
+        </a>
+      )}
+
       {/* Contato e perfil */}
       <div className="space-y-2 px-5 py-4">
         {p.telefone && (

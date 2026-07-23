@@ -112,6 +112,13 @@ export interface SpinePacienteHistorico {
   grupo: GrupoSituacao;
 }
 
+export interface SpineLeadVinculado {
+  kommoLeadId: number;
+  nome: string;
+  etapa: string | null;
+  unitId: number | null;
+}
+
 export interface SpinePaciente {
   idClient: number;
   nome: string;
@@ -130,6 +137,8 @@ export interface SpinePaciente {
   primeiroAtendimento: string | null;
   ultimoAtendimento: string | null;
   historico: SpinePacienteHistorico[];
+  /** Lead da Kommo do mesmo paciente, casado por telefone. null = sem correspondência. */
+  leadVinculado: SpineLeadVinculado | null;
 }
 
 export interface SpinePacienteCandidato {
