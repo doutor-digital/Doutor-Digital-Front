@@ -164,3 +164,32 @@ export async function pacientePorId(unitId: number, idClient: number): Promise<S
   });
   return data;
 }
+
+// ─── Onboarding self-service do token (Central de Integrações) ────────────────
+
+export interface SpineConfigStatus {
+  unitId: number;
+  configurado: boolean;
+  atualizadoEm: string | null;
+  /** Prévia mascarada do token (ex.: "eyJhbG…OWQE"). Nunca o token inteiro. */
+  previa: string | null;
+}
+
+export const spineConfig = {
+  async status(unitId: number): Promise<SpineConfigStatus> {
+    const { data } = await api.get<SpineConfigStatus>("/api/spine/config", { params: { unitId } });
+    return data;
+  },
+
+  /** Salva e valida o token na hora; rejeita (400) se o Doutor Hérnia recusar. */
+  async salvar(unitId: number, token: string): Promise<SpineConfigStatus> {
+    const { data } = await api.put<SpineConfigStatus>("/api/spine/config", { token }, {
+      params: { unitId },
+    });
+    return data;
+  },
+
+  async remover(unitId: number): Promise<void> {
+    await api.delete("/api/spine/config", { params: { unitId } });
+  },
+};

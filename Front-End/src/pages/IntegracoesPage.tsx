@@ -15,6 +15,7 @@ import {
 } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+import { DoutorHerniaConnectCard } from "@/components/integrations/DoutorHerniaConnectCard";
 import { canInvite, isAdminLevel, type Role } from "@/lib/roles";
 import { configurationService } from "@/services/configuration";
 import {
@@ -247,14 +248,19 @@ export default function IntegracoesPage() {
     });
   }, [search, category]);
 
+  const unitAtual = units.find((u) => String(u.id) === String(unitId));
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-50">Convites da equipe</h1>
+        <h1 className="text-2xl font-bold text-slate-50">Integrações</h1>
         <p className="text-sm text-slate-400">
-          Convide pessoas pra unidades específicas e gerencie os acessos.
+          Conecte os sistemas da unidade e gerencie os acessos da equipe.
         </p>
       </header>
+
+      {/* Sistema clínico — onboarding self-service do token */}
+      <DoutorHerniaConnectCard unitId={unitId} unitName={unitAtual?.name} />
 
       {/* equipe / convites */}
       <section className="rounded-2xl border border-white/[0.06] bg-[#0a0a0d] p-6">
