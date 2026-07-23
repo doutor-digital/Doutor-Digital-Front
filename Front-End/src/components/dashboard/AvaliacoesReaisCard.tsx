@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle } from "@/components/icons";
-import { spineService, type SpineAvaliacoes } from "@/services/spine";
+import {
+  spineService,
+  type GrupoSituacao,
+  type SpineAvaliacoes,
+} from "@/services/spine";
 
 interface AvaliacoesReaisCardProps {
   unitId?: number;
@@ -12,19 +16,23 @@ interface AvaliacoesReaisCardProps {
   className?: string;
 }
 
-/** Limite duro da API do Doutor Hérnia: nenhuma consulta pode passar de 100 dias. */
-const MAX_DIAS = 100;
+/** Janela máxima da API do Doutor Hérnia (99 porque o backend pede 1 dia a mais). */
+const MAX_DIAS = 99;
+
+/** Cor da superfície do card — usada como respiro de 2px entre segmentos empilhados. */
+const SUPERFICIE = "#0d1526";
 
 /**
- * Paleta de status (não é categórica): verde = aconteceu, âmbar = falta,
- * cinza = horário devolvido. Cada faixa leva rótulo e contagem ao lado — status
- * nunca é comunicado só por cor.
+ * Paleta por desfecho, não por situação: seis status colapsam em quatro cores.
+ * Cada faixa leva nome e contagem ao lado — status nunca é comunicado só por cor.
  */
-const COR = {
-  compareceu: "#34d399",
-  faltou: "#fbbf24",
-  desmarcou: "#94a3b8",
-} as const;
+const COR: Record<GrupoSituacao, string> = {
+  realizado: "#34d399",
+  falta: "#fbbf24",
+  cancelado: "#94a3b8",
+  pendente: "#60a5fa",
+  desconhecido: "#f472b6",
+};
 
 type Preset = "filtro" | "7" | "30" | "90" | "custom";
 
@@ -36,13 +44,13 @@ const PRESETS: { key: Preset; label: string }[] = [
   { key: "custom", label: "Datas" },
 ];
 
-/** Cor da superfície do card — usada como "respiro" de 2px entre segmentos empilhados. */
-const SUPERFICIE = "#0d1526";
+const hoje = () => new Date().toISOString().slice(0, 10);
+const diasAtras = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 /**
  * O número-herói não pode ser sempre verde: verde afirma "bom", e 45% de
- * comparecimento não é bom. A faixa vem da operação — abaixo de 60% a agenda
- * está sendo desperdiçada.
+ * comparecimento não é bom. Abaixo de 60% a agenda está sendo desperdiçada.
  */
 function corDaTaxa(taxa: number): string {
   if (taxa >= 80) return "text-emerald-400";
@@ -50,52 +58,12 @@ function corDaTaxa(taxa: number): string {
   return "text-red-400";
 }
 
-const hoje = () => new Date().toISOString().slice(0, 10);
-const diasAtras = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
-const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-
-/**
- * Corta a janela para caber no limite da API, mantendo o fim e recuando o início.
- * Necessário porque o filtro de "ano" da página estoura os 100 dias.
- */
 function limitarJanela(de?: string, ate?: string): { de?: string; ate?: string; cortada: boolean } {
   if (!de || !ate) return { de, ate, cortada: false };
   const dias = (Date.parse(ate) - Date.parse(de)) / 86_400_000;
   if (dias <= MAX_DIAS) return { de, ate, cortada: false };
   const inicio = new Date(Date.parse(ate) - MAX_DIAS * 86_400_000);
   return { de: inicio.toISOString().slice(0, 10), ate, cortada: true };
-}
-
-/** Faixa de proporção: uma barra, três segmentos, 2px de respiro entre eles. */
-function BarraProporcao({ d }: { d: SpineAvaliacoes }) {
-  const total = d.agendadas || 1;
-  const seg = [
-    { v: d.compareceram, cor: COR.compareceu },
-    { v: d.naoCompareceram, cor: COR.faltou },
-    { v: d.desmarcadas + d.remarcadas, cor: COR.desmarcou },
-  ].filter((s) => s.v > 0);
-
-  return (
-    <div className="flex h-2.5 gap-[2px] overflow-hidden rounded-full">
-      {seg.map((s, i) => (
-        <div
-          key={i}
-          className="h-full first:rounded-l-full last:rounded-r-full"
-          style={{ width: `${(s.v / total) * 100}%`, background: s.cor }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function Chip({ cor, rotulo, valor }: { cor: string; rotulo: string; valor: number }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-white/50">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cor }} />
-      {rotulo}
-      <span className="font-medium tabular-nums text-white/85">{valor}</span>
-    </span>
-  );
 }
 
 function DicaGrafico({ active, payload, label }: any) {
@@ -105,22 +73,18 @@ function DicaGrafico({ active, payload, label }: any) {
     <div className="rounded-lg border border-white/10 bg-[#0b1220] px-2.5 py-1.5 text-[11px] shadow-xl">
       <p className="text-white/50">{label}</p>
       <p className="text-white/85">
-        <span className="tabular-nums">{p.compareceram}</span> de{" "}
-        <span className="tabular-nums">{p.agendadas}</span> compareceram
+        <span className="tabular-nums">{p.realizadas}</span> de{" "}
+        <span className="tabular-nums">{p.total}</span> atendidas
       </p>
     </div>
   );
 }
 
 /**
- * Avaliações — comparecimento real, vindo da agenda do Doutor Hérnia.
+ * Avaliações — o desfecho real de cada horário, vindo da agenda do Doutor Hérnia.
  *
- * Diferente dos demais cards, o dado aqui não passa pela Kommo: é o status da
- * agenda da clínica (ATENDIDO / NÃO COMPARECEU / DESMARCADO). Serve de
- * contraprova do campo "Compareceu" que a recepção preenche no CRM.
- *
- * Período próprio porque a pergunta que ele responde raramente é a mesma do
- * filtro da página.
+ * Diferente dos demais cards, o dado não passa pela Kommo: é o status que a
+ * recepção deu à agenda. Serve de contraprova do campo "Compareceu" do CRM.
  */
 export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesReaisCardProps) {
   const [preset, setPreset] = useState<Preset>("filtro");
@@ -146,19 +110,19 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
 
   if (!unitId) return null;
 
-  const d = q.data;
+  const d: SpineAvaliacoes | undefined = q.data;
   const serie = (d?.porDia ?? []).map((p) => ({
     dia: ddmm(p.dia),
-    agendadas: p.agendadas,
-    compareceram: p.compareceram,
-    faltaram: p.agendadas - p.compareceram,
+    total: p.total,
+    realizadas: p.realizadas,
+    resto: p.total - p.realizadas,
   }));
 
   return (
     <div
       className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur ${className ?? ""}`}
     >
-      {/* ── Cabeçalho: identidade à esquerda, número-herói à direita ── */}
+      {/* ── Cabeçalho ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
@@ -172,14 +136,22 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
         </div>
 
         {d && (
-          <div className="text-right">
-            <div
-              className={`text-5xl font-semibold leading-none tabular-nums ${corDaTaxa(d.taxaComparecimento)}`}
-            >
-              {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-              <span className="text-2xl opacity-60">%</span>
+          <div className="flex items-end gap-5">
+            <div className="text-right">
+              <div className="text-4xl font-semibold leading-none tabular-nums text-white/90">
+                {d.realizadas}
+              </div>
+              <p className="mt-1 text-[11px] text-white/40">atendidas</p>
             </div>
-            <p className="mt-1 text-[11px] text-white/40">compareceram</p>
+            <div className="text-right">
+              <div
+                className={`text-4xl font-semibold leading-none tabular-nums ${corDaTaxa(d.taxaComparecimento)}`}
+              >
+                {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                <span className="text-xl opacity-60">%</span>
+              </div>
+              <p className="mt-1 text-[11px] text-white/40">comparecimento</p>
+            </div>
           </div>
         )}
       </div>
@@ -221,7 +193,7 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
         )}
       </div>
 
-      {q.isLoading && <div className="mt-4 h-40 animate-pulse rounded-xl bg-white/5" />}
+      {q.isLoading && <div className="mt-4 h-48 animate-pulse rounded-xl bg-white/5" />}
 
       {q.isError && (
         <p className="mt-4 text-[11px] text-white/40">
@@ -231,26 +203,49 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
 
       {d && (
         <>
-          {/* ── Composição do período: uma barra, rótulo em todo segmento ── */}
-          <div className="mt-4">
-            <BarraProporcao d={d} />
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <Chip cor={COR.compareceu} rotulo="Compareceram" valor={d.compareceram} />
-              <Chip cor={COR.faltou} rotulo="Faltaram" valor={d.naoCompareceram} />
-              <Chip
-                cor={COR.desmarcou}
-                rotulo="Desmarcadas"
-                valor={d.desmarcadas + d.remarcadas}
+          {/* ── Composição: uma barra, um segmento por situação ── */}
+          <div className="mt-4 flex h-2.5 gap-[2px] overflow-hidden rounded-full">
+            {d.porSituacao.map((s) => (
+              <div
+                key={s.idStatus}
+                className="h-full first:rounded-l-full last:rounded-r-full"
+                style={{ width: `${(s.total / (d.total || 1)) * 100}%`, background: COR[s.grupo] }}
+                title={`${s.nome}: ${s.total}`}
               />
-              <span className="ml-auto text-[11px] text-white/40">
-                {d.agendadas} agendadas
-                {d.aguardandoAtendimento > 0 && ` · ${d.aguardandoAtendimento} por atender`}
-                {/* Só mostra pacientes quando difere do total: se for igual, é ruído;
-                    se for menor, significa que alguém remarcou e ocupou 2 horários. */}
-                {d.pacientesDistintos !== d.agendadas && ` · ${d.pacientesDistintos} pacientes`}
+            ))}
+          </div>
+
+          {/* ── Todas as situações, nominais ── */}
+          <div className="mt-3 space-y-0.5">
+            {d.porSituacao.map((s) => (
+              <div key={s.idStatus} className="flex items-center gap-2 py-[3px]">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: COR[s.grupo] }}
+                />
+                <span className="text-[11.5px] text-white/60">{s.nome}</span>
+                <span className="ml-auto text-[11.5px] font-medium tabular-nums text-white/85">
+                  {s.total}
+                </span>
+                <span className="w-11 shrink-0 text-right text-[11px] tabular-nums text-white/35">
+                  {((s.total / (d.total || 1)) * 100).toFixed(0)}%
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 border-t border-white/5 pt-1.5">
+              <span className="text-[11.5px] text-white/45">Total de horários</span>
+              <span className="ml-auto text-[11.5px] font-medium tabular-nums text-white/70">
+                {d.total}
               </span>
+              <span className="w-11 shrink-0" />
             </div>
           </div>
+
+          <p className="mt-2 text-[10.5px] leading-relaxed text-white/35">
+            Comparecimento = {d.realizadas} atendidas ÷ {d.resolvidas} com desfecho.
+            {d.total !== d.resolvidas &&
+              ` ${d.total - d.resolvidas} ainda não aconteceram e ficam fora da conta.`}
+          </p>
 
           {/* ── Distribuição no tempo ── */}
           {serie.length > 1 && (
@@ -277,22 +272,21 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
                       width={34}
                     />
                     <Tooltip content={<DicaGrafico />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                    <Bar dataKey="compareceram" stackId="a" radius={[0, 0, 0, 0]}>
+                    <Bar dataKey="realizadas" stackId="a">
                       {serie.map((_, i) => (
-                        <Cell key={i} fill={COR.compareceu} />
+                        <Cell key={i} fill={COR.realizado} />
                       ))}
                     </Bar>
-                    {/* stroke na cor da superfície = respiro de 2px entre os
-                        segmentos empilhados, sem inventar espaçamento no dado */}
+                    {/* stroke na cor da superfície = respiro de 2px entre os segmentos */}
                     <Bar
-                      dataKey="faltaram"
+                      dataKey="resto"
                       stackId="a"
                       radius={[4, 4, 0, 0]}
                       stroke={SUPERFICIE}
                       strokeWidth={2}
                     >
                       {serie.map((_, i) => (
-                        <Cell key={i} fill={COR.desmarcou} fillOpacity={0.45} />
+                        <Cell key={i} fill={COR.cancelado} fillOpacity={0.45} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -324,10 +318,8 @@ export function AvaliacoesReaisCard({ unitId, de, ate, className }: AvaliacoesRe
             <div className="mt-4 flex gap-2 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] p-2.5">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
               <p className="text-[10.5px] leading-relaxed text-amber-200/70">
-                {d.desmarcadas} desmarques contra {d.naoCompareceram} falta
-                {d.naoCompareceram === 1 ? "" : "s"} registrada
-                {d.naoCompareceram === 1 ? "" : "s"} — a recepção provavelmente marca como
-                “desmarcado” quem faltou. A taxa real de falta pode ser maior.
+                Muito mais desmarques do que faltas registradas — a recepção provavelmente marca
+                como “desmarcado” quem faltou. A taxa real de falta pode ser maior.
               </p>
             </div>
           )}
