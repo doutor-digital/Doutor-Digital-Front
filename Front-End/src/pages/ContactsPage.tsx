@@ -1167,6 +1167,13 @@ function humanizeEtapa(etapa: string): string {
     "10_EM_TRATAMENTO": "Em tratamento",
     "13_ALTA_SATISFEITO": "Alta · satisfeito",
     "15_NAO_PERTURBAR": "Não perturbar",
+    // Funil novo COMERCIAL/TRATAMENTO (Kommo 2026)
+    QUALIFICACAO: "Em qualificação",
+    COMPARECEU: "Compareceu",
+    NEGOCIACAO: "Em negociação",
+    PERDIDO: "Perdido",
+    ALTA: "Alta",
+    TRATAMENTO_CANCELADO: "Tratamento cancelado",
   };
   return (
     map[etapa] ??

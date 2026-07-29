@@ -32,6 +32,17 @@ const STAGE_LABELS: Record<string, string> = {
   TRATAMENTO_FECHADO: "Tratamento fechado",
   NAO_DEU_CONTINUIDADE: "Não deu continuidade",
 
+  // Funil novo COMERCIAL/TRATAMENTO (Kommo 2026) — usado pela ITZ.
+  // COMERCIAL: Qualificação → Agendado → Compareceu → Negociação → Ganho/Perdido.
+  // TRATAMENTO: Em tratamento → Alta / Cancelado. (AGENDADO reusa 04, GANHO reusa 09,
+  // EM TRATAMENTO reusa 10 — já mapeados acima.)
+  QUALIFICACAO: "Em qualificação",
+  COMPARECEU: "Compareceu",
+  NEGOCIACAO: "Em negociação",
+  PERDIDO: "Perdido",
+  ALTA: "Alta",
+  TRATAMENTO_CANCELADO: "Tratamento cancelado",
+
   // Auxiliares
   NOVO: "Novo",
   SEM_ETAPA: "Sem etapa",
