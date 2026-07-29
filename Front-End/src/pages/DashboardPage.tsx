@@ -20,6 +20,7 @@ import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
+import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
@@ -2098,6 +2099,18 @@ export default function DashboardPage() {
                   labelRealizadas="realizados"
                   labelTaxa="comparecimento"
                   queryKeyBase="spine-retornos"
+                />
+              </div>
+            )}
+
+            {/* Situação dos tratamentos — raspado do CRM web da franquia (módulo
+                bloqueado na API). Só faz sentido na vertical saúde. */}
+            {!isJuridico && (
+              <div className="mt-4">
+                <TratamentosCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
                 />
               </div>
             )}

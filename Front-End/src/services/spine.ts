@@ -80,7 +80,29 @@ export const spineService = {
     const { data } = await api.get("/api/spine/status");
     return data;
   },
+
+  /** Situação dos tratamentos (raspado do CRM web da franquia): por situação + valor. */
+  async tratamentos(unitId: number, de?: string, ate?: string): Promise<SpineTratamentos> {
+    const { data } = await api.get<SpineTratamentos>("/api/spine/tratamentos", {
+      params: { unitId, de, ate },
+    });
+    return data;
+  },
 };
+
+export interface SpineTratamentoSituacao {
+  situacao: string;
+  quantidade: number;
+  valor: number;
+}
+
+export interface SpineTratamentos {
+  total: number;
+  valorTotal: number;
+  porSituacao: SpineTratamentoSituacao[];
+  porFinanceiro: SpineTratamentoSituacao[];
+  atualizadoEm: string;
+}
 
 export interface SpineAgendaItem {
   idSchedule: number;
