@@ -782,6 +782,15 @@ export interface DashboardOverview {
   };
   /** Ranking dos motivos de não-agendamento preenchidos no cartão da Kommo. */
   motivos_perda?: Array<{ motivo: string; quantidade: number }>;
+  /** De cada origem: leads, quantos agendaram e quantos fecharam tratamento. */
+  funil_por_origem?: Array<{
+    origem: string;
+    total: number;
+    agendados: number;
+    fechados: number;
+  }>;
+  /** Mix de tratamento indicado no período. */
+  tratamentos_indicados?: Array<{ tratamento: string; quantidade: number }>;
   origens: OrigemAgrupada[];
 
   // ─── Extensões para a dashboard funnel-style ────────────────────

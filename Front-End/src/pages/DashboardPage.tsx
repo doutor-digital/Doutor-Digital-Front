@@ -23,6 +23,8 @@ import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
 import { LeadsFimDeSemanaCard } from "@/components/dashboard/LeadsFimDeSemanaCard";
 import { ReceitaTratamentoCard } from "@/components/dashboard/ReceitaTratamentoCard";
 import { MotivosPerdaCard } from "@/components/dashboard/MotivosPerdaCard";
+import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
+import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
@@ -2124,6 +2126,8 @@ export default function DashboardPage() {
                   loading={isLoading}
                 />
                 <MotivosPerdaCard motivos={ov?.motivos_perda} loading={isLoading} />
+                <FunilPorOrigemCard linhas={ov?.funil_por_origem} loading={isLoading} />
+                <MixTratamentoCard itens={ov?.tratamentos_indicados} loading={isLoading} />
               </div>
             )}
 
