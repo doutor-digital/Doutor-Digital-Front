@@ -59,6 +59,7 @@ import {
   Users2,
   Wallet,
   Webhook,
+  LayoutGrid,
   Workflow,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -158,7 +159,7 @@ const navGroups: NavGroup[] = [
         label: "Leads",
         icon: ListChecks,
         iconUrl: "/nav-icons/leads.png",
-        basePaths: ["/leads", "/recent-leads", "/recuperacao", "/mudancas-etapas", "/conversao", "/funnel", "/sources"],
+        basePaths: ["/leads", "/recent-leads", "/recuperacao", "/mudancas-etapas", "/conversao", "/funnel", "/funil-board", "/sources"],
         children: [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
           { to: "/recent-leads", label: "Recentes", icon: History },
@@ -166,6 +167,7 @@ const navGroups: NavGroup[] = [
           { to: "/mudancas-etapas", label: "Mudanças de etapa", icon: RouteIcon },
           { to: "/conversao", label: "Conversão", icon: PieChart },
           { to: "/funnel", label: "Funil", icon: Workflow },
+          { to: "/funil-board", label: "Funil · Quadro", icon: LayoutGrid },
           { to: "/sources", label: "Origens", icon: Filter },
         ],
       },

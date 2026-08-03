@@ -773,6 +773,15 @@ export interface DashboardOverview {
     domingo: number;
     origens: OrigemAgrupada[];
   };
+  /** Receita de tratamento fechada no período e ticket médio. */
+  receita?: {
+    receita_fechada: number;
+    ticket_medio: number;
+    com_valor: number;
+    fechados: number;
+  };
+  /** Ranking dos motivos de não-agendamento preenchidos no cartão da Kommo. */
+  motivos_perda?: Array<{ motivo: string; quantidade: number }>;
   origens: OrigemAgrupada[];
 
   // ─── Extensões para a dashboard funnel-style ────────────────────

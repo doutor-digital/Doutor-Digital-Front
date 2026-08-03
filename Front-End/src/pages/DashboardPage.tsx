@@ -21,6 +21,8 @@ import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner"
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
 import { LeadsFimDeSemanaCard } from "@/components/dashboard/LeadsFimDeSemanaCard";
+import { ReceitaTratamentoCard } from "@/components/dashboard/ReceitaTratamentoCard";
+import { MotivosPerdaCard } from "@/components/dashboard/MotivosPerdaCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
@@ -2109,6 +2111,22 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* Dinheiro do tratamento + aceitação, e o diagnóstico da perda.
+                São os dois cards que ligam o funil à receita. */}
+            {!isJuridico && (
+              <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <ReceitaTratamentoCard
+                  receitaFechada={ov?.receita?.receita_fechada}
+                  ticketMedio={ov?.receita?.ticket_medio}
+                  comValor={ov?.receita?.com_valor}
+                  fechados={ov?.receita?.fechados}
+                  taxaAceitacao={ov?.fechamento_rate}
+                  loading={isLoading}
+                />
+                <MotivosPerdaCard motivos={ov?.motivos_perda} loading={isLoading} />
+              </div>
+            )}
+
             {/* Leads que entraram no fim de semana: volume + origem. Fila de
                 retomada de segunda — ninguém atendeu esses na hora. */}
             <LeadsFimDeSemanaCard
@@ -2371,27 +2389,10 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ─── Funil de vendas estilo CRM (board Kanban por etapa) ── */}
-            <DarkCard className="mt-4" accent="#34d399">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Funil de vendas
-                </h2>
-                <span className="text-[11px] text-white/40">{rangeLabel}</span>
-              </div>
-              {leadsBoard.isLoading && !leadsBoard.data ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-white/40" />
-                </div>
-              ) : (
-                <CrmKanban columns={kanbanColumns} />
-              )}
-              {unitId == null && (
-                <p className="mt-3 text-[11px] text-white/40">
-                  Selecione uma unidade para que as etapas saiam com os nomes do pipeline da Kommo.
-                </p>
-              )}
-            </DarkCard>
+            {/* O quadro Kanban do funil saiu daqui para a página própria
+                (/funil-board, "Funil · Quadro" na sidebar): com milhares de leads
+                ele dominava o dashboard, e é ferramenta de trabalho do SDR, não
+                indicador de gestão. */}
 
             {/* ─── Tendência: barras por dia da semana ────────────────── */}
             <DarkCard className="mt-4" accent="#34d399">
