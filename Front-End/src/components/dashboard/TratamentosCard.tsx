@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { spineService, type SpineTratamentos } from "@/services/spine";
+import { isSemAutorizacaoFranquia, spineService, type SpineTratamentos } from "@/services/spine";
+import { SemAutorizacaoFranquia } from "@/components/dashboard/SemAutorizacaoFranquia";
 
 interface Props {
   unitId?: number;
@@ -54,9 +55,13 @@ export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
 
       {q.isLoading && <div className="h-24 w-full animate-pulse rounded-lg bg-white/5" />}
 
-      {q.isError && (
+      {q.isError && isSemAutorizacaoFranquia(q.error) && (
+        <SemAutorizacaoFranquia recurso="A situação dos tratamentos" />
+      )}
+
+      {q.isError && !isSemAutorizacaoFranquia(q.error) && (
         <p className="text-xs text-amber-400">
-          Não foi possível carregar (CRM da franquia não configurado ou indisponível).
+          Não foi possível carregar (CRM da franquia indisponível).
         </p>
       )}
 

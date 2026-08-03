@@ -292,3 +292,20 @@ export const spineConfig = {
     await api.delete("/api/spine/config", { params: { unitId } });
   },
 };
+
+/**
+ * Código que o back devolve em `ProblemDetails.codigo` (503) quando a unidade não
+ * tem autorização da franquia — sem token da API do Doutor Hérnia ou sem credencial
+ * do CRM web. Ver `SpineController.CodigoSemAutorizacao`.
+ */
+export const CODIGO_SEM_AUTORIZACAO = "sem_autorizacao_franquia";
+
+/**
+ * Distingue "unidade não autorizada pela franquia" de "integração caiu". São coisas
+ * diferentes para o usuário: a primeira é estado esperado enquanto o token não chega,
+ * a segunda é falha. Casa pelo código, não pelo texto nem só pelo status.
+ */
+export function isSemAutorizacaoFranquia(erro: unknown): boolean {
+  const resp = (erro as { response?: { status?: number; data?: { codigo?: string } } })?.response;
+  return resp?.status === 503 && resp?.data?.codigo === CODIGO_SEM_AUTORIZACAO;
+}

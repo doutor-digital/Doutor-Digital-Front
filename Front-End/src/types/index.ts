@@ -745,6 +745,12 @@ export interface DashboardOverview {
   states: LeadsCountDto;
   /** Valores de KPI vindos das Configurações Técnicas (mapeamento por unidade). */
   kpi_overrides?: Record<string, number>;
+  /**
+   * KPIs cujo número vem do CRM da franquia e que esta unidade ainda não pode ler
+   * (sem token / sem credencial). O card mostra "Sem autorização da franquia" em vez
+   * de 0 — o 0 seria lido como resultado, não como acesso ausente.
+   */
+  kpis_sem_autorizacao?: string[];
   /** KPIs criados do zero pelo analista (nome + cor + fonte + valor já calculado). */
   custom_kpis?: Array<{
     key: string;

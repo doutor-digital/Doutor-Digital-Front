@@ -1021,6 +1021,12 @@ export default function DashboardPage() {
   const kpiLive = (key: string, fallback: number): number =>
     isJuridico ? fallback : ov?.kpi_overrides?.[key] ?? fallback;
 
+  // KPI mapeado para o CRM da franquia numa unidade que ainda não tem autorização:
+  // o card troca o número pelo aviso. Sem isso ele mostraria 0, que a equipe lê como
+  // "nenhuma consulta no período" em vez de "não temos acesso ao sistema da franquia".
+  const semAutorizacaoFranquia = (key: string): boolean =>
+    !isJuridico && (ov?.kpis_sem_autorizacao ?? []).includes(key);
+
   // "Origem manda na soma" no card Agendados: quando o usuário edita manualmente
   // alguma origem, o número grande passa a ser a SOMA das origens (override ??
   // automático) — se forem 10 + 10, o card mostra 20. Sem nenhuma edição de origem,
@@ -2052,7 +2058,7 @@ export default function DashboardPage() {
               {/* Col 3 row 2: No-show */}
               <DarkCard accent="#f87171">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "no_show", label: "No-show" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "no_show", label: "No-show" })} />
                 <div className="mt-4 h-px w-1/3 bg-white/10" />
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
                 {srcBtn("no_show", "No-show")}
@@ -2144,7 +2150,7 @@ export default function DashboardPage() {
                   </button>
                   )}
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
                 {isJuridico ? null : tratamentosManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -2194,7 +2200,7 @@ export default function DashboardPage() {
                   </button>
                   )}
                 </div>
-                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} live={kpiLive("consultas", isJuridico ? funnelLeads.consultas : (bd?.consultas.do_dia ?? 0))} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("consultas")} live={kpiLive("consultas", isJuridico ? funnelLeads.consultas : (bd?.consultas.do_dia ?? 0))} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
                 {isJuridico ? null : consultasManual ? (
                   <ManualBreakdownNote />
                 ) : (

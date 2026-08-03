@@ -11,6 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import { historicoAvaliacoes, type SpineHistoricoMes } from "@/services/spine";
+import { isSemAutorizacaoFranquia } from "@/services/spine";
+import { SemAutorizacaoFranquia } from "@/components/dashboard/SemAutorizacaoFranquia";
 
 interface Props {
   unitId?: number;
@@ -86,7 +88,11 @@ export function HistoricoAvaliacoesCard({ unitId, className }: Props) {
 
       {q.isLoading && <div className="mt-4 h-56 animate-pulse rounded-xl bg-white/5" />}
 
-      {q.isError && (
+      {q.isError && isSemAutorizacaoFranquia(q.error) && (
+        <SemAutorizacaoFranquia recurso="O histórico de avaliações" className="mt-4" />
+      )}
+
+      {q.isError && !isSemAutorizacaoFranquia(q.error) && (
         <p className="mt-4 text-[11px] text-white/40">Não foi possível carregar o histórico.</p>
       )}
 

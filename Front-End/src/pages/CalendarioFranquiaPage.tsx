@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Check, X } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { isSemAutorizacaoFranquia } from "@/services/spine";
+import { SemAutorizacaoFranquia } from "@/components/dashboard/SemAutorizacaoFranquia";
 import { useClinic } from "@/hooks/useClinic";
 import { agendaFranquia, type SpineAgendaItem } from "@/services/spine";
 import { PacienteDrawer } from "@/components/dashboard/PacienteDrawer";
@@ -379,7 +381,11 @@ export default function CalendarioFranquiaPage() {
       </div>
 
       {q.isLoading && <p className="mt-3 text-[11px] text-white/40">Carregando agenda…</p>}
-      {q.isError && (
+      {q.isError && isSemAutorizacaoFranquia(q.error) && (
+        <SemAutorizacaoFranquia recurso="A agenda da clínica" variante="pagina" className="mt-4" />
+      )}
+
+      {q.isError && !isSemAutorizacaoFranquia(q.error) && (
         <p className="mt-3 text-[11px] text-white/40">
           Não foi possível carregar a agenda. Confira o token da unidade.
         </p>

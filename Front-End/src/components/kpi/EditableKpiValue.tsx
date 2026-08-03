@@ -20,6 +20,7 @@ export function EditableKpiValue({
   align = "left",
   format = (n) => new Intl.NumberFormat("pt-BR").format(n),
   onDrill,
+  semAutorizacao = false,
 }: {
   /** Chave canônica do override (use kpiKey(unitId, metric)). */
   okey: string;
@@ -30,6 +31,12 @@ export function EditableKpiValue({
   format?: (n: number) => string;
   /** Quando fornecido, clicar no número abre o drill-down (ver os leads). */
   onDrill?: () => void;
+  /**
+   * A unidade não tem autorização da franquia para este KPI (o número vem do CRM
+   * clínico, não da Kommo). Troca o número pelo aviso: um 0 aqui seria lido como
+   * "nenhuma consulta aconteceu", que é falso — o dado é que não temos acesso.
+   */
+  semAutorizacao?: boolean;
 }) {
   const overrides = useKpiOverrides((s) => s.overrides);
   const setOverride = useKpiOverrides((s) => s.setOverride);
@@ -90,7 +97,19 @@ export function EditableKpiValue({
       </RichTooltip>
 
       <div className={align === "right" ? "text-right" : ""}>
-        {onDrill ? (
+        {semAutorizacao ? (
+          <div className="mt-4">
+            <p className="text-[26px] font-bold uppercase leading-[1.05] tracking-tight text-amber-300 sm:text-[30px]">
+              Sem autorização
+              <br />
+              da franquia
+            </p>
+            <p className="mt-2 max-w-[22rem] text-[11px] leading-snug text-slate-500">
+              Este número vem do sistema da franquia, que ainda não liberou o acesso
+              desta unidade.
+            </p>
+          </div>
+        ) : onDrill ? (
           <button
             type="button"
             onClick={onDrill}

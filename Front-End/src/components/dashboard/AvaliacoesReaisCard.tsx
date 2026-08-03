@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle } from "@/components/icons";
+import { isSemAutorizacaoFranquia } from "@/services/spine";
+import { SemAutorizacaoFranquia } from "@/components/dashboard/SemAutorizacaoFranquia";
 import {
   spineService,
   type GrupoSituacao,
@@ -215,7 +217,11 @@ export function AvaliacoesReaisCard({
 
       {q.isLoading && <div className="mt-4 h-48 animate-pulse rounded-xl bg-white/5" />}
 
-      {q.isError && (
+      {q.isError && isSemAutorizacaoFranquia(q.error) && (
+        <SemAutorizacaoFranquia recurso="O comparecimento real" className="mt-4" />
+      )}
+
+      {q.isError && !isSemAutorizacaoFranquia(q.error) && (
         <p className="mt-4 text-[11px] text-white/40">
           Integração indisponível. Confira o token da unidade.
         </p>

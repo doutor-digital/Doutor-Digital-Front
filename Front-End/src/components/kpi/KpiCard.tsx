@@ -99,6 +99,7 @@ export function KpiCard({
   tone = "neutral",
   subtitle,
   loading,
+  semAutorizacao,
 }: {
   label: string;
   value: number | string;
@@ -107,6 +108,12 @@ export function KpiCard({
   tone?: LegacyTone;
   subtitle?: string;
   loading?: boolean;
+  /**
+   * A unidade não tem autorização da franquia para este número (o dado vem do CRM
+   * clínico). Substitui o valor pelo aviso — mostrar 0 seria lido como "não houve
+   * consulta", e não como "não temos acesso".
+   */
+  semAutorizacao?: boolean;
 }) {
   const t = TONE_STYLE[tone] ?? TONE_STYLE.neutral;
   const trendUp = trend !== undefined && trend >= 0;
@@ -144,6 +151,17 @@ export function KpiCard({
 
         {loading ? (
           <div className="mt-3 h-7 w-36 rounded bg-white/[0.04] animate-pulse" />
+        ) : semAutorizacao ? (
+          <div className="mt-3">
+            <p className="text-[19px] md:text-[21px] font-bold uppercase leading-[1.05] tracking-tight text-amber-300">
+              Sem autorização
+              <br />
+              da franquia
+            </p>
+            <p className="mt-1.5 text-[10.5px] leading-snug text-slate-500">
+              Depende do acesso ao sistema da franquia
+            </p>
+          </div>
         ) : (
           <div className="mt-3 flex items-end justify-between gap-2">
             <p
