@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -161,6 +162,15 @@ export default function TechnicalSettingsPage() {
                 unitId={unitId!}
               />
             ))}
+          </div>
+
+          {/* Diagnóstico dos campos da Kommo: preenchimento e distribuição de valores
+              por campo. Saiu do dashboard (poluía a tela do dia a dia com ~100 linhas,
+              a maioria sem preenchimento) e vive aqui, junto do mapeamento de KPI —
+              é justamente onde se decide qual campo alimenta qual número. Traz o
+              próprio seletor de período. */}
+          <div className="mt-6">
+            <CustomFieldsPanel unitId={unitId} withPeriodPicker />
           </div>
         </>
       )}

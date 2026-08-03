@@ -15,12 +15,12 @@ import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
-import { CustomFieldsPanel } from "@/components/dashboard/CustomFieldsPanel";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
+import { LeadsFimDeSemanaCard } from "@/components/dashboard/LeadsFimDeSemanaCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
@@ -2109,6 +2109,17 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* Leads que entraram no fim de semana: volume + origem. Fila de
+                retomada de segunda — ninguém atendeu esses na hora. */}
+            <LeadsFimDeSemanaCard
+              className="mt-4"
+              total={ov?.fim_de_semana?.total}
+              sabado={ov?.fim_de_semana?.sabado}
+              domingo={ov?.fim_de_semana?.domingo}
+              origens={ov?.fim_de_semana?.origens}
+              loading={isLoading}
+            />
+
             {/* Situação dos tratamentos — raspado do CRM web da franquia (módulo
                 bloqueado na API). Só faz sentido na vertical saúde. */}
             {!isJuridico && (
@@ -2411,13 +2422,6 @@ export default function DashboardPage() {
               <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
             )}
 
-            {/* ─── Campos da Kommo (perfil do lead) ─────────────────── */}
-            <CustomFieldsPanel
-              unitId={unitId}
-              dateFrom={range.from}
-              dateTo={range.to}
-              rangeLabel={rangeLabel}
-            />
           </>
         )}
       </div>

@@ -763,6 +763,16 @@ export interface DashboardOverview {
     sort_order: number;
   }>;
   etapas: Array<{ etapa: string; quantidade: number }>;
+  /**
+   * Leads que entraram no fim de semana (sábado/domingo pelo relógio comercial
+   * 19h→19h), com a quebra por origem. Fila de retomada: ninguém atendeu na hora.
+   */
+  fim_de_semana?: {
+    total: number;
+    sabado: number;
+    domingo: number;
+    origens: OrigemAgrupada[];
+  };
   origens: OrigemAgrupada[];
 
   // ─── Extensões para a dashboard funnel-style ────────────────────
