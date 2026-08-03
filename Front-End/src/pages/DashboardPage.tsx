@@ -24,6 +24,7 @@ import { LeadsFimDeSemanaCard } from "@/components/dashboard/LeadsFimDeSemanaCar
 import { ReceitaTratamentoCard } from "@/components/dashboard/ReceitaTratamentoCard";
 import { MotivosPerdaCard } from "@/components/dashboard/MotivosPerdaCard";
 import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
+import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -2112,6 +2113,10 @@ export default function DashboardPage() {
                 />
               </div>
             )}
+
+            {/* De qual anúncio veio o paciente, e se ele agendou. Fica antes dos cards
+                de receita porque é a decisão mais cara do mês: onde colocar verba. */}
+            <AnunciosCard className="mt-4" linhas={ov?.anuncios} loading={isLoading} />
 
             {/* Dinheiro do tratamento + aceitação, e o diagnóstico da perda.
                 São os dois cards que ligam o funil à receita. */}

@@ -789,6 +789,8 @@ export interface DashboardOverview {
     agendados: number;
     fechados: number;
   }>;
+  /** Anúncios que mais trouxeram lead no período e quantos deles agendaram (rastreio CTWA). */
+  anuncios?: Array<{ anuncio: string; total: number; agendados: number }>;
   /** Mix de tratamento indicado no período. */
   tratamentos_indicados?: Array<{ tratamento: string; quantidade: number }>;
   origens: OrigemAgrupada[];
