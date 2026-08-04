@@ -554,10 +554,13 @@ export default function DashboardPage() {
   });
 
   // Mapeamentos de KPI salvos (Configurações Técnicas) — pra mostrar a fonte no card.
+  // Desde que configurar a fonte virou permissão nominal, o endpoint responde 403 para
+  // qualquer outra conta. Buscar assim mesmo enchia o console de erro em toda carga da
+  // página para quem nem pode ver o resultado.
   const savedKpis = useQuery({
     queryKey: ["kpi-config", unitId],
     queryFn: () => kpiConfigService.list(unitId!),
-    enabled: unitId != null,
+    enabled: unitId != null && isOwner(user?.email),
     retry: false,
   });
 
