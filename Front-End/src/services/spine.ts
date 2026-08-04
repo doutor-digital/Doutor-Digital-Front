@@ -100,7 +100,10 @@ export interface SpineTratamentos {
   total: number;
   valorTotal: number;
   porSituacao: SpineTratamentoSituacao[];
+  /** Só vem preenchido quando a fonte é o export raspado — a rota oficial não devolve. */
   porFinanceiro: SpineTratamentoSituacao[];
+  /** `api` = rota oficial da franquia; `web` = export raspado (reserva). */
+  fonte?: "api" | "web";
   atualizadoEm: string;
 }
 

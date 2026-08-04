@@ -24,9 +24,9 @@ const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 /**
- * Situação dos tratamentos da unidade — raspado do CRM web da franquia
- * (o módulo Tratamentos é bloqueado na API oficial). Mostra o total, o valor e a
- * quebra por situação. Fonte diferente das avaliações/sessões (que vêm da API).
+ * Situação dos tratamentos da unidade, vinda da rota oficial da franquia desde que ela
+ * foi liberada. Quando a unidade não tem token, o back cai no export raspado do CRM web
+ * — e o card diz qual das duas respondeu, porque o retroativo das duas não é o mesmo.
  */
 export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
   const q = useQuery({
@@ -44,7 +44,9 @@ export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-white">Tratamentos</h3>
-          <p className="text-xs text-slate-400">Situação e valor · CRM da franquia</p>
+          <p className="text-xs text-slate-400">
+            Situação e valor · {d?.fonte === "web" ? "export do CRM da franquia" : "API da franquia"}
+          </p>
         </div>
         {d && (
           <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-medium text-slate-300">
