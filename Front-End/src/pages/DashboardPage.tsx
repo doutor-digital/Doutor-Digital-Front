@@ -30,7 +30,7 @@ import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliac
 import { spineService } from "@/services/spine";
 import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
-import { isAdminLevel } from "@/lib/roles";
+import { isAdminLevel, isOwner } from "@/lib/roles";
 import { webhooksService } from "@/services/webhooks";
 import { unitsService } from "@/services/units";
 import { kpiConfigService, type KpiConfigItem } from "@/services/kpiConfig";
@@ -365,7 +365,10 @@ export default function DashboardPage() {
   // Modal de KPI custom: null = fechado; { existing } = abrindo p/ criar (undefined) ou editar.
   const [kpiModal, setKpiModal] = useState<{ existing: KpiConfigItem | null } | null>(null);
   const { user } = useAuth();
-  const canEditKpis = isAdminLevel(user?.role) && unitId != null;
+  // Criar/editar KPI custom também escolhe a etapa/campo de origem — mesma decisão das
+  // Configurações Técnicas, mesma restrição: só a conta dona. O back devolve 403 de todo
+  // jeito; o gate aqui evita oferecer um botão que não funciona.
+  const canEditKpis = isOwner(user?.email) && unitId != null;
   // Filtros dinâmicos globais (topo): só analista cria/edita/remove; todos aplicam.
   const canManageFilters = isAdminLevel(user?.role);
   const [rangeKey, setRangeKey] = useState<RangeKey>("mes");
@@ -1066,7 +1069,7 @@ export default function DashboardPage() {
       )
     : kpiLive("agendados", funnelLeads.agendados);
 
-  // Botão de fonte (analista) reutilizável por card.
+  // Botão de fonte (conta dona) reutilizável por card.
   const srcBtn = (key: string, label: string) => isJuridico ? null : (
     <KpiSourceButton
       unitId={unitId}

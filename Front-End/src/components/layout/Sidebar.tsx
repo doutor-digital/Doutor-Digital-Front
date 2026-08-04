@@ -64,7 +64,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { isAdminLevel, isReadOnly } from "@/lib/roles";
+import { isAdminLevel, isOwner, isReadOnly } from "@/lib/roles";
 import { SavedViewsSection } from "./SavedViewsSection";
 
 type NavItem = {
@@ -253,7 +253,7 @@ function isNestedEntry(
   return "children" in entry;
 }
 
-/** Link das Configurações Técnicas — injetado só para analista_ti / super_admin. */
+/** Link das Configurações Técnicas — injetado só para a conta dona do produto. */
 const technicalSettingsChild: NavItem = {
   to: "/settings/technical",
   label: "Técnicas · KPIs",
@@ -273,14 +273,14 @@ const integracoesAdsItem: NavItem = {
  * Injeções só para analista_ti / super_admin no grupo "Sistema": o filho "Técnicas · KPIs"
  * na seção Configurações e o item "Central de Integrações".
  */
-function withTechnicalSettings(groups: NavGroup[]): NavGroup[] {
+function withTechnicalSettings(groups: NavGroup[], comKpis: boolean): NavGroup[] {
   return groups.map((g) => {
     if (g.label !== "Sistema") return g;
     return {
       ...g,
       items: [
         ...g.items.map((entry) =>
-          isNestedEntry(entry) && entry.label === "Configurações"
+          isNestedEntry(entry) && entry.label === "Configurações" && comKpis
             ? {
                 ...entry,
                 basePaths: [...entry.basePaths, "/settings/technical"],
@@ -498,12 +498,13 @@ export function Sidebar() {
         },
       ];
     }
-    // super_admin / analista_ti: tudo + Configurações Técnicas.
+    // super_admin / analista_ti: tudo. As Configurações Técnicas (mapear KPI → etapa)
+    // ficam de fora — só a conta dona do produto vê esse link.
     if (isAdminLevel(role)) {
-      return withPartnersPanel(withTechnicalSettings(navGroups));
+      return withPartnersPanel(withTechnicalSettings(navGroups, isOwner(user?.email)));
     }
     return navGroups;
-  }, [user?.role]);
+  }, [user?.role, user?.email]);
 
   return (
     <aside

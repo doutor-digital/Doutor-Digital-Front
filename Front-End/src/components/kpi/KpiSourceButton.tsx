@@ -6,7 +6,7 @@ import { Check, Filter, Layers, Loader2, SlidersHorizontal, Tag, X } from "@/com
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
-import { isAdminLevel } from "@/lib/roles";
+import { isOwner } from "@/lib/roles";
 import type { KommoPipeline, KommoCustomField } from "@/services/units";
 import {
   kpiConfigService,
@@ -89,7 +89,7 @@ export function KpiSourceButton({
     [customFields, config.fieldId],
   );
 
-  if (!isAdminLevel(user?.role) || unitId == null) return null;
+  if (!isOwner(user?.email) || unitId == null) return null;
 
   const usesStage = sourceType === "kommo_stage" || sourceType === "stage_field_filter";
   const usesField =

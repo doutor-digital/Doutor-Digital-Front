@@ -27,6 +27,20 @@ export function isAdminLevel(role?: string | null): boolean {
   return isSuperAdmin(role) || isAnalistaTi(role);
 }
 
+/**
+ * Conta dona do produto — a única que pode configurar de onde cada KPI é puxado.
+ *
+ * Papel não resolve isso: analista_ti é concedido por convite, e trocar a etapa de
+ * origem de um KPI muda o número que a rede inteira lê sem parecer erro — parece queda
+ * de desempenho. Por isso a permissão é nominal, e o back confere o mesmo e-mail
+ * (`Security:OwnerEmail`); o gate do front é só para não mostrar botão que vai dar 403.
+ */
+export const OWNER_EMAIL = "doutordigitalconsultoria@gmail.com";
+
+export function isOwner(email?: string | null): boolean {
+  return norm(email) === OWNER_EMAIL;
+}
+
 /** trafego_pago — só visualiza números, somente leitura. */
 export function isReadOnly(role?: string | null): boolean {
   const r = norm(role);

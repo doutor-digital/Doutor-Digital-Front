@@ -5,7 +5,7 @@ import { useClinic } from "@/hooks/useClinic";
 import { Loader2 } from "@/components/icons";
 import { SplashScreen } from "@/components/SplashScreen";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
-import { isAdminLevel } from "@/lib/roles";
+import { isAdminLevel, isOwner } from "@/lib/roles";
 
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
@@ -114,6 +114,14 @@ function RequireClinic({ children }: { children: ReactElement }) {
   return children;
 }
 
+// Configurar de onde cada KPI é puxado é restrito à conta dona do produto, não ao papel:
+// o mapeamento errado muda o número da rede inteira e não parece erro na tela.
+function RequireOwner({ children }: { children: ReactElement }) {
+  const { user } = useAuth();
+  if (!isOwner(user?.email)) return <Navigate to="/" replace />;
+  return children;
+}
+
 // Restringe rotas a papéis admin-level (super_admin / analista_ti) — ex.: logs avançados.
 function RequireAdminLevel({ children }: { children: ReactElement }) {
   const { user } = useAuth();
@@ -202,9 +210,11 @@ export default function App() {
 
           {/* Rotas admin-level — super_admin / analista_ti */}
           <Route element={<RequireAdminLevel><Outlet /></RequireAdminLevel>}>
-            <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
             <Route path="/admin/import-cloudia" element={<ImportCloudiaPage />} />
             <Route path="/integracoes/ads"  element={<CentralIntegracoesPage />} />
+          </Route>
+          <Route element={<RequireOwner><Outlet /></RequireOwner>}>
+            <Route path="/settings/technical" element={<TechnicalSettingsPage />} />
           </Route>
           <Route path="/perfil"             element={<PerfilPage />}          />
 
