@@ -25,6 +25,7 @@ import { ReceitaTratamentoCard } from "@/components/dashboard/ReceitaTratamentoC
 import { MotivosPerdaCard } from "@/components/dashboard/MotivosPerdaCard";
 import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
 import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
+import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -1826,6 +1827,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* ─── 1. Resultado do período ───────────────────────────── */}
+            <SecaoDashboard titulo="Resultado do período" subtitulo="Quantos chegaram e o que virou paciente" className="!mt-6">
             {/* ─── Hero: grid assimétrica amoCRM (1 card por métrica) ─── */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
@@ -2073,103 +2076,9 @@ export default function DashboardPage() {
               </DarkCard>
             </div>
 
-            {/* ─── Avaliações reais (agenda do Doutor Hérnia) ───────────
-                Fonte diferente do resto da página: o comparecimento vem do status
-                da agenda da clínica, não do campo preenchido na Kommo. Fica logo
-                abaixo dos KPIs porque é a contraprova deles. Recebe as datas de
-                calendário (fromDate/toDate) — o corte comercial das 19h vale para
-                lead, não para horário de consulta — e tem seletor próprio dentro. */}
-            {!isJuridico && (
-              <AvaliacoesReaisCard
-                className="mt-4"
-                unitId={unitId ?? undefined}
-                de={dateToInput(range.fromDate)}
-                ate={dateToInput(range.toDate)}
-              />
-            )}
-
-            {/* Adesão ao tratamento (sessões) e Retornos — mesma estrutura do card
-                de avaliações, outra categoria da agenda. Sessões é metade da
-                operação clínica que estava invisível; retornos inclui o retorno
-                com exames. */}
-            {!isJuridico && (
-              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <AvaliacoesReaisCard
-                  unitId={unitId ?? undefined}
-                  de={dateToInput(range.fromDate)}
-                  ate={dateToInput(range.toDate)}
-                  titulo="Adesão ao tratamento"
-                  fonte={spineService.sessoes}
-                  labelRealizadas="sessões feitas"
-                  labelTaxa="adesão"
-                  queryKeyBase="spine-sessoes"
-                />
-                <AvaliacoesReaisCard
-                  unitId={unitId ?? undefined}
-                  de={dateToInput(range.fromDate)}
-                  ate={dateToInput(range.toDate)}
-                  titulo="Retornos"
-                  fonte={spineService.retornos}
-                  labelRealizadas="realizados"
-                  labelTaxa="comparecimento"
-                  queryKeyBase="spine-retornos"
-                />
-              </div>
-            )}
-
-            {/* De qual anúncio veio o paciente, e se ele agendou. Fica antes dos cards
-                de receita porque é a decisão mais cara do mês: onde colocar verba. */}
-            <AnunciosCard className="mt-4" linhas={ov?.anuncios} loading={isLoading} />
-
-            {/* Dinheiro do tratamento + aceitação, e o diagnóstico da perda.
-                São os dois cards que ligam o funil à receita. */}
-            {!isJuridico && (
-              <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <ReceitaTratamentoCard
-                  receitaFechada={ov?.receita?.receita_fechada}
-                  ticketMedio={ov?.receita?.ticket_medio}
-                  comValor={ov?.receita?.com_valor}
-                  fechados={ov?.receita?.fechados}
-                  taxaAceitacao={ov?.fechamento_rate}
-                  loading={isLoading}
-                />
-                <MotivosPerdaCard motivos={ov?.motivos_perda} loading={isLoading} />
-                <FunilPorOrigemCard linhas={ov?.funil_por_origem} loading={isLoading} />
-                <MixTratamentoCard itens={ov?.tratamentos_indicados} loading={isLoading} />
-              </div>
-            )}
-
-            {/* Leads que entraram no fim de semana: volume + origem. Fila de
-                retomada de segunda — ninguém atendeu esses na hora. */}
-            <LeadsFimDeSemanaCard
-              className="mt-4"
-              total={ov?.fim_de_semana?.total}
-              sabado={ov?.fim_de_semana?.sabado}
-              domingo={ov?.fim_de_semana?.domingo}
-              origens={ov?.fim_de_semana?.origens}
-              loading={isLoading}
-            />
-
-            {/* Situação dos tratamentos — raspado do CRM web da franquia (módulo
-                bloqueado na API). Só faz sentido na vertical saúde. */}
-            {!isJuridico && (
-              <div className="mt-4">
-                <TratamentosCard
-                  unitId={unitId ?? undefined}
-                  de={dateToInput(range.fromDate)}
-                  ate={dateToInput(range.toDate)}
-                />
-              </div>
-            )}
-
-            {/* Tendência longa das avaliações — série preservada no banco (além
-                dos 100 dias do sistema clínico). Independe do filtro de período
-                da página; mostra os últimos 12 meses capturados. */}
-            {!isJuridico && (
-              <HistoricoAvaliacoesCard className="mt-4" unitId={unitId ?? undefined} />
-            )}
-
-            {/* ─── 3 cards estilo WON / ACTIVE / TASKS ───────────────── */}
+            {/* Fecho do funil: tratamentos, consultas e qualificação. Ficam na
+                mesma faixa dos KPIs de entrada porque são o outro extremo da
+                mesma pergunta — quantos chegaram e quantos viraram paciente. */}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <div className="flex items-start justify-between gap-2">
@@ -2318,7 +2227,54 @@ export default function DashboardPage() {
                 <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
               </DarkCard>
             </div>
+            </SecaoDashboard>
 
+            {/* ─── 2. De onde vêm ─────────────────────────────────────── */}
+            <SecaoDashboard titulo="De onde vêm" subtitulo="Mídia e peça que trouxeram o paciente">
+            {/* De qual anúncio veio o paciente, e se ele agendou. Fica antes dos cards
+                de receita porque é a decisão mais cara do mês: onde colocar verba. */}
+            <AnunciosCard className="mt-4" linhas={ov?.anuncios} loading={isLoading} />
+
+              {!isJuridico && (
+                <div className="mt-4">
+                  <FunilPorOrigemCard linhas={ov?.funil_por_origem} loading={isLoading} />
+                </div>
+              )}
+            </SecaoDashboard>
+
+            {/* ─── 3. Receita e perda ─────────────────────────────────── */}
+            <SecaoDashboard titulo="Receita e perda" subtitulo="O que entrou de dinheiro e onde o funil vaza">
+            {/* Dinheiro do tratamento + aceitação, e o diagnóstico da perda.
+                São os dois cards que ligam o funil à receita. */}
+            {!isJuridico && (
+              <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <ReceitaTratamentoCard
+                  receitaFechada={ov?.receita?.receita_fechada}
+                  ticketMedio={ov?.receita?.ticket_medio}
+                  comValor={ov?.receita?.com_valor}
+                  fechados={ov?.receita?.fechados}
+                  taxaAceitacao={ov?.fechamento_rate}
+                  loading={isLoading}
+                />
+                <MotivosPerdaCard motivos={ov?.motivos_perda} loading={isLoading} />
+                <MixTratamentoCard itens={ov?.tratamentos_indicados} loading={isLoading} />
+              </div>
+            )}
+
+            {/* Situação dos tratamentos — raspado do CRM web da franquia (módulo
+                bloqueado na API). Só faz sentido na vertical saúde. */}
+            {!isJuridico && (
+              <div className="mt-4">
+                <TratamentosCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                />
+              </div>
+            )}
+            </SecaoDashboard>
+
+            {/* ─── 4. Meus KPIs ───────────────────────────────────────── */}
             {/* ─── Meus KPIs (criados pelo analista) ──────────────────── */}
             {((ov?.custom_kpis?.length ?? 0) > 0 || canEditKpis) && (
               <div className="mt-6">
@@ -2401,6 +2357,73 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* ─── 5. Operação clínica (fechada por padrão) ───────────── */}
+            <SecaoDashboard titulo="Operação clínica" subtitulo="Agenda da clínica: avaliações, sessões e retornos" recolhivel>
+            {/* ─── Avaliações reais (agenda do Doutor Hérnia) ───────────
+                Fonte diferente do resto da página: o comparecimento vem do status
+                da agenda da clínica, não do campo preenchido na Kommo. Fica logo
+                abaixo dos KPIs porque é a contraprova deles. Recebe as datas de
+                calendário (fromDate/toDate) — o corte comercial das 19h vale para
+                lead, não para horário de consulta — e tem seletor próprio dentro. */}
+            {!isJuridico && (
+              <AvaliacoesReaisCard
+                className="mt-4"
+                unitId={unitId ?? undefined}
+                de={dateToInput(range.fromDate)}
+                ate={dateToInput(range.toDate)}
+              />
+            )}
+
+            {/* Adesão ao tratamento (sessões) e Retornos — mesma estrutura do card
+                de avaliações, outra categoria da agenda. Sessões é metade da
+                operação clínica que estava invisível; retornos inclui o retorno
+                com exames. */}
+            {!isJuridico && (
+              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <AvaliacoesReaisCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                  titulo="Adesão ao tratamento"
+                  fonte={spineService.sessoes}
+                  labelRealizadas="sessões feitas"
+                  labelTaxa="adesão"
+                  queryKeyBase="spine-sessoes"
+                />
+                <AvaliacoesReaisCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                  titulo="Retornos"
+                  fonte={spineService.retornos}
+                  labelRealizadas="realizados"
+                  labelTaxa="comparecimento"
+                  queryKeyBase="spine-retornos"
+                />
+              </div>
+            )}
+
+            {/* Tendência longa das avaliações — série preservada no banco (além
+                dos 100 dias do sistema clínico). Independe do filtro de período
+                da página; mostra os últimos 12 meses capturados. */}
+            {!isJuridico && (
+              <HistoricoAvaliacoesCard className="mt-4" unitId={unitId ?? undefined} />
+            )}
+            </SecaoDashboard>
+
+            {/* ─── 6. Detalhe e tendência (fechada por padrão) ────────── */}
+            <SecaoDashboard titulo="Detalhe e tendência" subtitulo="Recortes de consulta, não de acompanhamento diário" recolhivel>
+            {/* Leads que entraram no fim de semana: volume + origem. Fila de
+                retomada de segunda — ninguém atendeu esses na hora. */}
+            <LeadsFimDeSemanaCard
+              className="mt-4"
+              total={ov?.fim_de_semana?.total}
+              sabado={ov?.fim_de_semana?.sabado}
+              domingo={ov?.fim_de_semana?.domingo}
+              origens={ov?.fim_de_semana?.origens}
+              loading={isLoading}
+            />
+
             {/* O quadro Kanban do funil saiu daqui para a página própria
                 (/funil-board, "Funil · Quadro" na sidebar): com milhares de leads
                 ele dominava o dashboard, e é ferramenta de trabalho do SDR, não
@@ -2434,6 +2457,8 @@ export default function DashboardPage() {
             {!isJuridico && (
               <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
             )}
+            </SecaoDashboard>
+
 
           </>
         )}
