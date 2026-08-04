@@ -28,36 +28,76 @@ const pct = (parte: number, todo: number) => (todo > 0 ? (parte / todo) * 100 : 
 const rotulo = (v: string) => (/^\d{8,}$/.test(v) ? `Anúncio ${v}` : v);
 
 /**
- * Miniatura do criativo, no formato de post: quadrado, canto arredondado, 44px.
+ * Criativo em quadrado, no formato de post.
  *
  * A URL vem assinada pela CDN da Meta e expira; o back revalida por idade, mas entre
- * uma revalidação e outra ela pode morrer. `onError` troca a imagem quebrada pelo
- * mesmo quadrado vazio de quem nunca teve miniatura — nunca por um ícone de imagem
- * partida.
+ * uma revalidação e outra ela pode morrer. Imagem quebrada cai para o mesmo quadro
+ * neutro de quem nunca teve criativo — com o nome dentro, que é mais útil que um
+ * ícone de imagem partida.
  */
-function Miniatura({ src, href, alt }: { src?: string | null; href?: string | null; alt: string }) {
+function Criativo({
+  src,
+  href,
+  alt,
+  className = "",
+}: {
+  src?: string | null;
+  href?: string | null;
+  alt: string;
+  className?: string;
+}) {
   const [quebrou, setQuebrou] = useState(false);
+  const temImagem = Boolean(src) && !quebrou;
 
   const quadro = (
-    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
-      {src && !quebrou && (
+    <div
+      className={`relative aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] ${className}`}
+    >
+      {temImagem ? (
         <img
-          src={src}
+          src={src!}
           alt={alt}
           loading="lazy"
           referrerPolicy="no-referrer"
           className="h-full w-full object-cover"
           onError={() => setQuebrou(true)}
         />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-[10px] leading-tight text-slate-600">
+          {alt}
+        </span>
       )}
     </div>
   );
 
   if (!href) return quadro;
   return (
-    <a href={href} target="_blank" rel="noreferrer" title="Ver a peça no Facebook" className="shrink-0">
+    <a href={href} target="_blank" rel="noreferrer" title="Ver a peça no Facebook" className="block">
       {quadro}
     </a>
+  );
+}
+
+/** Os dois números do card, com o mesmo peso: volume e agendamento. */
+function Numeros({ total, agendados }: { total: number; agendados: number }) {
+  const taxa = pct(agendados, total);
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-2">
+      <div>
+        <div className="text-lg font-semibold leading-none tabular-nums text-slate-100">
+          {total.toLocaleString("pt-BR")}
+        </div>
+        <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">leads</div>
+      </div>
+      <div>
+        <div className="text-lg font-semibold leading-none tabular-nums text-sky-300">
+          {agendados.toLocaleString("pt-BR")}
+        </div>
+        <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">
+          agendaram · {taxa.toFixed(0)}%
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -69,14 +109,16 @@ function Miniatura({ src, href, alt }: { src?: string | null; href?: string | nu
  * no cartão da Kommo. Unidade sem esse rastreio ligado não tem o que mostrar — por isso o
  * card some em vez de exibir uma tabela vazia.
  *
- * As duas colunas andam juntas de propósito. Volume sozinho manda verba para o anúncio
- * errado: o que traz mais conversa costuma ser o que traz conversa mais barata, não
- * paciente. Quem decide investimento é a taxa de agendamento.
+ * Os três primeiros ganham a peça inteira; o resto vira lista. É onde a verba está
+ * concentrada, e é o que a pessoa precisa reconhecer de longe. Os dois números andam
+ * juntos e com o mesmo peso de propósito: volume sozinho manda verba para o anúncio
+ * errado — o que traz mais conversa costuma trazer conversa barata, não paciente.
  */
 export function AnunciosCard({ linhas = [], loading = false, className = "" }: Props) {
   if (!loading && linhas.length === 0) return null;
 
-  const maior = Math.max(1, ...linhas.map((l) => l.total));
+  const podio = linhas.slice(0, 3);
+  const resto = linhas.slice(3);
 
   // Só compara taxa entre anúncios com volume — com 3 leads a taxa oscila demais
   // para virar decisão de verba.
@@ -89,6 +131,8 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
     (acc, l) => (acc == null || pct(l.agendados, l.total) < pct(acc.agendados, acc.total) ? l : acc),
     null,
   );
+
+  const titulo = (l: Linha) => l.nome?.trim() || rotulo(l.anuncio);
 
   return (
     <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
@@ -105,53 +149,53 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
       </div>
 
       {loading ? (
-        <div className="h-48 w-full animate-pulse rounded-lg bg-white/5" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="aspect-square w-full animate-pulse rounded-lg bg-white/5" />
+          ))}
+        </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {linhas.map((l) => {
-              const taxa = pct(l.agendados, l.total);
-              const titulo = l.nome?.trim() || rotulo(l.anuncio);
-              return (
-                <div key={l.anuncio} className="flex items-center gap-3">
-                  <Miniatura src={l.thumbnail} href={l.permalink} alt={titulo} />
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-baseline justify-between gap-3">
-                      <span className="truncate text-xs text-slate-200" title={titulo}>
-                        {titulo}
-                      </span>
-                      <span className="shrink-0 text-xs tabular-nums text-slate-400">
-                        {l.total.toLocaleString("pt-BR")} leads
-                        <span className="mx-1.5 text-slate-700">·</span>
-                        <span className="font-semibold text-sky-300">{l.agendados}</span>
-                        <span className="ml-1 text-slate-500">agendaram ({taxa.toFixed(0)}%)</span>
-                      </span>
-                    </div>
-                    {/* Barra cheia = volume de lead; a parte clara = quem agendou.
-                        Ler o vazio entre as duas é o ponto do card. */}
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                      <div
-                        className="h-full rounded-full bg-slate-600/70"
-                        style={{ width: `${(l.total / maior) * 100}%` }}
-                      >
-                        <div
-                          className="h-full rounded-full bg-sky-400"
-                          style={{ width: `${taxa}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {podio.map((l) => (
+              <div key={l.anuncio} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                <Criativo src={l.thumbnail} href={l.permalink} alt={titulo(l)} />
+                <p className="mt-2 truncate text-xs text-slate-200" title={titulo(l)}>
+                  {titulo(l)}
+                </p>
+                <Numeros total={l.total} agendados={l.agendados} />
+              </div>
+            ))}
           </div>
+
+          {resto.length > 0 && (
+            <div className="mt-4 border-t border-white/[0.06] pt-1">
+              {resto.map((l) => (
+                <div
+                  key={l.anuncio}
+                  className="flex items-center gap-3 border-b border-white/[0.04] py-2 last:border-b-0"
+                >
+                  <div className="w-8 shrink-0">
+                    <Criativo src={l.thumbnail} href={l.permalink} alt="" />
+                  </div>
+                  <span className="min-w-0 flex-1 truncate text-xs text-slate-300" title={titulo(l)}>
+                    {titulo(l)}
+                  </span>
+                  <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                    {l.total.toLocaleString("pt-BR")} leads
+                    <span className="mx-1.5 text-slate-700">·</span>
+                    <span className="text-sky-300">{l.agendados}</span> agendaram
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {melhor && pior && melhor.anuncio !== pior.anuncio && (
             <p className="mt-4 text-[11px] leading-snug text-slate-500">
-              Melhor conversão: <span className="text-slate-300">{rotulo(melhor.anuncio)}</span> (
+              Melhor conversão: <span className="text-slate-300">{titulo(melhor)}</span> (
               {pct(melhor.agendados, melhor.total).toFixed(0)}%). Pior:{" "}
-              <span className="text-slate-300">{rotulo(pior.anuncio)}</span> (
+              <span className="text-slate-300">{titulo(pior)}</span> (
               {pct(pior.agendados, pior.total).toFixed(0)}%). Anúncio com muito lead e pouco
               agendamento é verba gastando conversa, não paciente.
             </p>
