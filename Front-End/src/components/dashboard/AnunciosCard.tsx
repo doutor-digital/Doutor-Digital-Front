@@ -1,7 +1,15 @@
+import { useState } from "react";
+
 interface Linha {
   anuncio: string;
   total: number;
   agendados: number;
+  /** Nome do anúncio na Meta — só existe com a conta de anúncios conectada. */
+  nome?: string | null;
+  /** Miniatura do criativo (CDN da Meta). */
+  thumbnail?: string | null;
+  /** Link para a peça no Facebook/Instagram. */
+  permalink?: string | null;
 }
 
 interface Props {
@@ -18,6 +26,40 @@ const pct = (parte: number, todo: number) => (todo > 0 ? (parte / todo) * 100 : 
  * ganha o rótulo — e continua sendo pesquisável no Gerenciador de Anúncios.
  */
 const rotulo = (v: string) => (/^\d{8,}$/.test(v) ? `Anúncio ${v}` : v);
+
+/**
+ * Miniatura do criativo, no formato de post: quadrado, canto arredondado, 44px.
+ *
+ * A URL vem assinada pela CDN da Meta e expira; o back revalida por idade, mas entre
+ * uma revalidação e outra ela pode morrer. `onError` troca a imagem quebrada pelo
+ * mesmo quadrado vazio de quem nunca teve miniatura — nunca por um ícone de imagem
+ * partida.
+ */
+function Miniatura({ src, href, alt }: { src?: string | null; href?: string | null; alt: string }) {
+  const [quebrou, setQuebrou] = useState(false);
+
+  const quadro = (
+    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+      {src && !quebrou && (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover"
+          onError={() => setQuebrou(true)}
+        />
+      )}
+    </div>
+  );
+
+  if (!href) return quadro;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" title="Ver a peça no Facebook" className="shrink-0">
+      {quadro}
+    </a>
+  );
+}
 
 /**
  * Ranking dos anúncios que mais trouxeram lead no período, com quantos deles agendaram.
@@ -69,30 +111,35 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
           <div className="space-y-3">
             {linhas.map((l) => {
               const taxa = pct(l.agendados, l.total);
+              const titulo = l.nome?.trim() || rotulo(l.anuncio);
               return (
-                <div key={l.anuncio}>
-                  <div className="mb-1 flex items-baseline justify-between gap-3">
-                    <span className="truncate text-xs text-slate-200" title={l.anuncio}>
-                      {rotulo(l.anuncio)}
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-slate-400">
-                      {l.total.toLocaleString("pt-BR")} leads
-                      <span className="mx-1.5 text-slate-700">·</span>
-                      <span className="font-semibold text-sky-300">{l.agendados}</span>
-                      <span className="ml-1 text-slate-500">agendaram ({taxa.toFixed(0)}%)</span>
-                    </span>
-                  </div>
-                  {/* Barra cheia = volume de lead; a parte clara = quem agendou.
-                      Ler o vazio entre as duas é o ponto do card. */}
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                    <div
-                      className="h-full rounded-full bg-slate-600/70"
-                      style={{ width: `${(l.total / maior) * 100}%` }}
-                    >
+                <div key={l.anuncio} className="flex items-center gap-3">
+                  <Miniatura src={l.thumbnail} href={l.permalink} alt={titulo} />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-baseline justify-between gap-3">
+                      <span className="truncate text-xs text-slate-200" title={titulo}>
+                        {titulo}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                        {l.total.toLocaleString("pt-BR")} leads
+                        <span className="mx-1.5 text-slate-700">·</span>
+                        <span className="font-semibold text-sky-300">{l.agendados}</span>
+                        <span className="ml-1 text-slate-500">agendaram ({taxa.toFixed(0)}%)</span>
+                      </span>
+                    </div>
+                    {/* Barra cheia = volume de lead; a parte clara = quem agendou.
+                        Ler o vazio entre as duas é o ponto do card. */}
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
                       <div
-                        className="h-full rounded-full bg-sky-400"
-                        style={{ width: `${taxa}%` }}
-                      />
+                        className="h-full rounded-full bg-slate-600/70"
+                        style={{ width: `${(l.total / maior) * 100}%` }}
+                      >
+                        <div
+                          className="h-full rounded-full bg-sky-400"
+                          style={{ width: `${taxa}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
