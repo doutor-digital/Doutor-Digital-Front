@@ -72,6 +72,11 @@ api.interceptors.response.use(
       // não desloga, deixa o caller tratar
     } else if (status && status >= 500) {
       toast.error(`Erro ${status}: ${msg || "falha no servidor"}`);
+    } else if (status === 403) {
+      // 403 é decisão, não falha. O back manda ProblemDetails com título e motivo, e o
+      // prefixo deixa claro de que tipo de coisa se trata: sem ele, "Request failed with
+      // status code 403" é indistinguível de bug para quem está lendo a tela.
+      toast.error(msg ? `Sem permissão — ${msg}` : "Sem permissão para esta ação.");
     } else if (status === 404) {
       // silent - deixa o caller decidir
     } else if (isTimeout || semResposta) {
