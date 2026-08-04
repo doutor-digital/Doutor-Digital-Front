@@ -24,21 +24,30 @@ import { cn } from "@/lib/utils";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const C = {
-  bg: "#EEF1FA",
-  panel: "#FFFFFF",
-  header: "#4F46E5",
-  headerDark: "#3730A3",
-  primary: "#4F46E5",
-  primarySoft: "#EEF2FF",
-  teal: "#10B981",
-  amber: "#F59E0B",
-  rose: "#EC4899",
-  cyan: "#06B6D4",
-  purple: "#A855F7",
-  ink: "#1E293B",
-  inkSoft: "#64748B",
-  rule: "#E5E7EB",
+  /** Superfícies: vidro sobre o fundo do app, como no restante do painel. */
+  panel: "rgba(255,255,255,0.05)",
+  panelSoft: "rgba(255,255,255,0.03)",
+  field: "rgba(255,255,255,0.04)",
+  rule: "rgba(255,255,255,0.10)",
+
+  /** Texto. */
+  ink: "#e2e8f0",
+  inkSoft: "#94a3b8",
+
+  /** Acentos — os mesmos hexes do DashboardPage, para os gráficos conversarem. */
+  primary: "#a78bfa",
+  primaryFill: "#7c3aed",
+  teal: "#34d399",
+  amber: "#fbbf24",
+  rose: "#f472b6",
+  cyan: "#22d3ee",
+  purple: "#a78bfa",
+  blue: "#60a5fa",
+  danger: "#f87171",
 } as const;
+
+/** Fundo tênue de um acento, para chip e ícone. */
+const tint = (hex: string, alpha = 0.12) => `${hex}${Math.round(alpha * 255).toString(16).padStart(2, "0")}`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Filtro de período avançado
@@ -309,24 +318,23 @@ export default function IaAnalyticsPage() {
   const canAnalyze = hasKey && unitId != null;
 
   return (
-    <div className="-mx-4 md:-mx-6 -mt-2" style={{ background: C.bg, minHeight: "calc(100vh - 3rem)" }}>
-      {/* Header */}
+    <div className="-mx-4 md:-mx-6 -mt-2">
       <header
-        className="flex items-center justify-between px-6 py-3"
-        style={{ background: `linear-gradient(90deg, ${C.headerDark} 0%, ${C.header} 100%)` }}
+        className="flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: `1px solid ${C.rule}` }}
       >
         <div className="flex items-center gap-3">
-          <div
-            className="h-8 w-8 rounded grid place-items-center text-[11px] font-bold text-white"
-            style={{ background: "rgba(255,255,255,0.15)" }}
+          <span
+            className="h-8 w-8 rounded-lg grid place-items-center text-[10.5px] font-semibold tracking-wide"
+            style={{ background: tint(C.primary), color: C.primary, border: `1px solid ${tint(C.primary, 0.25)}` }}
           >
             IA
-          </div>
+          </span>
           <div>
-            <h1 className="font-display text-[16px] font-semibold tracking-wide text-white">
+            <h1 className="font-display text-[16px] font-semibold tracking-tight" style={{ color: C.ink }}>
               Análise com I.A.
             </h1>
-            <p className="text-[10.5px] text-white/70 mt-0.5">
+            <p className="text-[10.5px] mt-0.5" style={{ color: C.inkSoft }}>
               {unitId ? `Unidade #${unitId}` : "Selecione uma unidade no topo do painel"}
             </p>
           </div>
@@ -336,7 +344,7 @@ export default function IaAnalyticsPage() {
       <div className="px-6 py-5 space-y-4 max-w-6xl mx-auto" style={{ color: C.ink }}>
         {/* ───── Configuração da chave (compacta) ───── */}
         <section
-          className="rounded-xl p-4 shadow-sm"
+          className="rounded-xl p-4"
           style={{ background: C.panel, border: `1px solid ${C.rule}` }}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -349,14 +357,14 @@ export default function IaAnalyticsPage() {
               ) : hasKey ? (
                 <span
                   className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: "#D1FAE5", color: "#065F46" }}
+                  style={{ background: tint(C.teal), color: C.teal }}
                 >
                   ✓ Configurada
                 </span>
               ) : (
                 <span
                   className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: "#FEE2E2", color: "#991B1B" }}
+                  style={{ background: tint(C.danger), color: C.danger }}
                 >
                   Não configurada
                 </span>
@@ -368,14 +376,14 @@ export default function IaAnalyticsPage() {
                   onClick={() => ping.mutate()}
                   disabled={ping.isPending}
                   className="rounded-md px-2.5 py-1 text-[11.5px] font-medium"
-                  style={{ background: "#F3F4F6", color: C.ink }}
+                  style={{ background: "rgba(255,255,255,0.07)", color: C.ink }}
                 >
                   {ping.isPending ? "Testando…" : "Testar"}
                 </button>
                 <button
                   onClick={() => setShowKeyInput(true)}
                   className="rounded-md px-2.5 py-1 text-[11.5px] font-medium"
-                  style={{ background: "#F3F4F6", color: C.ink }}
+                  style={{ background: "rgba(255,255,255,0.07)", color: C.ink }}
                 >
                   Trocar
                 </button>
@@ -384,7 +392,7 @@ export default function IaAnalyticsPage() {
                     if (confirm("Remover a chave?")) deleteKey.mutate();
                   }}
                   className="rounded-md px-2.5 py-1 text-[11.5px] font-medium"
-                  style={{ background: "#FEE2E2", color: "#991B1B" }}
+                  style={{ background: tint(C.danger), color: C.danger }}
                 >
                   Remover
                 </button>
@@ -399,14 +407,14 @@ export default function IaAnalyticsPage() {
                 onChange={(e) => setKeyInput(e.target.value)}
                 placeholder="sk-..."
                 className="w-full rounded-md px-3 py-2 text-[12.5px] outline-none"
-                style={{ background: "#F9FAFB", border: `1px solid ${C.rule}`, color: C.ink }}
+                style={{ background: C.field, border: `1px solid ${C.rule}`, color: C.ink }}
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => keyInput.length >= 20 && setKey.mutate(keyInput)}
                   disabled={keyInput.length < 20 || setKey.isPending}
                   className="rounded-md px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
-                  style={{ background: C.primary }}
+                  style={{ background: C.primaryFill }}
                 >
                   {setKey.isPending ? "Salvando…" : "Salvar chave"}
                 </button>
@@ -428,7 +436,7 @@ export default function IaAnalyticsPage() {
           {ping.data && (
             <p
               className="mt-2 text-[11.5px]"
-              style={{ color: ping.data.ok ? "#065F46" : "#B91C1C" }}
+              style={{ color: ping.data.ok ? C.teal : C.danger }}
             >
               {ping.data.ok ? "✓ Chave válida" : `✗ ${ping.data.error}`}
             </p>
@@ -437,7 +445,7 @@ export default function IaAnalyticsPage() {
 
         {/* ───── Filtro de período avançado ───── */}
         <section
-          className="rounded-xl p-4 shadow-sm"
+          className="rounded-xl p-4"
           style={{ background: C.panel, border: `1px solid ${C.rule}` }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -457,11 +465,11 @@ export default function IaAnalyticsPage() {
                   "rounded-md px-3 py-1.5 text-[11.5px] font-medium transition",
                   presetKey === p.key
                     ? "text-white"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
+                    : "text-slate-400 hover:text-slate-100 hover:bg-white/5",
                 )}
                 style={{
-                  background: presetKey === p.key ? C.primary : "transparent",
-                  border: `1px solid ${presetKey === p.key ? C.primary : C.rule}`,
+                  background: presetKey === p.key ? C.primaryFill : "transparent",
+                  border: `1px solid ${presetKey === p.key ? C.primaryFill : C.rule}`,
                 }}
               >
                 {p.label}
@@ -473,11 +481,11 @@ export default function IaAnalyticsPage() {
                 "rounded-md px-3 py-1.5 text-[11.5px] font-medium transition",
                 presetKey === "custom"
                   ? "text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
+                  : "text-slate-400 hover:text-slate-100 hover:bg-white/5",
               )}
               style={{
-                background: presetKey === "custom" ? C.primary : "transparent",
-                border: `1px solid ${presetKey === "custom" ? C.primary : C.rule}`,
+                background: presetKey === "custom" ? C.primaryFill : "transparent",
+                border: `1px solid ${presetKey === "custom" ? C.primaryFill : C.rule}`,
               }}
             >
               Personalizado
@@ -492,7 +500,7 @@ export default function IaAnalyticsPage() {
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
                 className="rounded-md px-2 py-1 text-[12px] outline-none"
-                style={{ background: "#F9FAFB", border: `1px solid ${C.rule}`, color: C.ink }}
+                style={{ background: C.field, border: `1px solid ${C.rule}`, color: C.ink }}
               />
               <span>até</span>
               <input
@@ -500,7 +508,7 @@ export default function IaAnalyticsPage() {
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
                 className="rounded-md px-2 py-1 text-[12px] outline-none"
-                style={{ background: "#F9FAFB", border: `1px solid ${C.rule}`, color: C.ink }}
+                style={{ background: C.field, border: `1px solid ${C.rule}`, color: C.ink }}
               />
             </div>
           )}
@@ -529,12 +537,12 @@ export default function IaAnalyticsPage() {
           </div>
 
           {!hasKey && (
-            <p className="text-[12px] mb-3 px-3 py-2 rounded-md" style={{ background: "#FEF3C7", color: "#92400E" }}>
+            <p className="text-[12px] mb-3 px-3 py-2 rounded-md" style={{ background: tint(C.amber), color: C.amber }}>
               Configure sua chave da OpenAI acima pra liberar as perguntas.
             </p>
           )}
           {hasKey && unitId == null && (
-            <p className="text-[12px] mb-3 px-3 py-2 rounded-md" style={{ background: "#DBEAFE", color: "#1E3A8A" }}>
+            <p className="text-[12px] mb-3 px-3 py-2 rounded-md" style={{ background: tint(C.blue), color: C.blue }}>
               Selecione uma unidade no topo do painel pra perguntar.
             </p>
           )}
@@ -548,7 +556,7 @@ export default function IaAnalyticsPage() {
                 <article
                   key={q.id}
                   className={cn(
-                    "rounded-xl shadow-sm transition-all",
+                    "rounded-xl transition-all",
                     isOpen && "sm:col-span-2 lg:col-span-3",
                   )}
                   style={{
@@ -559,11 +567,11 @@ export default function IaAnalyticsPage() {
                   <button
                     onClick={() => (state ? clearQuestion(q.id) : askPreset(q))}
                     disabled={!canAnalyze || isLoading}
-                    className="w-full flex items-start gap-3 p-3.5 text-left disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                    className="w-full flex items-start gap-3 p-3.5 text-left disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/5"
                   >
                     <span
                       className="h-9 w-9 shrink-0 rounded-lg grid place-items-center"
-                      style={{ background: `${q.color}15`, color: q.color }}
+                      style={{ background: tint(q.color), color: q.color }}
                     >
                       <q.Icon className="h-[18px] w-[18px]" />
                     </span>
@@ -589,7 +597,7 @@ export default function IaAnalyticsPage() {
                   </button>
 
                   {state?.answer && (
-                    <div className="border-t px-4 py-3" style={{ borderColor: C.rule, background: "#F9FAFB" }}>
+                    <div className="border-t px-4 py-3" style={{ borderColor: C.rule, background: C.panelSoft }}>
                       <MarkdownLite text={state.answer} />
                       {state.toolsCalled && state.toolsCalled.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -597,7 +605,7 @@ export default function IaAnalyticsPage() {
                             <span
                               key={t}
                               className="text-[9.5px] px-1.5 py-0.5 rounded font-mono"
-                              style={{ background: "#E5E7EB", color: C.inkSoft }}
+                              style={{ background: "rgba(255,255,255,0.07)", color: C.inkSoft }}
                             >
                               {t}
                             </span>
@@ -608,7 +616,7 @@ export default function IaAnalyticsPage() {
                   )}
 
                   {state?.error && (
-                    <div className="border-t px-4 py-3 text-[11.5px]" style={{ borderColor: C.rule, color: "#B91C1C" }}>
+                    <div className="border-t px-4 py-3 text-[11.5px]" style={{ borderColor: C.rule, color: C.danger }}>
                       Erro: {state.error}
                     </div>
                   )}
@@ -620,7 +628,7 @@ export default function IaAnalyticsPage() {
 
         {/* ───── Análise profunda ───── */}
         <section
-          className="rounded-xl p-5 shadow-sm"
+          className="rounded-xl p-5"
           style={{ background: C.panel, border: `1px solid ${C.rule}` }}
         >
           <div className="flex items-end justify-between gap-3 mb-3">
@@ -638,7 +646,7 @@ export default function IaAnalyticsPage() {
                 onClick={() => analyze.mutate()}
                 disabled={analyze.isPending}
                 className="rounded-md px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50 inline-flex items-center gap-2 shrink-0"
-                style={{ background: C.primary }}
+                style={{ background: C.primaryFill }}
               >
                 {analyze.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 {analyze.isPending ? "Analisando…" : "Analisar com I.A."}
@@ -647,7 +655,7 @@ export default function IaAnalyticsPage() {
           </div>
 
           {analyze.isError && (
-            <p className="mt-3 text-[12px]" style={{ color: "#B91C1C" }}>
+            <p className="mt-3 text-[12px]" style={{ color: C.danger }}>
               Erro: {String((analyze.error as Error)?.message ?? "falha na análise")}
             </p>
           )}
@@ -668,7 +676,7 @@ export default function IaAnalyticsPage() {
               </div>
               <article
                 className="rounded-lg p-5 max-w-none"
-                style={{ background: "#F9FAFB", border: `1px solid ${C.rule}`, color: C.ink }}
+                style={{ background: C.field, border: `1px solid ${C.rule}`, color: C.ink }}
               >
                 <MarkdownLite text={analyze.data.markdown} />
               </article>
