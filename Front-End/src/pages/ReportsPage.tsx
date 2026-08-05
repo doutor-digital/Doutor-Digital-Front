@@ -643,7 +643,7 @@ export default function ReportsPage() {
       <PageHeader
         title="Relatórios"
         badge="Analytics"
-        description="Visão completa do desempenho por dia ou mês — com comparativos, gráficos, exportação e envio direto pelo WhatsApp."
+        description="Fechamento por dia ou mês, com comparativo e exportação."
         actions={
           <>
             {hasClinic ? (
@@ -660,179 +660,128 @@ export default function ReportsPage() {
         }
       />
 
-      {/* ════════════ Escopo e período ════════════ */}
-      <Card className="mb-4">
-        <CardBody className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-            <div className="md:col-span-3">
-              <label className="label">Modo</label>
-              <div className="mt-1 flex items-center gap-1 rounded-lg border border-white/[0.06] bg-black/20 p-1">
-                <ModeTab
-                  icon={<CalendarDays className="h-3.5 w-3.5" />}
-                  label="Diário"
-                  active={mode === "daily"}
-                  onClick={() => setMode("daily")}
-                />
-                <ModeTab
-                  icon={<FileText className="h-3.5 w-3.5" />}
-                  label="Mensal"
-                  active={mode === "monthly"}
-                  onClick={() => setMode("monthly")}
-                />
-              </div>
-            </div>
+      {/* ════════════ Barra de controle ════════════
+          Uma faixa só. A versão anterior empilhava um card com cinco campos mais uma
+          fileira de atalhos antes de qualquer número — quatro blocos de moldura para
+          chegar ao conteúdo. Aqui tudo o que muda o relatório cabe numa linha. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        {/* modo */}
+        <div className="flex items-center gap-0.5 rounded-lg bg-black/25 p-0.5">
+          <ModeTab
+            icon={<CalendarDays className="h-3.5 w-3.5" />}
+            label="Diário"
+            active={mode === "daily"}
+            onClick={() => setMode("daily")}
+          />
+          <ModeTab
+            icon={<FileText className="h-3.5 w-3.5" />}
+            label="Mensal"
+            active={mode === "monthly"}
+            onClick={() => setMode("monthly")}
+          />
+        </div>
 
-            <div className="md:col-span-4">
-              <label className="label">Unidade</label>
-              <Select
-                className="mt-1"
-                value={resolvedUnitId}
-                onChange={(e) => setUnitValue(e.target.value)}
-                disabled={unitsQuery.isLoading}
+        <div className="h-5 w-px bg-white/10" />
+
+        <Select
+          className="h-8 min-w-[190px] text-[12.5px]"
+          value={resolvedUnitId}
+          onChange={(e) => setUnitValue(e.target.value)}
+          disabled={unitsQuery.isLoading}
+        >
+          <option value="">
+            {unitsQuery.isLoading ? "Carregando…" : "Selecione uma unidade"}
+          </option>
+          {units.map((u) => (
+            <option key={u.id} value={String(u.clinicId ?? u.id)}>
+              {u.name ?? `Clínica ${u.clinicId ?? u.id}`}
+            </option>
+          ))}
+        </Select>
+
+        {mode === "daily" ? (
+          /* Passo de um dia em vez de quatro chips fixos: cobre qualquer data
+             sem ocupar uma linha inteira da tela. */
+          <div className="flex items-center gap-1">
+            <IconBtn
+              title="Dia anterior"
+              onClick={() => setDailyDate(addDaysIso(dailyDate, -1))}
+              disabled={!hasClinic}
+            >
+              <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+            </IconBtn>
+            <Input
+              className="h-8 w-[150px] text-[12.5px]"
+              type="date"
+              value={dailyDate}
+              max={todayIsoLocal()}
+              onChange={(e) => setDailyDate(e.target.value)}
+              disabled={!hasClinic}
+            />
+            <IconBtn
+              title="Dia seguinte"
+              onClick={() => setDailyDate(addDaysIso(dailyDate, 1))}
+              disabled={!hasClinic || dailyDate >= todayIsoLocal()}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </IconBtn>
+            {dailyDate !== todayIsoLocal() && (
+              <button
+                onClick={() => setDailyDate(todayIsoLocal())}
+                className="rounded-md px-2 py-1 text-[11.5px] font-medium text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-100"
               >
-                <option value="">
-                  {unitsQuery.isLoading ? "Carregando unidades…" : "Selecione uma unidade"}
-                </option>
-                {units.map((u) => (
-                  <option key={u.id} value={String(u.clinicId ?? u.id)}>
-                    {u.name ?? `Clínica ${u.clinicId ?? u.id}`}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            {mode === "daily" ? (
-              <div className="md:col-span-3">
-                <label className="label">Data</label>
-                <Input
-                  className="mt-1"
-                  type="date"
-                  value={dailyDate}
-                  max={todayIsoLocal()}
-                  onChange={(e) => setDailyDate(e.target.value)}
-                  disabled={!hasClinic}
-                />
-              </div>
-            ) : (
-              <>
-                <div className="md:col-span-2">
-                  <label className="label">Mês</label>
-                  <Select
-                    className="mt-1"
-                    value={mes}
-                    onChange={(e) => setMes(+e.target.value)}
-                    disabled={!hasClinic}
-                  >
-                    {MESES_PT.map((nome, i) => (
-                      <option key={nome} value={i + 1}>{nome}</option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="label">Ano</label>
-                  <Input
-                    type="number"
-                    className="mt-1"
-                    value={ano}
-                    min={2000}
-                    max={now.getFullYear() + 1}
-                    onChange={(e) => setAno(+e.target.value)}
-                    disabled={!hasClinic}
-                  />
-                </div>
-              </>
+                Hoje
+              </button>
             )}
-
-            <div className="md:col-span-2 flex flex-col justify-end">
-              <label className="label">Comparar</label>
-              <Toggle
-                className="mt-2"
-                label={mode === "daily" ? "com o dia anterior" : "com o mês anterior"}
-                value={compare}
-                onChange={setCompare}
-              />
-            </div>
           </div>
-
-          {/* Presets rápidos */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-3">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Atalhos
-            </span>
-            {mode === "daily" ? (
-              <>
-                <PresetChip
-                  label="Hoje"
-                  active={dailyDate === todayIsoLocal()}
-                  onClick={() => setDailyDate(todayIsoLocal())}
-                />
-                <PresetChip
-                  label="Ontem"
-                  active={dailyDate === addDaysIso(todayIsoLocal(), -1)}
-                  onClick={() => setDailyDate(addDaysIso(todayIsoLocal(), -1))}
-                />
-                <PresetChip
-                  label="Anteontem"
-                  active={dailyDate === addDaysIso(todayIsoLocal(), -2)}
-                  onClick={() => setDailyDate(addDaysIso(todayIsoLocal(), -2))}
-                />
-                <PresetChip
-                  label="Há 7 dias"
-                  active={dailyDate === addDaysIso(todayIsoLocal(), -7)}
-                  onClick={() => setDailyDate(addDaysIso(todayIsoLocal(), -7))}
-                />
-              </>
-            ) : (
-              <>
-                <PresetChip
-                  label="Este mês"
-                  active={mes === now.getMonth() + 1 && ano === now.getFullYear()}
-                  onClick={() => {
-                    setMes(now.getMonth() + 1);
-                    setAno(now.getFullYear());
-                  }}
-                />
-                <PresetChip
-                  label="Mês anterior"
-                  active={(() => {
-                    const p = subtractMonth(now.getMonth() + 1, now.getFullYear());
-                    return mes === p.mes && ano === p.ano;
-                  })()}
-                  onClick={() => {
-                    const p = subtractMonth(now.getMonth() + 1, now.getFullYear());
-                    setMes(p.mes);
-                    setAno(p.ano);
-                  }}
-                />
-                <PresetChip
-                  label="2 meses atrás"
-                  active={(() => {
-                    const p1 = subtractMonth(now.getMonth() + 1, now.getFullYear());
-                    const p2 = subtractMonth(p1.mes, p1.ano);
-                    return mes === p2.mes && ano === p2.ano;
-                  })()}
-                  onClick={() => {
-                    const p1 = subtractMonth(now.getMonth() + 1, now.getFullYear());
-                    const p2 = subtractMonth(p1.mes, p1.ano);
-                    setMes(p2.mes);
-                    setAno(p2.ano);
-                  }}
-                />
-              </>
-            )}
-
-            <span className="ml-auto text-[11px] text-slate-500">
-              Última atualização:{" "}
-              <span className="text-slate-300">
-                {lastUpdated ? formatRelativeAgo(lastUpdated) : "—"}
-              </span>
-            </span>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <Select
+              className="h-8 w-[130px] text-[12.5px]"
+              value={mes}
+              onChange={(e) => setMes(+e.target.value)}
+              disabled={!hasClinic}
+            >
+              {MESES_PT.map((nome, i) => (
+                <option key={nome} value={i + 1}>{nome}</option>
+              ))}
+            </Select>
+            <Input
+              type="number"
+              className="h-8 w-[86px] text-[12.5px]"
+              value={ano}
+              min={2000}
+              max={now.getFullYear() + 1}
+              onChange={(e) => setAno(+e.target.value)}
+              disabled={!hasClinic}
+            />
           </div>
-        </CardBody>
-      </Card>
+        )}
 
-      {/* ════════════ KPIs ════════════ */}
-      {hasClinic && (
+        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-slate-400">
+          <input
+            type="checkbox"
+            checked={compare}
+            onChange={(e) => setCompare(e.target.checked)}
+            className="h-3.5 w-3.5 accent-violet-500"
+          />
+          comparar
+        </label>
+
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden text-[11px] text-slate-500 sm:inline">
+            {lastUpdated ? formatRelativeAgo(lastUpdated) : "—"}
+          </span>
+          <IconBtn title="Atualizar" onClick={handleRefresh} disabled={!hasClinic}>
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          </IconBtn>
+        </div>
+      </div>
+
+      {/* ════════════ KPIs ════════════
+          Só no mensal. No diário eles repetiam exatamente os números que o
+          fechamento já mostra logo abaixo, em cards maiores. */}
+      {hasClinic && mode === "monthly" && (
         <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k, i) => (
             <KpiCard
@@ -860,55 +809,54 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* ════════════ Abas ════════════ */}
+      {/* ════════════ Abas ════════════
+          Sublinhado em vez de pílulas dentro do cabeçalho do card: as abas eram
+          disputadas por três botões na mesma linha e sobrava pouco para cada um. */}
       <Card>
-        <CardHeader
-          title={
-            <div className="inline-flex items-center gap-1 rounded-lg border border-white/[0.06] bg-black/20 p-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4">
+          <div className="flex items-center gap-1">
+            <TabBtn
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
+              label="Visão geral"
+              active={tab === "overview"}
+              onClick={() => setTab("overview")}
+            />
+            <TabBtn
+              icon={<LayoutGrid className="h-3.5 w-3.5" />}
+              label="Por unidade"
+              active={tab === "units"}
+              onClick={() => setTab("units")}
+            />
+            {mode === "monthly" && (
               <TabBtn
-                icon={<BarChart3 className="h-3.5 w-3.5" />}
-                label="Visão geral"
-                active={tab === "overview"}
-                onClick={() => setTab("overview")}
+                icon={<PieChartIcon className="h-3.5 w-3.5" />}
+                label="Por origem"
+                active={tab === "sources"}
+                onClick={() => setTab("sources")}
               />
-              <TabBtn
-                icon={<LayoutGrid className="h-3.5 w-3.5" />}
-                label="Por unidade"
-                active={tab === "units"}
-                onClick={() => setTab("units")}
-              />
-              {mode === "monthly" && (
-                <TabBtn
-                  icon={<PieChartIcon className="h-3.5 w-3.5" />}
-                  label="Por origem"
-                  active={tab === "sources"}
-                  onClick={() => setTab("sources")}
-                />
-              )}
-              <TabBtn
-                icon={<MessageCircle className="h-3.5 w-3.5" />}
-                label="WhatsApp"
-                active={tab === "whatsapp"}
-                onClick={() => setTab("whatsapp")}
-              />
-            </div>
-          }
-          action={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCopyLink}>
-                <Link2 className="mr-1.5 h-3.5 w-3.5" /> Copiar link
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={!hasClinic}>
-                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Exportar CSV
-              </Button>
-              {mode === "monthly" && (
-                <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={!hasClinic}>
-                  <FileDown className="mr-1.5 h-3.5 w-3.5" /> Baixar PDF
-                </Button>
-              )}
-            </div>
-          }
-        />
+            )}
+            <TabBtn
+              icon={<MessageCircle className="h-3.5 w-3.5" />}
+              label="WhatsApp"
+              active={tab === "whatsapp"}
+              onClick={() => setTab("whatsapp")}
+            />
+          </div>
+
+          <div className="flex items-center gap-1 py-1.5">
+            <IconBtn title="Copiar link" onClick={handleCopyLink}>
+              <Link2 className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn title="Exportar CSV" onClick={handleExportCsv} disabled={!hasClinic}>
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+            </IconBtn>
+            {mode === "monthly" && (
+              <IconBtn title="Baixar PDF" onClick={handleDownloadPdf} disabled={!hasClinic}>
+                <FileDown className="h-3.5 w-3.5" />
+              </IconBtn>
+            )}
+          </div>
+        </div>
         <CardBody className="space-y-6">
           {!hasClinic && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[12px] text-amber-200">
@@ -2598,10 +2546,12 @@ function TabBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition",
+        // Sublinhado: a aba ativa é marcada pela borda inferior, alinhada à borda
+        // do card. Pílula dentro de card já cria dois retângulos concêntricos.
+        "inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-[12.5px] font-medium transition",
         active
-          ? "bg-white/[0.08] text-slate-50 shadow-sm"
-          : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]",
+          ? "border-violet-400 text-slate-50"
+          : "border-transparent text-slate-400 hover:text-slate-200",
       )}
     >
       {icon}
@@ -2656,6 +2606,30 @@ function Toggle({
       />
       {label}
     </label>
+  );
+}
+
+/** Botão quadrado de ícone da barra de controle. */
+function IconBtn({
+  children,
+  title,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+      className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 transition hover:bg-white/[0.08] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }
 
