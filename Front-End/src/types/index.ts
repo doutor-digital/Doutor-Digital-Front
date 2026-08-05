@@ -1138,12 +1138,41 @@ export interface DashboardLeadListItem {
 
 /* ─── Relatórios (Daily + Monthly resumo) ─── */
 
+export interface RelatorioContagemDto {
+  rotulo: string;
+  quantidade: number;
+  percentual: number;
+}
+
+/** Um campo que ficou vazio em N cartões do dia. */
+export interface RelatorioPendenciaDto {
+  campo: string;
+  /** O que deixa de funcionar enquanto estiver vazio. */
+  impacto: string;
+  quantidade: number;
+}
+
 export interface DailyRelatoryDto {
   unidade: string;
+  unidadeId: number;
   totalLeads: number;
   agendamentos: number;
+  /** Agendados que já garantiram a consulta no PIX antecipado. */
+  agendadosComAntecipado: number;
+  /** Agendados sem antecipado — é aqui que mora o no-show. */
+  agendadosSemAntecipado: number;
+  /** Entraram e não marcaram. */
+  naoAgendaram: number;
+  /** Fecharam tratamento. */
   comPagamento: number;
   resgastes: number;
+  /** % do total que agendou. */
+  taxaAgendamento: number;
+  porOrigem: RelatorioContagemDto[];
+  porQualificacao: RelatorioContagemDto[];
+  motivosNaoAgendamento: RelatorioContagemDto[];
+  /** O que ficou faltando preencher — é o que torna o relatório conferível. */
+  pendencias: RelatorioPendenciaDto[];
   observacoes: string;
   atendentes: string[];
 }

@@ -77,6 +77,7 @@ import {
 } from "@/lib/utils";
 import type {
   DailyRelatoryDto,
+  RelatorioContagemDto,
   RelatorioMensalResumoDto,
 } from "@/types";
 
@@ -919,7 +920,12 @@ export default function ReportsPage() {
           {tab === "overview" && hasClinic && (
             <>
               {mode === "daily" ? (
-                <DailyOverview rows={dailyRows} loading={loading} />
+                <DailyOverview
+                  rows={dailyRows}
+                  prevRows={prevDailyQuery.data ?? undefined}
+                  data={dailyDate}
+                  loading={loading}
+                />
               ) : (
                 <MonthlyOverview data={monthlyData} loading={loading} />
               )}
@@ -984,106 +990,324 @@ export default function ReportsPage() {
  *  Visão geral — Diário
  * ═══════════════════════════════════════════════════════════════ */
 
-function DailyOverview({ rows, loading }: { rows: DailyRelatoryDto[]; loading: boolean }) {
-  const agg = useMemo(() => aggregateDaily(rows), [rows]);
-  const chartData = useMemo(
-    () =>
-      rows
-        .slice()
-        .sort((a, b) => b.totalLeads - a.totalLeads)
-        .map((r) => ({
-          unidade: r.unidade,
-          Leads: r.totalLeads,
-          Agendamentos: r.agendamentos,
-          "Com pagamento": r.comPagamento,
-          Resgates: r.resgastes,
-        })),
-    [rows],
+function DailyOverview({
+  rows,
+  prevRows,
+  data,
+  loading,
+}: {
+  rows: DailyRelatoryDto[];
+  prevRows?: DailyRelatoryDto[];
+  data?: string;
+  loading: boolean;
+}) {
+  const [copiado, setCopiado] = useState(false);
+
+  // O relatório é POR UNIDADE: a equipe manda o fechamento da clínica dela, não um
+  // comparativo entre 13. Com mais de uma no filtro, agrega — mas o normal é uma.
+  const r = useMemo(() => (rows.length === 1 ? rows[0] : somarUnidades(rows)), [rows]);
+  const ontem = useMemo(
+    () => (prevRows && prevRows.length ? (prevRows.length === 1 ? prevRows[0] : somarUnidades(prevRows)) : null),
+    [prevRows],
   );
 
-  if (loading && rows.length === 0) {
-    return <Skeleton height={320} />;
-  }
+  const texto = useMemo(() => (r ? textoParaWhatsapp(r, data) : ""), [r, data]);
 
-  if (rows.length === 0) {
-    return <Empty title="Nenhum lead atribuído no dia selecionado." />;
+  if (loading && rows.length === 0) return <Skeleton height={360} />;
+  if (!r || rows.length === 0) return <Empty title="Nenhum lead entrou no dia selecionado." />;
+
+  const pendencias = r.pendencias ?? [];
+  const totalPendencias = pendencias.reduce((s, p) => s + p.quantidade, 0);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      /* clipboard bloqueado — o texto segue visível para seleção manual */
+    }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-      <div className="xl:col-span-2 rounded-xl border border-white/[0.06] bg-white/[0.01] p-4">
-        <SectionTitle icon={<BarChartIcon className="h-3.5 w-3.5" />}>
-          Leads por unidade
-        </SectionTitle>
-        <div className="mt-2 h-[300px] w-full">
-          <ResponsiveContainer>
-            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 28 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis
-                dataKey="unidade"
-                tick={{ fill: "#64748b", fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-                angle={-12}
-                textAnchor="end"
-                height={40}
-              />
-              <YAxis
-                tick={{ fill: "#64748b", fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                width={32}
-              />
-              <RTooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-              <Legend wrapperStyle={{ color: "#cbd5e1", fontSize: 11 }} />
-              <Bar dataKey="Leads" fill="#38bdf8" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Agendamentos" fill="#fbbf24" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Com pagamento" fill="#34d399" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Resgates" fill="#a78bfa" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+    <div className="space-y-3">
+      {/* ─── Cabeçalho: é o que aparece no print ─── */}
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Fechamento do dia
+          </p>
+          <h2 className="font-display text-[19px] font-semibold tracking-tight text-slate-100">
+            {r.unidade}
+          </h2>
+          {data && <p className="text-[11.5px] text-slate-400">{formatarDataLonga(data)}</p>}
         </div>
+        <button
+          onClick={copiar}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-slate-200 transition hover:bg-white/[0.08]"
+        >
+          {copiado ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
+          {copiado ? "Copiado" : "Copiar para WhatsApp"}
+        </button>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-4">
-        <SectionTitle icon={<ListTree className="h-3.5 w-3.5" />}>Funil do dia</SectionTitle>
-        <div className="mt-3 space-y-2">
-          <FunnelRow label="Leads" value={agg.total} total={agg.total} tone="sky" />
-          <FunnelRow
-            label="Agendamentos"
-            value={agg.agendamentos}
-            total={agg.total}
-            tone="amber"
-          />
-          <FunnelRow
-            label="Com pagamento"
-            value={agg.comPagamento}
-            total={agg.total}
-            tone="emerald"
-          />
-          <FunnelRow
-            label="Resgates"
-            value={agg.resgastes}
-            total={agg.total}
-            tone="indigo"
-          />
-        </div>
-        {agg.atendentes.length > 0 && (
-          <div className="mt-4 border-t border-white/[0.05] pt-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Atendentes ativos ({agg.atendentes.length})
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {agg.atendentes.map((a) => (
-                <Badge key={a} tone="slate">{a}</Badge>
-              ))}
-            </div>
+      {/* ─── Pendências: a resposta ao "eu não vi" ───
+          Vem ANTES dos números. Sem isso, "3 agendamentos" parece dia ruim quando
+          pode ser 3 preenchidos de 12. */}
+      {totalPendencias > 0 && (
+        <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+            Faltou preencher — confira antes de enviar
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {pendencias.map((p) => (
+              <span key={p.campo} className="text-[12.5px] text-amber-100/90" title={p.impacto}>
+                <strong className="tabular-nums">{p.quantidade}</strong> sem {p.campo.toLowerCase()}
+              </span>
+            ))}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* ─── Números do dia ─── */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+        <NumeroDoDia rotulo="Leads" valor={r.totalLeads} antes={ontem?.totalLeads} destaque />
+        <NumeroDoDia
+          rotulo="Agendaram"
+          valor={r.agendamentos}
+          antes={ontem?.agendamentos}
+          nota={`${r.taxaAgendamento?.toFixed(1) ?? 0}% do total`}
+          tom="amber"
+        />
+        <NumeroDoDia
+          rotulo="Com antecipado"
+          valor={r.agendadosComAntecipado}
+          antes={ontem?.agendadosComAntecipado}
+          nota="paga antes, falta menos"
+          tom="emerald"
+        />
+        <NumeroDoDia
+          rotulo="Sem antecipado"
+          valor={r.agendadosSemAntecipado}
+          antes={ontem?.agendadosSemAntecipado}
+          nota="risco de no-show"
+          tom="rose"
+        />
+        <NumeroDoDia rotulo="Não agendaram" valor={r.naoAgendaram} antes={ontem?.naoAgendaram} />
       </div>
+
+      {/* ─── Quebras ─── */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <QuebraCard titulo="De onde vieram" itens={r.porOrigem} vazio="Sem origem registrada" />
+        <QuebraCard
+          titulo="Por que não agendaram"
+          itens={r.motivosNaoAgendamento}
+          vazio="Ninguém deixou de agendar"
+        />
+        <QuebraCard titulo="Termômetro" itens={r.porQualificacao} vazio="Sem qualificação" />
+      </div>
+
+      {r.atendentes?.length > 0 && (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] px-4 py-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Atendentes no dia ({r.atendentes.length})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {r.atendentes.map((a) => (
+              <Badge key={a} tone="slate">{a}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/** Um número do dia, com o de ontem ao lado — número sozinho não diz nada. */
+function NumeroDoDia({
+  rotulo,
+  valor,
+  antes,
+  nota,
+  tom = "slate",
+  destaque = false,
+}: {
+  rotulo: string;
+  valor: number;
+  antes?: number;
+  nota?: string;
+  tom?: "slate" | "amber" | "emerald" | "rose";
+  destaque?: boolean;
+}) {
+  const cores = {
+    slate: "text-slate-100",
+    amber: "text-amber-300",
+    emerald: "text-emerald-300",
+    rose: "text-rose-300",
+  } as const;
+  const delta = typeof antes === "number" ? valor - antes : null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border px-3.5 py-3",
+        destaque ? "border-white/12 bg-white/[0.05]" : "border-white/[0.06] bg-white/[0.02]",
+      )}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{rotulo}</p>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className={cn("font-display text-[26px] font-semibold tabular-nums", cores[tom])}>
+          {valor}
+        </span>
+        {delta !== null && (
+          <span
+            className={cn(
+              "text-[11px] font-medium tabular-nums",
+              delta > 0 ? "text-emerald-400" : delta < 0 ? "text-rose-400" : "text-slate-500",
+            )}
+            title={`ontem: ${antes}`}
+          >
+            {delta > 0 ? "+" : ""}
+            {delta}
+          </span>
+        )}
+      </div>
+      {nota && <p className="mt-0.5 text-[10.5px] text-slate-500">{nota}</p>}
+    </div>
+  );
+}
+
+/** Lista com barra proporcional. Mostra tudo, sem "outros" — o print precisa fechar. */
+function QuebraCard({
+  titulo,
+  itens,
+  vazio,
+}: {
+  titulo: string;
+  itens?: RelatorioContagemDto[];
+  vazio: string;
+}) {
+  const lista = (itens ?? []).slice(0, 7);
+  const max = lista.length ? Math.max(...lista.map((i) => i.quantidade)) : 1;
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] px-4 py-3">
+      <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+        {titulo}
+      </p>
+      {lista.length === 0 ? (
+        <p className="text-[12px] text-slate-600">{vazio}</p>
+      ) : (
+        <div className="space-y-2">
+          {lista.map((i) => (
+            <div key={i.rotulo}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-[12.5px] text-slate-300" title={i.rotulo}>
+                  {i.rotulo}
+                </span>
+                <span className="shrink-0 text-[12px] tabular-nums text-slate-400">
+                  {i.quantidade}
+                  <span className="ml-1 text-slate-600">{i.percentual}%</span>
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-violet-400/70"
+                  style={{ width: `${Math.max(4, (i.quantidade / max) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Soma as unidades quando o filtro traz mais de uma. O normal é vir uma só. */
+function somarUnidades(rows: DailyRelatoryDto[]): DailyRelatoryDto | null {
+  if (rows.length === 0) return null;
+  const juntar = (sel: (r: DailyRelatoryDto) => RelatorioContagemDto[] | undefined) => {
+    const mapa = new Map<string, number>();
+    rows.forEach((r) => (sel(r) ?? []).forEach((i) => mapa.set(i.rotulo, (mapa.get(i.rotulo) ?? 0) + i.quantidade)));
+    const tot = [...mapa.values()].reduce((a, b) => a + b, 0) || 1;
+    return [...mapa.entries()]
+      .map(([rotulo, quantidade]) => ({
+        rotulo,
+        quantidade,
+        percentual: Math.round((quantidade / tot) * 1000) / 10,
+      }))
+      .sort((a, b) => b.quantidade - a.quantidade);
+  };
+  const soma = (sel: (r: DailyRelatoryDto) => number) => rows.reduce((s, r) => s + (sel(r) ?? 0), 0);
+  const total = soma((r) => r.totalLeads);
+  const agend = soma((r) => r.agendamentos);
+
+  const pend = new Map<string, { campo: string; impacto: string; quantidade: number }>();
+  rows.forEach((r) =>
+    (r.pendencias ?? []).forEach((p) => {
+      const at = pend.get(p.campo);
+      pend.set(p.campo, { campo: p.campo, impacto: p.impacto, quantidade: (at?.quantidade ?? 0) + p.quantidade });
+    }),
+  );
+
+  return {
+    unidade: rows.length === 1 ? rows[0].unidade : `${rows.length} unidades`,
+    unidadeId: rows[0].unidadeId,
+    totalLeads: total,
+    agendamentos: agend,
+    agendadosComAntecipado: soma((r) => r.agendadosComAntecipado),
+    agendadosSemAntecipado: soma((r) => r.agendadosSemAntecipado),
+    naoAgendaram: soma((r) => r.naoAgendaram),
+    comPagamento: soma((r) => r.comPagamento),
+    resgastes: soma((r) => r.resgastes),
+    taxaAgendamento: total ? Math.round((agend / total) * 1000) / 10 : 0,
+    porOrigem: juntar((r) => r.porOrigem),
+    porQualificacao: juntar((r) => r.porQualificacao),
+    motivosNaoAgendamento: juntar((r) => r.motivosNaoAgendamento),
+    pendencias: [...pend.values()].sort((a, b) => b.quantidade - a.quantidade),
+    observacoes: rows.map((r) => r.observacoes).filter(Boolean).join(" | "),
+    atendentes: [...new Set(rows.flatMap((r) => r.atendentes ?? []))].sort(),
+  };
+}
+
+function formatarDataLonga(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+}
+
+/**
+ * Versão em texto para colar no WhatsApp. É como a equipe manda hoje, então o
+ * relatório precisa sair daqui pronto — sem ninguém redigitar número.
+ */
+function textoParaWhatsapp(r: DailyRelatoryDto, data?: string) {
+  const L: string[] = [];
+  L.push(`*${r.unidade}*${data ? ` — ${new Date(data).toLocaleDateString("pt-BR")}` : ""}`);
+  L.push("");
+  L.push(`Leads: ${r.totalLeads}`);
+  L.push(`Agendaram: ${r.agendamentos} (${r.taxaAgendamento?.toFixed(1) ?? 0}%)`);
+  L.push(`  com antecipado: ${r.agendadosComAntecipado}`);
+  L.push(`  sem antecipado: ${r.agendadosSemAntecipado}`);
+  L.push(`Nao agendaram: ${r.naoAgendaram}`);
+  if (r.comPagamento) L.push(`Fecharam tratamento: ${r.comPagamento}`);
+
+  const bloco = (titulo: string, itens?: RelatorioContagemDto[]) => {
+    const l = (itens ?? []).slice(0, 6);
+    if (!l.length) return;
+    L.push("");
+    L.push(`*${titulo}*`);
+    l.forEach((i) => L.push(`  ${i.rotulo}: ${i.quantidade}`));
+  };
+  bloco("Origens", r.porOrigem);
+  bloco("Motivos de nao agendamento", r.motivosNaoAgendamento);
+
+  const pend = r.pendencias ?? [];
+  if (pend.length) {
+    L.push("");
+    L.push("*Faltou preencher*");
+    pend.forEach((p) => L.push(`  ${p.quantidade} sem ${p.campo.toLowerCase()}`));
+  }
+  return L.join("\n");
 }
 
 /* ═══════════════════════════════════════════════════════════════
