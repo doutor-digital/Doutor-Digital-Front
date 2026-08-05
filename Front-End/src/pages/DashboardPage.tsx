@@ -10,6 +10,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 
 import { useClinic } from "@/hooks/useClinic";
 import { kpiKey, useKpiOverrides } from "@/hooks/useKpiOverrides";
 import { EditableKpiValue } from "@/components/kpi/EditableKpiValue";
+import { MetaKpi } from "@/components/kpi/MetaKpi";
 import { EditableKpiChips } from "@/components/kpi/EditableKpiChips";
 import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown";
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
@@ -433,6 +434,11 @@ export default function DashboardPage() {
     return base;
   }, [rangeKey, customFrom, customTo, customFromTime, customToTime, isCustom, hasCustomTime]);
   // Rótulo mostra as DATAS COMERCIAIS escolhidas. Quando há horas, anexa o intervalo HH:mm.
+  // Meta mensal só entra quando o filtro é o mês corrente inteiro. Debaixo de um número
+  // de um dia, de uma semana ou de um recorte de horas, ela compararia coisas diferentes
+  // com cara de comparação certa.
+  const mesCorrente = rangeKey === "mes" && !isCustom && !hasCustomTime;
+
   const rangeLabel = hasCustomTime
     ? `${fmtDateLocalBr(range.fromDate)} ${customFromTime} – ${fmtDateLocalBr(range.toDate)} ${customToTime}`
     : `${fmtDateLocalBr(range.fromDate)} - ${fmtDateLocalBr(range.toDate)}`;
@@ -1936,6 +1942,7 @@ export default function DashboardPage() {
     kpi_override de fonte — assim o número e o "Por origem" são sempre o mesmo
     conjunto (tipo=cadastro). Jurídico mantém o funil próprio. */}
 <EditableKpiValue okey={kpiKey(unitId, "cadastro", range.from, range.to)} live={isJuridico ? funnelCadastro.total : (bd?.cadastro.total ?? 0)} valueClass="text-violet-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "cadastro", label: "Cadastro" })} />
+<MetaKpi unitId={unitId} kpiKey="cadastro" okey={kpiKey(unitId, "cadastro", range.from, range.to)} valor={isJuridico ? funnelCadastro.total : (bd?.cadastro.total ?? 0)} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : cadastroManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -1975,6 +1982,7 @@ export default function DashboardPage() {
               <DarkCard accent="#fbbf24">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
+                <MetaKpi unitId={unitId} kpiKey="resgate" okey={kpiKey(unitId, "resgate", range.from, range.to)} valor={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : resgateManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -2054,6 +2062,7 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "agendados", range.from, range.to)} live={agendadosLive} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "agendados", label: "Agendados" })} />
+                <MetaKpi unitId={unitId} kpiKey="agendados" okey={kpiKey(unitId, "agendados", range.from, range.to)} valor={agendadosLive} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : agendadosManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -2129,6 +2138,7 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "tratamentos", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("tratamentos")} live={kpiLive("tratamentos", funnelLeads.tratamentos)} valueClass="text-emerald-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "tratamentos", label: "Tratamentos" })} />
+                <MetaKpi unitId={unitId} kpiKey="tratamentos" okey={kpiKey(unitId, "tratamentos", range.from, range.to)} valor={kpiLive("tratamentos", funnelLeads.tratamentos)} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : tratamentosManual ? (
                   <ManualBreakdownNote />
                 ) : (
@@ -2179,6 +2189,7 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <EditableKpiValue okey={kpiKey(unitId, "consultas", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("consultas")} live={kpiLive("consultas", isJuridico ? funnelLeads.consultas : (bd?.consultas.do_dia ?? 0))} valueClass="text-sky-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "consultas", label: "Consultas" })} />
+                <MetaKpi unitId={unitId} kpiKey="consultas" okey={kpiKey(unitId, "consultas", range.from, range.to)} valor={kpiLive("consultas", isJuridico ? funnelLeads.consultas : (bd?.consultas.do_dia ?? 0))} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : consultasManual ? (
                   <ManualBreakdownNote />
                 ) : (
