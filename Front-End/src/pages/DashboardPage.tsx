@@ -17,6 +17,7 @@ import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
+import { QualidadeBanner } from "@/components/dashboard/QualidadeBanner";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
@@ -1373,6 +1374,14 @@ export default function DashboardPage() {
           </div>,
           document.body,
         )}
+
+        {/* ─── Faixa de preenchimento ───────────────────────────────────
+            Fica no principal, acima dos números, de propósito: tela que só quem
+            procura encontra não muda comportamento. O número do dashboard vale o
+            que o cartão preenchido vale, e a faixa tira o "eu não vi" da mesa.
+            Sem campo abaixo da meta ela não renderiza — aviso permanente vira
+            paisagem. */}
+        <QualidadeBanner unitId={unitId} de={range.from} ate={range.to} />
 
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
         {!isJuridico && (
