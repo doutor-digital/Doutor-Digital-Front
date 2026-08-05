@@ -22,6 +22,7 @@ import { QualidadeBanner } from "@/components/dashboard/QualidadeBanner";
 import { SeloConfianca } from "@/components/dashboard/SeloConfianca";
 import { AgendaDoDiaCard } from "@/components/dashboard/AgendaDoDiaCard";
 import { FilasCard } from "@/components/dashboard/FilasCard";
+import { AtividadeAoVivoCard } from "@/components/dashboard/AtividadeAoVivoCard";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
@@ -2498,6 +2499,17 @@ export default function DashboardPage() {
             )}
             </SecaoDashboard>
 
+            {/* ─── 7. Atividade ───────────────────────────────────────── */}
+            {/* Fecha a página, e é de propósito: contagem esconde a história —
+                "22 leads" não conta que 14 chegaram entre 10h e 11h e depois o
+                dia morreu. É a prova bruta dos números acima. No topo competiria
+                com as filas e perderia: fila pede ação, log só informa. */}
+            <SecaoDashboard
+              titulo="Atividade"
+              subtitulo="O que aconteceu no CRM, na ordem em que aconteceu"
+            >
+              <AtividadeAoVivoCard className="mt-4" unitId={unitId} />
+            </SecaoDashboard>
 
           </>
         )}
