@@ -20,6 +20,7 @@ import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/
 import { QualidadeBanner } from "@/components/dashboard/QualidadeBanner";
 import { SeloConfianca } from "@/components/dashboard/SeloConfianca";
 import { AgendaDoDiaCard } from "@/components/dashboard/AgendaDoDiaCard";
+import { FilasCard } from "@/components/dashboard/FilasCard";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
 import { TratamentosCard } from "@/components/dashboard/TratamentosCard";
@@ -1393,6 +1394,10 @@ export default function DashboardPage() {
             da Kommo. A divergência entre os dois é o erro mais caro daqui, e era
             invisível enquanto ninguém abria os dois sistemas para comparar. */}
         <AgendaDoDiaCard unitId={unitId} />
+
+        {/* Fila antes de métrica: o resto da tela responde "como foi o mês", e
+            ninguém abre isso todo dia. Aqui está o que precisa de alguém agora. */}
+        <FilasCard unitId={unitId} />
 
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
         {!isJuridico && (
