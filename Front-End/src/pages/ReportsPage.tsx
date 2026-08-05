@@ -985,7 +985,7 @@ function DailyOverview({
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
             Fechamento do dia
           </p>
-          <h2 className="font-display text-[19px] font-semibold tracking-tight text-slate-100">
+          <h2 className="text-[22px] font-semibold leading-tight tracking-tight text-slate-50">
             {r.unidade}
           </h2>
           {data && <p className="text-[11.5px] text-slate-400">{formatarDataLonga(data)}</p>}
@@ -1003,14 +1003,21 @@ function DailyOverview({
           Vem ANTES dos números. Sem isso, "3 agendamentos" parece dia ruim quando
           pode ser 3 preenchidos de 12. */}
       {totalPendencias > 0 && (
-        <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3.5">
+          <p className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-amber-300/90">
             Faltou preencher — confira antes de enviar
           </p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+          <div className="flex flex-wrap gap-2">
             {pendencias.map((p) => (
-              <span key={p.campo} className="text-[12.5px] text-amber-100/90" title={p.impacto}>
-                <strong className="tabular-nums">{p.quantidade}</strong> sem {p.campo.toLowerCase()}
+              <span
+                key={p.campo}
+                title={p.impacto}
+                className="inline-flex items-baseline gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-2.5 py-1"
+              >
+                <strong className="text-[13px] font-semibold tabular-nums text-amber-200">
+                  {p.quantidade}
+                </strong>
+                <span className="text-[12px] text-amber-100/70">sem {p.campo.toLowerCase()}</span>
               </span>
             ))}
           </div>
@@ -1031,14 +1038,14 @@ function DailyOverview({
           rotulo="Com antecipado"
           valor={r.agendadosComAntecipado}
           antes={ontem?.agendadosComAntecipado}
-          nota="paga antes, falta menos"
+          nota={r.agendamentos ? `${Math.round((r.agendadosComAntecipado / r.agendamentos) * 100)}% dos agendados` : undefined}
           tom="emerald"
         />
         <NumeroDoDia
           rotulo="Sem antecipado"
           valor={r.agendadosSemAntecipado}
           antes={ontem?.agendadosSemAntecipado}
-          nota="risco de no-show"
+          nota={r.agendamentos ? `${Math.round((r.agendadosSemAntecipado / r.agendamentos) * 100)}% dos agendados` : undefined}
           tom="rose"
         />
         <NumeroDoDia rotulo="Não agendaram" valor={r.naoAgendaram} antes={ontem?.naoAgendaram} />
@@ -1098,29 +1105,43 @@ function NumeroDoDia({
   return (
     <div
       className={cn(
-        "rounded-xl border px-3.5 py-3",
-        destaque ? "border-white/12 bg-white/[0.05]" : "border-white/[0.06] bg-white/[0.02]",
+        "rounded-xl border px-4 py-3.5",
+        destaque
+          ? "border-white/[0.12] bg-white/[0.05]"
+          : "border-white/[0.06] bg-white/[0.02]",
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{rotulo}</p>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className={cn("font-display text-[26px] font-semibold tabular-nums", cores[tom])}>
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {rotulo}
+      </p>
+
+      {/* Número em SANS, não na display. A display do projeto é Playfair, uma
+          serifada: ótima para título, estranha para dígito de painel. */}
+      <div className="mt-1.5 flex items-baseline gap-2">
+        <span
+          className={cn(
+            "text-[30px] font-semibold leading-none tabular-nums tracking-tight",
+            cores[tom],
+          )}
+        >
           {valor}
         </span>
-        {delta !== null && (
+        {delta !== null && delta !== 0 && (
           <span
             className={cn(
-              "text-[11px] font-medium tabular-nums",
-              delta > 0 ? "text-emerald-400" : delta < 0 ? "text-rose-400" : "text-slate-500",
+              "text-[11.5px] font-medium tabular-nums",
+              delta > 0 ? "text-emerald-400" : "text-rose-400",
             )}
-            title={`ontem: ${antes}`}
           >
             {delta > 0 ? "+" : ""}
             {delta}
           </span>
         )}
       </div>
-      {nota && <p className="mt-0.5 text-[10.5px] text-slate-500">{nota}</p>}
+
+      <p className="mt-1.5 text-[11px] leading-tight text-slate-500">
+        {nota ?? (typeof antes === "number" ? `ontem: ${antes}` : "\u00A0")}
+      </p>
     </div>
   );
 }
@@ -1137,31 +1158,42 @@ function QuebraCard({
 }) {
   const lista = (itens ?? []).slice(0, 7);
   const max = lista.length ? Math.max(...lista.map((i) => i.quantidade)) : 1;
+  const total = (itens ?? []).reduce((s, i) => s + i.quantidade, 0);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] px-4 py-3">
-      <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-        {titulo}
-      </p>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {titulo}
+        </p>
+        {total > 0 && (
+          <span className="text-[11px] tabular-nums text-slate-600">{total}</span>
+        )}
+      </div>
+
       {lista.length === 0 ? (
         <p className="text-[12px] text-slate-600">{vazio}</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {lista.map((i) => (
             <div key={i.rotulo}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[12.5px] text-slate-300" title={i.rotulo}>
+              <div className="flex items-baseline gap-2">
+                <span className="min-w-0 flex-1 truncate text-[12.5px] text-slate-300" title={i.rotulo}>
                   {i.rotulo}
                 </span>
-                <span className="shrink-0 text-[12px] tabular-nums text-slate-400">
+                {/* Colunas de largura fixa: sem elas a quantidade e o percentual
+                    encostam um no outro e "12" com "60%" vira "1260%". */}
+                <span className="w-8 shrink-0 text-right text-[13px] font-semibold tabular-nums text-slate-100">
                   {i.quantidade}
-                  <span className="ml-1 text-slate-600">{i.percentual}%</span>
+                </span>
+                <span className="w-12 shrink-0 text-right text-[11.5px] tabular-nums text-slate-500">
+                  {i.percentual}%
                 </span>
               </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.05]">
                 <div
-                  className="h-full rounded-full bg-violet-400/70"
-                  style={{ width: `${Math.max(4, (i.quantidade / max) * 100)}%` }}
+                  className="h-full rounded-full bg-violet-400/60"
+                  style={{ width: `${Math.max(3, (i.quantidade / max) * 100)}%` }}
                 />
               </div>
             </div>
