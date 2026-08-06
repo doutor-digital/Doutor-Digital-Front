@@ -6,6 +6,10 @@
    /campos-customizados pra dar tom editorial aos títulos. */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
 
+/* Poppins — o boletim do relatório do dia. Só os pesos usados (400/500/600/700):
+   puxar a família inteira custa uns 200 KB para ganhar nada. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 /* ─────────────────────────────────────────────────────────────
    FONTE — PT Sans self-hosted (não depende de CDN; carrega no
    mobile mesmo em rede ruim e fica no cache offline do PWA).

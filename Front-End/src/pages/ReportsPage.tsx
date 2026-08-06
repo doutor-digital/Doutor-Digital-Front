@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { RelatorioCompleto } from "@/components/reports/RelatorioCompleto";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -85,7 +86,7 @@ import type {
  *  Tipos e constantes
  * ═══════════════════════════════════════════════════════════════ */
 
-type Mode = "daily" | "monthly";
+type Mode = "daily" | "monthly" | "completo";
 type TabValue = "overview" | "units" | "sources" | "whatsapp";
 type ReportStyle = "whatsapp" | "markdown" | "plain";
 
@@ -245,6 +246,10 @@ export default function ReportsPage() {
   const now = new Date();
   const [mes, setMes] = useState(qpMes ? Number(qpMes) : now.getMonth() + 1);
   const [ano, setAno] = useState(qpAno ? Number(qpAno) : now.getFullYear());
+
+  // O relatório completo usa o mês escolhido nos seletores que já existem.
+  const mesInicioIso = `${ano}-${String(mes).padStart(2, "0")}-01`;
+  const mesFimIso = new Date(ano, mes, 0).toISOString().slice(0, 10);
 
   const [compare, setCompare] = useState(true);
 
@@ -679,6 +684,14 @@ export default function ReportsPage() {
             active={mode === "monthly"}
             onClick={() => setMode("monthly")}
           />
+          {/* O relatório sem redação: cada número com a lista de nomes que o
+              compõe, para conferir na Kommo em vez de acreditar. */}
+          <ModeTab
+            icon={<FileText className="h-3.5 w-3.5" />}
+            label="Completo"
+            active={mode === "completo"}
+            onClick={() => setMode("completo")}
+          />
         </div>
 
         <div className="h-5 w-px bg-white/10" />
@@ -858,7 +871,17 @@ export default function ReportsPage() {
           </div>
         </div>
         <CardBody className="space-y-6">
-          {!hasClinic && (
+          {/* O relatório completo substitui o conteúdo inteiro: ele já traz
+              movimento, campanhas, lacunas e origens, e repetir as abas ao lado
+              faria a mesma pergunta duas vezes com respostas diferentes. */}
+          {mode === "completo" && hasClinic && (
+            <RelatorioCompleto
+              unitId={Number(resolvedUnitId) || null}
+              de={mesInicioIso}
+              ate={mesFimIso}
+            />
+          )}
+          {mode !== "completo" && !hasClinic && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[12px] text-amber-200">
               Selecione uma unidade para carregar os relatórios.
             </div>

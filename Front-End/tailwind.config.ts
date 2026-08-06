@@ -123,6 +123,14 @@ export default {
           "Inter",
           "sans-serif",
         ],
+        // Boletim do relatório do dia. Fica em família própria para não mexer
+        // no display (Playfair), que outras telas usam.
+        boletim: [
+          "Poppins",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
         display: [
           "Playfair Display",
           "Georgia",
