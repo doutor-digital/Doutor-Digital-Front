@@ -2198,15 +2198,38 @@ export default function DashboardPage() {
                   <ManualBreakdownNote />
                 ) : (
                   <>
-                    <KpiBreakdownHeading>Desfecho no período</KpiBreakdownHeading>
+                    {/* O desfecho vem de onde vem o número grande. Quando "consultas"
+                        está mapeado para a franquia, o número é o comparecimento real
+                        dela — e o desfecho calculado na Kommo dizia outra coisa: o card
+                        mostrava 8 no topo, 12 no desfecho e 56 nos tipos, três populações
+                        diferentes, nenhuma delas errada sozinha. */}
+                    <KpiBreakdownHeading>
+                      {bd?.consultas.fonte === "franquia"
+                        ? `Desfecho na agenda da franquia${
+                            bd.consultas.franquia_total ? ` · ${bd.consultas.franquia_total} marcadas` : ""
+                          }`
+                        : "Desfecho no período"}
+                    </KpiBreakdownHeading>
                     <KpiChips
-                      items={[
-                        { label: "Compareceu", count: bd?.consultas.compareceu ?? 0 },
-                        { label: "Faltou", count: bd?.consultas.faltou ?? 0 },
-                        { label: "Aguardando", count: bd?.consultas.aguardando ?? 0 },
-                      ].filter((c) => c.count > 0)}
+                      items={
+                        bd?.consultas.fonte === "franquia"
+                          ? (bd.consultas.situacoes ?? []).map((s) => ({
+                              label: s.value,
+                              count: s.count,
+                            }))
+                          : [
+                              { label: "Compareceu", count: bd?.consultas.compareceu ?? 0 },
+                              { label: "Faltou", count: bd?.consultas.faltou ?? 0 },
+                              { label: "Aguardando", count: bd?.consultas.aguardando ?? 0 },
+                            ].filter((c) => c.count > 0)
+                      }
                     />
-                    <KpiBreakdownHeading>Tipo</KpiBreakdownHeading>
+                    {/* Os tipos são de OUTRA população — quem a SDR marcou no período —
+                        e por isso o rótulo diz isso, em vez de deixar parecer quebra do
+                        número grande. */}
+                    <KpiBreakdownHeading>
+                      Tipo de quem a SDR marcou no período
+                    </KpiBreakdownHeading>
                     <KpiChips
                       items={[
                         { label: "Cadastro", count: bd?.consultas.cadastro ?? 0 },

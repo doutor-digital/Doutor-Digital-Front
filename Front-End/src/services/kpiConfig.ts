@@ -231,6 +231,12 @@ export interface ConsultasBreakdown {
   valor_total: number;
   /** Consultas cuja DATA DA CONSULTA cai no período (número principal do card). */
   do_dia: number;
+  /** franquia | kommo — de onde vem o número grande. As quebras têm de descrever a mesma população. */
+  fonte?: string;
+  /** Desfecho vindo da agenda da franquia, quando é ela que responde pelo número. */
+  situacoes?: { value: string; count: number }[];
+  /** Total de horários na agenda da franquia no período. */
+  franquia_total?: number;
   compareceu: number;
   faltou: number;
   aguardando: number;
@@ -392,7 +398,7 @@ export const kpiConfigService = {
       resgate: data?.resgate ?? { total: 0, tipos: [], origens: [] },
       agendados: data?.agendados ?? { total: 0, cadastro: 0, resgate: 0, com_pagamento: 0, sem_pagamento: 0, reclassificacoes: 0, com_consulta_no_periodo: 0, origens: [] },
       tratamentos: data?.tratamentos ?? { total: 0, origens: [], fisios: [], valor_consulta_total: 0, valor_tratamento_total: 0 },
-      consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, do_dia: 0, compareceu: 0, faltou: 0, aguardando: 0, agendamentos: [] },
+      consultas: data?.consultas ?? { total: 0, cadastro: 0, resgate: 0, valor_total: 0, do_dia: 0, fonte: "kommo", situacoes: [], franquia_total: 0, compareceu: 0, faltou: 0, aguardando: 0, agendamentos: [] },
     };
   },
 
