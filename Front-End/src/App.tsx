@@ -50,6 +50,7 @@ const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const JornadaPage      = lazy(() => import("@/pages/JornadaPage"));
+const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
 const BuscarLeadsPage = lazy(() => import("@/pages/BuscarLeadsPage"));
@@ -179,6 +180,7 @@ export default function App() {
           <Route path="/leads/:id/revisar" element={<LeadReviewPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/jornada"           element={<JornadaPage />}      />
+          <Route path="/conferencia"       element={<ConferenciaPage />}  />
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/funil-board"       element={<PipelineBoardPage />} />
           <Route path="/sources"           element={<SourcesPage />}      />

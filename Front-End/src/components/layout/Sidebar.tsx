@@ -137,6 +137,7 @@ const navGroups: NavGroup[] = [
       { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays, badge: "Novo" },
       { to: "/pacientes", label: "Pacientes", icon: CalendarDays, badge: "Novo" },
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, badge: "Novo" },
+      { to: "/conferencia", label: "Conferência", icon: Layers, badge: "Novo" },
       { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, badge: "Novo" },
       { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, badge: "Novo" },
       {
