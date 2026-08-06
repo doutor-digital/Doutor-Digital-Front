@@ -272,6 +272,20 @@ function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: num
           </span>
         );
       })}
+
+      {/* O resto, somado. Sem isto o card mostra 4 de 11 origens e parece não
+          fechar — foi o que fez a quebra do resgate somar 881 num card de 920. */}
+      {items.length > max && (
+        <span
+          className="rounded-full bg-white/[0.02] px-2 py-0.5 text-[10px] tracking-wide text-white/45 ring-1 ring-inset ring-white/[0.07]"
+          title={items.slice(max).map((c) => `${c.label} · ${c.count}`).join("\n")}
+        >
+          +{items.length - max} outras ·{" "}
+          <span className="tabular-nums">
+            {items.slice(max).reduce((s, c) => s + c.count, 0)}
+          </span>
+        </span>
+      )}
     </div>
   );
 }
@@ -841,7 +855,10 @@ export default function DashboardPage() {
       }
     : {
         cadastro: "Cadastro",
-        resgate: "Tentativas de resgastes",
+        // Conta LEADS com tentativa no período, não tentativas: os mesmos 920 leads
+        // tiveram 1.334 tentativas. O título antigo era o nome do campo na Kommo,
+        // copiado — e prometia um número que o card nunca mostrou.
+        resgate: "Leads com tentativa de resgate",
         origens: "Origens de Leads",
         tratamentos: "Tratamentos",
         consultas: "Consultas",
