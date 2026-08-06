@@ -18,10 +18,6 @@ import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
 import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
-import { QualidadeBanner } from "@/components/dashboard/QualidadeBanner";
-import { SeloConfianca } from "@/components/dashboard/SeloConfianca";
-import { AgendaDoDiaCard } from "@/components/dashboard/AgendaDoDiaCard";
-import { FilasCard } from "@/components/dashboard/FilasCard";
 import { AtividadeAoVivoCard } from "@/components/dashboard/AtividadeAoVivoCard";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
 import { AvaliacoesReaisCard } from "@/components/dashboard/AvaliacoesReaisCard";
@@ -1385,26 +1381,14 @@ export default function DashboardPage() {
           document.body,
         )}
 
-        {/* ─── Faixa de preenchimento ───────────────────────────────────
-            Fica no principal, acima dos números, de propósito: tela que só quem
-            procura encontra não muda comportamento. O número do dashboard vale o
-            que o cartão preenchido vale, e a faixa tira o "eu não vi" da mesa.
-            Sem campo abaixo da meta ela não renderiza — aviso permanente vira
-            paisagem. */}
-        {/* Selo de confiança acima de tudo: se a fonte está velha, o resto da
-            tela não merece leitura. */}
-        <SeloConfianca unitId={unitId} />
+        {/* O topo voltou a ser dos números. Selo de confiança, faixa de
+            preenchimento, agenda do dia e filas saíram daqui a pedido — quatro
+            blocos empilhados antes do primeiro card empurravam o resultado do
+            período para baixo da dobra.
 
-        <QualidadeBanner unitId={unitId} de={range.from} ate={range.to} />
-
-        {/* O que acontece na clínica HOJE, com o número da franquia ao lado do
-            da Kommo. A divergência entre os dois é o erro mais caro daqui, e era
-            invisível enquanto ninguém abria os dois sistemas para comparar. */}
-        <AgendaDoDiaCard unitId={unitId} />
-
-        {/* Fila antes de métrica: o resto da tela responde "como foi o mês", e
-            ninguém abre isso todo dia. Aqui está o que precisa de alguém agora. */}
-        <FilasCard unitId={unitId} />
+            Os componentes e as rotas continuam de pé (SeloConfianca,
+            QualidadeBanner, AgendaDoDiaCard, FilasCard sobre /api/saude/*):
+            voltar qualquer um é reimportar e colocar a linha de volta aqui. */}
 
         {/* ─── Faixa: consultas de hoje + alerta "horário agora" ────────── */}
         {!isJuridico && (
