@@ -68,6 +68,8 @@ interface RankingItem {
   criadoEm: string;
   agendouEm: string;
   minutos: number;
+  /** Cadastrado na Kommo depois do agendamento — não é conversão rápida. */
+  cadastradoJaAgendado: boolean;
 }
 
 // ─── Formatação ───────────────────────────────────────────────────────────
@@ -379,7 +381,9 @@ export default function JornadaPage() {
             Foram mais rápido de novo a agendado
           </p>
           <p className="mb-3 text-[11.5px] text-slate-600">
-            Últimos 30 dias. Clique para abrir a jornada.
+            Últimos 30 dias. Quem foi cadastrado já agendado aparece no fim, marcado: o lead
+            entrou na Kommo depois do agendamento, então zero minuto ali é registro atrasado e
+            não velocidade.
           </p>
           <ul className="divide-y divide-white/[0.05]">
             {ranking.data!.slice(0, 10).map((r, i) => (
@@ -394,11 +398,20 @@ export default function JornadaPage() {
                   <span className="min-w-0 flex-1 truncate text-[12.5px] text-slate-300">
                     {r.nome?.trim() || "Sem nome"}
                   </span>
-                  <span className="hidden shrink-0 text-[11.5px] text-slate-600 sm:block">
-                    {r.origem}
-                  </span>
-                  <span className="w-[74px] shrink-0 text-right text-[12.5px] tabular-nums text-emerald-400/90">
-                    {duracao(r.minutos)}
+                  {/* Origem só aparece quando diz algo: Lead.Source vale "Kommo" na
+                      base inteira, e coluna que repete a mesma palavra é ruído. */}
+                  {r.origem && !["Kommo", "DESCONHECIDO"].includes(r.origem) && (
+                    <span className="hidden shrink-0 text-[11.5px] text-slate-600 sm:block">
+                      {r.origem}
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "w-[120px] shrink-0 text-right text-[12.5px] tabular-nums",
+                      r.cadastradoJaAgendado ? "text-slate-600" : "text-emerald-400/90",
+                    )}
+                  >
+                    {r.cadastradoJaAgendado ? "cadastro atrasado" : duracao(r.minutos)}
                   </span>
                 </button>
               </li>
