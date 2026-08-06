@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FichaKommo } from "@/components/leads/FichaKommo";
+import { LeadCardKommo } from "@/components/leads/LeadCardKommo";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -629,9 +629,11 @@ export default function LeadDetailPage() {
 
           {tab === "overview" && (
             <div className="space-y-4">
-              {/* A ficha do cartão vem primeiro: é o que a SDR preencheu, e era
-                  justamente o que a tela não mostrava. */}
-              <FichaKommo campos={l.camposKommo ?? []} />
+              {/* O cartão em três colunas — ficha à esquerda como na Kommo, o que
+                  aconteceu no meio como numa conversa, tempos à direita. Substituiu
+                  a pilha de blocos: era preciso rolar a página inteira para juntar
+                  o que agora se lê de uma vez. */}
+              <LeadCardKommo lead={l} />
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <InfoBlock
