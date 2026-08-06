@@ -2076,7 +2076,13 @@ export default function DashboardPage() {
                         className="mt-1 text-[10.5px] text-amber-200/90"
                         title="Leads que já eram agendados antes do período e só mudaram de 04↔05 dentro dele — não somam como agendamento novo."
                       >
-                        +{bd!.agendados.reclassificacoes} reclassificação{bd!.agendados.reclassificacoes! > 1 ? "ões" : ""} de pagamento (não contam)
+                        {/* Palavra inteira nos dois casos: colar o sufixo produzia
+                            "reclassificaçãoões", que esteve em produção até hoje. */}
+                        +{bd!.agendados.reclassificacoes}{" "}
+                        {bd!.agendados.reclassificacoes! > 1
+                          ? "reclassificações"
+                          : "reclassificação"}{" "}
+                        de pagamento (não contam)
                       </p>
                     )}
                     {/* Cadastro/Resgate (tipo do LEAD) removidos do card Agendados —
