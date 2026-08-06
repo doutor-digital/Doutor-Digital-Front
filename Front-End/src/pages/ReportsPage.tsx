@@ -230,7 +230,11 @@ export default function ReportsPage() {
   const qpMes = url.searchParams.get("mes");
   const qpAno = url.searchParams.get("ano");
 
-  const [mode, setMode] = useState<Mode>(qpMode === "monthly" ? "monthly" : "daily");
+  // O modo vem da URL: sem "completo" aqui, o link compartilhado abria no diário
+  // e a pessoa via outra tela do que quem mandou.
+  const [mode, setMode] = useState<Mode>(
+    qpMode === "monthly" || qpMode === "completo" ? qpMode : "daily",
+  );
   const [tab, setTab] = useState<TabValue>("overview");
   const [unitValue, setUnitValue] = useState<string>(qpUnit ?? "");
   const resolvedUnitId = unitValue || String(activeClinicFallback ?? "");
