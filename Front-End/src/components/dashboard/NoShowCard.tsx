@@ -22,6 +22,7 @@ interface NoShow {
   percentualFalta: number;
   percentualComparecimento: number;
   anteriorFaltaram: number;
+  anteriorAgendados: number;
   anteriorPercentualFalta: number;
   temAnterior: boolean;
   baldeSuspeito: boolean;
@@ -39,17 +40,18 @@ const dataHora = (iso: string) =>
   });
 
 /**
- * Falta na agenda da clínica.
+ * A agenda que não aconteceu.
  *
- * O CARD ANTIGO MOSTRAVA "1" E PARECIA QUEBRADO
- * ---------------------------------------------
- * Estava certo: existe exatamente um agendamento marcado como "Não compareceu" em 30 dias —
- * contra 48 "Desmarcado". A recepção usa Desmarcado para tudo. Um número correto que ninguém
- * consegue interpretar é pior que um erro, porque erro alguém corrige.
+ * POR QUE O NÚMERO GRANDE NÃO É "FALTA"
+ * -------------------------------------
+ * Liderar com falta dava ZERO: esta clínica não usa o status "Não compareceu", marca tudo
+ * como Desmarcado. O card abria com 0 num período em que 25 horários se perderam — e um card
+ * que abre com zero quando há problema ensina a equipe a ignorá-lo.
  *
- * Então o card passa a mostrar o desfecho inteiro, e a acusar o balde quando ele mascara.
- * Somar desmarcado à falta seria mais bonito e seria mentira: desmarcar na véspera dá tempo
- * de encaixar outro paciente; não aparecer no dia é hora perdida.
+ * Então o número grande é o horário perdido: desmarcado + remarcado + falta. Todos têm o
+ * mesmo efeito prático — a hora ficou vazia e ninguém foi atendido. "Não aconteceu" é
+ * literalmente verdade e não inventa classificação nenhuma; a quebra logo abaixo diz o
+ * motivo de cada um, e o aviso explica quando o balde está mascarando falta.
  */
 export function NoShowCard({
   unitId,
@@ -76,10 +78,19 @@ export function NoShowCard({
     enabled: !!unitId && !!de && !!ate,
   });
 
+  // Horário perdido: desmarcado, remarcado ou falta. Todos têm o mesmo efeito na
+  // agenda — a hora ficou vazia. O motivo aparece na quebra, mas o total é um só.
+  const naoAconteceram = data
+    ? data.desmarcados + data.remarcados + data.faltaram
+    : 0;
+  const pctPerdido =
+    data && data.resolvidos > 0
+      ? Math.round((naoAconteceram / data.resolvidos) * 1000) / 10
+      : 0;
+
   const variacao = useMemo(() => {
     if (!data?.temAnterior) return null;
-    const d = data.faltaram - data.anteriorFaltaram;
-    return { d, pp: Math.round((data.percentualFalta - data.anteriorPercentualFalta) * 10) / 10 };
+    return { agendados: data.anteriorAgendados };
   }, [data]);
 
   if (!unitId) return null;
@@ -90,38 +101,38 @@ export function NoShowCard({
     <div className={cn("rounded-2xl bg-[#0f1f3a]/80 p-5 ring-1 ring-white/5", className)}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-          Faltas na agenda
+          Agenda que não aconteceu
         </p>
         {data && data.resolvidos > 0 && (
           <p className="text-[11px] tabular-nums text-white/40">
-            {data.percentualComparecimento}% compareceram
+            {data.compareceram} de {data.resolvidos} atenderam
           </p>
         )}
       </div>
 
+      {/* O número grande é o que NÃO aconteceu, e não só a falta registrada.
+          Liderar com "falta" dava zero: esta clínica não usa esse status, marca
+          tudo como desmarcado. Um card que abre com 0 num mês em que 25 horários
+          foram perdidos ensina a ignorar o card. "Não aconteceu" é literalmente
+          verdade e não inventa classificação nenhuma — a quebra logo abaixo diz
+          o motivo de cada um. */}
       <div className="mt-3 flex items-baseline gap-3">
         <p className="text-5xl font-bold leading-none text-rose-400">
-          {isLoading ? "—" : data?.faltaram ?? 0}
+          {isLoading ? "—" : naoAconteceram}
         </p>
         {data && data.resolvidos > 0 && (
-          <p className="text-[13px] tabular-nums text-white/50">
-            {data.percentualFalta}% de {data.resolvidos} que já aconteceram
+          <p className="text-[13px] leading-snug text-white/50">
+            <span className="tabular-nums">{pctPerdido}%</span> dos {data.resolvidos} horários
+            <br />
+            que já passaram
           </p>
         )}
       </div>
 
       {/* Comparativo: só aparece quando existe período anterior de verdade. */}
       {variacao && (
-        <p className="mt-2 text-[11.5px] tabular-nums text-white/45">
-          {variacao.d === 0
-            ? "igual ao período anterior"
-            : `${variacao.d > 0 ? "▲" : "▼"} ${Math.abs(variacao.d)} vs. período anterior`}
-          {variacao.pp !== 0 && (
-            <span className={cn("ml-1.5", variacao.pp > 0 ? "text-rose-300/80" : "text-emerald-300/80")}>
-              ({variacao.pp > 0 ? "+" : ""}
-              {variacao.pp} p.p.)
-            </span>
-          )}
+        <p className="mt-2 text-[11.5px] tabular-nums text-white/40">
+          Período anterior: {variacao.agendados} agendados
         </p>
       )}
 
@@ -132,6 +143,7 @@ export function NoShowCard({
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
           <Linha k="Agendados no período" v={data.agendados} />
           <Linha k="Compareceram" v={data.compareceram} tom="ok" />
+          {/* Estes três somam o número grande. */}
           <Linha
             k="Faltaram"
             v={data.faltaram}
