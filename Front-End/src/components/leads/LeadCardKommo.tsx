@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { Search } from "@/components/icons";
+import { webhooksService } from "@/services/webhooks";
 import { ChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import type { LeadDetail, LeadCustomFieldDto } from "@/types";
+import type { LeadDetail, LeadCustomFieldDto, LeadMetrics } from "@/types";
 
 /**
  * O cartão do lead com a cara do CRM, em três colunas.
@@ -86,7 +90,35 @@ interface EventoFeed {
   entrada?: boolean;
 }
 
-export function LeadCardKommo({ lead }: { lead: LeadDetail }) {
+export function LeadCardKommo({
+  lead,
+  metricas,
+}: {
+  lead: LeadDetail;
+  /** Tempo por estado da conversa. Vem de outra rota, então pode faltar. */
+  metricas?: LeadMetrics | null;
+}) {
+  const [filtro, setFiltro] = useState("");
+
+  // A coluna da esquerda é a lista de leads, como a lista de conversas do WhatsApp Web:
+  // dá para pular de lead em lead sem voltar para a listagem e perder o contexto.
+  const vizinhos = useQuery({
+    queryKey: ["card-vizinhos", lead.unitId],
+    queryFn: () =>
+      webhooksService.recentLeads({ unitId: lead.unitId ?? undefined, hours: 168, limit: 40 }),
+    enabled: lead.unitId != null,
+    staleTime: 60_000,
+  });
+
+  const listaFiltrada = useMemo(() => {
+    const itens = vizinhos.data?.items ?? [];
+    const q = norm(filtro.trim());
+    if (!q) return itens;
+    return itens.filter(
+      (i) => norm(i.name ?? "").includes(q) || (i.phone ?? "").includes(filtro.trim()),
+    );
+  }, [vizinhos.data, filtro]);
+
   const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(
     () => new Set(["Atendimento", "Origem"]),
   );
@@ -210,30 +242,181 @@ export function LeadCardKommo({ lead }: { lead: LeadDetail }) {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[276px_minmax(0,1fr)_236px]">
-        {/* ═══ Coluna 1 — a ficha ═══════════════════════════════════ */}
-        <aside className="border-white/[0.06] lg:border-r">
-          <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3.5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-700 text-[13px] font-semibold text-slate-200">
+      <div className="grid grid-cols-1 lg:grid-cols-[248px_minmax(0,1fr)_286px]">
+        {/* ═══ Coluna 1 — a lista, como a de conversas do WhatsApp Web ═══ */}
+        <aside className="flex max-h-[560px] flex-col border-white/[0.06] lg:border-r">
+          <div className="border-b border-white/[0.06] p-2.5">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600" />
+              <input
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                placeholder="Buscar nome ou telefone"
+                className="w-full rounded-lg border border-white/[0.06] bg-white/[0.03] py-1.5 pl-8 pr-2.5 text-[12px] text-slate-200 placeholder:text-slate-600 focus:border-emerald-400/40 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {listaFiltrada.length === 0 ? (
+              <p className="px-3 py-3 text-[11.5px] text-slate-600">
+                {vizinhos.isLoading ? "carregando…" : "Nenhum lead nos últimos 7 dias."}
+              </p>
+            ) : (
+              <ul>
+                {listaFiltrada.map((v) => {
+                  const aqui = v.id === lead.id;
+                  return (
+                    <li key={v.id}>
+                      <Link
+                        to={`/leads/${v.id}`}
+                        className={cn(
+                          "flex items-center gap-2.5 border-b border-white/[0.04] px-3 py-2 transition",
+                          aqui ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
+                        )}
+                      >
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-700 text-[11px] font-semibold text-slate-300">
+                          {iniciais(v.name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] text-slate-200">
+                            {v.name?.trim() || "Sem nome"}
+                          </span>
+                          <span className="block truncate text-[11px] text-slate-600">
+                            {(v.current_stage ?? "").replace(/_/g, " ") || "sem etapa"}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-[10.5px] tabular-nums text-slate-600">
+                          {new Date(v.created_at).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </aside>
+
+        {/* ═══ Coluna 2 — a conversa ════════════════════════════════ */}
+        <div className="flex max-h-[560px] min-w-0 flex-col">
+          {/* Cabeçalho do contato, como o topo de uma conversa. */}
+          <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-700 text-[12px] font-semibold text-slate-200">
               {iniciais(lead.name)}
             </span>
-            <div className="min-w-0">
-              <p className="truncate text-[14px] text-slate-100">{lead.name}</p>
-              {/* Telefone é o que a SDR usa para achar a pessoa. Quando falta, a tela diz —
-                  nenhum lead de Imperatriz tem telefone gravado hoje. */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13.5px] text-slate-100">{lead.name}</p>
               <p
                 className={cn(
-                  "truncate text-[12px] tabular-nums",
-                  lead.phone ? "text-slate-400" : "text-amber-400/80",
+                  "truncate text-[11.5px] tabular-nums",
+                  lead.phone ? "text-slate-500" : "text-amber-400/80",
                 )}
               >
                 {lead.phone || "sem telefone gravado"}
+                <span className="mx-1.5 text-slate-700">·</span>
+                lead {lead.id} · Kommo {lead.externalId}
               </p>
             </div>
           </div>
 
-          <div className="px-4 py-2 text-[11px] text-slate-600">
-            lead {lead.id} · Kommo {lead.externalId}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 12px 10px, rgba(255,255,255,.016) 1.4px, transparent 1.5px)",
+            backgroundSize: "56px 48px",
+          }}
+        >
+          {feed.length === 0 ? (
+            <p className="text-[12.5px] text-slate-600">Nada registrado neste lead.</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {feed.map((e, i) => {
+                const diaAnterior = i > 0 ? new Date(feed[i - 1].quando).toDateString() : null;
+                const novoDia = new Date(e.quando).toDateString() !== diaAnterior;
+
+                return (
+                  <li key={`${e.quando}-${i}`} className="contents">
+                    {novoDia && (
+                      <span className="mx-auto my-2 rounded-md bg-white/[0.05] px-3 py-1 text-[10.5px] text-slate-500">
+                        {diaBR(e.quando)}
+                      </span>
+                    )}
+
+                    {e.tipo === "mensagem" ? (
+                      /* Mensagem em balão, como numa conversa: quem manda fica à direita. */
+                      <div
+                        className={cn(
+                          "max-w-[76%] rounded-lg px-2.5 py-1.5",
+                          e.entrada
+                            ? "self-start rounded-tl-sm bg-[#1c2a3d]"
+                            : "self-end rounded-tr-sm bg-[#0d4f43]",
+                        )}
+                      >
+                        <p className="text-[12.5px] leading-snug text-slate-200">{e.texto}</p>
+                        <p className="mt-0.5 text-right text-[10px] tabular-nums text-slate-500">
+                          {horaBR(e.quando)}
+                        </p>
+                      </div>
+                    ) : (
+                      /* Evento do sistema no meio, como o aviso de "entrou no grupo". */
+                      <div
+                        className={cn(
+                          "mx-auto max-w-[86%] rounded-md px-3 py-1.5 text-center text-[11.5px]",
+                          e.confiavel
+                            ? "bg-white/[0.045] text-slate-400"
+                            : "bg-transparent text-slate-700",
+                        )}
+                      >
+                        <span className={cn(e.confiavel && "text-slate-200")}>{e.texto}</span>
+                        {e.confiavel ? (
+                          <span className="ml-2 tabular-nums text-slate-600">
+                            {horaBR(e.quando)}
+                          </span>
+                        ) : (
+                          <span className="ml-2 text-slate-700">
+                            data do sync, não da mudança
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        </div>
+
+        {/* ═══ Coluna 3 — a ficha e os tempos ══════════════════════ */}
+        <aside className="flex max-h-[560px] flex-col overflow-y-auto border-white/[0.06] lg:border-l">
+          <div className="border-b border-white/[0.06] px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Tempos
+            </p>
+            <div className="mt-1.5 flex flex-col gap-1">
+              <Linha k="Parado há" v={duracao(minutosParado)} alerta={minutosParado > 120} />
+              <Linha
+                k="Passos com data"
+                v={String((lead.stageHistory ?? []).filter((h) => h.dataConfiavel !== false).length)}
+              />
+              <Linha k="Responsável" v={lead.attendantName ?? "não atribuído"} />
+              <Linha k="Qualificação" v={lead.qualification ?? "—"} />
+              <Linha k="Tipo" v={lead.leadType ?? "—"} />
+              {lead.appointmentScheduledAt && (
+                <Linha
+                  k="Consulta"
+                  v={new Date(lead.appointmentScheduledAt).toLocaleDateString("pt-BR")}
+                />
+              )}
+              {metricas && (metricas.totalTime ?? 0) > 0 && (
+                <Linha k="Total no funil" v={duracao(metricas.totalTime!)} />
+              )}
+            </div>
           </div>
 
           {grupos.map((g) => {
@@ -305,112 +488,9 @@ export function LeadCardKommo({ lead }: { lead: LeadDetail }) {
               )}
             </div>
           )}
-        </aside>
-
-        {/* ═══ Coluna 2 — o feed ════════════════════════════════════ */}
-        <div
-          className="min-h-[380px] px-4 py-4"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 12px 10px, rgba(255,255,255,.016) 1.4px, transparent 1.5px)",
-            backgroundSize: "56px 48px",
-          }}
-        >
-          {feed.length === 0 ? (
-            <p className="text-[12.5px] text-slate-600">Nada registrado neste lead.</p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {feed.map((e, i) => {
-                const diaAnterior = i > 0 ? new Date(feed[i - 1].quando).toDateString() : null;
-                const novoDia = new Date(e.quando).toDateString() !== diaAnterior;
-
-                return (
-                  <li key={`${e.quando}-${i}`} className="contents">
-                    {novoDia && (
-                      <span className="mx-auto my-2 rounded-md bg-white/[0.05] px-3 py-1 text-[10.5px] text-slate-500">
-                        {diaBR(e.quando)}
-                      </span>
-                    )}
-
-                    {e.tipo === "mensagem" ? (
-                      /* Mensagem em balão, como numa conversa: quem manda fica à direita. */
-                      <div
-                        className={cn(
-                          "max-w-[76%] rounded-lg px-2.5 py-1.5",
-                          e.entrada
-                            ? "self-start rounded-tl-sm bg-[#1c2a3d]"
-                            : "self-end rounded-tr-sm bg-[#0d4f43]",
-                        )}
-                      >
-                        <p className="text-[12.5px] leading-snug text-slate-200">{e.texto}</p>
-                        <p className="mt-0.5 text-right text-[10px] tabular-nums text-slate-500">
-                          {horaBR(e.quando)}
-                        </p>
-                      </div>
-                    ) : (
-                      /* Evento do sistema no meio, como o aviso de "entrou no grupo". */
-                      <div
-                        className={cn(
-                          "mx-auto max-w-[86%] rounded-md px-3 py-1.5 text-center text-[11.5px]",
-                          e.confiavel
-                            ? "bg-white/[0.045] text-slate-400"
-                            : "bg-transparent text-slate-700",
-                        )}
-                      >
-                        <span className={cn(e.confiavel && "text-slate-200")}>{e.texto}</span>
-                        {e.confiavel ? (
-                          <span className="ml-2 tabular-nums text-slate-600">
-                            {horaBR(e.quando)}
-                          </span>
-                        ) : (
-                          <span className="ml-2 text-slate-700">
-                            data do sync, não da mudança
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* ═══ Coluna 3 — tempos, IA e situação ═════════════════════ */}
-        <aside className="flex flex-col gap-3 border-white/[0.06] px-4 py-4 lg:border-l">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-              Tempos
-            </p>
-            <div className="mt-1.5 flex flex-col gap-1">
-              <Linha k="Parado há" v={duracao(minutosParado)} alerta={minutosParado > 120} />
-              <Linha
-                k="Passos com data"
-                v={String((lead.stageHistory ?? []).filter((h) => h.dataConfiavel !== false).length)}
-              />
-              <Linha k="Etapa" v={(lead.currentStage ?? "—").replace(/_/g, " ")} alerta={perdido} />
-            </div>
-          </div>
-
-          <div className="border-t border-white/[0.06] pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-              Situação
-            </p>
-            <div className="mt-1.5 flex flex-col gap-1">
-              <Linha k="Responsável" v={lead.attendantName ?? "não atribuído"} />
-              <Linha k="Qualificação" v={lead.qualification ?? "—"} />
-              <Linha k="Tipo" v={lead.leadType ?? "—"} />
-              {lead.appointmentScheduledAt && (
-                <Linha
-                  k="Consulta"
-                  v={new Date(lead.appointmentScheduledAt).toLocaleDateString("pt-BR")}
-                />
-              )}
-            </div>
-          </div>
 
           {lead.tags?.length > 0 && (
-            <div className="border-t border-white/[0.06] pt-3">
+            <div className="border-t border-white/[0.05] px-4 py-3">
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
                 Etiquetas
               </p>
