@@ -252,6 +252,10 @@ export interface LeadStageHistoryDto {
   stageId: number;
   stageLabel: string;
   changedAt: string;
+  /** webhook · events_api · legacy */
+  entrySource?: string | null;
+  /** Falso nas linhas legadas: a data é a do sync, não a da mudança de etapa. */
+  dataConfiavel?: boolean;
 }
 
 export interface LeadInteractionDto {
@@ -1052,6 +1056,16 @@ export interface LeadPaymentReceipt {
   isAdvance: boolean;
 }
 
+export interface LeadCustomFieldDto {
+  fieldId: number;
+  nome: string;
+  valor: string;
+  /** Era carimbo unix e virou data. */
+  ehData: boolean;
+  /** Falso = campo existe no cartão e está em branco. */
+  preenchido: boolean;
+}
+
 export interface LeadDetail {
   id: number;
   externalId: number;
@@ -1093,6 +1107,15 @@ export interface LeadDetail {
   createdAt: string;
   updatedAt: string;
   convertedAt?: string | null;
+
+  qualification?: string | null;
+  qualificationFilledAt?: string | null;
+  appointmentScheduledAtFilledAt?: string | null;
+  price?: number | null;
+  originalCreatedAt?: string | null;
+
+  /** A ficha inteira do cartão da Kommo, com nome legível — inclusive o que está vazio. */
+  camposKommo: LeadCustomFieldDto[];
 
   stageHistory: LeadStageHistoryDto[];
   conversations: LeadConversationDto[];

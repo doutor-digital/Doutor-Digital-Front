@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { FichaKommo } from "@/components/leads/FichaKommo";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -628,6 +629,10 @@ export default function LeadDetailPage() {
 
           {tab === "overview" && (
             <div className="space-y-4">
+              {/* A ficha do cartão vem primeiro: é o que a SDR preencheu, e era
+                  justamente o que a tela não mostrava. */}
+              <FichaKommo campos={l.camposKommo ?? []} />
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <InfoBlock
                   icon={<Target className="h-4 w-4" />}
