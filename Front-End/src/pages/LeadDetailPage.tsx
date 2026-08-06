@@ -347,8 +347,17 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
+      {/* Na Visão geral o cartão ocupa a largura inteira: ele JÁ tem a ficha do
+          lead na coluna da direita. Com a barra lateral ligada, a mesma
+          informação aparecia duas vezes e sobravam 496px para a conversa —
+          era isso que fazia a tela não parecer as três colunas aprovadas.
+          Nas outras abas a lateral continua, porque lá ela é o único lugar
+          onde os dados de contato aparecem. */}
+      <div className={`grid grid-cols-1 gap-5 items-start ${
+        tab === "overview" ? "" : "lg:grid-cols-[300px_1fr]"
+      }`}>
         {/* Sidebar */}
+        {tab !== "overview" && (
         <Panel>
           <div className="px-5 pt-5 pb-4 border-b border-white/[0.05]">
             <div className="flex items-start gap-4">
@@ -607,6 +616,7 @@ export default function LeadDetailPage() {
             </div>
           </SidebarSection>
         </Panel>
+        )}
 
         {/* Conteúdo principal */}
         <div className="min-w-0 space-y-4">
