@@ -33,6 +33,22 @@ interface Lacuna {
   leads: LeadSemCampo[];
 }
 
+interface Anuncio {
+  anuncioId: string;
+  nome?: string | null;
+  campanha?: string | null;
+  imagem?: string | null;
+  gasto: number;
+  alcance: number;
+  impressoes: number;
+  cliques: number;
+  ctr: number;
+  cpc: number;
+  conversas: number;
+  /** Nulo sem conversa: zero seria lido como "de graça". */
+  custoPorConversa?: number | null;
+}
+
 interface Relatorio {
   totalLeads: number;
   agendaram: number;
@@ -40,6 +56,7 @@ interface Relatorio {
   compareceram: number;
   horariosPerdidos: number;
   campanhas: Campanha[];
+  anuncios: Anuncio[];
   lacunas: Lacuna[];
   origens: { valor: string; contagem: number }[];
 }
@@ -111,6 +128,81 @@ export function RelatorioCompleto({
           </p>
         )}
       </section>
+
+      {/* ─── Anúncios: linha larga ──────────────────────────────────
+          Foto à esquerda, as métricas no meio e o custo por conversa isolado à
+          direita — é o número que decide se o anúncio fica ou sai, e por isso
+          não divide espaço com os outros. */}
+      {data.anuncios.length > 0 && (
+        <section>
+          <h3 className="font-boletim text-[15px] font-semibold tracking-tight text-slate-100">
+            Anúncios
+          </h3>
+          <p className="mt-1 text-[12px] text-slate-500">
+            Custo por conversa de WhatsApp iniciada, como a Meta conta. Nem toda conversa vira
+            lead no CRM — o custo por lead está no bloco de campanhas.
+          </p>
+
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {data.anuncios.map((a) => (
+              <li
+                key={a.anuncioId}
+                className="flex overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]"
+              >
+                {a.imagem ? (
+                  <img
+                    src={a.imagem}
+                    alt=""
+                    loading="lazy"
+                    className="h-[120px] w-[120px] shrink-0 object-cover"
+                  />
+                ) : (
+                  <span className="grid h-[120px] w-[120px] shrink-0 place-items-center bg-white/[0.03] text-[10px] text-slate-600">
+                    sem foto
+                  </span>
+                )}
+
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-boletim text-[13.5px] font-medium text-slate-100">
+                      {a.nome}
+                    </p>
+                    {a.campanha && (
+                      <p className="truncate text-[11px] text-slate-500">{a.campanha}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    <Met k="gasto" v={moeda(a.gasto)} />
+                    <Met k="alcance" v={nf.format(a.alcance)} />
+                    <Met k="cliques" v={nf.format(a.cliques)} />
+                    <Met k="CTR" v={`${a.ctr.toFixed(2)}%`} />
+                    <Met k="CPC" v={moeda(a.cpc)} />
+                    <Met k="conversas" v={nf.format(a.conversas)} />
+                  </div>
+                </div>
+
+                <div className="flex w-[124px] shrink-0 flex-col items-center justify-center gap-1 border-l border-white/[0.07] bg-white/[0.015] px-2">
+                  <p
+                    className={cn(
+                      "font-boletim text-[19px] font-semibold tabular-nums",
+                      a.custoPorConversa == null
+                        ? "text-slate-600"
+                        : a.custoPorConversa <= 14
+                          ? "text-emerald-300"
+                          : "text-amber-300",
+                    )}
+                  >
+                    {a.custoPorConversa != null ? moeda(a.custoPorConversa) : "—"}
+                  </p>
+                  <p className="text-center text-[9.5px] uppercase tracking-[0.08em] text-slate-600">
+                    custo por conversa
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* ─── Campanhas ──────────────────────────────────────────────── */}
       <section>
@@ -275,6 +367,15 @@ export function RelatorioCompleto({
           })}
         </ul>
       </section>
+    </div>
+  );
+}
+
+function Met({ k, v }: { k: string; v: string }) {
+  return (
+    <div>
+      <p className="text-[14px] font-medium leading-none tabular-nums text-slate-200">{v}</p>
+      <p className="mt-1 text-[10px] text-slate-600">{k}</p>
     </div>
   );
 }
