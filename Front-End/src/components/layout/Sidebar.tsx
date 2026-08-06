@@ -133,20 +133,21 @@ const navGroups: NavGroup[] = [
     label: "Visão geral",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
-      { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays, badge: "Novo" },
-      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays, badge: "Novo" },
-      { to: "/pacientes", label: "Pacientes", icon: CalendarDays, badge: "Novo" },
-      { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, badge: "Novo" },
-      { to: "/conferencia", label: "Conferência", icon: Layers, badge: "Novo" },
-      { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, badge: "Novo" },
-      { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, badge: "Novo" },
+      { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
+      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays },
+      { to: "/pacientes", label: "Pacientes", icon: CalendarDays },
+      { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
+      { to: "/conferencia", label: "Conferência", icon: Layers },
+      { to: "/buscas", label: "Buscas", icon: Layers },
+      { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain },
+      { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch },
       {
         label: "Performance",
         icon: Gauge,
         iconUrl: "/nav-icons/performance.png",
         basePaths: ["/analytics", "/evolution", "/desempenho"],
         children: [
-          { to: "/desempenho", label: "Desempenho de Mídia", icon: Target, badge: "Novo" },
+          { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
           { to: "/analytics", label: "Analytics", icon: BarChart3 },
           { to: "/evolution", label: "Evolução", icon: LineChart },
         ],
@@ -165,7 +166,7 @@ const navGroups: NavGroup[] = [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
           { to: "/recent-leads", label: "Recentes", icon: History },
           { to: "/recuperacao", label: "Recuperação", icon: LifeBuoy },
-          { to: "/jornada", label: "Jornada do lead", icon: RouteIcon, badge: "Novo" },
+          { to: "/jornada", label: "Jornada do lead", icon: RouteIcon },
           { to: "/mudancas-etapas", label: "Mudanças de etapa", icon: RouteIcon },
           { to: "/conversao", label: "Conversão", icon: PieChart },
           { to: "/funnel", label: "Funil", icon: Workflow },
@@ -184,7 +185,7 @@ const navGroups: NavGroup[] = [
           { to: "/contacts/duplicates", label: "Duplicados", icon: Copy },
         ],
       },
-      { to: "/duplicates", label: "Duplicados (leads + contatos)", icon: Copy, badge: "Novo" },
+      { to: "/duplicates", label: "Duplicados (leads + contatos)", icon: Copy },
       {
         label: "Unidades",
         icon: Building2,
@@ -193,7 +194,7 @@ const navGroups: NavGroup[] = [
         children: [
           { to: "/units", label: "Lista de unidades", icon: Building2, end: true },
           { to: "/webhooks-monitor", label: "Monitor de webhooks", icon: Webhook },
-          { to: "/amanheceu", label: "Amanheceu", icon: Sunrise, badge: "Novo" },
+          { to: "/amanheceu", label: "Amanheceu", icon: Sunrise },
         ],
       },
     ],
@@ -268,7 +269,6 @@ const integracoesAdsItem: NavItem = {
   to: "/integracoes/ads",
   label: "Central de Integrações",
   icon: Plug2,
-  badge: "Novo",
 };
 
 /**
@@ -486,9 +486,9 @@ export function Sidebar() {
           label: "Visão geral",
           items: [
             { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
-            { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays, badge: "Novo" },
-      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays, badge: "Novo" },
-      { to: "/pacientes", label: "Pacientes", icon: CalendarDays, badge: "Novo" },
+            { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
+      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays },
+      { to: "/pacientes", label: "Pacientes", icon: CalendarDays },
             { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
             { to: "/analytics", label: "Analytics", icon: BarChart3 },
             { to: "/evolution", label: "Evolução", icon: LineChart },
