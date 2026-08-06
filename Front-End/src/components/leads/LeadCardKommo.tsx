@@ -102,12 +102,21 @@ export function LeadCardKommo({
 
   // A coluna da esquerda é a lista de leads, como a lista de conversas do WhatsApp Web:
   // dá para pular de lead em lead sem voltar para a listagem e perder o contexto.
+  // /webhooks/recent exige clinicId — sem ele a rota responde "clinicId inválido".
+  // O tenant do próprio lead é a resposta certa: a lista tem que ser da clínica dele.
   const vizinhos = useQuery({
-    queryKey: ["card-vizinhos", lead.unitId],
+    queryKey: ["card-vizinhos", lead.tenantId, lead.unitId],
     queryFn: () =>
-      webhooksService.recentLeads({ unitId: lead.unitId ?? undefined, hours: 168, limit: 40 }),
-    enabled: lead.unitId != null,
+      webhooksService.recentLeads({
+        clinicId: lead.tenantId,
+        unitId: lead.unitId ?? undefined,
+        hours: 168,
+        limit: 40,
+      }),
+    enabled: !!lead.tenantId,
     staleTime: 60_000,
+    // Lista de vizinhos é conveniência: se falhar, o cartão do lead continua de pé.
+    retry: false,
   });
 
   const listaFiltrada = useMemo(() => {
@@ -260,7 +269,11 @@ export function LeadCardKommo({
           <div className="min-h-0 flex-1 overflow-y-auto">
             {listaFiltrada.length === 0 ? (
               <p className="px-3 py-3 text-[11.5px] text-slate-600">
-                {vizinhos.isLoading ? "carregando…" : "Nenhum lead nos últimos 7 dias."}
+                {vizinhos.isLoading
+                  ? "carregando…"
+                  : vizinhos.isError
+                    ? "Não deu para carregar a lista."
+                    : "Nenhum lead nos últimos 7 dias."}
               </p>
             ) : (
               <ul>
