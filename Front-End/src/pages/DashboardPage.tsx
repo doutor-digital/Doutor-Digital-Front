@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { NoShowCard } from "@/components/dashboard/NoShowCard";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -2130,14 +2131,26 @@ export default function DashboardPage() {
                 {srcBtn("agendados", "Agendados")}
               </DarkCard>
 
-              {/* Col 3 row 2: No-show */}
-              <DarkCard accent="#f87171">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
-                <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "no_show", label: "No-show" })} />
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
-                {srcBtn("no_show", "No-show")}
-              </DarkCard>
+              {/* Col 3 row 2: faltas na agenda.
+                  O card antigo mostrava só o número e parecia quebrado ao devolver "1".
+                  Estava certo: existe UM agendamento marcado como "Não compareceu" em 30
+                  dias, contra 48 "Desmarcado" — a recepção usa o segundo para tudo. Agora
+                  vem o desfecho inteiro, o comparativo e a lista de quem faltou, e o card
+                  acusa quando o balde está mascarando o número. */}
+              {isJuridico ? (
+                <DarkCard accent="#f87171">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
+                  <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
+                  <div className="mt-4 h-px w-1/3 bg-white/10" />
+                  <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                </DarkCard>
+              ) : (
+                <NoShowCard
+                  unitId={unitId}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                />
+              )}
             </div>
 
             {/* Fecho do funil: tratamentos, consultas e qualificação. Ficam na
