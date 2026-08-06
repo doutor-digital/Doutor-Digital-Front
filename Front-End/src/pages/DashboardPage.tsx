@@ -2052,6 +2052,25 @@ export default function DashboardPage() {
                   <ManualBreakdownNote />
                 ) : (
                   <>
+                    {/* As duas perguntas separadas, no próprio card.
+                        O número grande conta quem foi MOVIDO para agendado no período;
+                        esta linha conta quem tem CONSULTA MARCADA para ele — que é o
+                        número comparável com a agenda da franquia. Sem os dois à vista,
+                        conferir com a franquia é comparar coisas diferentes. */}
+                    {(bd?.agendados.com_consulta_no_periodo ?? 0) > 0 && (
+                      <p
+                        className="mt-1 text-[10.5px] text-slate-400"
+                        title="O número grande é quem foi movido para agendado dentro do período. Este é quem tem data de consulta marcada para o período — inclui quem agendou antes."
+                      >
+                        {bd!.agendados.com_consulta_no_periodo} com consulta marcada no período
+                        {bd?.agendados.avaliacoes_franquia != null && (
+                          <span className="text-slate-500">
+                            {" · "}
+                            {bd.agendados.avaliacoes_franquia} na agenda da franquia
+                          </span>
+                        )}
+                      </p>
+                    )}
                     {(bd?.agendados.reclassificacoes ?? 0) > 0 && (
                       <p
                         className="mt-1 text-[10.5px] text-amber-200/90"
