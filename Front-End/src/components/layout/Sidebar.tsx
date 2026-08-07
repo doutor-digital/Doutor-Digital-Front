@@ -148,6 +148,7 @@ const navGroups: NavGroup[] = [
         basePaths: ["/analytics", "/evolution", "/desempenho"],
         children: [
           { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
+          { to: "/midia", label: "Campanhas e anúncios", icon: Target },
           { to: "/analytics", label: "Analytics", icon: BarChart3 },
           { to: "/evolution", label: "Evolução", icon: LineChart },
         ],
