@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { HistoricoLead } from "@/components/leads/HistoricoLead";
 import { LeadCardKommo } from "@/components/leads/LeadCardKommo";
+import { RastreamentoLead } from "@/components/leads/RastreamentoLead";
+import { FichaFranquia } from "@/components/leads/FichaFranquia";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -391,23 +393,6 @@ export default function LeadDetailPage() {
                 onSave={(v) => patch.mutate({ phone: v })}
               />
             </SidebarRow>
-            <SidebarRow icon={<Mail className="h-3.5 w-3.5" />} label="E-mail">
-              <EditableField
-                value={l.email}
-                placeholder="Adicionar e-mail"
-                onSave={(v) => patch.mutate({ email: v })}
-              />
-            </SidebarRow>
-            <SidebarRow icon={<Hash className="h-3.5 w-3.5" />} label="CPF">
-              <EditableField
-                value={l.cpf}
-                placeholder="Não informado"
-                onSave={(v) => patch.mutate({ cpf: v })}
-              />
-            </SidebarRow>
-            <SidebarRow icon={<User2 className="h-3.5 w-3.5" />} label="Gênero">
-              <EditableField value={l.gender} placeholder="Não informado" />
-            </SidebarRow>
           </SidebarSection>
 
           <SidebarSection label="Atribuição">
@@ -427,67 +412,11 @@ export default function LeadDetailPage() {
                 {l.attendantName ?? "—"}
               </span>
             </SidebarRow>
-            <SidebarRow
-              icon={<Mail className="h-3.5 w-3.5" />}
-              label="Email atend."
-            >
-              <span className="text-[11.5px] text-slate-400 truncate max-w-[130px]">
-                {l.attendantEmail ?? "—"}
-              </span>
-            </SidebarRow>
           </SidebarSection>
 
-          <SidebarSection label="Rastreamento">
-            <SidebarRow
-              icon={<Target className="h-3.5 w-3.5" />}
-              label="Origem"
-            >
-              <span className="text-[11.5px] text-indigo-300 font-medium">
-                {l.source ?? "—"}
-              </span>
-            </SidebarRow>
-            <SidebarRow
-              icon={<Globe className="h-3.5 w-3.5" />}
-              label="Canal"
-            >
-              <span className="text-[11.5px] text-sky-300 font-medium">
-                {l.channel ?? "—"}
-              </span>
-            </SidebarRow>
-            <SidebarRow
-              icon={<Layers className="h-3.5 w-3.5" />}
-              label="Campanha"
-            >
-              <span className="text-[11.5px] text-amber-300 font-medium">
-                {l.campaign ?? "—"}
-              </span>
-            </SidebarRow>
-            <SidebarRow
-              icon={<Tag className="h-3.5 w-3.5" />}
-              label="Anúncio"
-            >
-              <span className="text-[11.5px] text-slate-300 truncate max-w-[130px]">
-                {l.ad ?? "—"}
-              </span>
-            </SidebarRow>
-            <SidebarRow
-              icon={<Shield className="h-3.5 w-3.5" />}
-              label="Confiança"
-            >
-              <span
-                className={cn(
-                  "text-[11.5px] font-semibold",
-                  l.trackingConfidence === "ALTA"
-                    ? "text-emerald-300"
-                    : l.trackingConfidence === "MEDIA"
-                      ? "text-amber-300"
-                      : "text-slate-500",
-                )}
-              >
-                {l.trackingConfidence ?? "—"}
-              </span>
-            </SidebarRow>
-          </SidebarSection>
+          <RastreamentoLead lead={l} />
+
+          <FichaFranquia nome={l.name} unitId={l.unitId} />
 
           <SidebarSection label="Datas">
             <SidebarRow

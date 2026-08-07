@@ -39,3 +39,5 @@ coverage/
 *.pid.lock
 
 # External projects (have their own repos / will be moved to legacy/)
+.vercel
+.env*

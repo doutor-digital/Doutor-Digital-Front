@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { ConversaDoLead } from "./ConversaDoLead";
 import type { LeadDetail } from "@/types";
 
 /**
@@ -18,8 +19,7 @@ import type { LeadDetail } from "@/types";
  * O VAZIO EXPLICA O VAZIO
  * -----------------------
  * "0 conversa(s)" não é informação: parece defeito. Onde não há dado, a tela diz por que não
- * há e o que destrava — nesta unidade o Salesbot ainda não chama a Sofia, então não existe
- * mensagem gravada para lead nenhum.
+ * há e o que destrava.
  */
 
 /** Id numérico cru = status apagado na Kommo. O nome se perdeu na origem. */
@@ -85,8 +85,6 @@ export function HistoricoLead({ lead }: { lead: LeadDetail }) {
   const maior = Math.max(1, ...passos.map((p) => p.minutos));
   const total = passos.reduce((s, p) => s + p.minutos, 0);
   const semData = passos.filter((p) => !p.confiavel).length;
-
-  const interacoes = (lead.conversations ?? []).flatMap((c) => c.interactions ?? []);
 
   return (
     <div className="flex flex-col gap-7">
@@ -193,38 +191,14 @@ export function HistoricoLead({ lead }: { lead: LeadDetail }) {
         )}
       </section>
 
-      {/* ─── Mensagens ──────────────────────────────────────────────── */}
+      {/* ─── A conversa ─────────────────────────────────────────────── */}
       <section className="border-t border-white/[0.06] pt-5">
         <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
-          Mensagens
+          A conversa
         </h3>
-
-        {interacoes.length === 0 ? (
-          <p className="mt-2 max-w-[62ch] text-[12.5px] leading-relaxed text-white/45">
-            Nenhuma mensagem gravada — e não é deste lead: não existe conversa registrada para
-            nenhum lead desta unidade. O Salesbot da Kommo ainda não chama a Sofia, então nada
-            chega até aqui. Quando ligar, as mensagens aparecem nesta aba sem mais nenhum ajuste.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-1.5">
-            {interacoes.map((i) => (
-              <li
-                key={i.id}
-                className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-[12.5px]",
-                  i.type?.includes("RECEIVED")
-                    ? "self-start bg-white/[0.05] text-white/85"
-                    : "self-end bg-emerald-500/[0.12] text-emerald-50",
-                )}
-              >
-                {i.content ?? i.type}
-                <span className="mt-0.5 block text-right text-[10px] tabular-nums text-white/35">
-                  {hora(i.createdAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="mt-3">
+          <ConversaDoLead leadId={lead.id} />
+        </div>
       </section>
 
       {/* ─── Quem atendeu ───────────────────────────────────────────── */}
