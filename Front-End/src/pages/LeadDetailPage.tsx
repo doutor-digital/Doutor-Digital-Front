@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { HistoricoLead } from "@/components/leads/HistoricoLead";
 import { LeadCardKommo } from "@/components/leads/LeadCardKommo";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -150,7 +151,7 @@ export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const [tab, setTab] = useState<
-    "overview" | "timeline" | "history" | "payments" | "conversations"
+    "overview" | "history" | "payments" | "conversations"
   >("overview");
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
@@ -177,7 +178,7 @@ export default function LeadDetailPage() {
   const timeline = useQuery({
     queryKey: ["lead-timeline", id],
     queryFn: () => webhooksService.getLeadTimeline(id!),
-    enabled: !!id && tab === "timeline",
+    enabled: false,  // a aba Timeline saiu; o Histórico monta tudo do próprio lead
     retry: false,
   });
 
@@ -287,8 +288,7 @@ export default function LeadDetailPage() {
 
   const TABS = [
     { key: "overview", label: "Visão geral", icon: <BarChart2 className="h-3.5 w-3.5" /> },
-    { key: "timeline", label: "Timeline", icon: <Route className="h-3.5 w-3.5" /> },
-    { key: "history", label: "Histórico", icon: <TrendingUp className="h-3.5 w-3.5" /> },
+    { key: "history", label: "Histórico", icon: <Route className="h-3.5 w-3.5" /> },
     { key: "payments", label: "Pagamentos", icon: <CreditCard className="h-3.5 w-3.5" /> },
     { key: "conversations", label: "Conversas", icon: <MessageSquare className="h-3.5 w-3.5" /> },
   ] as const;
@@ -326,12 +326,6 @@ export default function LeadDetailPage() {
               <CheckCircle2 className="h-3.5 w-3.5" /> Marcar comparecimento
             </Button>
           )}
-          <Link
-            to={`/leads/${l.id}/journey`}
-            className="flex items-center gap-1.5 text-[11px] text-slate-300 hover:text-emerald-300 bg-white/[0.02] hover:bg-emerald-500/[0.06] border border-white/[0.08] hover:border-emerald-500/30 px-3 py-1.5 rounded-md transition"
-          >
-            <Route className="h-3.5 w-3.5" /> Ver jornada
-          </Link>
           <button
             onClick={() => navigator.clipboard.writeText(String(l.id))}
             className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.14] px-3 py-1.5 rounded-md transition"
@@ -637,112 +631,11 @@ export default function LeadDetailPage() {
               lê de uma vez. Cada pedaço que estava aqui virou coluna do cartão. */}
           {tab === "overview" && <LeadCardKommo lead={l} metricas={m} />}
 
-          {tab === "timeline" && (
-            <div className="space-y-4">
-              {timeline.isLoading && (
-                <div className="h-64 rounded-xl bg-white/[0.02] animate-pulse" />
-              )}
-              {timeline.isError && (
-                <Panel>
-                  <div className="p-8">
-                    <EmptyState
-                      title="Timeline indisponível"
-                      description="Falha ao carregar timeline deste lead."
-                    />
-                  </div>
-                </Panel>
-              )}
-              {timeline.data && (
-                <TimelineView data={timeline.data} />
-              )}
-            </div>
-          )}
-
-          {tab === "history" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Section
-                title="Etapas"
-                subtitle={`${l.stageHistory.length} mudança(s)`}
-                eyebrow="Funil"
-                eyebrowTone="bg-sky-400"
-              >
-                {l.stageHistory.length > 0 ? (
-                  <ol className="ml-1 space-y-0">
-                    {l.stageHistory.map((h, idx) => (
-                      <li
-                        key={h.id}
-                        className="relative flex gap-4 pb-5 last:pb-0"
-                      >
-                        {idx < l.stageHistory.length - 1 && (
-                          <span className="absolute left-[9px] top-5 bottom-0 w-px bg-white/[0.08]" />
-                        )}
-                        <span
-                          className={cn(
-                            "mt-0.5 h-5 w-5 rounded-full ring-4 ring-[#0a0a0d] grid place-items-center shrink-0 z-10",
-                            idx === 0
-                              ? "bg-emerald-500"
-                              : "bg-white/[0.08]",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              idx === 0 ? "bg-emerald-950" : "bg-slate-500",
-                            )}
-                          />
-                        </span>
-                        <div className="pt-0.5">
-                          <p className="text-[10.5px] text-slate-500 mb-1.5 tabular-nums">
-                            {formatDate(h.changedAt)}
-                          </p>
-                          <StageBadge stage={h.stageLabel} />
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <EmptyState title="Sem histórico de etapas" />
-                )}
-              </Section>
-
-              <Section
-                title="Atendentes"
-                subtitle={`${attendantItems.length} atribuição(ões)`}
-                eyebrow="Equipe"
-                eyebrowTone="bg-indigo-400"
-              >
-                {attendantItems.length > 0 ? (
-                  <ul className="space-y-2">
-                    {attendantItems.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-3 p-3 rounded-md hover:bg-white/[0.02] transition"
-                      >
-                        <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-100 shrink-0">
-                          {item.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium text-slate-100">
-                            {item.name}
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
-                            {formatDate(item.date)}
-                          </p>
-                          {item.stage && (
-                            <div className="mt-1.5">
-                              <StageBadge stage={item.stage} />
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <EmptyState title="Sem histórico de atendentes" />
-                )}
-              </Section>
-            </div>
-          )}
+          {/* Timeline e Histórico eram duas abas do mesmo assunto, ambas cheias de
+             "0 conversa(s)" e "Sem atribuições" — vazio que parece defeito. Viraram
+             uma só, com a duração de cada etapa desenhada em altura e o vazio
+             explicando por que está vazio. */}
+          {tab === "history" && <HistoricoLead lead={l} />}
 
           {tab === "payments" && (
             <Section

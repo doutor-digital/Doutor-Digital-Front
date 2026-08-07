@@ -187,7 +187,7 @@ export default function LeadsPage() {
               {pageItems.map((l) => (
                 <li key={l.id}>
                   <button
-                    onClick={() => navigate(`/leads/${l.id}/revisar`)}
+                    onClick={() => navigate(`/leads/${l.id}`)}
                     className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-white/[0.04]"
                   >
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.04] text-[13px] font-semibold text-slate-100 ring-1 ring-inset ring-white/[0.08]">
@@ -237,12 +237,12 @@ export default function LeadsPage() {
                     clickable
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest("a")) return;
-                      navigate(`/leads/${l.id}/revisar`);
+                      navigate(`/leads/${l.id}`);
                     }}
                   >
                     <Td>
                       <Link
-                        to={`/leads/${l.id}/revisar`}
+                        to={`/leads/${l.id}`}
                         className="flex items-center gap-3 hover:text-slate-50 transition"
                       >
                         <div className="h-8 w-8 rounded-md bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] grid place-items-center text-[11px] font-semibold text-slate-100">
