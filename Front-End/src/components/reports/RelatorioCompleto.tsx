@@ -91,7 +91,7 @@ export function RelatorioCompleto({
 }) {
   const [aberta, setAberta] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["relatorio-completo", unitId, de, ate],
     queryFn: async () => {
       const { data } = await api.get<Relatorio>("/api/saude/relatorio-completo", {
@@ -102,8 +102,23 @@ export function RelatorioCompleto({
     enabled: !!unitId && !!de && !!ate,
   });
 
-  if (!unitId) return <p className="text-[13px] text-slate-500">Escolha uma unidade.</p>;
+  // Sem unidade a rota devolve 404, e o relatório precisa dos campos mapeados por
+  // unidade para saber ler origem, motivo e qualificação.
+  if (!unitId)
+    return (
+      <p className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[12.5px] text-amber-200">
+        Escolha uma unidade no seletor do topo. Este relatório lê os campos do cartão da Kommo,
+        e o mapeamento deles é por unidade.
+      </p>
+    );
   if (isLoading) return <p className="text-[13px] text-slate-600">montando o relatório…</p>;
+  // Erro precisa aparecer: em branco, a pessoa conclui que o mês não teve movimento.
+  if (isError)
+    return (
+      <p className="rounded-lg border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2 text-[12.5px] text-rose-200">
+        Não foi possível montar o relatório deste período.
+      </p>
+    );
   if (!data) return null;
 
   const semAtender = data.horariosNaClinica - data.compareceram - data.horariosPerdidos;

@@ -886,7 +886,11 @@ export default function ReportsPage() {
               faria a mesma pergunta duas vezes com respostas diferentes. */}
           {mode === "completo" && hasClinic && (
             <RelatorioCompleto
-              unitId={Number(resolvedUnitId) || null}
+              /* activeUnitId, não resolvedUnitId: nesta página "unit" é o id da
+                 CLÍNICA (8024). A rota resolve unidade, procurava a unidade 8024,
+                 não achava e devolvia 404 — o relatório ficava em branco sem dizer
+                 por quê. A unidade de verdade é a do seletor do topo (15). */
+              unitId={activeUnitId ?? null}
               de={mesInicioIso}
               ate={mesFimIso}
             />
