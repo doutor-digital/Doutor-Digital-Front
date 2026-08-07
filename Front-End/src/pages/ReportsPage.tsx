@@ -885,7 +885,9 @@ export default function ReportsPage() {
               ate={mesFimIso}
             />
           )}
-          {mode !== "completo" && !hasClinic && (
+          {/* Sem unidade, a aba Completo ficava em branco — nem número nem aviso.
+              Tela vazia sem explicação é lida como defeito. */}
+          {!hasClinic && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2 text-[12px] text-amber-200">
               Selecione uma unidade para carregar os relatórios.
             </div>
