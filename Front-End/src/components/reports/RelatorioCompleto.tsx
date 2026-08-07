@@ -155,7 +155,7 @@ export function RelatorioCompleto({
           </h3>
           <p className="mt-1 text-[12px] text-slate-500">
             Custo por conversa de WhatsApp iniciada, como a Meta conta. Nem toda conversa vira
-            lead no CRM — o custo por lead está no bloco de campanhas.
+            lead no CRM, então este número é do anúncio, não do funil.
           </p>
 
           <ul className="mt-3 flex flex-col gap-2.5">
@@ -223,59 +223,13 @@ export function RelatorioCompleto({
         </section>
       )}
 
-      {/* ─── Campanhas ──────────────────────────────────────────────── */}
-      <section>
-        <h3 className="font-boletim text-[15px] font-semibold tracking-tight text-slate-100">
-          Campanhas
-        </h3>
-        {data.campanhas.length === 0 ? (
-          <p className="mt-2 text-[12.5px] text-slate-600">
-            Nenhum lead do período tem anúncio identificado. O rastreio começou em 05/08 — só os
-            leads a partir daí trazem campanha.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {data.campanhas.slice(0, 8).map((c) => (
-              <li
-                key={c.campanhaId}
-                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5"
-              >
-                {/* A imagem do anúncio, quando existe. Sem ela o bloco não colapsa. */}
-                {c.melhorAnuncioImagem ? (
-                  <img
-                    src={c.melhorAnuncioImagem}
-                    alt=""
-                    loading="lazy"
-                    className="h-14 w-14 shrink-0 rounded object-cover ring-1 ring-white/10"
-                  />
-                ) : (
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded bg-white/[0.04] text-[10px] text-slate-600">
-                    sem foto
-                  </span>
-                )}
+      {/* O bloco de Campanhas saiu daqui. Ele mostrava "Campanha não identificada"
+          em todas as linhas, com gasto e custo por lead vazios: o lead guarda o id do
+          ANÚNCIO e o gasto é gravado por CAMPANHA, então o cruzamento nunca casava.
+          Oito linhas dizendo "—" ocupavam meia tela e não respondiam nada.
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] text-slate-200">{c.nome}</p>
-                  {c.melhorAnuncioNome && (
-                    <p className="truncate text-[11px] text-slate-500">{c.melhorAnuncioNome}</p>
-                  )}
-                </div>
-
-                <div className="flex shrink-0 gap-5 text-right">
-                  <Mini k="leads" v={nf.format(c.leads)} />
-                  <Mini k="agendou" v={nf.format(c.agendados)} />
-                  <Mini k="gasto" v={c.gasto > 0 ? moeda(c.gasto) : "—"} />
-                  <Mini
-                    k="custo/lead"
-                    v={c.custoPorLead != null ? moeda(c.custoPorLead) : "—"}
-                    destaque={c.custoPorLead != null}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          Volta quando existir a ponte anúncio → campanha; até lá o bloco de Anúncios
+          acima já mostra gasto e custo por conversa, que é o mesmo diagnóstico. */}
 
       {/* ─── O que não foi preenchido ───────────────────────────────── */}
       <section>
