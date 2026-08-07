@@ -51,6 +51,7 @@ const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
 const BuscasPage       = lazy(() => import("@/pages/BuscasPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
+const MidiaVersoesPage = lazy(() => import("@/pages/MidiaVersoesPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
 const BuscarLeadsPage = lazy(() => import("@/pages/BuscarLeadsPage"));
@@ -181,6 +182,7 @@ export default function App() {
           <Route path="/conferencia"       element={<ConferenciaPage />}  />
           <Route path="/buscas"            element={<BuscasPage />}       />
           <Route path="/midia"             element={<MidiaPage />}        />
+          <Route path="/midia/versoes"     element={<MidiaVersoesPage />} />
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/funil-board"       element={<PipelineBoardPage />} />
           <Route path="/sources"           element={<SourcesPage />}      />
