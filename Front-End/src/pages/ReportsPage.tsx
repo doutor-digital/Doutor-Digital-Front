@@ -830,7 +830,13 @@ export default function ReportsPage() {
           Sublinhado em vez de pílulas dentro do cabeçalho do card: as abas eram
           disputadas por três botões na mesma linha e sobrava pouco para cada um. */}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4">
+        {/* As abas internas são do Diário e do Mensal. No Completo elas
+            ofereceriam caminhos que não levam a lugar nenhum. */}
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 ${
+            mode === "completo" ? "hidden" : ""
+          }`}
+        >
           <div className="flex items-center gap-1">
             <TabBtn
               icon={<BarChart3 className="h-3.5 w-3.5" />}
@@ -894,7 +900,7 @@ export default function ReportsPage() {
           )}
 
           {/* ─── Visão geral ─── */}
-          {tab === "overview" && hasClinic && (
+          {mode !== "completo" && tab === "overview" && hasClinic && (
             <>
               {mode === "daily" ? (
                 <DailyOverview
@@ -910,7 +916,7 @@ export default function ReportsPage() {
           )}
 
           {/* ─── Por unidade ─── */}
-          {tab === "units" && hasClinic && (
+          {mode !== "completo" && tab === "units" && hasClinic && (
             <>
               {mode === "daily" ? (
                 <DailyUnitsTable rows={dailyRows} loading={loading} />
@@ -926,7 +932,7 @@ export default function ReportsPage() {
           )}
 
           {/* ─── WhatsApp ─── */}
-          {tab === "whatsapp" && (
+          {mode !== "completo" && tab === "whatsapp" && (
             <WhatsAppComposer
               reportText={reportText}
               loading={loading}
