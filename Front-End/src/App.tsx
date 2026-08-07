@@ -49,7 +49,6 @@ const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
 const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
-const JornadaPage      = lazy(() => import("@/pages/JornadaPage"));
 const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
 const BuscasPage       = lazy(() => import("@/pages/BuscasPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
@@ -181,7 +180,6 @@ export default function App() {
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
           <Route path="/leads/:id/revisar" element={<LeadReviewPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
-          <Route path="/jornada"           element={<JornadaPage />}      />
           <Route path="/conferencia"       element={<ConferenciaPage />}  />
           <Route path="/buscas"            element={<BuscasPage />}       />
           <Route path="/midia"             element={<MidiaPage />}        />

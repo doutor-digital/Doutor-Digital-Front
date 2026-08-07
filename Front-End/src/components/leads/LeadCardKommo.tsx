@@ -73,6 +73,20 @@ const horaBR = (iso: string) =>
 const diaBR = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
 
+/**
+ * Etapa em texto legível.
+ *
+ * Id numérico cru significa status apagado na Kommo — os funis antigos foram removidos e o
+ * nome se perdeu na origem, não aqui. Mostrar "106037707" na linha do tempo faz a tela
+ * parecer defeituosa; dizer que a etapa foi removida é a informação verdadeira.
+ */
+function rotuloEtapa(etapa?: string | null): string {
+  const e = (etapa ?? "").trim();
+  if (!e) return "—";
+  if (e.length >= 6 && /^\d+$/.test(e)) return "Etapa removida do funil";
+  return e.replace(/_/g, " ").replace(/^\d+\s+/, "");
+}
+
 function iniciais(nome?: string | null): string {
   const n = (nome ?? "").trim();
   if (!n) return "?";
@@ -88,6 +102,9 @@ interface EventoFeed {
   /** Falso = data do sync, não da transição. */
   confiavel: boolean;
   entrada?: boolean;
+  /** Minutos até o próximo evento; no último, minutos até agora. */
+  minutosAte?: number;
+  ultimo?: boolean;
 }
 
 export function LeadCardKommo({
@@ -148,7 +165,7 @@ export function LeadCardKommo({
       ev.push({
         quando: h.changedAt,
         tipo: "etapa",
-        texto: (h.stageLabel ?? "").replace(/_/g, " "),
+        texto: rotuloEtapa(h.stageLabel),
         confiavel: h.dataConfiavel !== false,
       }),
     );
@@ -184,7 +201,18 @@ export function LeadCardKommo({
       }),
     );
 
-    return ev.sort((a, b) => +new Date(a.quando) - +new Date(b.quando));
+    const ordenado = ev.sort((a, b) => +new Date(a.quando) - +new Date(b.quando));
+
+    // A duração de cada passo só existe depois da ordenação: é a distância até o
+    // evento seguinte, e no último até agora.
+    const agora = Date.now();
+    ordenado.forEach((e, i) => {
+      const prox = i + 1 < ordenado.length ? +new Date(ordenado[i + 1].quando) : agora;
+      e.minutosAte = (prox - +new Date(e.quando)) / 60000;
+      e.ultimo = i === ordenado.length - 1;
+    });
+
+    return ordenado;
   }, [lead]);
 
   // ─── Ficha agrupada ───────────────────────────────────────────────────
@@ -317,6 +345,9 @@ export function LeadCardKommo({
         {/* ═══ Coluna 2 — a conversa ════════════════════════════════ */}
         <div className="flex max-h-[560px] min-w-0 flex-col">
           {/* Cabeçalho do contato, como o topo de uma conversa. */}
+          {/* Etiquetas no topo da conversa, não escondidas na terceira coluna.
+              É por elas que se sabe de relance se a Sofia atendeu ("IA atração
+              Sofia") e de que anúncio o lead veio. */}
           <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-700 text-[12px] font-semibold text-slate-200">
               {iniciais(lead.name)}
@@ -335,6 +366,30 @@ export function LeadCardKommo({
               </p>
             </div>
           </div>
+
+          {lead.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 border-b border-white/[0.06] px-4 py-2">
+              {lead.tags.map((t) => {
+                const ia = /\bia\b|sofia|atra[cç]/i.test(t);
+                const anuncio = /an[uú]ncio|campanha|meta|instagram|facebook|pago|org/i.test(t);
+                return (
+                  <span
+                    key={t}
+                    className={cn(
+                      "rounded px-1.5 py-0.5 text-[10.5px]",
+                      ia
+                        ? "bg-violet-400/15 text-violet-200 ring-1 ring-inset ring-violet-400/25"
+                        : anuncio
+                          ? "bg-sky-400/12 text-sky-200 ring-1 ring-inset ring-sky-400/25"
+                          : "bg-white/[0.05] text-slate-400",
+                    )}
+                  >
+                    {t}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
         <div
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
@@ -379,7 +434,7 @@ export function LeadCardKommo({
                       /* Evento do sistema no meio, como o aviso de "entrou no grupo". */
                       <div
                         className={cn(
-                          "mx-auto max-w-[86%] rounded-md px-3 py-1.5 text-center text-[11.5px]",
+                          "mx-auto max-w-[92%] rounded-md px-3 py-2 text-center text-[11.5px]",
                           e.confiavel
                             ? "bg-white/[0.045] text-slate-400"
                             : "bg-transparent text-slate-700",
@@ -393,6 +448,15 @@ export function LeadCardKommo({
                         ) : (
                           <span className="ml-2 text-slate-700">
                             data do sync, não da mudança
+                          </span>
+                        )}
+                        {/* Quanto tempo ficou aqui. É a pergunta que a linha do tempo
+                            existe para responder — sem ela são só carimbos soltos. */}
+                        {e.confiavel && e.minutosAte != null && (
+                          <span className="mt-0.5 block text-[10.5px] text-slate-500">
+                            {e.ultimo
+                              ? `há ${duracao(e.minutosAte)} nesta etapa`
+                              : `${duracao(e.minutosAte)} até o próximo passo`}
                           </span>
                         )}
                       </div>

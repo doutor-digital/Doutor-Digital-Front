@@ -167,7 +167,6 @@ const navGroups: NavGroup[] = [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
           { to: "/recent-leads", label: "Recentes", icon: History },
           { to: "/recuperacao", label: "Recuperação", icon: LifeBuoy },
-          { to: "/jornada", label: "Jornada do lead", icon: RouteIcon },
           { to: "/mudancas-etapas", label: "Mudanças de etapa", icon: RouteIcon },
           { to: "/conversao", label: "Conversão", icon: PieChart },
           { to: "/funnel", label: "Funil", icon: Workflow },
