@@ -165,12 +165,20 @@ export function RelatorioCompleto({
                 className="flex overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]"
               >
                 {a.imagem ? (
-                  <img
-                    src={a.imagem}
-                    alt=""
-                    loading="lazy"
-                    className="h-[120px] w-[120px] shrink-0 object-cover"
-                  />
+                  /* 64px, o tamanho real que a Meta entrega.
+                     Estes anúncios são vídeo (object_type VIDEO): não existe image_url, e a
+                     miniatura em alta exige permissão de Página, que o token não tem. Esticar
+                     64 para 120 só produzia borrão — a imagem nativa, nítida, informa mais. */
+                  <span className="grid h-[120px] w-[120px] shrink-0 place-items-center bg-white/[0.03]">
+                    <img
+                      src={a.imagem}
+                      alt=""
+                      loading="lazy"
+                      width={64}
+                      height={64}
+                      className="h-16 w-16 rounded-md object-cover"
+                    />
+                  </span>
                 ) : (
                   <span className="grid h-[120px] w-[120px] shrink-0 place-items-center bg-white/[0.03] text-[10px] text-slate-600">
                     sem foto
