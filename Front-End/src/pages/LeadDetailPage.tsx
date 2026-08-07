@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { HistoricoLead } from "@/components/leads/HistoricoLead";
 import { LeadCardKommo } from "@/components/leads/LeadCardKommo";
 import { RastreamentoLead } from "@/components/leads/RastreamentoLead";
+import { ConversaDoLead } from "@/components/leads/ConversaDoLead";
 import { FichaFranquia } from "@/components/leads/FichaFranquia";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -606,56 +607,16 @@ export default function LeadDetailPage() {
           )}
 
           {tab === "conversations" && (
+            // A conversa vem da atendente virtual (agent_conversations), não da
+            // tabela antiga de interações — aquela nunca recebeu nada nesta rede
+            // e deixava a aba vazia mesmo com 11 mil mensagens gravadas.
             <Section
               title="Conversas"
-              subtitle={`${l.conversations.length} conversa(s)`}
+              subtitle="O atendimento como aconteceu"
               eyebrow="Mensagens"
               eyebrowTone="bg-sky-400"
             >
-              {l.conversations.length > 0 ? (
-                <ul className="space-y-3">
-                  {l.conversations.map((c) => (
-                    <li
-                      key={c.id}
-                      className="p-4 rounded-md bg-white/[0.015] ring-1 ring-inset ring-white/[0.05] hover:bg-white/[0.025] transition"
-                    >
-                      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <StateBadge
-                            state={c.conversationState as ConversationState}
-                          />
-                          <span className="text-[11px] font-medium text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded-full ring-1 ring-inset ring-white/[0.06]">
-                            {c.channel}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-500 tabular-nums">
-                          {formatDate(c.startedAt)}
-                          {c.endedAt ? (
-                            <> → {formatDate(c.endedAt)}</>
-                          ) : (
-                            <span className="ml-1 text-emerald-300 font-medium">
-                              · ao vivo
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      {c.attendantName && (
-                        <p className="text-[11.5px] text-slate-500">
-                          Atendente:{" "}
-                          <span className="text-slate-300 font-medium">
-                            {c.attendantName}
-                          </span>
-                        </p>
-                      )}
-                      <p className="text-[10.5px] text-slate-600 mt-1.5 tabular-nums">
-                        {c.interactions.length} interação(ões)
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <EmptyState title="Nenhuma conversa registrada" />
-              )}
+              <ConversaDoLead leadId={l.id} />
             </Section>
           )}
         </div>

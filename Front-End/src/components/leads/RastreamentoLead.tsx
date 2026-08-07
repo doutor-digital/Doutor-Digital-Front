@@ -55,12 +55,15 @@ function canalDa(origem: string | null): string | null {
 }
 
 export function RastreamentoLead({ lead }: { lead: LeadDetail }) {
-  const { origem, canal, ehLink } = useMemo(() => {
+  const { origem, canal, ehLink, utm } = useMemo(() => {
     const o = campo(lead, "origem");
+    const source = campo(lead, "utm_source");
+    const medium = campo(lead, "utm_medium");
     return {
       origem: o,
       canal: canalDa(o),
       ehLink: !!o && /^https?:\/\//i.test(o),
+      utm: [source, medium].filter(Boolean).join(" · ") || null,
     };
   }, [lead]);
 
@@ -95,6 +98,14 @@ export function RastreamentoLead({ lead }: { lead: LeadDetail }) {
           <p className="max-w-[34ch] text-[11.5px] leading-relaxed text-slate-500">
             O campo “Origem” do cartão está em branco. Sem ele não dá para dizer por onde
             este lead chegou.
+          </p>
+        )}
+
+        {/* utm chega em 66 dos 8.772 leads — raro, mas quando chega é dado real. */}
+        {utm && (
+          <p className="mt-2 font-mono text-[11px] text-slate-400">
+            {utm}
+            <span className="ml-1.5 font-sans text-[10px] text-slate-600">utm do link</span>
           </p>
         )}
 
