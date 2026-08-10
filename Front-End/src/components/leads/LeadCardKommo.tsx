@@ -54,6 +54,36 @@ const GRUPOS: { titulo: string; casa: (nome: string) => boolean }[] = [
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+/**
+ * A Kommo prefixa cada campo com um s\u00edmbolo (\u2691 \u2302 \u270e \u2b22 \u25f7 \u2605 \u2298 \u2713 \u00a4 \u2695 \u260e #) para
+ * agrupar visualmente l\u00e1 dentro. Aqui o agrupamento j\u00e1 \u00e9 feito por se\u00e7\u00e3o, ent\u00e3o o
+ * s\u00edmbolo vira s\u00f3 ru\u00eddo repetido em toda linha. Sai o s\u00edmbolo, fica o nome.
+ */
+const limpaNome = (s: string) =>
+  s.replace(/^[^\p{L}\p{N}]+/u, "").replace(/\s+/g, " ").trim();
+
+/**
+ * Campos que n\u00e3o s\u00e3o dados: a recep\u00e7\u00e3o usa nomes como "*HUMANO*", "## CONSULTA"
+ * e "**!" para desenhar faixas separadoras dentro do cart\u00e3o. Eles chegam pela API
+ * como campo de texto e poluem a ficha se n\u00e3o forem barrados aqui.
+ */
+const ehSeparador = (nome: string) => {
+  const texto = limpaNome(nome);
+  if (texto.length === 0) return true; // "**!", "##!" — só símbolo
+  // Faixa é escrita em caixa alta ("## CONSULTA", "*IA SOFIA*"); campo de verdade
+  // tem minúscula em algum lugar ("# Nº de parcelas", "☎ Gravação). Barrar por
+  // prefixo dropava "# Nº de parcelas" junto — a caixa é o que separa os dois.
+  return !/\p{Ll}/u.test(texto);
+};
+
+/** "Sim"/"N\u00e3o" carregam sinal; o resto \u00e9 texto. Vale marcar. */
+const tomDoValor = (v: string) => {
+  const t = norm(v).trim();
+  if (t === "sim") return "sim" as const;
+  if (t === "nao") return "nao" as const;
+  return "texto" as const;
+};
+
 /** 6 min, 2h14, 3d — a unidade muda porque "4 320 min" ninguém lê. */
 function duracao(min: number): string {
   if (min < 1) return "menos de 1 min";
@@ -217,7 +247,7 @@ export function LeadCardKommo({
 
   // ─── Ficha agrupada ───────────────────────────────────────────────────
   const { grupos, vazios, cheios } = useMemo(() => {
-    const campos = lead.camposKommo ?? [];
+    const campos = (lead.camposKommo ?? []).filter((c) => !ehSeparador(c.nome));
     const cheios = campos.filter((c) => c.preenchido);
     const vazios = campos.filter((c) => !c.preenchido);
 
@@ -524,20 +554,34 @@ export function LeadCardKommo({
                 </button>
 
                 {aberto && (
-                  <dl className="px-4 pb-2.5">
-                    {g.itens.map((c) => (
-                      <div key={`${c.fieldId}-${c.nome}`} className="py-1.5">
-                        <dt className="text-[10.5px] text-slate-600">{c.nome}</dt>
-                        <dd
-                          className={cn(
-                            "text-[12.5px] text-slate-200",
-                            c.ehData && "tabular-nums",
-                          )}
+                  // Rótulo e valor na mesma linha, alinhados numa coluna fixa: a ficha
+                  // vira uma tabela de leitura vertical em vez de uma pilha de pares
+                  // soltos, e o olho encontra o valor sem reler o rótulo.
+                  <dl className="px-4 pb-3">
+                    {g.itens.map((c) => {
+                      const tom = tomDoValor(c.valor);
+                      return (
+                        <div
+                          key={`${c.fieldId}-${c.nome}`}
+                          className="flex items-baseline gap-3 border-b border-white/[0.03] py-[5px] last:border-0"
                         >
-                          {c.valor}
-                        </dd>
-                      </div>
-                    ))}
+                          <dt className="w-[104px] shrink-0 text-[10.5px] leading-snug text-slate-600">
+                            {limpaNome(c.nome)}
+                          </dt>
+                          <dd
+                            className={cn(
+                              "min-w-0 flex-1 text-[12.5px] leading-snug",
+                              c.ehData && "font-mono tabular-nums text-slate-300",
+                              tom === "sim" && "text-emerald-300",
+                              tom === "nao" && "text-slate-500",
+                              tom === "texto" && !c.ehData && "text-slate-200",
+                            )}
+                          >
+                            {c.valor}
+                          </dd>
+                        </div>
+                      );
+                    })}
                   </dl>
                 )}
               </div>
@@ -555,10 +599,13 @@ export function LeadCardKommo({
                 {mostrarVazios ? "ocultar" : "ver"} os em branco
               </button>
               {mostrarVazios && (
-                <ul className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                <ul className="mt-2 flex flex-wrap gap-1">
                   {vazios.map((c) => (
-                    <li key={`${c.fieldId}-${c.nome}`} className="text-[11px] text-slate-700">
-                      {c.nome}
+                    <li
+                      key={`${c.fieldId}-${c.nome}`}
+                      className="rounded border border-white/[0.05] px-1.5 py-0.5 text-[10.5px] text-slate-600"
+                    >
+                      {limpaNome(c.nome)}
                     </li>
                   ))}
                 </ul>
