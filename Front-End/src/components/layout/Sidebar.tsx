@@ -136,6 +136,7 @@ const navGroups: NavGroup[] = [
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
       { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays },
       { to: "/pacientes", label: "Pacientes", icon: CalendarDays },
+      { to: "/auditoria", label: "Auditoria de Prontuários", icon: FileSearch },
       { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
       { to: "/conferencia", label: "Conferência", icon: Layers },
       { to: "/buscas", label: "Buscas", icon: Layers },
