@@ -232,15 +232,21 @@ export default function DesempenhoPage() {
               O que esta tela ainda não responde
             </h2>
             <p className="mt-2.5 max-w-[74ch] text-[12.5px] leading-relaxed text-slate-400">
-              Quantos leads cada campanha trouxe, quanto voltou em receita e qual o ROAS. Não é
-              que os números deram zero — é que não existe nada que ligue um lead da Kommo ao
-              anúncio que o trouxe.
+              Quantos leads cada campanha trouxe, quanto voltou em receita e qual o ROAS. O
+              rastreio do clique já funciona e grava o id do anúncio no cartão, mas ainda pega
+              uma fatia pequena dos leads — e a ponte entre esse id e o gasto por campanha não
+              está montada aqui.
             </p>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2">
               <Pendencia
-                titulo="Atribuição do clique"
-                texto="O referral da CTWA precisa ser gravado no cartão quando a mensagem chega. Hoje nenhum lead da unidade carrega id de anúncio."
-                onde="trabalho no n8n"
+                titulo="Cobertura do rastreio"
+                texto="O n8n grava ctwa_clid, id e título do anúncio no cartão — hoje em 130 dos 8.812 leads da unidade. Só pega quem vem de anúncio com clique para o WhatsApp."
+                onde="ampliar no n8n"
+              />
+              <Pendencia
+                titulo="Ligar o anúncio à campanha"
+                texto="O cartão guarda o id do anúncio; o gasto vem por campanha. Falta a ponte entre os dois para o custo por lead sair por campanha."
+                onde="trabalho aqui no painel"
               />
               {totais.conversas === 0 && (
                 <Pendencia
