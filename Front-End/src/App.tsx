@@ -18,6 +18,7 @@ const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const CalendarioFranquiaPage = lazy(() => import("@/pages/CalendarioFranquiaPage"));
 const RedeComparativoPage = lazy(() => import("@/pages/RedeComparativoPage"));
 const PacientesPage = lazy(() => import("@/pages/PacientesPage"));
+const AuditoriaPage = lazy(() => import("@/pages/AuditoriaPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
@@ -173,6 +174,7 @@ export default function App() {
           <Route path="/calendario"        element={<CalendarioFranquiaPage />} />
           <Route path="/rede"              element={<RedeComparativoPage />} />
           <Route path="/pacientes"         element={<PacientesPage />} />
+          <Route path="/auditoria"         element={<AuditoriaPage />} />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
           <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />
