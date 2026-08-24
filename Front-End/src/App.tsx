@@ -16,9 +16,6 @@ const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
 const CalendarioFranquiaPage = lazy(() => import("@/pages/CalendarioFranquiaPage"));
-const RedeComparativoPage = lazy(() => import("@/pages/RedeComparativoPage"));
-const PacientesPage = lazy(() => import("@/pages/PacientesPage"));
-const AuditoriaPage = lazy(() => import("@/pages/AuditoriaPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
@@ -38,11 +35,9 @@ const ReportsPage      = lazy(() => import("@/pages/ReportsPage"));
 const SettingsPage     = lazy(() => import("@/pages/SettingsPage"));
 const TechnicalSettingsPage = lazy(() => import("@/pages/TechnicalSettingsPage"));
 const ImportCloudiaPage = lazy(() => import("@/pages/ImportCloudiaPage"));
-const CustomFieldsPage = lazy(() => import("@/pages/CustomFieldsPage"));
 const AmanheceuPage    = lazy(() => import("@/pages/AmanheceuPage"));
 const ContactsPage     = lazy(() => import("@/pages/ContactsPage"));
 const ContactsDuplicatesPage = lazy(() => import("@/pages/ContactsDuplicatesPage"));
-const DuplicatesPage   = lazy(() => import("@/pages/DuplicatesPage"));
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
@@ -50,12 +45,9 @@ const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
-const BuscasPage       = lazy(() => import("@/pages/BuscasPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
 const MidiaVersoesPage = lazy(() => import("@/pages/MidiaVersoesPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
-const IaAnalyticsPage = lazy(() => import("@/pages/IaAnalyticsPage"));
-const BuscarLeadsPage = lazy(() => import("@/pages/BuscarLeadsPage"));
 const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 
 // ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
@@ -172,9 +164,6 @@ export default function App() {
         >
           <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/calendario"        element={<CalendarioFranquiaPage />} />
-          <Route path="/rede"              element={<RedeComparativoPage />} />
-          <Route path="/pacientes"         element={<PacientesPage />} />
-          <Route path="/auditoria"         element={<AuditoriaPage />} />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
           <Route path="/dashboard/compareceram" element={<DashboardLeadListPage kind="attended" />} />
@@ -182,7 +171,6 @@ export default function App() {
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/conferencia"       element={<ConferenciaPage />}  />
-          <Route path="/buscas"            element={<BuscasPage />}       />
           <Route path="/midia"             element={<MidiaPage />}        />
           <Route path="/midia/versoes"     element={<MidiaVersoesPage />} />
           <Route path="/funnel"            element={<FunnelPage />}       />
@@ -198,16 +186,12 @@ export default function App() {
           <Route path="/reports"           element={<ReportsPage />}      />
           <Route path="/finance"           element={<FinancePage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />
-          <Route path="/campos-customizados" element={<CustomFieldsPage />} />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
           <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
           <Route path="/mudancas-etapas"   element={<MudancasEtapasPage />} />
           <Route path="/conversao"         element={<ConversaoPage />}    />
-          <Route path="/ia-analytics"      element={<IaAnalyticsPage />} />
-          <Route path="/buscar-leads"      element={<BuscarLeadsPage />} />
           <Route path="/contacts"          element={<ContactsPage />}     />
-          <Route path="/duplicates"        element={<DuplicatesPage />}   />
           <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
           <Route path="/contacts/new"      element={<ContactFormPage />}  />
           <Route path="/contacts/:id/edit" element={<ContactFormPage />}  />

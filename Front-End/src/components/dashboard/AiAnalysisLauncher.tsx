@@ -275,11 +275,8 @@ export function AiAnalysisLauncher({
 
                   {tenantId != null && !settings.isLoading && !hasKey && (
                     <p className="mt-4 text-[12px] text-amber-200/80">
-                      Configure a chave da OpenAI em{" "}
-                      <a href="/ia-analytics" className="font-semibold underline underline-offset-2">
-                        Análise com I.A.
-                      </a>{" "}
-                      para liberar a análise.
+                      A chave da OpenAI ainda não foi configurada nesta conta.
+                      Fale com o suporte para liberar a análise.
                     </p>
                   )}
 

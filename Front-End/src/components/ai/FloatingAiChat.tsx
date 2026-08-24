@@ -80,19 +80,10 @@ export function FloatingAiChat() {
     [],
   );
 
-  if (!settings.data?.hasKey) {
-    // Sem chave configurada — botão pequeno informativo
-    return (
-      <button
-        type="button"
-        onClick={() => (window.location.href = "/ia-analytics")}
-        title="Configure sua chave da OpenAI em /ia-analytics"
-        className="fixed bottom-5 right-5 z-40 h-12 w-12 rounded-full shadow-lg grid place-items-center bg-slate-700 text-slate-300 hover:bg-slate-600"
-      >
-        ⚙
-      </button>
-    );
-  }
+  // Sem chave configurada não há chat. Antes aparecia uma engrenagem que levava a
+  // /ia-analytics; essa página saiu do produto, e um botão que não leva a lugar
+  // nenhum é pior do que botão nenhum.
+  if (!settings.data?.hasKey) return null;
 
   async function send(content: string) {
     if (!content.trim() || sending) return;

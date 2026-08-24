@@ -108,11 +108,8 @@ export function DashboardAiReport({
       {/* Chave não configurada */}
       {tenantId != null && !settings.isLoading && !hasKey && (
         <p className="mt-4 text-[12px] text-amber-200/80">
-          Configure a chave da OpenAI em{" "}
-          <a href="/ia-analytics" className="font-semibold underline decoration-amber-300/40 underline-offset-2 hover:text-amber-100">
-            Análise com I.A.
-          </a>{" "}
-          para liberar o relatório.
+          A chave da OpenAI ainda não foi configurada nesta conta.
+          Fale com o suporte para liberar o relatório.
         </p>
       )}
 

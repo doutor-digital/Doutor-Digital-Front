@@ -80,9 +80,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
-      { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
-      { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain },
-      { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch },
       { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
       { to: "/analytics", label: "Performance", icon: BarChart3, iconUrl: "/nav-icons/performance.png" },
     ],
@@ -92,7 +89,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/leads", label: "Leads", icon: ListChecks, iconUrl: "/nav-icons/leads.png" },
       { to: "/contacts", label: "Contatos", icon: ContactIcon, iconUrl: "/nav-icons/contatos.png" },
-      { to: "/duplicates", label: "Duplicados", icon: Copy },
       { to: "/funnel", label: "Funil", icon: Workflow },
       { to: "/sources", label: "Origens", icon: Filter },
       { to: "/evolution", label: "Evolução", icon: LineChart },

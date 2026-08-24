@@ -134,14 +134,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
-      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays },
-      { to: "/pacientes", label: "Pacientes", icon: CalendarDays },
-      { to: "/auditoria", label: "Auditoria de Prontuários", icon: FileSearch },
-      { to: "/campos-customizados", label: "Campos Customizados", icon: Layers },
       { to: "/conferencia", label: "Conferência", icon: Layers },
-      { to: "/buscas", label: "Buscas", icon: Layers },
-      { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain },
-      { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch },
       {
         label: "Performance",
         icon: Gauge,
@@ -186,7 +179,6 @@ const navGroups: NavGroup[] = [
           { to: "/contacts/duplicates", label: "Duplicados", icon: Copy },
         ],
       },
-      { to: "/duplicates", label: "Duplicados (leads + contatos)", icon: Copy },
       {
         label: "Unidades",
         icon: Building2,
@@ -488,15 +480,10 @@ export function Sidebar() {
           items: [
             { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
             { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
-      { to: "/rede", label: "Rede (comparativo)", icon: CalendarDays },
-      { to: "/pacientes", label: "Pacientes", icon: CalendarDays },
             { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
             { to: "/analytics", label: "Analytics", icon: BarChart3 },
             { to: "/evolution", label: "Evolução", icon: LineChart },
             { to: "/sources", label: "Origens", icon: Filter },
-            { to: "/campos-customizados", label: "Campos Customizados", icon: Layers, disabled: true },
-            { to: "/ia-analytics", label: "Análise com I.A.", icon: Brain, disabled: true },
-            { to: "/buscar-leads", label: "Buscar Leads (I.A.)", icon: FileSearch, disabled: true },
           ],
         },
       ];
