@@ -21,8 +21,6 @@ const SHORTCUTS: Array<{ group: string; items: Array<{ keys: string[]; label: st
       { keys: ["g", "l"], label: "Leads" },
       { keys: ["g", "c"], label: "Contatos" },
       { keys: ["g", "r"], label: "Relatórios" },
-      { keys: ["g", "a"], label: "Analytics" },
-      { keys: ["g", "e"], label: "Evolução" },
       { keys: ["g", "u"], label: "Unidades" },
       { keys: ["g", "s"], label: "Configurações" },
       { keys: ["g", "v"], label: "Ao vivo" },
