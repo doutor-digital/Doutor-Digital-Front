@@ -11,8 +11,6 @@ export function NavigationShortcuts() {
   useShortcut("g l", () => navigate("/leads"));
   useShortcut("g c", () => navigate("/contacts"));
   useShortcut("g r", () => navigate("/reports"));
-  useShortcut("g a", () => navigate("/analytics"));
-  useShortcut("g e", () => navigate("/evolution"));
   useShortcut("g u", () => navigate("/units"));
   useShortcut("g s", () => navigate("/settings"));
   useShortcut("g v", () => navigate("/live"));

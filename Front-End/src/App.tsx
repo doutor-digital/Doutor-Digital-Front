@@ -24,8 +24,6 @@ const LeadDetailPage   = lazy(() => import("@/pages/LeadDetailPage"));
 const FunnelPage       = lazy(() => import("@/pages/FunnelPage"));
 const PipelineBoardPage= lazy(() => import("@/pages/PipelineBoardPage"));
 const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
-const EvolutionPage    = lazy(() => import("@/pages/EvolutionPage"));
-const AnalyticsPage    = lazy(() => import("@/pages/AnalyticsPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
 const ParceirosPage    = lazy(() => import("@/pages/ParceirosPage"));
@@ -48,7 +46,6 @@ const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
 const MidiaVersoesPage = lazy(() => import("@/pages/MidiaVersoesPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
-const FinancePage      = lazy(() => import("@/pages/FinancePage"));
 
 // ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
 const InsightsHubPage     = lazy(() => import("@/pages/InsightsHubPage"));
@@ -176,15 +173,12 @@ export default function App() {
           <Route path="/funnel"            element={<FunnelPage />}       />
           <Route path="/funil-board"       element={<PipelineBoardPage />} />
           <Route path="/sources"           element={<SourcesPage />}      />
-          <Route path="/evolution"         element={<EvolutionPage />}    />
-          <Route path="/analytics"         element={<AnalyticsPage />}    />
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/units"             element={<UnitsPage />}        />
           <Route path="/parceiros"         element={<ParceirosPage />}    />
           <Route path="/units/new"         element={<UnitCreatePage />}   />
           <Route path="/webhooks-monitor"  element={<WebhookMonitorPage />} />
           <Route path="/reports"           element={<ReportsPage />}      />
-          <Route path="/finance"           element={<FinancePage />}      />
           <Route path="/settings"          element={<SettingsPage />}     />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />

@@ -151,7 +151,7 @@ export function InsightsCard({
     if (totalTrend === "down" && deltaPct !== null && deltaPct <= -20) {
       recs.push({
         text: `Queda de ${Math.abs(deltaPct).toFixed(1)}% vs período anterior — investigue origens com menor volume.`,
-        cta: { label: "Analisar", to: "/analytics" },
+        cta: { label: "Ver origens", to: "/sources" },
         tone: "warn",
       });
     }

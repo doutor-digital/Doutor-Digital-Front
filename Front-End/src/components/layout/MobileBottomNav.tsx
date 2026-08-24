@@ -12,7 +12,6 @@ const TABS = [
   { to: "/", label: "Início", icon: LayoutDashboard, end: true },
   { to: "/leads", label: "Leads", icon: ListChecks },
   { to: "/contacts", label: "Contatos", icon: ContactIcon },
-  { to: "/finance", label: "Financeiro", icon: DollarSign },
   { to: "/settings", label: "Mais", icon: MoreHorizontal },
 ];
 
