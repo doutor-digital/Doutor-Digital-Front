@@ -13,6 +13,7 @@ import {
 } from "@/services/integrations";
 import { cn } from "@/lib/utils";
 import { AsaasCard } from "@/components/integracoes/AsaasCard";
+import { CrmFranquiaCard } from "@/components/integracoes/CrmFranquiaCard";
 
 interface ProviderMeta {
   id: AdsProvider;
@@ -258,6 +259,8 @@ export default function CentralIntegracoesPage() {
       )}
 
       <AsaasCard />
+
+      <CrmFranquiaCard />
 
       <p className="text-[11px] leading-relaxed text-white/35">
         Em modo <span className="text-amber-300">demo</span>, o "Conectar" cria uma conta de exemplo e
