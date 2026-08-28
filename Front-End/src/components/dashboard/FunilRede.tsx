@@ -1,6 +1,10 @@
 import { BotaoAjuda } from "./KpiInfo";
 
 const nf = new Intl.NumberFormat("pt-BR");
+// Sem centavos: o campo vem como inteiro e o card é de leitura rápida, não de extrato.
+const brl = new Intl.NumberFormat("pt-BR", {
+  style: "currency", currency: "BRL", maximumFractionDigits: 0,
+});
 
 interface Etapa {
   nome: string;
@@ -10,6 +14,8 @@ interface Etapa {
   fonte: "kommo" | "franquia";
   /** Por que não há número. Só aparece quando `valor` é null. */
   porque?: string;
+  /** Formata em reais em vez de contagem. */
+  moeda?: boolean;
 }
 
 interface Props {
@@ -17,6 +23,8 @@ interface Props {
   agendados: number | null;
   consultas: number | null;
   tratamentos: number | null;
+  /** Soma do campo de valor do tratamento, em reais. */
+  receita: number | null;
   carregando?: boolean;
 }
 
@@ -32,16 +40,17 @@ interface Props {
  *
  * O SELO DA FONTE É O ASSUNTO
  * ---------------------------
- * Só "Leads" é da Kommo; o resto vem da agenda da clínica. É a diferença entre um
- * número que depende de alguém ter arrastado um card e um número que depende do
- * paciente ter aparecido.
+ * Leads e Receita vêm da KOMMO — dependem de alguém ter digitado. Agendados,
+ * Consultas e Tratamentos vêm da agenda da clínica: dependem do paciente ter
+ * aparecido. Ler os selos da esquerda para a direita mostra onde o dado é opinião
+ * e onde é fato.
  *
  * ETAPA SEM FONTE MOSTRA O PORQUÊ, NÃO ZERO
  * -----------------------------------------
  * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica
  * apagada e escreve o motivo.
  */
-export function FunilRede({ leads, agendados, consultas, tratamentos, carregando }: Props) {
+export function FunilRede({ leads, agendados, consultas, tratamentos, receita, carregando }: Props) {
   const etapas: Etapa[] = [
     { nome: "Leads", chave: "total_leads", valor: leads, fonte: "kommo" },
     {
@@ -68,9 +77,13 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
     {
       nome: "Receita",
       chave: "receita",
-      valor: null,
-      fonte: "franquia",
-      porque: "A franquia não expõe o valor do tratamento.",
+      valor: receita,
+      // Vem da KOMMO, não da franquia: a rota da franquia não expõe valor, mas a
+      // equipe preenche "¤ Valor do tratamento" no card. É o único numero desta
+      // linha que depende de digitação além de Leads — por isso o selo muda.
+      fonte: "kommo",
+      porque: "Ninguém preencheu o valor do tratamento no período.",
+      moeda: true,
     },
   ];
 
@@ -78,11 +91,17 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
   const taxa = (de: number | null, para: number | null): number | null =>
     de == null || para == null || de === 0 ? null : (para / de) * 100;
 
-  const taxas = [
+  const taxas: { v: number | null; rot: string; moeda?: boolean }[] = [
     { v: taxa(leads, agendados), rot: "agendamento" },
     { v: taxa(agendados, consultas), rot: "comparecimento" },
     { v: taxa(consultas, tratamentos), rot: "fechamento" },
-    { v: null as number | null, rot: "ticket médio" },
+    // O último vão não é taxa, é dinheiro por tratamento fechado. Fica no mesmo
+    // lugar porque a pergunta é a mesma — o que a etapa anterior virou.
+    {
+      v: receita != null && tratamentos ? receita / tratamentos : null,
+      rot: "ticket médio",
+      moeda: true,
+    },
   ];
 
   const furou = taxas[0].v != null && taxas[0].v > 100;
@@ -105,7 +124,11 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
                 e.valor == null ? "text-white/25" : "text-white"
               }`}
             >
-              {carregando ? "—" : e.valor == null ? "—" : nf.format(e.valor)}
+              {carregando || e.valor == null
+                ? "—"
+                : e.moeda
+                  ? brl.format(e.valor)
+                  : nf.format(e.valor)}
             </span>
 
             <span
@@ -141,7 +164,7 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
                   t.v == null ? "text-white/25" : i === 0 && furou ? "text-amber-300" : "text-white/85"
                 }`}
               >
-                {t.v == null ? "—" : `${Math.round(t.v)}%`}
+                {t.v == null ? "—" : t.moeda ? brl.format(t.v) : `${Math.round(t.v)}%`}
               </b>
               <span
                 className={`h-px flex-1 ${

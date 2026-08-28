@@ -1882,21 +1882,6 @@ export default function DashboardPage() {
                 Usa os mesmos kpiLive()/semAutorizacaoFranquia() dos cards, então
                 o número aqui e o número lá embaixo nunca divergem — e o período
                 escolhido nos filtros já chega na API da franquia por este caminho. */}
-            {/* O veredito responde "a clínica está bem hoje?" antes de qualquer
-                detalhe. Só depois vem o funil, que explica por quê. */}
-            <VeredictoClinica
-              unidade={agencyName}
-              periodo={rangeLabel}
-              agendados={
-                semAutorizacaoFranquia("agendados")
-                  ? null
-                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
-              }
-              consultas={
-                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
-              }
-              carregando={overview.isLoading}
-            />
 
             <FunilRede
               carregando={overview.isLoading}
@@ -1914,6 +1899,7 @@ export default function DashboardPage() {
                   ? null
                   : kpiLive("tratamentos", ov?.fechou ?? 0)
               }
+              receita={ov?.kpi_overrides?.receita ?? null}
             />
 
             {/* Segunda faixa: leituras laterais, não etapas do funil. Separada de
@@ -1927,6 +1913,22 @@ export default function DashboardPage() {
               leadsQualificados={ov?.kpi_overrides?.leads_qualificados ?? null}
               noShow={semAutorizacaoFranquia("no_show") ? null : kpiLive("no_show", funnelLeads.no_show)}
               semaforo={ov?.custom_kpis?.find((k) => k.key === "semaforo")?.breakdown}
+            />
+
+            {/* O veredito responde "a clínica está bem hoje?" antes de qualquer
+                detalhe. Só depois vem o funil, que explica por quê. */}
+            <VeredictoClinica
+              unidade={agencyName}
+              periodo={rangeLabel}
+              agendados={
+                semAutorizacaoFranquia("agendados")
+                  ? null
+                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
+              }
+              consultas={
+                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
+              }
+              carregando={overview.isLoading}
             />
 
             {/* ─── 1. Resultado do período ───────────────────────────── */}

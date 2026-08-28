@@ -131,6 +131,18 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
       '"Sem origem" grande é falha de rastreio, não uma origem real. Cada lead sem origem é verba que você não sabe se funcionou.',
   },
 
+  receita: {
+    titulo: "Receita",
+    resumo:
+      "Soma do valor dos tratamentos fechados no período, como a equipe preencheu no card.",
+    comoLer:
+      "Receita ÷ tratamentos é o ticket médio, que aparece no último vão do funil. Ticket caindo com volume estável costuma ser desconto para fechar.",
+    fonte: "Kommo",
+    fonteDetalhe: 'Soma do campo "¤ Valor do tratamento" dos leads do período.',
+    cuidado:
+      "É valor CONTRATADO, não recebido: quem fechou e ainda não pagou entra aqui igual. E depende de digitação — tratamento fechado com o campo vazio não aparece, então este número tende a ficar abaixo da realidade, nunca acima.",
+  },
+
   semaforo: {
     titulo: "Semáforo",
     resumo:
@@ -138,9 +150,10 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
     comoLer:
       "É o único lugar que diz POR QUE não fechou. Muito amarelo é objeção de preço; muito laranja é processo travado em exame; muito vermelho é mídia trazendo o público errado.",
     fonte: "Kommo",
-    fonteDetalhe: 'Campo "◉ Semáforo", contado apenas dentro da etapa COMPARECEU.',
+    fonteDetalhe:
+      'Campo "◉ Semáforo", contado da consulta em diante — COMPARECEU, NEGOCIAÇÃO, EM TRATAMENTO e ALTA — pela data em que o card entrou na etapa.',
     cuidado:
-      "Só conta dentro de COMPARECEU, porque semáforo de quem não veio à consulta é sobra de card antigo. E hoje o campo é pouquíssimo preenchido — enquanto a equipe não usar, o card vai mostrar quase nada.",
+      "Quem não veio à consulta fica de fora: semáforo de quem faltou é sobra de card antigo. A contagem é pela ENTRADA na etapa, não pela criação do lead — o lead nasce em julho e a consulta acontece em agosto. E hoje o campo é pouquíssimo preenchido: enquanto a equipe não usar, o card mostra quase nada.",
   },
 };
 
