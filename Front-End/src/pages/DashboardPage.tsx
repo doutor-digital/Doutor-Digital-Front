@@ -1900,6 +1900,7 @@ export default function DashboardPage() {
                   : kpiLive("tratamentos", ov?.fechou ?? 0)
               }
               receita={ov?.kpi_overrides?.receita ?? null}
+              receitaQtd={ov?.kpi_overrides?.receita_qtd ?? null}
             />
 
             {/* Segunda faixa: leituras laterais, não etapas do funil. Separada de

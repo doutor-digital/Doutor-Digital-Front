@@ -29,6 +29,8 @@ interface Props {
   tratamentos: number | null;
   /** Soma do campo de valor do tratamento, em reais. */
   receita: number | null;
+  /** Quantos leads entraram nessa soma — o denominador do ticket médio. */
+  receitaQtd: number | null;
   carregando?: boolean;
 }
 
@@ -44,17 +46,18 @@ interface Props {
  *
  * O SELO DA FONTE É O ASSUNTO
  * ---------------------------
- * Só "Leads" vem da KOMMO — depende de alguém ter digitado. Agendados, Consultas,
- * Tratamentos e Receita vêm do sistema da clínica: dependem do paciente ter
- * aparecido e do tratamento ter sido lançado. Um selo amarelo no meio de quatro
- * azuis é exatamente o que se quer ver.
+ * Leads e Receita vêm da KOMMO — dependem de alguém ter digitado. Agendados,
+ * Consultas e Tratamentos vêm da agenda da clínica: dependem do paciente ter
+ * aparecido. Os selos existem porque Receita e Tratamentos NÃO se reconciliam:
+ * são sistemas diferentes contando coisas diferentes, e a tela precisa dizer isso
+ * em vez de deixar alguém dividir um pelo outro.
  *
  * ETAPA SEM FONTE MOSTRA O PORQUÊ, NÃO ZERO
  * -----------------------------------------
  * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica
  * apagada e escreve o motivo.
  */
-export function FunilRede({ leads, agendados, consultas, tratamentos, receita, carregando }: Props) {
+export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, carregando }: Props) {
   const etapas: Etapa[] = [
     {
       nome: "Leads",
@@ -89,14 +92,12 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
       nome: "Receita", icone: "wallet", cor: "#4ade80",
       chave: "receita",
       valor: receita,
-      // Vem da FRANQUIA: cada tratamento traz o `price` na rota oficial, somado na
-      // mesma chamada que já conta os tratamentos. Saiu da Kommo em 28/08 porque o
-      // campo digitado capturava um terço do dinheiro — em Marabá, R$ 22.520 contra
-      // R$ 64.140 reais no mesmo período.
-      fonte: "franquia",
-      // Cobre os dois vazios possíveis: unidade sem token, e unidade conectada cuja
-      // franquia devolve os tratamentos sem preço (3 das 10 em 28/08/2026).
-      porque: "A franquia não informou o valor dos tratamentos desta unidade.",
+      // Vem da KOMMO, por decisão da diretoria. Soma o campo de valor apenas dos
+      // leads que ENTRARAM em EM TRATAMENTO dentro do período — não de todo lead
+      // criado no dia, que somaria valor de quem não fechou e perderia quem fechou
+      // hoje tendo entrado mês passado.
+      fonte: "kommo",
+      porque: "Ninguém preencheu o valor nos tratamentos fechados no período.",
       moeda: true,
     },
   ];
@@ -109,10 +110,12 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
     { v: taxa(leads, agendados), rot: "agendamento" },
     { v: taxa(agendados, consultas), rot: "comparecimento" },
     { v: taxa(consultas, tratamentos), rot: "fechamento" },
-    // O último vão não é taxa, é dinheiro por tratamento fechado. Fica no mesmo
-    // lugar porque a pergunta é a mesma — o que a etapa anterior virou.
+    // Ticket médio = média dos MESMOS valores que a Receita somou. Dividir pela
+    // contagem de tratamentos da franquia daria um número que não existe: são
+    // populações diferentes, o mesmo defeito da taxa que passa de 100%. Aqui
+    // numerador e denominador saem da mesma consulta.
     {
-      v: receita != null && tratamentos ? receita / tratamentos : null,
+      v: receita != null && receitaQtd ? receita / receitaQtd : null,
       rot: "ticket médio",
       moeda: true,
     },

@@ -134,13 +134,14 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   receita: {
     titulo: "Receita",
     resumo:
-      "Soma do valor dos tratamentos lançados no período, direto do sistema da clínica.",
+      "Soma do valor dos tratamentos fechados no período, pelo campo preenchido no card da Kommo.",
     comoLer:
-      "Receita ÷ tratamentos é o ticket médio, que aparece no último vão do funil. Ticket caindo com volume estável costuma ser desconto para fechar.",
-    fonte: "Franquia",
-    fonteDetalhe: "Soma do preço de cada tratamento lançado, pela rota oficial do Doutor Hérnia.",
+      "Receita ÷ fechamentos com valor é o ticket médio, no último vão do funil. Ticket caindo com volume estável costuma ser desconto para fechar.",
+    fonte: "Kommo",
+    fonteDetalhe:
+      'Soma do campo "¤ Valor do tratamento" dos leads que ENTRARAM em EM TRATAMENTO dentro do período — não de todo lead criado no dia.',
     cuidado:
-      "Em algumas unidades a franquia devolve os tratamentos SEM preço — nesse caso o card mostra um traço, nunca R$ 0, porque zero se leria como \'não vendeu nada\'. É valor CONTRATADO, não recebido: quem fechou e ainda não pagou entra aqui igual. Até 28/08 este número saía do campo digitado na Kommo e capturava cerca de um terço do real — em Marabá, R$ 22.520 contra R$ 64.140. Se você comparar com um relatório antigo, é por isso que ele subiu.",
+      "Não bate com a receita da franquia, e não deveria mesmo: são sistemas diferentes contando coisas diferentes. Em Marabá, agosto: a franquia registrou 18 tratamentos e R$ 58.660; a Kommo tem 30 leads com valor e R$ 114.360. Além disso é valor CONTRATADO, não recebido, e depende de digitação — tratamento fechado sem preencher o campo não aparece aqui.",
   },
 
   semaforo: {
