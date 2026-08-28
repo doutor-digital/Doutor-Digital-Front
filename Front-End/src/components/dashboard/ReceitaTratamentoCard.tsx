@@ -33,14 +33,14 @@ export function ReceitaTratamentoCard({
   const cobertura = fechados > 0 ? Math.round((comValor / fechados) * 100) : 0;
 
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
+    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">Tratamento fechado</h3>
+        <h3 className="text-sm font-semibold text-white">Tratamento fechado</h3>
         <p className="text-xs text-slate-400">Receita, ticket médio e aceitação no período</p>
       </div>
 
       {loading ? (
-        <div className="h-24 w-full animate-pulse rounded-lg bg-slate-50" />
+        <div className="h-24 w-full animate-pulse rounded-lg bg-white/5" />
       ) : (
         <>
           <div className="grid grid-cols-3 gap-4">
@@ -52,7 +52,7 @@ export function ReceitaTratamentoCard({
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-slate-500">Ticket médio</p>
-              <p className="mt-1 text-2xl font-bold leading-none tabular-nums text-slate-900">
+              <p className="mt-1 text-2xl font-bold leading-none tabular-nums text-white">
                 {brl(ticketMedio)}
               </p>
             </div>

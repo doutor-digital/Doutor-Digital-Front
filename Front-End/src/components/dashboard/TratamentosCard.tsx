@@ -40,22 +40,22 @@ export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
   const d: SpineTratamentos | undefined = q.data;
 
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
+    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Tratamentos</h3>
+          <h3 className="text-sm font-semibold text-white">Tratamentos</h3>
           <p className="text-xs text-slate-400">
             Situação e valor · {d?.fonte === "web" ? "export do CRM da franquia" : "API da franquia"}
           </p>
         </div>
         {d && (
-          <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-300">
+          <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-medium text-slate-300">
             {d.total} no período
           </span>
         )}
       </div>
 
-      {q.isLoading && <div className="h-24 w-full animate-pulse rounded-lg bg-slate-50" />}
+      {q.isLoading && <div className="h-24 w-full animate-pulse rounded-lg bg-white/5" />}
 
       {q.isError && isSemAutorizacaoFranquia(q.error) && (
         <SemAutorizacaoFranquia recurso="A situação dos tratamentos" />
@@ -70,12 +70,12 @@ export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
       {d && (
         <>
           <div className="mb-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">{brl(d.valorTotal)}</span>
+            <span className="text-3xl font-bold text-white">{brl(d.valorTotal)}</span>
             <span className="text-xs text-slate-400">valor total</span>
           </div>
 
           {/* Barra empilhada por situação */}
-          <div className="mb-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-50">
+          <div className="mb-3 flex h-2.5 w-full overflow-hidden rounded-full bg-white/5">
             {d.porSituacao.map((s) => (
               <div
                 key={s.situacao}
@@ -99,7 +99,7 @@ export function TratamentosCard({ unitId, de, ate, className = "" }: Props) {
                   {s.situacao}
                 </span>
                 <span className="tabular-nums text-slate-400">
-                  <b className="text-slate-900">{s.quantidade}</b> · {brl(s.valor)}
+                  <b className="text-white">{s.quantidade}</b> · {brl(s.valor)}
                 </span>
               </li>
             ))}

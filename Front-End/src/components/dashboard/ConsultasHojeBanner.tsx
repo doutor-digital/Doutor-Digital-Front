@@ -67,7 +67,7 @@ export function ConsultasHojeBanner({ tenantId, unitId }: ConsultasHojeBannerPro
       className={`relative overflow-hidden rounded-2xl p-4 ring-1 transition ${
         hasAlert
           ? "bg-rose-950/40 ring-rose-500/40 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
-          : "bg-white ring-slate-200"
+          : "bg-[#0f1f3a]/80 ring-white/5"
       }`}
     >
       {hasAlert && (
@@ -88,12 +88,12 @@ export function ConsultasHojeBanner({ tenantId, unitId }: ConsultasHojeBannerPro
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <Clock className="h-3.5 w-3.5 text-white/50" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">
             Consultas de hoje · {items.length}
           </span>
         </div>
-        <span className="text-[11px] tabular-nums text-slate-400">
+        <span className="text-[11px] tabular-nums text-white/40">
           {new Date(now).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </span>
       </div>
@@ -105,16 +105,16 @@ export function ConsultasHojeBanner({ tenantId, unitId }: ConsultasHojeBannerPro
               ? "text-emerald-200 ring-emerald-400/25 bg-emerald-400/10"
               : c.outcome === "faltou"
                 ? "text-rose-200 ring-rose-400/30 bg-rose-400/10"
-                : "text-slate-700 ring-slate-200 bg-slate-50";
+                : "text-white/75 ring-white/10 bg-white/5";
           return (
             <li
               key={`${c.name}-${i}`}
               className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ${
-                c.active ? "bg-rose-500/20 ring-rose-400/50" : "bg-slate-50 ring-slate-200"
+                c.active ? "bg-rose-500/20 ring-rose-400/50" : "bg-white/[0.03] ring-white/5"
               } ${c.past && !c.active ? "opacity-50" : ""}`}
             >
-              <span className="tabular-nums text-[13px] font-semibold text-slate-800">{hhmm(c.when)}</span>
-              <span className="max-w-[160px] truncate text-[12px] text-slate-700">{c.name || "—"}</span>
+              <span className="tabular-nums text-[13px] font-semibold text-white/90">{hhmm(c.when)}</span>
+              <span className="max-w-[160px] truncate text-[12px] text-white/80">{c.name || "—"}</span>
               <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] ring-1 ring-inset ${tone}`}>
                 {c.outcome === "compareceu" ? (
                   <CheckCircle2 className="h-3 w-3" />

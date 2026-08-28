@@ -183,7 +183,7 @@ export function AiAnalysisLauncher({
           type="button"
           onClick={openModal}
           title="Gerar análise com I.A."
-          className="group relative flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-200 transition hover:bg-slate-100"
+          className="group relative flex h-9 w-9 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/15 transition hover:bg-white/10"
         >
           <span className="absolute inset-0 animate-ping rounded-full bg-indigo-400/30" />
           <span className="absolute inset-0 rounded-full ring-1 ring-indigo-400/40" />
@@ -195,7 +195,7 @@ export function AiAnalysisLauncher({
           type="button"
           onClick={goToReports}
           title="Abrir relatório da unidade"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-200 transition hover:bg-slate-100"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/15 transition hover:bg-white/10"
         >
           <img src={ICON_RELATORIO} alt="" className="h-5 w-5 object-contain" />
         </button>
@@ -203,10 +203,10 @@ export function AiAnalysisLauncher({
 
       {/* ─── Overlay de carregamento (Lottie) ───────────────────────────── */}
       {open && analyze.isPending && createPortal(
-        <div className="fixed inset-0 z-[1100] flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[1100] flex flex-col items-center justify-center bg-[#070b16]/95 backdrop-blur-sm">
           <Lottie animationData={liveChatbot} loop className="h-64 w-64 sm:h-80 sm:w-80" />
-          <p className="mt-2 text-[15px] font-semibold text-slate-900">A I.A. está analisando {scope}…</p>
-          <p className="mt-1 text-[12.5px] text-slate-500">{selected?.rangeLabel} · isso pode levar de 20 a 60 segundos</p>
+          <p className="mt-2 text-[15px] font-semibold text-white">A I.A. está analisando {scope}…</p>
+          <p className="mt-1 text-[12.5px] text-white/50">{selected?.rangeLabel} · isso pode levar de 20 a 60 segundos</p>
         </div>,
         document.body,
       )}
@@ -218,24 +218,24 @@ export function AiAnalysisLauncher({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-[560px] rounded-2xl bg-white border border-slate-200 ring-1 ring-slate-200 shadow-2xl"
+            className="w-full max-w-[560px] rounded-2xl bg-[#0f1f3a] ring-1 ring-white/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho */}
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-inset ring-indigo-400/25">
                   <Sparkles className="h-4 w-4 text-indigo-200" />
                 </span>
                 <div>
-                  <h2 className="text-[13px] font-semibold text-slate-900">Análise com I.A.</h2>
-                  <p className="text-[11px] text-slate-500">{scope}</p>
+                  <h2 className="text-[13px] font-semibold text-white">Análise com I.A.</h2>
+                  <p className="text-[11px] text-white/45">{scope}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-md p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
                 aria-label="Fechar"
               >
                 <X className="h-4.5 w-4.5" />
@@ -246,12 +246,12 @@ export function AiAnalysisLauncher({
               {/* Sem resultado ainda → escolher data + gerar */}
               {!analyze.data && (
                 <>
-                  <p className="text-[12.5px] text-slate-500">
+                  <p className="text-[12.5px] text-white/60">
                     Escolha o período e a I.A. lê os números para montar um resumo executivo,
                     conversão &amp; perdas, destaques e recomendações.
                   </p>
 
-                  <p className="mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <p className="mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/40">
                     Data da análise
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -264,14 +264,14 @@ export function AiAnalysisLauncher({
                           "rounded-full px-3.5 py-1.5 text-[12px] font-medium transition",
                           p.key === presetKey
                             ? "bg-white text-slate-900"
-                            : "bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100",
+                            : "bg-white/5 text-white/70 ring-1 ring-inset ring-white/10 hover:bg-white/10",
                         )}
                       >
                         {p.label}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-400">{selected?.rangeLabel}</p>
+                  <p className="mt-2 text-[11px] text-white/40">{selected?.rangeLabel}</p>
 
                   {tenantId != null && !settings.isLoading && !hasKey && (
                     <p className="mt-4 text-[12px] text-amber-200/80">
@@ -288,7 +288,7 @@ export function AiAnalysisLauncher({
                     type="button"
                     onClick={() => analyze.mutate()}
                     disabled={tenantId == null || !hasKey}
-                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500/90 px-4 py-2.5 text-[13px] font-semibold text-slate-900 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500/90 px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Sparkles className="h-4 w-4" /> Gerar análise
                   </button>
@@ -305,7 +305,7 @@ export function AiAnalysisLauncher({
                       type="button"
                       onClick={handleScreenshot}
                       disabled={capturing}
-                      className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2.5 text-[13px] font-semibold text-slate-900 transition hover:bg-emerald-500 disabled:opacity-50"
+                      className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
                     >
                       {capturing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                       {capturing ? "Fotografando…" : "Tirar print do dashboard"}
@@ -314,14 +314,14 @@ export function AiAnalysisLauncher({
                     <button
                       type="button"
                       onClick={openWhatsApp}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/85 ring-1 ring-inset ring-white/10 transition hover:bg-white/10"
                     >
                       <MessageCircle className="h-4 w-4" /> Abrir WhatsApp
                     </button>
                     <button
                       type="button"
                       onClick={copyMessage}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/85 ring-1 ring-inset ring-white/10 transition hover:bg-white/10"
                     >
                       <Copy className="h-4 w-4" /> Copiar mensagem
                     </button>
@@ -329,20 +329,20 @@ export function AiAnalysisLauncher({
                     <button
                       type="button"
                       onClick={goToReports}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/85 ring-1 ring-inset ring-white/10 transition hover:bg-white/10"
                     >
                       <FileText className="h-4 w-4" /> Relatório completo
                     </button>
                     <button
                       type="button"
                       onClick={() => analyze.mutate()}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[12.5px] font-semibold text-white/85 ring-1 ring-inset ring-white/10 transition hover:bg-white/10"
                     >
                       <RefreshCw className="h-4 w-4" /> Gerar novamente
                     </button>
                   </div>
 
-                  <p className="mt-3 text-center text-[10.5px] text-slate-400">
+                  <p className="mt-3 text-center text-[10.5px] text-white/35">
                     Gerado em {analyze.data.durationSec.toFixed(1)}s · ~{analyze.data.tokens} tokens · {selected?.rangeLabel}
                   </p>
                 </>
@@ -360,9 +360,9 @@ export function AiAnalysisLauncher({
 function WhatsAppPreview({ scope, text }: { scope: string; text: string }) {
   const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200">
+    <div className="overflow-hidden rounded-2xl ring-1 ring-white/10">
       {/* Status bar */}
-      <div className="flex items-center justify-between bg-[#1f2c33] px-4 pt-1.5 pb-1 text-[10px] font-medium text-slate-900">
+      <div className="flex items-center justify-between bg-[#1f2c33] px-4 pt-1.5 pb-1 text-[10px] font-medium text-white">
         <span className="tabular-nums">{time}</span>
         <div className="flex items-center gap-1">
           <Signal className="h-2.5 w-2.5" />
@@ -371,14 +371,14 @@ function WhatsAppPreview({ scope, text }: { scope: string; text: string }) {
         </div>
       </div>
       {/* Header do contato */}
-      <div className="flex items-center gap-2.5 bg-[#1f2c33] px-3 py-2 text-slate-900">
-        <ArrowLeft className="h-4 w-4 text-slate-700" />
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-[11px] font-bold ring-1 ring-slate-200">
+      <div className="flex items-center gap-2.5 bg-[#1f2c33] px-3 py-2 text-white">
+        <ArrowLeft className="h-4 w-4 text-white/80" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-[11px] font-bold ring-1 ring-white/10">
           DD
         </div>
         <div className="min-w-0 flex-1 leading-tight">
           <div className="truncate text-[12.5px] font-medium">{scope}</div>
-          <div className="text-[10px] text-slate-500">online</div>
+          <div className="text-[10px] text-white/55">online</div>
         </div>
       </div>
       {/* Conversa */}
@@ -386,19 +386,19 @@ function WhatsAppPreview({ scope, text }: { scope: string; text: string }) {
         className="max-h-[320px] overflow-y-auto px-3 py-3"
         style={{ background: "#0b141a" }}
       >
-        <div className="ml-auto max-w-[90%] rounded-lg rounded-tr-sm bg-[#d9fdd3] px-3 py-2 text-[12.5px] leading-relaxed text-slate-900 shadow">
+        <div className="ml-auto max-w-[90%] rounded-lg rounded-tr-sm bg-[#005c4b] px-3 py-2 text-[12.5px] leading-relaxed text-white shadow">
           {renderWa(text)}
-          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-slate-500">
+          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/60">
             {time} <CheckCheck className="h-3 w-3 text-sky-300" />
           </div>
         </div>
       </div>
       {/* Barra de input fake */}
       <div className="flex items-center gap-2 bg-[#1f2c33] px-3 py-2">
-        <div className="flex-1 rounded-full bg-[#2a3942] px-3 py-1.5 text-[11px] text-slate-400">
+        <div className="flex-1 rounded-full bg-[#2a3942] px-3 py-1.5 text-[11px] text-white/40">
           Mensagem
         </div>
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-slate-900">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
           <Send className="h-4 w-4" />
         </span>
       </div>

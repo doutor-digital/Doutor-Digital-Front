@@ -10,7 +10,6 @@ import { isAdminLevel, isOwner } from "@/lib/roles";
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
 const DashboardLayout  = lazy(() => import("@/components/layout/DashboardLayout"));
-const LightShell       = lazy(() => import("@/components/layout/LightShell"));
 const LoginPage        = lazy(() => import("@/pages/LoginPage"));
 const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
 const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
@@ -151,26 +150,11 @@ export default function App() {
           }
         />
 
-        {/* O dashboard roda na casca CLARA, fora do DashboardLayout: as outras 54 páginas
-            são escuras e dividem aquele layout — clarear lá quebraria todas elas.
-            Mesma proteção de login + clínica. */}
+        {/* O dashboard da rede roda FORA do DashboardLayout: ele é claro e traz a
+            própria casca. Clarear o layout comum deixaria as outras 54 páginas, todas
+            escuras, com casca errada. Mesma proteção de login + clínica. */}
         <Route
-          element={
-            <RequireAuth>
-              <RequireClinic>
-                <LightShell />
-              </RequireClinic>
-            </RequireAuth>
-          }
-        >
-          <Route index path="/" element={<DashboardPage />} />
-        </Route>
-
-        {/* A Rede já traz a própria casca clara (foi feita antes do LightShell existir),
-            então roda solta. Quando ela for migrada para o LightShell, vira filha do
-            bloco acima e este trecho some. */}
-        <Route
-          path="/rede"
+          path="/"
           element={
             <RequireAuth>
               <RequireClinic>
@@ -190,6 +174,7 @@ export default function App() {
             </RequireAuth>
           }
         >
+          <Route path="/classico"          element={<DashboardPage />}   />
           <Route path="/calendario"        element={<CalendarioFranquiaPage />} />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />

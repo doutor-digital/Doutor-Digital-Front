@@ -130,11 +130,11 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+    <div className="rounded-xl border border-white/[0.07] bg-gradient-to-br from-white/[0.02] to-white/[0.005]">
       <Confetti trigger={confetti} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-3.5">
+      <div className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3.5">
         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-violet-400/10 ring-1 ring-inset ring-violet-400/20">
           <img
             src={GOALS_ICON}
@@ -165,7 +165,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-300 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1 text-[11px] text-slate-300 transition hover:bg-white/[0.05]"
           >
             <Pencil className="h-3 w-3" />
             Editar
@@ -175,7 +175,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-50 hover:text-slate-200"
+              className="rounded-md p-1.5 text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200"
               aria-label="Cancelar"
             >
               <X className="h-3.5 w-3.5" />
@@ -196,7 +196,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
       <div className="space-y-4 px-5 py-4">
         {/* Editor inline */}
         {editing && (
-          <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-black/20 p-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 rounded-lg border border-white/[0.06] bg-black/20 p-3 sm:grid-cols-2">
             <div>
               <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Meta de leads
@@ -208,7 +208,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, monthlyLeads: Number(e.target.value) }))
                 }
-                className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] text-slate-100 outline-none focus:border-emerald-400/40"
+                className="mt-1 w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-[13px] text-slate-100 outline-none focus:border-emerald-400/40"
               />
             </div>
             <div>
@@ -224,7 +224,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, conversionPct: Number(e.target.value) }))
                 }
-                className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] text-slate-100 outline-none focus:border-emerald-400/40"
+                className="mt-1 w-full rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-[13px] text-slate-100 outline-none focus:border-emerald-400/40"
               />
             </div>
           </div>
@@ -254,7 +254,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
         />
 
         {/* Projeção */}
-        <div className="rounded-lg border border-slate-200 bg-black/20 p-3">
+        <div className="rounded-lg border border-white/[0.05] bg-black/20 p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
@@ -282,7 +282,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
           </div>
 
           {/* Mini barra com marcador de meta */}
-          <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-50">
+          <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.05]">
             <div
               className={cn(
                 "h-full transition-all duration-500",
@@ -296,7 +296,7 @@ export function GoalsCard({ currentLeads, currentConversion, loading }: GoalsCar
             />
             <span
               aria-hidden
-              className="absolute top-0 h-full w-px bg-slate-200"
+              className="absolute top-0 h-full w-px bg-white/40"
               style={{ left: "100%" }}
             />
           </div>
@@ -353,7 +353,7 @@ function ProgressRow({
         </p>
       </div>
 
-      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-50">
+      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/[0.05]">
         <div
           className={cn("h-full transition-all duration-500", barColor)}
           style={{ width: `${pct}%` }}

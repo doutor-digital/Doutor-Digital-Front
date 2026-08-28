@@ -1,5 +1,3 @@
-import { AjudaKpi } from "./AjudaKpi";
-
 const nf = new Intl.NumberFormat("pt-BR");
 
 interface Etapa {
@@ -8,8 +6,6 @@ interface Etapa {
   fonte: "kommo" | "franquia";
   /** Por que não há número. Só aparece quando `valor` é null. */
   porque?: string;
-  /** O recorte que o nome esconde, no "?" ao lado do rótulo. */
-  ajuda: string;
 }
 
 interface Props {
@@ -32,69 +28,48 @@ interface Props {
  * O SELO DA FONTE É O ASSUNTO, NÃO UM RODAPÉ
  * ------------------------------------------
  * Cada etapa diz de onde veio o número. Só "Leads" é da Kommo; o resto vem da agenda da
- * franquia. É a diferença entre um número que depende de alguém ter arrastado um card e
- * um número que depende do paciente ter aparecido na clínica.
- *
- * CADA ETAPA CARREGA O PRÓPRIO "?"
- * --------------------------------
- * O nome esconde o recorte: "Agendados" não conta sessão de tratamento nem retorno, e
- * "Consultas" é quem sentou na cadeira, não quem marcou. Sem isso escrito ao lado do
- * número, cada pessoa preenche a lacuna com um palpite diferente.
+ * franquia. Isso importa porque é a diferença entre um número que depende de alguém ter
+ * arrastado um card e um número que depende do paciente ter aparecido na clínica. Quem
+ * bate o olho vê, em dois tons, quanto da tela é opinião e quanto é fato.
  *
  * ETAPA SEM FONTE MOSTRA O PORQUÊ, NÃO ZERO
  * -----------------------------------------
- * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica apagada e
+ * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica hachurada e
  * escreve o motivo — o que a transforma na lista do que ainda falta ligar.
+ *
+ * A PRIMEIRA TAXA PODE PASSAR DE 100%, E ISSO É INFORMAÇÃO
+ * --------------------------------------------------------
+ * Leads são da Kommo; agendados são da agenda inteira da clínica, que inclui indicação,
+ * telefone e balcão — gente que nunca foi lead. Quando a taxa fura os 100%, ela não está
+ * quebrada: está dizendo que a clínica atende além do que a mídia traz. Por isso a faixa
+ * marca o caso em vez de escondê-lo.
  */
 export function FunilRede({ leads, agendados, consultas, tratamentos, carregando }: Props) {
   const etapas: Etapa[] = [
-    {
-      nome: "Leads",
-      valor: leads,
-      fonte: "kommo",
-      ajuda:
-        "Pessoas que chegaram no período e viraram card na Kommo — anúncio, WhatsApp, " +
-        "indicação registrada. É o único número desta linha que depende de alguém ter " +
-        "mexido no CRM; todos os outros vêm da agenda da clínica.",
-    },
+    { nome: "Leads", valor: leads, fonte: "kommo" },
     {
       nome: "Agendados",
       valor: agendados,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
-      ajuda:
-        "Avaliações marcadas na agenda da franquia para o período. Conta SÓ avaliação: " +
-        "sessão de tratamento e retorno ficam de fora, porque não são paciente novo. " +
-        "O que foi desmarcado ou remarcado também sai da conta.",
     },
     {
       nome: "Consultas",
       valor: consultas,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
-      ajuda:
-        "Das avaliações marcadas, quantas o paciente de fato compareceu — situação " +
-        "ATENDIDO na agenda da franquia. Não é quem marcou: é quem sentou na cadeira.",
     },
     {
       nome: "Tratamentos",
       valor: tratamentos,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
-      ajuda:
-        "Tratamentos lançados no período, pela rota oficial da franquia. Conta o que foi " +
-        "lançado no mês mesmo que depois vire desistência — senão o número do passado " +
-        "mudaria sozinho conforme a recepção edita a situação.",
     },
     {
       nome: "Receita",
       valor: null,
       fonte: "franquia",
       porque: "Sem fonte: a franquia não expõe o valor do tratamento.",
-      ajuda:
-        "Ainda não existe. A franquia não expõe o valor do tratamento em nenhuma rota, e " +
-        "o campo de valor está vazio em todas as linhas do nosso banco. Fica em branco de " +
-        "propósito: um zero aqui seria lido como 'não vendeu nada'.",
     },
   ];
 
@@ -112,37 +87,36 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
   const furou = taxas[0].v != null && taxas[0].v > 100;
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <section className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
       <div className="flex flex-wrap">
         {etapas.map((e) => (
           <div
             key={e.nome}
-            className={`flex min-w-[150px] flex-1 flex-col gap-2 border-l border-slate-200 px-4 first:border-l-0 first:pl-0 ${
-              e.valor == null ? "rounded-xl bg-slate-50" : ""
+            className={`flex min-w-[150px] flex-1 flex-col gap-2 border-l border-white/[0.07] px-4 first:border-l-0 first:pl-0 ${
+              e.valor == null ? "rounded-xl bg-white/[0.02]" : ""
             }`}
           >
-            <span className="flex items-center gap-1.5 text-[12.5px] font-bold tracking-tight text-slate-900">
+            <span className="text-[12px] font-semibold tracking-tight text-white/70">
               {e.nome}
-              <AjudaKpi titulo={e.nome} texto={e.ajuda} />
             </span>
             <span
-              className={`text-[30px] font-extrabold leading-none tracking-tight tabular-nums ${
-                e.valor == null ? "text-slate-300" : "text-slate-900"
+              className={`font-mono text-[30px] leading-none tabular-nums tracking-tight ${
+                e.valor == null ? "text-white/25" : "text-white"
               }`}
             >
               {carregando ? "—" : e.valor == null ? "—" : nf.format(e.valor)}
             </span>
             <span
-              className={`self-start rounded-md px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.06em] ${
+              className={`self-start rounded-md px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.08em] ${
                 e.fonte === "kommo"
-                  ? "bg-[#fff8e6] text-[#664800] ring-1 ring-[#F0D290]"
-                  : "bg-[#e6f3ff] text-[#004f91] ring-1 ring-[#B9DCFA]"
+                  ? "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/25"
+                  : "bg-sky-400/15 text-sky-300 ring-1 ring-sky-400/25"
               }`}
             >
               {e.fonte === "kommo" ? "Kommo" : "Franquia"}
             </span>
             {e.valor == null && !carregando && (
-              <span className="text-[10.5px] leading-snug text-slate-400">{e.porque}</span>
+              <span className="text-[10.5px] leading-snug text-white/30">{e.porque}</span>
             )}
           </div>
         ))}
@@ -150,36 +124,30 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, carregando
 
       {/* As setas ficam nos vãos entre as etapas. Seta sem número não é erro
           escondido: é a conversão que ainda não dá para calcular. */}
-      <div className="mt-4 hidden border-t border-dashed border-slate-200 pt-3 sm:flex">
+      <div className="mt-4 hidden border-t border-dashed border-white/[0.08] pt-3 sm:flex">
         {taxas.map((t, i) => (
           <div key={i} className="flex min-w-0 flex-1 items-center justify-center gap-2">
             <span
-              className={`text-[15px] font-extrabold tracking-tight ${
-                t.v == null
-                  ? "text-slate-300"
-                  : i === 0 && furou
-                    ? "text-[#8a5a00]"
-                    : "text-slate-800"
+              className={`text-[14px] font-bold tracking-tight ${
+                t.v == null ? "text-white/25" : i === 0 && furou ? "text-amber-300" : "text-white/80"
               }`}
             >
               {t.v == null ? "—" : `${Math.round(t.v)}%`}
             </span>
             <span
-              className={`h-0.5 flex-1 rounded ${
-                t.v == null ? "bg-slate-200" : i === 0 && furou ? "bg-[#cc9100]" : "bg-[#0086f7]"
+              className={`h-px flex-1 ${
+                t.v == null ? "bg-white/10" : i === 0 && furou ? "bg-amber-400/60" : "bg-sky-400/60"
               }`}
             />
-            <span className="whitespace-nowrap text-[10px] font-semibold text-slate-400">
-              {t.rot}
-            </span>
+            <span className="whitespace-nowrap text-[10px] font-medium text-white/30">{t.rot}</span>
           </div>
         ))}
       </div>
 
       {furou && (
-        <p className="mt-3.5 rounded-xl border border-[#F5DFA8] bg-[#fff8e6] px-3.5 py-2.5 text-[11.5px] leading-relaxed text-[#6b4e05]">
-          <b className="font-extrabold">A primeira taxa passou de 100%</b> porque os dois
-          números não são da mesma população: a agenda da franquia conta todo mundo que ocupou
+        <p className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2 text-[11.5px] leading-relaxed text-amber-200/80">
+          <b className="font-bold">A primeira taxa passou de 100%</b> porque os dois números
+          não são da mesma população: a agenda da franquia conta todo mundo que ocupou
           horário — inclusive indicação, telefone e balcão, que nunca viraram lead na Kommo.
         </p>
       )}

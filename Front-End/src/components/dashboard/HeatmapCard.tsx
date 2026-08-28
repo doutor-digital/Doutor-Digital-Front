@@ -41,8 +41,8 @@ export function HeatmapCard({ data, rawDates, loading, weeks = 26 }: HeatmapCard
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-      <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-3.5">
+    <div className="rounded-xl border border-white/[0.07] bg-gradient-to-br from-white/[0.02] to-white/[0.005]">
+      <div className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-400/10 ring-1 ring-inset ring-emerald-400/20">
           <Activity className="h-4 w-4 text-emerald-300" />
         </div>
@@ -60,7 +60,7 @@ export function HeatmapCard({ data, rawDates, loading, weeks = 26 }: HeatmapCard
 
       <div className="overflow-x-auto px-5 py-4">
         {loading ? (
-          <div className="h-24 animate-pulse rounded-md bg-slate-50" />
+          <div className="h-24 animate-pulse rounded-md bg-white/[0.03]" />
         ) : (
           <ActivityHeatmap
             data={cells}

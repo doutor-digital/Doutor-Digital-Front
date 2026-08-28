@@ -53,7 +53,7 @@ export function SeloConfianca({ unitId }: { unitId?: number | null }) {
         "mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border px-4 py-2.5",
         data.temAlerta
           ? "border-rose-400/25 bg-rose-400/[0.06]"
-          : "border-slate-200 bg-slate-50",
+          : "border-white/[0.06] bg-white/[0.02]",
       )}
     >
       {data.fontes.map((f) => (

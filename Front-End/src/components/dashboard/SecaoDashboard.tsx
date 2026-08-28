@@ -43,26 +43,26 @@ export function SecaoDashboard({
             aria-expanded={aberta}
           >
             <ChevronDown
-              className={`h-4 w-4 text-slate-400 transition-transform group-hover:text-slate-700 ${
+              className={`h-4 w-4 text-white/40 transition-transform group-hover:text-white/70 ${
                 aberta ? "" : "-rotate-90"
               }`}
             />
             <span>
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
                 {titulo}
               </h2>
-              {subtitulo && <p className="text-[11px] text-slate-400">{subtitulo}</p>}
+              {subtitulo && <p className="text-[11px] text-white/35">{subtitulo}</p>}
             </span>
           </button>
         ) : (
           <div>
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
               {titulo}
             </h2>
-            {subtitulo && <p className="text-[11px] text-slate-400">{subtitulo}</p>}
+            {subtitulo && <p className="text-[11px] text-white/35">{subtitulo}</p>}
           </div>
         )}
-        <div className="h-px flex-1 bg-slate-50" />
+        <div className="h-px flex-1 bg-white/[0.07]" />
       </div>
 
       {aberta && children}

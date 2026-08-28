@@ -101,11 +101,11 @@ export function AtividadeAoVivoCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-slate-200 bg-white border border-slate-200",
+        "overflow-hidden rounded-xl border border-white/[0.07] bg-[#060d1c]",
         className,
       )}
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-slate-200 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/[0.06] px-4 py-2.5">
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Atividade
         </p>
@@ -143,7 +143,7 @@ export function AtividadeAoVivoCard({
                   key={k}
                   className={cn(
                     "flex gap-2.5 whitespace-nowrap transition-colors duration-700",
-                    novas.has(k) && "animate-[fadeIn_.3s_ease] bg-slate-50",
+                    novas.has(k) && "animate-[fadeIn_.3s_ease] bg-white/[0.04]",
                   )}
                 >
                   <span className="shrink-0 tabular-nums text-slate-600">{hora(l.quando)}</span>

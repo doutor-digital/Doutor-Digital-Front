@@ -49,7 +49,7 @@ export function AgendaDoDiaCard({ unitId }: { unitId?: number | null }) {
   if (!data || data.totalNaClinica === 0) return null;
 
   return (
-    <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5">
+    <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Hoje na clínica
@@ -67,7 +67,7 @@ export function AgendaDoDiaCard({ unitId }: { unitId?: number | null }) {
         {data.porCategoria.map((c) => (
           <div
             key={c.categoria}
-            className="min-w-[132px] flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
+            className="min-w-[132px] flex-1 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
           >
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate text-[11.5px] text-slate-400">{c.categoria}</span>
