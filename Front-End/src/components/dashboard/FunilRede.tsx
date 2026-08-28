@@ -118,12 +118,12 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
   const furou = taxas[0].v != null && taxas[0].v > 100;
 
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+    <section className="mt-6 flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {etapas.map((e) => (
           <div
             key={e.nome}
-            className="flex flex-col gap-2 border-b border-l border-t-2 border-white/[0.07] p-4 first:border-l-0 lg:border-b-0"
+            className="flex flex-col gap-2 rounded-xl border border-t-2 border-white/[0.08] bg-white/[0.02] p-4"
             style={{ borderTopColor: e.cor }}
           >
             <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
@@ -170,7 +170,7 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
 
       {/* Os vãos: uma coluna por conversão, a taxa centrada na própria linha e o
           nome embaixo. Some no celular — quatro taxas em 360px viram sopa. */}
-      <div className="hidden border-t border-white/[0.07] bg-black/10 lg:grid lg:grid-cols-4">
+      <div className="hidden rounded-xl border border-white/[0.08] bg-white/[0.02] lg:grid lg:grid-cols-4">
         {taxas.map((t, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 px-4 py-3">
             <div className="flex w-full items-center gap-2.5">
@@ -198,7 +198,7 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
       </div>
 
       {furou && (
-        <p className="border-t border-amber-400/20 bg-amber-400/[0.06] px-5 py-3 text-[11.5px] leading-relaxed text-amber-100/80">
+        <p className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-5 py-3 text-[11.5px] leading-relaxed text-amber-100/80">
           <b className="font-bold">A taxa de agendamento passou de 100%</b> porque os dois
           números não são da mesma população: a agenda da clínica conta todo mundo que ocupou
           horário — inclusive indicação, telefone e balcão, que nunca viraram lead na Kommo.

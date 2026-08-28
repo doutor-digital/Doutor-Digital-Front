@@ -78,11 +78,10 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
     carregando || v == null ? "—" : nf.format(v);
 
   return (
-    <section className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-      <div className="grid grid-cols-1 sm:grid-cols-3">
+    <section className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {/* 1. Qualidade do que entrou */}
         <div
-          className="flex flex-col gap-2 border-b border-t-2 border-white/[0.07] p-4 sm:border-b-0 sm:border-r"
+          className="flex flex-col gap-2 rounded-xl border border-t-2 border-white/[0.08] bg-white/[0.02] p-4"
           style={{ borderTopColor: "#fb923c" }}
         >
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
@@ -105,7 +104,7 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
 
         {/* 2. O que se perdeu entre marcar e comparecer */}
         <div
-          className="flex flex-col gap-2 border-b border-t-2 border-white/[0.07] p-4 sm:border-b-0 sm:border-r"
+          className="flex flex-col gap-2 rounded-xl border border-t-2 border-white/[0.08] bg-white/[0.02] p-4"
           style={{ borderTopColor: "#f87171" }}
         >
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
@@ -127,7 +126,7 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
         </div>
 
         {/* 3. Por que não fechou */}
-        <div className="flex flex-col gap-2 border-t-2 border-white/[0.07] p-4" style={{ borderTopColor: "#22d3ee" }}>
+        <div className="flex flex-col gap-2 rounded-xl border border-t-2 border-white/[0.08] bg-white/[0.02] p-4" style={{ borderTopColor: "#22d3ee" }}>
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
             Semáforo
             <BotaoAjuda kpiKey="semaforo" />
@@ -169,7 +168,6 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
               </span>
             </>
           )}
-        </div>
       </div>
     </section>
   );
