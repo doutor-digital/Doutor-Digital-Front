@@ -44,10 +44,10 @@ interface Props {
  *
  * O SELO DA FONTE É O ASSUNTO
  * ---------------------------
- * Leads e Receita vêm da KOMMO — dependem de alguém ter digitado. Agendados,
- * Consultas e Tratamentos vêm da agenda da clínica: dependem do paciente ter
- * aparecido. Ler os selos da esquerda para a direita mostra onde o dado é opinião
- * e onde é fato.
+ * Só "Leads" vem da KOMMO — depende de alguém ter digitado. Agendados, Consultas,
+ * Tratamentos e Receita vêm do sistema da clínica: dependem do paciente ter
+ * aparecido e do tratamento ter sido lançado. Um selo amarelo no meio de quatro
+ * azuis é exatamente o que se quer ver.
  *
  * ETAPA SEM FONTE MOSTRA O PORQUÊ, NÃO ZERO
  * -----------------------------------------
@@ -89,11 +89,12 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
       nome: "Receita", icone: "wallet", cor: "#4ade80",
       chave: "receita",
       valor: receita,
-      // Vem da KOMMO, não da franquia: a rota da franquia não expõe valor, mas a
-      // equipe preenche "¤ Valor do tratamento" no card. É o único numero desta
-      // linha que depende de digitação além de Leads — por isso o selo muda.
-      fonte: "kommo",
-      porque: "Ninguém preencheu o valor do tratamento no período.",
+      // Vem da FRANQUIA: cada tratamento traz o `price` na rota oficial, somado na
+      // mesma chamada que já conta os tratamentos. Saiu da Kommo em 28/08 porque o
+      // campo digitado capturava um terço do dinheiro — em Marabá, R$ 22.520 contra
+      // R$ 64.140 reais no mesmo período.
+      fonte: "franquia",
+      porque: "Sem autorização da franquia nesta unidade.",
       moeda: true,
     },
   ];
