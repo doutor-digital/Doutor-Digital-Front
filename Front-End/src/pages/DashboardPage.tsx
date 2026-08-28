@@ -30,6 +30,7 @@ import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
 import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
 import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
 import { FunilRede } from "@/components/dashboard/FunilRede";
+import { RotuloKpi, BotaoTutorial } from "@/components/dashboard/KpiInfo";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -1215,6 +1216,13 @@ export default function DashboardPage() {
           {agencyName}
         </h1>
 
+        {/* O tutorial percorre os mesmos verbetes do "?" de cada card, na ordem do
+            funil. Fica aqui, no topo, porque quem precisa dele é quem está abrindo
+            o painel pela primeira vez — e essa pessoa não sabe onde procurar ajuda. */}
+        <div className="mt-3 flex justify-center">
+          <BotaoTutorial />
+        </div>
+
         {/* ─── Atalhos de horário — evita ter que abrir o "customizado" ── */}
         {(() => {
           const isDiaInteiro = customFromTime === "00:00" && customToTime === "23:59";
@@ -1894,9 +1902,7 @@ export default function DashboardPage() {
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
               <DarkCard className="lg:row-span-2" accent="#34d399">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  Total de Leads
-                </p>
+                <RotuloKpi kpiKey="total_leads">Total de Leads</RotuloKpi>
                 <EditableKpiValue
                   okey={kpiKey(unitId, "total_leads", range.from, range.to)}
                   live={kpiLive("total_leads", funnelLeads.total)}
@@ -1947,7 +1953,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
+                  <RotuloKpi kpiKey="cadastro">{L.cadastro}</RotuloKpi>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2007,7 +2013,7 @@ export default function DashboardPage() {
 
               {/* Col 3 row 1: Resgate (leads do tipo=resgate — campo "Tipo" mapeado) */}
               <DarkCard accent="#fbbf24">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
+                <RotuloKpi kpiKey="resgate">{L.resgate}</RotuloKpi>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 <MetaKpi unitId={unitId} kpiKey="resgate" okey={kpiKey(unitId, "resgate", range.from, range.to)} valor={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : resgateManual ? (
@@ -2027,9 +2033,7 @@ export default function DashboardPage() {
 
               {/* Col 4 (tall): Origens de Leads — DonutChart */}
               <DarkCard className="lg:row-span-2" accent="#22d3ee">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  {L.origens}
-                </p>
+                <RotuloKpi kpiKey="origens">{L.origens}</RotuloKpi>
 
                 {channels.length === 0 ? (
                   <p className="mt-6 text-[12px] text-white/40">Sem dados de origem no período.</p>
@@ -2070,7 +2074,7 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                  <RotuloKpi kpiKey="agendados">Agendados</RotuloKpi>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2163,7 +2167,7 @@ export default function DashboardPage() {
                   acusa quando o balde está mascarando o número. */}
               {isJuridico ? (
                 <DarkCard accent="#f87171">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
+                  <RotuloKpi kpiKey="no_show">No-show</RotuloKpi>
                   <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
                   <div className="mt-4 h-px w-1/3 bg-white/10" />
                   <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
@@ -2183,7 +2187,7 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.tratamentos}</p>
+                  <RotuloKpi kpiKey="tratamentos">{L.tratamentos}</RotuloKpi>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2234,7 +2238,7 @@ export default function DashboardPage() {
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.consultas}</p>
+                  <RotuloKpi kpiKey="consultas">{L.consultas}</RotuloKpi>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2325,9 +2329,7 @@ export default function DashboardPage() {
                 {srcBtn("consultas", "Consultas")}
               </DarkCard>
               <DarkCard accent="#f472b6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                  {L.qualificacao}
-                </p>
+                <RotuloKpi kpiKey="leads_qualificados">{L.qualificacao}</RotuloKpi>
                 {qualificacaoData.length === 0 ? (
                   <p className="mt-6 text-[12px] text-white/40">
                     {crossAnalysis.isLoading ? "carregando…" : "Sem dados de qualificação no período."}

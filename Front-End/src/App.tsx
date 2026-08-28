@@ -43,7 +43,6 @@ const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
-const RedeDashboardPage = lazy(() => import("@/pages/RedeDashboardPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
 const MidiaVersoesPage = lazy(() => import("@/pages/MidiaVersoesPage"));
 const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
@@ -150,19 +149,6 @@ export default function App() {
           }
         />
 
-        {/* O dashboard da rede roda FORA do DashboardLayout: ele é claro e traz a
-            própria casca. Clarear o layout comum deixaria as outras 54 páginas, todas
-            escuras, com casca errada. Mesma proteção de login + clínica. */}
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <RequireClinic>
-                <RedeDashboardPage />
-              </RequireClinic>
-            </RequireAuth>
-          }
-        />
 
         {/* Área protegida — requer login + clínica */}
         <Route
@@ -174,7 +160,7 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route path="/classico"          element={<DashboardPage />}   />
+          <Route index path="/"            element={<DashboardPage />}   />
           <Route path="/calendario"        element={<CalendarioFranquiaPage />} />
           <Route path="/desempenho"        element={<DesempenhoPage />}   />
           <Route path="/dashboard/agendadas"   element={<DashboardLeadListPage kind="scheduled" />} />
