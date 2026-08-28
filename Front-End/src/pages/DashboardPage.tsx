@@ -17,7 +17,6 @@ import { KpiDrillDown, type KpiDrillTarget } from "@/components/kpi/KpiDrillDown
 import { KpiSourceButton } from "@/components/kpi/KpiSourceButton";
 import { CustomKpiModal } from "@/components/kpi/CustomKpiModal";
 import { CustomKpiChartCard } from "@/components/kpi/CustomKpiChartCard";
-import { LeadProfilePanel } from "@/components/dashboard/LeadProfilePanel";
 import { AiAnalysisLauncher, type AnalysisPreset } from "@/components/dashboard/AiAnalysisLauncher";
 import { AtividadeAoVivoCard } from "@/components/dashboard/AtividadeAoVivoCard";
 import { ConsultasHojeBanner } from "@/components/dashboard/ConsultasHojeBanner";
@@ -899,7 +898,16 @@ export default function DashboardPage() {
     // Prefere o breakdown do KPI de origens (campo customizado: Instagram/Facebook/…),
     // que traz as origens REAIS. Cai pra ov.origens só se não houver KPI configurado —
     // ov.origens agrupa Lead.Source, que pra leads da Kommo é sempre "Kommo".
-    const sourceKpi = ov?.custom_kpis?.find((k) => k.display_type === "source_chart");
+    // ESCOLHE PELO ASSUNTO, NÃO PELA POSIÇÃO.
+    // Enquanto existia um único KPI de gráfico, `find(display_type === "source_chart")`
+    // era suficiente. Com o Semáforo — que também é distribuição — o primeiro da lista
+    // passou a ser ele, e o card de ORIGENS DE LEADS exibiu "VERDE 3 · LARANJA 1".
+    // Card com o título de uma coisa e o dado de outra é pior que card vazio.
+    const sourceKpi = ov?.custom_kpis?.find(
+      (k) =>
+        k.display_type === "source_chart" &&
+        /origem|origens/i.test(`${k.key} ${k.label}`),
+    );
     const arr = sourceKpi?.breakdown?.length
       ? sourceKpi.breakdown.map((b) => ({ origem: b.label, quantidade: b.value }))
       : (ov?.origens ?? []);
@@ -2609,10 +2617,6 @@ export default function DashboardPage() {
               </div>
             </DarkCard>
 
-            {/* ─── Perfil avançado do lead (idade/alertas/doutor) ───── */}
-            {!isJuridico && (
-              <LeadProfilePanel unitId={unitId} dateFrom={range.from} dateTo={range.to} />
-            )}
             </SecaoDashboard>
 
             {/* ─── 7. Atividade ───────────────────────────────────────── */}
