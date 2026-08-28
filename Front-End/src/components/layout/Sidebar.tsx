@@ -126,7 +126,10 @@ const navGroups: NavGroup[] = [
   {
     label: "Visão geral",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+      // "/" é o dashboard da rede (claro, casca própria); o painel antigo, com os 28
+      // cards, continua inteiro em /classico.
+      { to: "/", label: "A Rede", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
+      { to: "/classico", label: "Dashboard clássico", icon: LayoutDashboard },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
       { to: "/conferencia", label: "Conferência", icon: Layers },
       {
