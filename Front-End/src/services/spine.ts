@@ -257,6 +257,8 @@ export interface SpineRedeUnidade {
   unidade: string;
   agendadas: number;
   compareceram: number;
+  /** Tratamentos lançados no período (rota oficial da franquia). */
+  tratamentos: number;
   naoCompareceram: number;
   desmarcadas: number;
   taxaComparecimento: number;
@@ -269,7 +271,13 @@ export interface SpineRede {
   ate: string;
   unidades: SpineRedeUnidade[];
   semToken: { unitId: number; unidade: string }[];
-  totais: { unidades: number; agendadas: number; compareceram: number; taxaComparecimento: number };
+  totais: {
+    unidades: number;
+    agendadas: number;
+    compareceram: number;
+    tratamentos: number;
+    taxaComparecimento: number;
+  };
 }
 
 export async function redeComparativo(de?: string, ate?: string): Promise<SpineRede> {

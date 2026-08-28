@@ -128,6 +128,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
+      { to: "/rede", label: "A Rede", icon: Layers },
       { to: "/conferencia", label: "Conferência", icon: Layers },
       {
         label: "Performance",
