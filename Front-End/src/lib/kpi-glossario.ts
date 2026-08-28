@@ -140,7 +140,7 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
     fonte: "Franquia",
     fonteDetalhe: "Soma do preço de cada tratamento lançado, pela rota oficial do Doutor Hérnia.",
     cuidado:
-      "É valor CONTRATADO, não recebido: quem fechou e ainda não pagou entra aqui igual. Até 28/08 este número saía do campo digitado na Kommo e capturava cerca de um terço do real — em Marabá, R$ 22.520 contra R$ 64.140. Se você comparar com um relatório antigo, é por isso que ele subiu.",
+      "Em algumas unidades a franquia devolve os tratamentos SEM preço — nesse caso o card mostra um traço, nunca R$ 0, porque zero se leria como \'não vendeu nada\'. É valor CONTRATADO, não recebido: quem fechou e ainda não pagou entra aqui igual. Até 28/08 este número saía do campo digitado na Kommo e capturava cerca de um terço do real — em Marabá, R$ 22.520 contra R$ 64.140. Se você comparar com um relatório antigo, é por isso que ele subiu.",
   },
 
   semaforo: {

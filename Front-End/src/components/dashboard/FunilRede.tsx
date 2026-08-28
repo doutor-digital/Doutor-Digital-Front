@@ -94,7 +94,9 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
       // campo digitado capturava um terço do dinheiro — em Marabá, R$ 22.520 contra
       // R$ 64.140 reais no mesmo período.
       fonte: "franquia",
-      porque: "Sem autorização da franquia nesta unidade.",
+      // Cobre os dois vazios possíveis: unidade sem token, e unidade conectada cuja
+      // franquia devolve os tratamentos sem preço (3 das 10 em 28/08/2026).
+      porque: "A franquia não informou o valor dos tratamentos desta unidade.",
       moeda: true,
     },
   ];
