@@ -30,7 +30,8 @@ import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
 import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
 import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
 import { FunilRede } from "@/components/dashboard/FunilRede";
-import { RotuloKpi, BotaoTutorial } from "@/components/dashboard/KpiInfo";
+import { RotuloKpi } from "@/components/dashboard/KpiInfo";
+import { VeredictoClinica } from "@/components/dashboard/VeredictoClinica";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -1216,12 +1217,6 @@ export default function DashboardPage() {
           {agencyName}
         </h1>
 
-        {/* O tutorial percorre os mesmos verbetes do "?" de cada card, na ordem do
-            funil. Fica aqui, no topo, porque quem precisa dele é quem está abrindo
-            o painel pela primeira vez — e essa pessoa não sabe onde procurar ajuda. */}
-        <div className="mt-3 flex justify-center">
-          <BotaoTutorial />
-        </div>
 
         {/* ─── Atalhos de horário — evita ter que abrir o "customizado" ── */}
         {(() => {
@@ -1878,6 +1873,22 @@ export default function DashboardPage() {
                 Usa os mesmos kpiLive()/semAutorizacaoFranquia() dos cards, então
                 o número aqui e o número lá embaixo nunca divergem — e o período
                 escolhido nos filtros já chega na API da franquia por este caminho. */}
+            {/* O veredito responde "a clínica está bem hoje?" antes de qualquer
+                detalhe. Só depois vem o funil, que explica por quê. */}
+            <VeredictoClinica
+              unidade={agencyName}
+              periodo={rangeLabel}
+              agendados={
+                semAutorizacaoFranquia("agendados")
+                  ? null
+                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
+              }
+              consultas={
+                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
+              }
+              carregando={overview.isLoading}
+            />
+
             <FunilRede
               carregando={overview.isLoading}
               leads={kpiLive("total_leads", ov?.total_leads ?? 0)}
@@ -1897,7 +1908,10 @@ export default function DashboardPage() {
             />
 
             {/* ─── 1. Resultado do período ───────────────────────────── */}
-            <SecaoDashboard titulo="Resultado do período" subtitulo="Quantos chegaram e o que virou paciente" recolhivel className="!mt-6">
+            {/* Esta fica ABERTA: é o detalhe do funil logo acima. Recolhida, o topo
+                da página virava três barras vazias em sequência e o resumo não
+                encostava em nada — o que fazia a tela parecer desmontada. */}
+            <SecaoDashboard titulo="Resultado do período" subtitulo="Quantos chegaram e o que virou paciente" className="!mt-6">
             {/* ─── Hero: grid assimétrica amoCRM (1 card por métrica) ─── */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
@@ -2358,7 +2372,7 @@ export default function DashboardPage() {
             </SecaoDashboard>
 
             {/* ─── 2. De onde vêm ─────────────────────────────────────── */}
-            <SecaoDashboard titulo="De onde vêm" subtitulo="Mídia e peça que trouxeram o paciente" recolhivel>
+            <SecaoDashboard titulo="De onde vêm" subtitulo="Mídia e peça que trouxeram o paciente">
             {/* De qual anúncio veio o paciente, e se ele agendou. Fica antes dos cards
                 de receita porque é a decisão mais cara do mês: onde colocar verba. */}
             <AnunciosCard className="mt-4" linhas={ov?.anuncios} loading={isLoading} />
@@ -2486,7 +2500,7 @@ export default function DashboardPage() {
             )}
 
             {/* ─── 5. Operação clínica (fechada por padrão) ───────────── */}
-            <SecaoDashboard titulo="Operação clínica" subtitulo="Agenda da clínica: avaliações, sessões e retornos" recolhivel>
+            <SecaoDashboard titulo="Operação clínica" subtitulo="Agenda da clínica: avaliações, sessões e retornos">
             {/* ─── Avaliações reais (agenda do Doutor Hérnia) ───────────
                 Fonte diferente do resto da página: o comparecimento vem do status
                 da agenda da clínica, não do campo preenchido na Kommo. Fica logo

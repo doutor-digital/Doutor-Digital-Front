@@ -241,6 +241,58 @@ export function Tutorial({ fechar, inicial }: { fechar: () => void; inicial?: st
   );
 }
 
+/**
+ * O "?" sozinho, sem o rótulo junto. Serve onde o rótulo já tem estilo próprio —
+ * o funil, por exemplo, cujos nomes não são maiúsculas de 10px como os dos cards.
+ */
+export function BotaoAjuda({ kpiKey, className = "" }: { kpiKey: string; className?: string }) {
+  const [aberto, setAberto] = useState(false);
+  const [tutorial, setTutorial] = useState(false);
+  const v = GLOSSARIO_KPI[kpiKey];
+  useModalAberto(aberto, () => setAberto(false));
+  if (!v) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-label={`O que é ${v.titulo}`}
+        className={`grid h-[15px] w-[15px] flex-none place-items-center rounded-full bg-white/10 text-[9.5px] font-bold text-white/50 transition hover:bg-white/20 hover:text-white ${className}`}
+      >
+        ?
+      </button>
+
+      {aberto && (
+        <Moldura fechar={() => setAberto(false)} rotulo={v.titulo}>
+          <Verbete v={v} />
+          <div className="mt-6 flex flex-wrap gap-2.5 border-t border-white/[0.08] pt-5">
+            <button
+              type="button"
+              onClick={() => {
+                setAberto(false);
+                setTutorial(true);
+              }}
+              className="rounded-xl bg-sky-500 px-4 py-2.5 text-[12.5px] font-bold text-white transition hover:bg-sky-400"
+            >
+              Ver tutorial
+            </button>
+            <button
+              type="button"
+              onClick={() => setAberto(false)}
+              className="rounded-xl border border-white/10 px-4 py-2.5 text-[12.5px] font-bold text-white/70 transition hover:bg-white/5"
+            >
+              Fechar
+            </button>
+          </div>
+        </Moldura>
+      )}
+
+      {tutorial && <Tutorial fechar={() => setTutorial(false)} inicial={kpiKey} />}
+    </>
+  );
+}
+
 /** O botão "Ver tutorial" que fica no cabeçalho da página. */
 export function BotaoTutorial({ className = "" }: { className?: string }) {
   const [aberto, setAberto] = useState(false);
