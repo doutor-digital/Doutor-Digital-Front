@@ -25,14 +25,6 @@ const pct = (parte: number, todo: number) => (todo > 0 ? (parte / todo) * 100 : 
  * o sistema de origem do dado ("Kommo") e é igual para todo mundo.
  */
 export function FunilPorOrigemCard({ linhas = [], loading = false, className = "" }: Props) {
-  // Destaca a melhor taxa de agendamento entre origens com volume relevante — abaixo
-  // disso a taxa oscila demais para virar decisão.
-  const relevantes = linhas.filter((l) => l.total >= 20);
-  const melhor = relevantes.reduce<Linha | null>(
-    (acc, l) => (acc == null || pct(l.agendados, l.total) > pct(acc.agendados, acc.total) ? l : acc),
-    null,
-  );
-
   return (
     <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
       <div className="mb-4">
@@ -85,14 +77,12 @@ export function FunilPorOrigemCard({ linhas = [], loading = false, className = "
             </table>
           </div>
 
-          {melhor && (
-            <p className="mt-3 text-[11px] leading-snug text-slate-500">
-              Melhor taxa de agendamento entre as origens com volume:{" "}
-              <span className="text-slate-300">{melhor.origem}</span>, com{" "}
-              {pct(melhor.agendados, melhor.total).toFixed(1)}%. Volume alto com taxa baixa é
-              lead caro, não lead bom.
-            </p>
-          )}
+          {/* Aqui havia uma frase de "melhor taxa de agendamento". Saiu por estar
+              errada: ela escolhia a origem por VOLUME e chamava o resultado de melhor
+              TAXA — apontava Meta-Facebook com 9,6% enquanto a própria tabela acima
+              mostrava Google com 85,7%. A tabela já ordena e já mostra as duas taxas;
+              quem lê tira a conclusão sozinho, e sem correr o risco de ler o oposto
+              do que o dado diz. */}
         </>
       )}
     </div>
