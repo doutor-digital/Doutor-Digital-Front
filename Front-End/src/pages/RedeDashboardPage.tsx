@@ -5,6 +5,7 @@ import { redeComparativo } from "@/services/spine";
 import { webhooksService } from "@/services/webhooks";
 import { useClinic } from "@/hooks/useClinic";
 import { useAuth } from "@/hooks/useAuth";
+import { AjudaKpi } from "@/components/dashboard/AjudaKpi";
 
 const nf = new Intl.NumberFormat("pt-BR");
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -83,16 +84,54 @@ export default function RedeDashboardPage() {
   const taxa = (a: number | null, b: number | null) =>
     a == null || b == null || a === 0 ? null : (b / a) * 100;
 
+  // A explicação de cada KPI vive junto do KPI, não num manual à parte. Todas dizem o
+  // recorte que o nome esconde — é o recorte, não o nome, que faz duas pessoas olharem
+  // o mesmo painel e discordarem do que ele diz.
   const etapas = [
-    { nome: "Leads", valor: totalLeads, fonte: "kommo" as const },
-    { nome: "Agendados", valor: agendados, fonte: "franquia" as const },
-    { nome: "Consultas", valor: consultas, fonte: "franquia" as const },
-    { nome: "Tratamentos", valor: tratamentos, fonte: "franquia" as const },
+    {
+      nome: "Leads",
+      valor: totalLeads,
+      fonte: "kommo" as const,
+      ajuda:
+        "Pessoas que chegaram no período e viraram card na Kommo — anúncio, WhatsApp, " +
+        "indicação registrada. É o único número desta linha que depende de alguém ter " +
+        "mexido no CRM; todos os outros vêm da agenda da clínica.",
+    },
+    {
+      nome: "Agendados",
+      valor: agendados,
+      fonte: "franquia" as const,
+      ajuda:
+        "Avaliações marcadas na agenda da franquia para o período. Conta SÓ avaliação: " +
+        "sessão de tratamento e retorno ficam de fora, porque não são paciente novo. " +
+        "O que foi desmarcado ou remarcado também sai da conta.",
+    },
+    {
+      nome: "Consultas",
+      valor: consultas,
+      fonte: "franquia" as const,
+      ajuda:
+        "Das avaliações marcadas, quantas o paciente de fato compareceu — situação " +
+        "ATENDIDO na agenda da franquia. Não é quem marcou: é quem sentou na cadeira.",
+    },
+    {
+      nome: "Tratamentos",
+      valor: tratamentos,
+      fonte: "franquia" as const,
+      ajuda:
+        "Tratamentos lançados no período, pela rota oficial da franquia. Conta o que foi " +
+        "lançado no mês mesmo que depois vire desistência — senão o número do passado " +
+        "mudaria sozinho conforme a recepção edita a situação.",
+    },
     {
       nome: "Receita",
       valor: null,
       fonte: "franquia" as const,
       porque: "Sem fonte: a franquia não expõe o valor do tratamento.",
+      ajuda:
+        "Ainda não existe. A franquia não expõe o valor do tratamento em nenhuma rota, e " +
+        "o campo de valor está vazio em todas as linhas do nosso banco. Fica em branco " +
+        "de propósito: um zero aqui seria lido como 'não vendeu nada'.",
     },
   ];
 
@@ -268,8 +307,9 @@ export default function RedeDashboardPage() {
                       e.valor == null ? "rounded-xl bg-slate-50/70" : ""
                     }`}
                   >
-                    <span className="text-[12.5px] font-bold tracking-tight text-slate-900">
+                    <span className="flex items-center gap-1.5 text-[12.5px] font-bold tracking-tight text-slate-900">
                       {e.nome}
+                      <AjudaKpi titulo={e.nome} texto={e.ajuda} />
                     </span>
                     <span
                       className={`text-[30px] font-extrabold leading-none tracking-tight tabular-nums ${
@@ -366,8 +406,17 @@ export default function RedeDashboardPage() {
               </article>
 
               <article className="rounded-[20px] border border-slate-200 bg-white p-[18px] lg:col-span-3">
-                <h3 className="mb-3.5 text-[14.5px] font-bold tracking-tight text-slate-900">
+                <h3 className="mb-3.5 flex items-center gap-1.5 text-[14.5px] font-bold tracking-tight text-slate-900">
                   Desfecho da agenda
+                  <AjudaKpi
+                    titulo="Desfecho da agenda"
+                    texto={
+                      "O que aconteceu com cada avaliação marcada. Compareceram e faltaram são " +
+                      "os dois desfechos registrados; 'sem desfecho' é o que sobra — horário que " +
+                      "ninguém marcou o que deu, normalmente desmarcado ou remarcado. Quando essa " +
+                      "fatia cinza é grande, o problema é de preenchimento, não de operação."
+                    }
+                  />
                 </h3>
                 <div className="relative mx-auto max-w-[220px]">
                   <svg
