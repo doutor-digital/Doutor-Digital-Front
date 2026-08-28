@@ -21,21 +21,21 @@ export function MixTratamentoCard({ itens = [], loading = false, className = "" 
   const maior = itens[0]?.quantidade ?? 0;
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">Mix de tratamento indicado</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Mix de tratamento indicado</h3>
           <p className="text-xs text-slate-400">O que a clínica está indicando no período</p>
         </div>
         {total > 0 && (
-          <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-medium text-slate-300">
+          <span className="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-300">
             {total.toLocaleString("pt-BR")} indicações
           </span>
         )}
       </div>
 
       {loading ? (
-        <div className="h-32 w-full animate-pulse rounded-lg bg-white/5" />
+        <div className="h-32 w-full animate-pulse rounded-lg bg-slate-50" />
       ) : itens.length === 0 ? (
         <p className="text-xs text-slate-500">
           Nenhum tratamento indicado preenchido no período.
@@ -47,7 +47,7 @@ export function MixTratamentoCard({ itens = [], loading = false, className = "" 
               <span className="w-48 shrink-0 truncate text-xs text-slate-300" title={i.tratamento}>
                 {i.tratamento}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-50">
                 <div
                   className="h-full rounded-full bg-violet-400/70"
                   style={{ width: `${maior > 0 ? (i.quantidade / maior) * 100 : 0}%` }}

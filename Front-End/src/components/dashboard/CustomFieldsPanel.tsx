@@ -115,22 +115,22 @@ export function CustomFieldsPanel({
 
   return (
     <div
-      className="mt-4 rounded-2xl bg-[#0f1f3a]/80 p-5 ring-1 ring-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+      className="mt-4 rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
       style={{ borderTop: "4px solid #22d3ee" }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Campos da Kommo · Perfil do lead
           </p>
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/40">
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
             <Users className="h-3 w-3" /> {formatNumber(total)} leads
             {!withPeriodPicker && rangeLabel ? ` · ${rangeLabel}` : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {withPeriodPicker && (
-            <div className="inline-flex items-center rounded-lg border border-white/[0.06] bg-white/[0.03] p-0.5">
+            <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
               {PERIODS.map((p) => (
                 <button
                   key={p.key}
@@ -138,7 +138,7 @@ export function CustomFieldsPanel({
                   onClick={() => setPeriod(p.key)}
                   className={cn(
                     "rounded-md px-3 py-1 text-[11px] font-medium transition",
-                    period === p.key ? "bg-white/[0.1] text-slate-50" : "text-slate-400 hover:text-slate-200",
+                    period === p.key ? "bg-slate-50 text-slate-50" : "text-slate-400 hover:text-slate-200",
                   )}
                 >
                   {p.label}
@@ -152,8 +152,8 @@ export function CustomFieldsPanel({
             disabled={!unitId || syncing}
             title="Puxa de novo os campos customizados da Kommo (5k leads mais recentes)"
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] font-medium",
-              "text-slate-200 hover:bg-white/[0.08] hover:text-slate-50",
+              "inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium",
+              "text-slate-200 hover:bg-slate-50 hover:text-slate-50",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
@@ -167,11 +167,11 @@ export function CustomFieldsPanel({
       )}
 
       {summary.isLoading ? (
-        <div className="grid h-32 place-items-center text-white/40">
+        <div className="grid h-32 place-items-center text-slate-400">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : fields.length === 0 ? (
-        <p className="mt-4 text-[12px] text-white/40">
+        <p className="mt-4 text-[12px] text-slate-400">
           {total === 0
             ? "Nenhum lead com campos da Kommo no período. Rode o sync da unidade."
             : "Nenhum campo customizado no período."}
@@ -217,7 +217,7 @@ function FieldCard({
   const empty = field.filled === 0;
 
   return (
-    <div className={cn("rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5", empty && "opacity-60")}>
+    <div className={cn("rounded-xl border border-slate-200 bg-slate-50 p-3.5", empty && "opacity-60")}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[12.5px] font-semibold text-slate-100">{field.field_name}</p>
@@ -233,7 +233,7 @@ function FieldCard({
           <span>preenchido</span>
           <span className="tabular-nums">{formatNumber(field.filled)} ({fillPct}%)</span>
         </div>
-        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.04]">
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-50">
           <div className="h-full rounded-full bg-emerald-400/70" style={{ width: `${Math.max(2, fillPct)}%` }} />
         </div>
       </div>
@@ -259,7 +259,7 @@ function FieldCard({
                       {formatNumber(v.count)}
                     </span>
                   </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/[0.03]">
+                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-50">
                     <div
                       className="h-full rounded-full transition-all group-hover:opacity-90"
                       style={{ width: `${Math.max(3, pct)}%`, background: color }}

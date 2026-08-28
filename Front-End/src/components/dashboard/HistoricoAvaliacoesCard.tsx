@@ -35,13 +35,13 @@ function Dica({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const p: SpineHistoricoMes = payload[0].payload;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0b1220] px-3 py-2 text-[11px] shadow-xl">
-      <p className="mb-1 font-medium text-white/70">{label}</p>
-      <p className="text-white/85">
+    <div className="rounded-lg border border-slate-200 bg-white border border-slate-200 px-3 py-2 text-[11px] shadow-xl">
+      <p className="mb-1 font-medium text-slate-700">{label}</p>
+      <p className="text-slate-700">
         <span className="tabular-nums text-emerald-400">{p.compareceram}</span> de{" "}
         <span className="tabular-nums">{p.agendadas}</span> compareceram
       </p>
-      <p className="text-white/50">
+      <p className="text-slate-500">
         {p.naoCompareceram} faltas · {p.desmarcadas} desmarques ·{" "}
         <span className="text-sky-400">{p.taxaComparecimento}%</span>
       </p>
@@ -74,32 +74,32 @@ export function HistoricoAvaliacoesCard({ unitId, className }: Props) {
   const vazio = !q.isLoading && serie.length === 0;
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur ${className ?? ""}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-slate-50 p-5 backdrop-blur ${className ?? ""}`}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Avaliações — tendência
           </p>
-          <p className="mt-1 text-[11px] text-white/40">
+          <p className="mt-1 text-[11px] text-slate-400">
             Série longa preservada no dashboard, além dos 100 dias do sistema clínico
           </p>
         </div>
       </div>
 
-      {q.isLoading && <div className="mt-4 h-56 animate-pulse rounded-xl bg-white/5" />}
+      {q.isLoading && <div className="mt-4 h-56 animate-pulse rounded-xl bg-slate-50" />}
 
       {q.isError && isSemAutorizacaoFranquia(q.error) && (
         <SemAutorizacaoFranquia recurso="O histórico de avaliações" className="mt-4" />
       )}
 
       {q.isError && !isSemAutorizacaoFranquia(q.error) && (
-        <p className="mt-4 text-[11px] text-white/40">Não foi possível carregar o histórico.</p>
+        <p className="mt-4 text-[11px] text-slate-400">Não foi possível carregar o histórico.</p>
       )}
 
       {vazio && (
-        <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-6 text-center">
-          <p className="text-[13px] text-white/70">Ainda sem histórico.</p>
-          <p className="mt-1 text-[11px] text-white/40">
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+          <p className="text-[13px] text-slate-700">Ainda sem histórico.</p>
+          <p className="mt-1 text-[11px] text-slate-400">
             A captura preserva a agenda a partir do dia em que é ligada. Assim que a
             rotina diária rodar, os meses começam a aparecer aqui.
           </p>
@@ -152,7 +152,7 @@ export function HistoricoAvaliacoesCard({ unitId, className }: Props) {
       )}
 
       {q.data?.capturandoDesde && (
-        <p className="mt-3 text-[11px] text-white/35">
+        <p className="mt-3 text-[11px] text-slate-400">
           Capturando desde {new Date(q.data.capturandoDesde).toLocaleDateString("pt-BR")} ·
           barras: comparecimento vs. resto · linha: taxa (%)
         </p>

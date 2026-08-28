@@ -34,8 +34,8 @@ const horaBR = (iso: string) => {
 
 function LinhaInfo({ icone, children }: { icone: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 text-[13px] text-white/70">
-      <span className="text-white/30">{icone}</span>
+    <div className="flex items-center gap-2 text-[13px] text-slate-700">
+      <span className="text-slate-400">{icone}</span>
       {children}
     </div>
   );
@@ -47,10 +47,10 @@ function ItemHistorico({ h }: { h: SpinePacienteHistorico }) {
     <div className="flex items-center gap-3 border-l-2 py-2 pl-3" style={{ borderColor: cor }}>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[12.5px] font-medium text-white/85">{h.categoria ?? "—"}</span>
+          <span className="text-[12.5px] font-medium text-slate-700">{h.categoria ?? "—"}</span>
           {h.grupo === "realizado" && <Check className="h-3 w-3 text-emerald-400" />}
         </div>
-        <div className="text-[11px] text-white/40">
+        <div className="text-[11px] text-slate-400">
           {dataBR(h.quandoLocal)} · {horaBR(h.quandoLocal)}
           {h.profissional ? ` · ${h.profissional}` : ""}
         </div>
@@ -97,23 +97,23 @@ function EvolucaoProtocolo({ historico }: { historico: SpinePacienteHistorico[] 
 
   return (
     <div className="px-5 pb-4">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
         Evolução do tratamento
       </p>
       <div className="space-y-2">
         {linhas.map((l) => (
-          <div key={l.protocolo} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+          <div key={l.protocolo} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[12.5px] font-medium text-white/85">{l.protocolo}</span>
+              <span className="text-[12.5px] font-medium text-slate-700">{l.protocolo}</span>
               <span className="shrink-0 text-[12px] tabular-nums text-emerald-400">
-                {l.feitas} <span className="text-white/40">sessõe{l.feitas === 1 ? "" : "s"}</span>
+                {l.feitas} <span className="text-slate-400">sessõe{l.feitas === 1 ? "" : "s"}</span>
               </span>
             </div>
-            <div className="mt-1 text-[11px] text-white/40">
+            <div className="mt-1 text-[11px] text-slate-400">
               {dataBR(l.de)}
               {l.de !== l.ate && ` → ${dataBR(l.ate)}`}
               {l.total !== l.feitas && (
-                <span className="text-white/30"> · {l.total - l.feitas} não realizada(s)</span>
+                <span className="text-slate-400"> · {l.total - l.feitas} não realizada(s)</span>
               )}
             </div>
           </div>
@@ -127,16 +127,16 @@ function Ficha({ p }: { p: SpinePaciente }) {
   return (
     <>
       {/* Identidade */}
-      <div className="border-b border-white/10 px-5 pb-4 pt-1">
-        <h2 className="text-lg font-semibold text-white">{p.nome}</h2>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/40">
+      <div className="border-b border-slate-200 px-5 pb-4 pt-1">
+        <h2 className="text-lg font-semibold text-slate-900">{p.nome}</h2>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
           {p.status && (
             <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-emerald-300">
               {p.status}
             </span>
           )}
           {p.origem && <span>Origem: {p.origem}</span>}
-          <span className="text-white/25">#{p.idClient}</span>
+          <span className="text-slate-400">#{p.idClient}</span>
         </div>
       </div>
 
@@ -148,10 +148,10 @@ function Ficha({ p }: { p: SpinePaciente }) {
         >
           <div>
             <div className="text-[10px] uppercase tracking-wide text-sky-300/70">Lead na Kommo</div>
-            <div className="text-[13px] text-white/85">
+            <div className="text-[13px] text-slate-700">
               {p.leadVinculado.nome}
               {p.leadVinculado.etapa && (
-                <span className="ml-2 text-[11px] text-white/40">· {p.leadVinculado.etapa}</span>
+                <span className="ml-2 text-[11px] text-slate-400">· {p.leadVinculado.etapa}</span>
               )}
             </div>
           </div>
@@ -172,7 +172,7 @@ function Ficha({ p }: { p: SpinePaciente }) {
         {(p.idade != null || p.sexo) && (
           <LinhaInfo icone={<User className="h-3.5 w-3.5" />}>
             {[p.sexo, p.idade != null ? `${p.idade} anos` : null].filter(Boolean).join(" · ")}
-            {p.nascimento && <span className="text-white/35"> ({dataBR(p.nascimento)})</span>}
+            {p.nascimento && <span className="text-slate-400"> ({dataBR(p.nascimento)})</span>}
           </LinhaInfo>
         )}
         {(p.cidade || p.endereco) && (
@@ -183,27 +183,27 @@ function Ficha({ p }: { p: SpinePaciente }) {
       </div>
 
       {/* Resumo do tratamento */}
-      <div className="mx-5 mb-4 grid grid-cols-3 gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+      <div className="mx-5 mb-4 grid grid-cols-3 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="text-center">
           <div className="text-xl font-semibold tabular-nums text-emerald-400">{p.totalAtendimentos}</div>
-          <div className="text-[10px] text-white/40">sessões feitas</div>
+          <div className="text-[10px] text-slate-400">sessões feitas</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-semibold tabular-nums text-amber-400">{p.totalFaltas}</div>
-          <div className="text-[10px] text-white/40">faltas</div>
+          <div className="text-[10px] text-slate-400">faltas</div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-semibold tabular-nums text-white/80">{p.historico.length}</div>
-          <div className="text-[10px] text-white/40">na agenda</div>
+          <div className="text-xl font-semibold tabular-nums text-slate-700">{p.historico.length}</div>
+          <div className="text-[10px] text-slate-400">na agenda</div>
         </div>
       </div>
 
       {/* Período em tratamento */}
       {p.primeiroAtendimento && p.ultimoAtendimento && (
-        <div className="mx-5 mb-4 flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-[12px]">
-          <span className="text-white/50">Em tratamento desde</span>
-          <span className="text-white/80">
-            {dataBR(p.primeiroAtendimento)} <span className="text-white/30">→</span>{" "}
+        <div className="mx-5 mb-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-[12px]">
+          <span className="text-slate-500">Em tratamento desde</span>
+          <span className="text-slate-700">
+            {dataBR(p.primeiroAtendimento)} <span className="text-slate-400">→</span>{" "}
             {dataBR(p.ultimoAtendimento)}
           </span>
         </div>
@@ -214,13 +214,13 @@ function Ficha({ p }: { p: SpinePaciente }) {
 
       {/* Histórico */}
       <div className="px-5 pb-6">
-        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           <Calendar className="h-3 w-3" /> Histórico na clínica
         </p>
         {p.historico.length === 0 ? (
-          <p className="text-[12px] text-white/35">Nenhum agendamento registrado.</p>
+          <p className="text-[12px] text-slate-400">Nenhum agendamento registrado.</p>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-slate-200">
             {p.historico.map((h) => (
               <ItemHistorico key={h.idSchedule} h={h} />
             ))}
@@ -269,15 +269,15 @@ export function PacienteFichaConteudo({ unitId, nome }: { unitId: number; nome: 
   if (carregando)
     return (
       <div className="space-y-3 p-5">
-        <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
-        <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
-        <div className="mt-4 h-24 animate-pulse rounded-xl bg-white/5" />
+        <div className="h-6 w-2/3 animate-pulse rounded bg-slate-100" />
+        <div className="h-4 w-1/2 animate-pulse rounded bg-slate-50" />
+        <div className="mt-4 h-24 animate-pulse rounded-xl bg-slate-50" />
       </div>
     );
 
   if (erro)
     return (
-      <p className="p-5 text-[12px] text-white/40">
+      <p className="p-5 text-[12px] text-slate-400">
         Não foi possível carregar a ficha. Confira o token da unidade.
       </p>
     );
@@ -287,7 +287,7 @@ export function PacienteFichaConteudo({ unitId, nome }: { unitId: number; nome: 
   if (candidatos.length > 1)
     return (
       <div className="p-5">
-        <p className="mb-3 text-[12px] text-white/50">
+        <p className="mb-3 text-[12px] text-slate-500">
           Há {candidatos.length} cadastros com esse nome. Qual é o paciente?
         </p>
         <div className="space-y-2">
@@ -295,10 +295,10 @@ export function PacienteFichaConteudo({ unitId, nome }: { unitId: number; nome: 
             <button
               key={c.idClient}
               onClick={() => setIdEscolhido(c.idClient)}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-3 text-left transition hover:bg-white/5"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:bg-slate-50"
             >
-              <div className="text-[13px] font-medium text-white/85">{c.nome}</div>
-              <div className="mt-0.5 text-[11px] text-white/40">
+              <div className="text-[13px] font-medium text-slate-700">{c.nome}</div>
+              <div className="mt-0.5 text-[11px] text-slate-400">
                 {[c.whatsapp, [c.cidade, c.uf].filter(Boolean).join("/"), c.origem]
                   .filter(Boolean)
                   .join(" · ")}
@@ -312,8 +312,8 @@ export function PacienteFichaConteudo({ unitId, nome }: { unitId: number; nome: 
 
   return (
     <div className="p-5">
-      <p className="text-[13px] text-white/70">{nome}</p>
-      <p className="mt-2 text-[12px] text-white/40">
+      <p className="text-[13px] text-slate-700">{nome}</p>
+      <p className="mt-2 text-[12px] text-slate-400">
         Sem cadastro correspondente no Doutor Hérnia. O nome na agenda pode estar
         grafado diferente do cadastro.
       </p>
@@ -331,12 +331,12 @@ export function PacienteDrawer({ unitId, nome, onClose }: PacienteDrawerProps) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative flex w-full max-w-md flex-col overflow-y-auto border-l border-white/10 bg-[#0b1220] shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#0b1220]/95 px-5 py-3 backdrop-blur">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+      <div className="relative flex w-full max-w-md flex-col overflow-y-auto border-l border-slate-200 bg-white border border-slate-200 shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-3 backdrop-blur">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Paciente
           </span>
-          <button onClick={onClose} className="rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white/80">
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-4 w-4" />
           </button>
         </div>

@@ -56,7 +56,7 @@ export function FilasCard({ unitId }: { unitId?: number | null }) {
   if (!data || data.filas.length === 0) return null;
 
   return (
-    <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
+    <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5">
       <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
         Precisa de alguém agora
       </p>
@@ -71,19 +71,19 @@ export function FilasCard({ unitId }: { unitId?: number | null }) {
                 "overflow-hidden rounded-lg border",
                 f.urgencia === "alta"
                   ? "border-rose-400/20 bg-rose-400/[0.04]"
-                  : "border-white/[0.06] bg-white/[0.02]",
+                  : "border-slate-200 bg-slate-50",
               )}
             >
               <button
                 onClick={() => setAberta(abertaAqui ? null : f.id)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.03]"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
               >
                 <span
                   className={cn(
                     "grid h-7 w-7 shrink-0 place-items-center rounded-md text-[13px] font-semibold tabular-nums",
                     f.urgencia === "alta"
                       ? "bg-rose-400/15 text-rose-300"
-                      : "bg-white/[0.06] text-slate-300",
+                      : "bg-slate-50 text-slate-300",
                   )}
                 >
                   {f.quantidade}
@@ -102,7 +102,7 @@ export function FilasCard({ unitId }: { unitId?: number | null }) {
               </button>
 
               {abertaAqui && (
-                <ul className="max-h-64 divide-y divide-white/[0.04] overflow-y-auto border-t border-white/[0.05]">
+                <ul className="max-h-64 divide-y divide-slate-200] overflow-y-auto border-t border-slate-200">
                   {f.itens.map((i, idx) => (
                     <li
                       key={`${f.id}-${i.leadId ?? idx}`}

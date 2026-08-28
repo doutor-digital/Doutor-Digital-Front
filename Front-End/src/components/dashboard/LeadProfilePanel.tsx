@@ -65,18 +65,18 @@ export function LeadProfilePanel({
 
   return (
     <div
-      className="mt-4 rounded-2xl bg-[#0f1f3a]/80 p-5 ring-1 ring-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+      className="mt-4 rounded-2xl bg-white p-5 ring-1 ring-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
       style={{ borderTop: "4px solid #a78bfa" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Perfil do lead · análise avançada
         </p>
         {canConfig && (
           <button
             type="button"
             onClick={() => setConfigOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-[10.5px] font-medium text-slate-300 ring-1 ring-inset ring-white/[0.08] transition hover:bg-white/[0.08]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10.5px] font-medium text-slate-300 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50"
           >
             <SlidersHorizontal className="h-3 w-3" /> Escolher campos
           </button>
@@ -95,7 +95,7 @@ export function LeadProfilePanel({
       )}
 
       {q.isLoading ? (
-        <div className="grid h-28 place-items-center text-white/40">
+        <div className="grid h-28 place-items-center text-slate-400">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : (
@@ -112,7 +112,7 @@ export function LeadProfilePanel({
                   <li key={u.lead_id}>
                     <Link
                       to={`/leads/${u.lead_id}`}
-                      className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-[12px] transition hover:bg-white/[0.04]"
+                      className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-[12px] transition hover:bg-slate-50"
                     >
                       <span className="flex min-w-0 items-center gap-2 text-slate-200">
                         <Calendar className="h-3 w-3 shrink-0 text-amber-300" />
@@ -139,7 +139,7 @@ export function LeadProfilePanel({
           )}
 
           {/* ── Idade média por desfecho ── */}
-          <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
+          <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Idade média por desfecho
           </p>
           <div className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -149,15 +149,15 @@ export function LeadProfilePanel({
               return (
                 <div
                   key={s.key}
-                  className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3"
                   style={{ borderTop: `3px solid ${s.color}` }}
                 >
-                  <p className="text-[10px] uppercase tracking-wider text-white/45">{s.label}</p>
-                  <p className="mt-1.5 text-2xl font-semibold tabular-nums text-white">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{s.label}</p>
+                  <p className="mt-1.5 text-2xl font-semibold tabular-nums text-slate-900">
                     {has ? Math.round(stat!.avg) : "—"}
-                    {has && <span className="ml-1 text-[11px] font-normal text-white/40">anos</span>}
+                    {has && <span className="ml-1 text-[11px] font-normal text-slate-400">anos</span>}
                   </p>
-                  <p className="mt-0.5 text-[10.5px] text-white/35">
+                  <p className="mt-0.5 text-[10.5px] text-slate-400">
                     {has ? `${formatNumber(stat!.count)} c/ idade` : "sem dado de idade"}
                   </p>
                 </div>
@@ -168,20 +168,20 @@ export function LeadProfilePanel({
           {/* ── Doutor responsável ── */}
           {(data?.doctors.length ?? 0) > 0 && (
             <>
-              <p className="mt-5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
+              <p className="mt-5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                 <Stethoscope className="h-3 w-3" /> Doutor responsável
               </p>
               <ul className="mt-2.5 space-y-2">
                 {data!.doctors.map((d) => (
                   <li key={d.label} className="flex items-center gap-3">
                     <span className="w-40 shrink-0 truncate text-[12px] text-slate-200">{d.label}</span>
-                    <span className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                    <span className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-slate-50">
                       <span
                         className="absolute inset-y-0 left-0 rounded-full bg-violet-400/70"
                         style={{ width: `${Math.max(4, (d.count / docMax) * 100)}%` }}
                       />
                     </span>
-                    <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-white/55">
+                    <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-slate-500">
                       {formatNumber(d.count)}
                     </span>
                   </li>
@@ -190,7 +190,7 @@ export function LeadProfilePanel({
             </>
           )}
 
-          <p className="mt-4 flex items-center gap-1.5 text-[10.5px] text-white/30">
+          <p className="mt-4 flex items-center gap-1.5 text-[10.5px] text-slate-400">
             <Users className="h-3 w-3" /> {formatNumber(data?.total_leads ?? 0)} leads analisados no período
           </p>
         </>
@@ -272,19 +272,19 @@ function LeadProfileConfigModal({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-white/12 bg-[#0a0f1f] shadow-2xl ring-1 ring-white/5">
-        <div className="flex items-center justify-between border-b border-white/5 p-5">
+      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-slate-200 bg-white border border-slate-200 shadow-2xl ring-1 ring-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 p-5">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-200">
             Escolher campos do perfil
           </p>
-          <button type="button" onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100">
+          <button type="button" onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-100">
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="space-y-3 overflow-y-auto p-5">
 
         {fields.isLoading || current.isLoading ? (
-          <div className="grid h-24 place-items-center text-white/40">
+          <div className="grid h-24 place-items-center text-slate-400">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : opts.length === 0 ? (

@@ -177,13 +177,13 @@ export function InsightsCard({
     <div
       className={cn(
         "relative overflow-hidden rounded-xl",
-        "border border-white/[0.06] bg-white/[0.02]",
+        "border border-slate-200 bg-slate-50",
       )}
     >
       <div className="relative space-y-4 p-5">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 ring-1 ring-inset ring-slate-200">
             <img
               src={INSIGHTS_ICON}
               alt="Insights"
@@ -200,7 +200,7 @@ export function InsightsCard({
               dangerouslySetInnerHTML={{
                 __html: narrative.replace(
                   /\*\*([^*]+)\*\*/g,
-                  '<strong class="text-white font-semibold">$1</strong>',
+                  '<strong class="text-slate-900 font-semibold">$1</strong>',
                 ),
               }}
             />
@@ -212,7 +212,7 @@ export function InsightsCard({
           {highlights.map((h) => (
             <div
               key={h.label}
-              className="rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
             >
               <p className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500">
                 {h.label}
@@ -274,7 +274,7 @@ export function InsightsCard({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 text-[10px] text-slate-500">
+        <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-[10px] text-slate-500">
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="h-3 w-3" />
             atualizado há instantes

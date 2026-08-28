@@ -59,7 +59,7 @@ export function DashboardAiReport({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+      className="relative overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
       style={{ borderTop: "4px solid #6366f1" }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -68,10 +68,10 @@ export function DashboardAiReport({
             <Brain className="h-4 w-4 text-indigo-200" />
           </span>
           <div>
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
               Análise com I.A.
             </h2>
-            <p className="text-[11px] text-white/40">
+            <p className="text-[11px] text-slate-400">
               {scope} · {rangeLabel}
             </p>
           </div>
@@ -82,7 +82,7 @@ export function DashboardAiReport({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-white/80 ring-1 ring-inset ring-white/10 transition hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-100"
             >
               <FileDown className="h-3.5 w-3.5" /> Baixar PDF
             </button>
@@ -115,7 +115,7 @@ export function DashboardAiReport({
 
       {/* Estado inicial */}
       {hasKey && !analyze.isPending && !analyze.data && !analyze.isError && (
-        <p className="mt-4 text-[12px] text-white/50">
+        <p className="mt-4 text-[12px] text-slate-500">
           A I.A. lê os números do período selecionado ({scope}) e gera um relatório com
           resumo executivo, conversão &amp; perdas, quem está bombando, perfil do paciente e
           recomendações práticas. Pode levar de 20 a 60 segundos.
@@ -124,7 +124,7 @@ export function DashboardAiReport({
 
       {/* Carregando */}
       {analyze.isPending && (
-        <div className="mt-5 flex items-center gap-3 text-[12.5px] text-white/60">
+        <div className="mt-5 flex items-center gap-3 text-[12.5px] text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin text-indigo-300" />
           A I.A. está lendo os números de {scope}…
         </div>
@@ -141,7 +141,7 @@ export function DashboardAiReport({
           <div className="rounded-xl bg-white px-6 py-5 text-slate-800 shadow-sm">
             <MarkdownLite text={analyze.data.markdown} />
           </div>
-          <p className="mt-2 text-[10.5px] text-white/35">
+          <p className="mt-2 text-[10.5px] text-slate-400">
             Gerado pela I.A. em {analyze.data.durationSec.toFixed(1)}s · ~{analyze.data.tokens} tokens · {rangeLabel}
           </p>
         </div>

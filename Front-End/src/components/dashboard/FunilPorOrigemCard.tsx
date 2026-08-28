@@ -34,16 +34,16 @@ export function FunilPorOrigemCard({ linhas = [], loading = false, className = "
   );
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-white">Funil por origem</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Funil por origem</h3>
         <p className="text-xs text-slate-400">
           Quantos de cada mídia chegam a agendar e a fechar
         </p>
       </div>
 
       {loading ? (
-        <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" />
+        <div className="h-40 w-full animate-pulse rounded-lg bg-slate-50" />
       ) : linhas.length === 0 ? (
         <p className="text-xs text-slate-500">Sem origem preenchida no período.</p>
       ) : (
@@ -63,7 +63,7 @@ export function FunilPorOrigemCard({ linhas = [], loading = false, className = "
                   const taxaAg = pct(l.agendados, l.total);
                   const taxaFe = pct(l.fechados, l.total);
                   return (
-                    <tr key={l.origem} className="border-t border-white/[0.06]">
+                    <tr key={l.origem} className="border-t border-slate-200">
                       <td className="max-w-[180px] truncate px-1 py-2 text-xs text-slate-200" title={l.origem}>
                         {l.origem}
                       </td>

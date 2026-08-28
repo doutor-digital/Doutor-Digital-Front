@@ -46,8 +46,8 @@ export function LeaderboardCard() {
   const max = ranking[0]?.total ?? 0;
 
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-gradient-to-br from-white/[0.02] to-white/[0.005]">
-      <div className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3.5">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+      <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-3.5">
         <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-400/10 ring-1 ring-inset ring-amber-400/20 overflow-hidden">
           <img
             src={LEADERBOARD_ICON}
@@ -75,7 +75,7 @@ export function LeaderboardCard() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-12 animate-pulse rounded-md bg-white/[0.03]"
+                className="h-12 animate-pulse rounded-md bg-slate-50"
               />
             ))}
           </div>
@@ -93,11 +93,11 @@ export function LeaderboardCard() {
               const pct = max > 0 ? ((r.total ?? 0) / max) * 100 : 0;
               const rankStyle =
                 RANK_COLORS[i] ??
-                "from-white/[0.03] to-transparent ring-white/[0.06] text-slate-300";
+                "from-slate-50 to-transparent ring-slate-200 text-slate-300";
               const convPct = (r.conversionRate ?? 0) * 100;
               return (
                 <li key={r.attendantId}>
-                  <div className="flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-white/[0.025]">
+                  <div className="flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-slate-50">
                     <div
                       className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ring-1 ring-inset text-[14px] font-bold tabular-nums",
@@ -107,7 +107,7 @@ export function LeaderboardCard() {
                       {RANK_EMOJI[i] ?? `#${i + 1}`}
                     </div>
 
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400/20 to-sky-500/15 text-[10px] font-bold text-slate-100 ring-1 ring-inset ring-white/[0.08]">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400/20 to-sky-500/15 text-[10px] font-bold text-slate-100 ring-1 ring-inset ring-slate-200">
                       {initialsOf(r.name)}
                     </div>
 
@@ -116,7 +116,7 @@ export function LeaderboardCard() {
                         {r.name}
                       </p>
                       <div className="mt-1 flex items-center gap-2">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-50">
                           <div
                             className="h-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-all duration-500"
                             style={{ width: `${pct}%` }}

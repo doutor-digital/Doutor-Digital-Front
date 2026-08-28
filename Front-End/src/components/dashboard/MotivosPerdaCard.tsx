@@ -21,21 +21,21 @@ export function MotivosPerdaCard({ motivos = [], loading = false, className = ""
   const maior = motivos[0]?.quantidade ?? 0;
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">Motivos de não agendamento</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Motivos de não agendamento</h3>
           <p className="text-xs text-slate-400">Campo preenchido pela SDR no cartão</p>
         </div>
         {total > 0 && (
-          <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-medium text-slate-300">
+          <span className="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-300">
             {total.toLocaleString("pt-BR")} classificados
           </span>
         )}
       </div>
 
       {loading ? (
-        <div className="h-32 w-full animate-pulse rounded-lg bg-white/5" />
+        <div className="h-32 w-full animate-pulse rounded-lg bg-slate-50" />
       ) : motivos.length === 0 ? (
         <p className="text-xs text-slate-500">
           Nenhum motivo preenchido no período. Sem isso, a perda fica sem diagnóstico.
@@ -47,7 +47,7 @@ export function MotivosPerdaCard({ motivos = [], loading = false, className = ""
               <span className="w-44 shrink-0 truncate text-xs text-slate-300" title={m.motivo}>
                 {m.motivo}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-50">
                 <div
                   className="h-full rounded-full bg-rose-400/70"
                   style={{ width: `${maior > 0 ? (m.quantidade / maior) * 100 : 0}%` }}

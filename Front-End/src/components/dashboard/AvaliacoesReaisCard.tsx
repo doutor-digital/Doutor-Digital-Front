@@ -82,9 +82,9 @@ function DicaGrafico({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0b1220] px-2.5 py-1.5 text-[11px] shadow-xl">
-      <p className="text-white/50">{label}</p>
-      <p className="text-white/85">
+    <div className="rounded-lg border border-slate-200 bg-white border border-slate-200 px-2.5 py-1.5 text-[11px] shadow-xl">
+      <p className="text-slate-500">{label}</p>
+      <p className="text-slate-700">
         <span className="tabular-nums">{p.realizadas}</span> de{" "}
         <span className="tabular-nums">{p.total}</span> atendidas
       </p>
@@ -142,15 +142,15 @@ export function AvaliacoesReaisCard({
 
   return (
     <div
-      className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur ${className ?? ""}`}
+      className={`rounded-2xl border border-slate-200 bg-slate-50 p-5 backdrop-blur ${className ?? ""}`}
     >
       {/* ── Cabeçalho ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {titulo}
           </p>
-          <p className="mt-1 text-[11px] text-white/40">
+          <p className="mt-1 text-[11px] text-slate-400">
             Agenda do Doutor Hérnia
             {janela.de && janela.ate && ` · ${ddmm(janela.de)} a ${ddmm(janela.ate)}`}
             {janela.cortada && ` · cortado em ${MAX_DIAS}d`}
@@ -160,10 +160,10 @@ export function AvaliacoesReaisCard({
         {d && (
           <div className="flex items-end gap-5">
             <div className="text-right">
-              <div className="text-4xl font-semibold leading-none tabular-nums text-white/90">
+              <div className="text-4xl font-semibold leading-none tabular-nums text-slate-800">
                 {d.realizadas}
               </div>
-              <p className="mt-1 text-[11px] text-white/40">{labelRealizadas}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{labelRealizadas}</p>
             </div>
             <div className="text-right">
               <div
@@ -172,7 +172,7 @@ export function AvaliacoesReaisCard({
                 {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                 <span className="text-xl opacity-60">%</span>
               </div>
-              <p className="mt-1 text-[11px] text-white/40">{labelTaxa}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{labelTaxa}</p>
             </div>
           </div>
         )}
@@ -187,8 +187,8 @@ export function AvaliacoesReaisCard({
             onClick={() => setPreset(p.key)}
             className={`rounded-full px-2.5 py-1 text-[11px] transition ${
               preset === p.key
-                ? "bg-white/10 text-white/90"
-                : "text-white/45 hover:bg-white/5 hover:text-white/70"
+                ? "bg-slate-100 text-slate-800"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
             }`}
           >
             {p.label}
@@ -201,28 +201,28 @@ export function AvaliacoesReaisCard({
               value={customDe}
               max={customAte}
               onChange={(e) => setCustomDe(e.target.value)}
-              className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/80 [color-scheme:dark]"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700 [color-scheme:dark]"
             />
-            <span className="text-[11px] text-white/30">até</span>
+            <span className="text-[11px] text-slate-400">até</span>
             <input
               type="date"
               value={customAte}
               min={customDe}
               onChange={(e) => setCustomAte(e.target.value)}
-              className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/80 [color-scheme:dark]"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700 [color-scheme:dark]"
             />
           </div>
         )}
       </div>
 
-      {q.isLoading && <div className="mt-4 h-48 animate-pulse rounded-xl bg-white/5" />}
+      {q.isLoading && <div className="mt-4 h-48 animate-pulse rounded-xl bg-slate-50" />}
 
       {q.isError && isSemAutorizacaoFranquia(q.error) && (
         <SemAutorizacaoFranquia recurso="O comparecimento real" className="mt-4" />
       )}
 
       {q.isError && !isSemAutorizacaoFranquia(q.error) && (
-        <p className="mt-4 text-[11px] text-white/40">
+        <p className="mt-4 text-[11px] text-slate-400">
           Integração indisponível. Confira o token da unidade.
         </p>
       )}
@@ -249,25 +249,25 @@ export function AvaliacoesReaisCard({
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ background: COR[s.grupo] }}
                 />
-                <span className="text-[11.5px] text-white/60">{s.nome}</span>
-                <span className="ml-auto text-[11.5px] font-medium tabular-nums text-white/85">
+                <span className="text-[11.5px] text-slate-500">{s.nome}</span>
+                <span className="ml-auto text-[11.5px] font-medium tabular-nums text-slate-700">
                   {s.total}
                 </span>
-                <span className="w-11 shrink-0 text-right text-[11px] tabular-nums text-white/35">
+                <span className="w-11 shrink-0 text-right text-[11px] tabular-nums text-slate-400">
                   {((s.total / (d.total || 1)) * 100).toFixed(0)}%
                 </span>
               </div>
             ))}
-            <div className="flex items-center gap-2 border-t border-white/5 pt-1.5">
-              <span className="text-[11.5px] text-white/45">Total de horários</span>
-              <span className="ml-auto text-[11.5px] font-medium tabular-nums text-white/70">
+            <div className="flex items-center gap-2 border-t border-slate-200 pt-1.5">
+              <span className="text-[11.5px] text-slate-500">Total de horários</span>
+              <span className="ml-auto text-[11.5px] font-medium tabular-nums text-slate-700">
                 {d.total}
               </span>
               <span className="w-11 shrink-0" />
             </div>
           </div>
 
-          <p className="mt-2 text-[10.5px] leading-relaxed text-white/35">
+          <p className="mt-2 text-[10.5px] leading-relaxed text-slate-400">
             {labelTaxa[0].toUpperCase() + labelTaxa.slice(1)} = {d.realizadas} {labelRealizadas} ÷ {d.resolvidas} com desfecho.
             {d.total !== d.resolvidas &&
               ` ${d.total - d.resolvidas} ainda não aconteceram e ficam fora da conta.`}
@@ -276,7 +276,7 @@ export function AvaliacoesReaisCard({
           {/* ── Distribuição no tempo ── */}
           {serie.length > 1 && (
             <div className="mt-5">
-              <p className="mb-1 text-[10px] uppercase tracking-wide text-white/35">Por dia</p>
+              <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">Por dia</p>
               <div className="h-28">
                 <ResponsiveContainer>
                   <BarChart data={serie} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
@@ -323,16 +323,16 @@ export function AvaliacoesReaisCard({
 
           {/* ── Quem atendeu ── */}
           {d.porProfissional.length > 0 && (
-            <div className="mt-4 border-t border-white/5 pt-3">
-              <p className="mb-1.5 text-[10px] uppercase tracking-wide text-white/35">
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-400">
                 Quem atendeu
               </p>
               {d.porProfissional.map((p) => (
                 <div key={p.profissional} className="flex items-baseline justify-between py-0.5">
-                  <span className="truncate pr-3 text-[11.5px] text-white/60">
+                  <span className="truncate pr-3 text-[11.5px] text-slate-500">
                     {p.profissional}
                   </span>
-                  <span className="shrink-0 text-[11.5px] font-medium tabular-nums text-white/85">
+                  <span className="shrink-0 text-[11.5px] font-medium tabular-nums text-slate-700">
                     {p.atendimentos}
                   </span>
                 </div>

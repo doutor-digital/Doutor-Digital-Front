@@ -248,8 +248,8 @@ function DonutChart({
       </svg>
       <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
         <div>
-          <div className="text-2xl font-bold leading-none text-white">{nf(total)}</div>
-          <div className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/45">leads</div>
+          <div className="text-2xl font-bold leading-none text-slate-900">{nf(total)}</div>
+          <div className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-slate-500">leads</div>
         </div>
       </div>
     </div>
@@ -259,7 +259,7 @@ function DonutChart({
 // ─── Breakdown inline nos KPI cards ──────────────────────────────────────
 function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: number; tone?: "ok" | "warn" | "neutral" }>; max?: number }) {
   if (!items.length) {
-    return <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>;
+    return <div className="mt-1 text-[10px] italic text-slate-400">sem dados</div>;
   }
   return (
     <div className="mt-2 flex flex-wrap gap-1">
@@ -267,10 +267,10 @@ function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: num
         const tone =
           c.tone === "ok" ? "bg-emerald-400/[0.12] text-emerald-200 ring-emerald-400/20"
           : c.tone === "warn" ? "bg-amber-400/[0.12] text-amber-100 ring-amber-400/20"
-          : "bg-white/[0.04] text-white/75 ring-white/10";
+          : "bg-slate-50 text-slate-700 ring-slate-200";
         return (
           <span key={`${c.label}-${i}`} className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide ring-1 ring-inset ${tone}`}>
-            <span className="truncate">{c.label}</span> · <span className="tabular-nums text-white">{c.count}</span>
+            <span className="truncate">{c.label}</span> · <span className="tabular-nums text-slate-900">{c.count}</span>
           </span>
         );
       })}
@@ -279,7 +279,7 @@ function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: num
           fechar — foi o que fez a quebra do resgate somar 881 num card de 920. */}
       {items.length > max && (
         <span
-          className="rounded-full bg-white/[0.02] px-2 py-0.5 text-[10px] tracking-wide text-white/45 ring-1 ring-inset ring-white/[0.07]"
+          className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] tracking-wide text-slate-500 ring-1 ring-inset ring-slate-200"
           title={items.slice(max).map((c) => `${c.label} · ${c.count}`).join("\n")}
         >
           +{items.length - max} outras ·{" "}
@@ -293,7 +293,7 @@ function KpiChips({ items, max = 4 }: { items: Array<{ label: string; count: num
 }
 
 function KpiBreakdownHeading({ children }: { children: React.ReactNode }) {
-  return <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">{children}</p>;
+  return <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">{children}</p>;
 }
 
 /**
@@ -334,7 +334,7 @@ function DarkCard({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-[#0f1f3a]/80 ring-1 ring-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
+      className={`relative overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] ${className}`}
       style={accent ? { borderTop: `4px solid ${accent}` } : undefined}
     >
       {children}
@@ -361,15 +361,15 @@ function MetricCard({
 }) {
   return (
     <DarkCard className={className} accent={accent}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
         {label}
       </p>
       <p className={`mt-3 text-5xl font-bold leading-none ${valueClass}`}>
         {value}
       </p>
-      <div className="mt-3 h-px w-1/3 bg-white/10" />
+      <div className="mt-3 h-px w-1/3 bg-slate-100" />
       {range && (
-        <p className="mt-3 text-[11px] text-white/40">{range}</p>
+        <p className="mt-3 text-[11px] text-slate-400">{range}</p>
       )}
       {children}
     </DarkCard>
@@ -1190,7 +1190,7 @@ export default function DashboardPage() {
   // ─── Render ───────────────────────────────────────────────────────────
   return (
     <div
-      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-white font-normal"
+      className="-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] text-slate-900 font-normal"
       style={{
         // Gradiente VERTICAL (não radial) — sem escurecer as laterais; "azul do meio" uniforme em toda a largura.
         background:
@@ -1223,8 +1223,8 @@ export default function DashboardPage() {
           const pill = (active: boolean) =>
             `rounded-full border px-4 py-1.5 text-xs font-medium transition ${
               active
-                ? "border-white/30 bg-white text-slate-900"
-                : "border-white/15 bg-white/5 text-white/70 hover:border-white/25 hover:text-white"
+                ? "border-slate-200 bg-white text-slate-900"
+                : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-200 hover:text-slate-900"
             }`;
           return (
             <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
@@ -1253,7 +1253,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => { setCustomFromTime(""); setCustomToTime(""); }}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium text-white/50 hover:text-white/80"
+                  className="rounded-full px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
                 >
                   Limpar
                 </button>
@@ -1275,8 +1275,8 @@ export default function DashboardPage() {
                     title={describeFilter(f.filter)}
                     className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
                       active
-                        ? "border-violet-400/50 bg-violet-500/25 text-white"
-                        : "border-white/15 bg-white/5 text-white/70 hover:border-white/25 hover:text-white"
+                        ? "border-violet-400/50 bg-violet-500/25 text-slate-900"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-200 hover:text-slate-900"
                     } ${canManageFilters ? "rounded-r-none border-r-0" : ""}`}
                   >
                     {f.name}
@@ -1288,8 +1288,8 @@ export default function DashboardPage() {
                       title="Editar filtro"
                       className={`rounded-full rounded-l-none border py-1.5 pl-1.5 pr-2.5 transition ${
                         active
-                          ? "border-violet-400/50 bg-violet-500/25 text-white/80 hover:text-white"
-                          : "border-white/15 bg-white/5 text-white/50 hover:text-white"
+                          ? "border-violet-400/50 bg-violet-500/25 text-slate-700 hover:text-slate-900"
+                          : "border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-900"
                       }`}
                     >
                       <Pencil className="h-3 w-3" />
@@ -1303,7 +1303,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => setFilterEditor({ id: null, name: "", filter: buildCurrentFilterPayload() })}
                 title="Cria um filtro com os filtros ativos agora na tela"
-                className="inline-flex items-center gap-1 rounded-full border border-dashed border-white/25 px-4 py-1.5 text-xs font-medium text-white/60 transition hover:border-violet-400/50 hover:text-white"
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-500 transition hover:border-violet-400/50 hover:text-slate-900"
               >
                 <Plus className="h-3.5 w-3.5" /> Novo filtro
               </button>
@@ -1389,7 +1389,7 @@ export default function DashboardPage() {
                       })
                     }
                     disabled={saveFilterMut.isPending || !filterEditor.name.trim()}
-                    className="rounded-lg bg-violet-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+                    className="rounded-lg bg-violet-600 px-4 py-1.5 text-[13px] font-semibold text-slate-900 hover:bg-violet-500 disabled:opacity-50"
                   >
                     {saveFilterMut.isPending ? "Salvando…" : "Salvar"}
                   </button>
@@ -1419,7 +1419,7 @@ export default function DashboardPage() {
         {/* ─── FILTROS ─────────────────────────────────────────────────── */}
         <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
           {/* Pílulas — rolam na horizontal no mobile (sem quebrar linha) */}
-          <div className="mx-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mx-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-slate-200 bg-slate-50 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {RANGES.map((r) => (
               <button
                 key={r.key}
@@ -1434,7 +1434,7 @@ export default function DashboardPage() {
                 className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition ${
                   !isCustom && rangeKey === r.key
                     ? "bg-white text-slate-900"
-                    : "text-white/70 hover:text-white"
+                    : "text-slate-700 hover:text-slate-900"
                 }`}
               >
                 <Fi name={r.icon} />
@@ -1510,9 +1510,9 @@ export default function DashboardPage() {
                           styles={{ root: { margin: 0 } }}
                           classNames={{
                             today: "font-bold text-violet-600",
-                            selected: "!bg-violet-500 !text-white",
-                            range_start: "!bg-violet-600 !text-white rounded-l-full",
-                            range_end: "!bg-violet-600 !text-white rounded-r-full",
+                            selected: "!bg-violet-500 !text-slate-900",
+                            range_start: "!bg-violet-600 !text-slate-900 rounded-l-full",
+                            range_end: "!bg-violet-600 !text-slate-900 rounded-r-full",
                             range_middle: "!bg-violet-100 !text-violet-900",
                           }}
                         />
@@ -1541,7 +1541,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => setDateMenuOpen(false)}
-                          className="rounded-lg bg-violet-600 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-violet-500"
+                          className="rounded-lg bg-violet-600 px-4 py-1.5 text-[12px] font-semibold text-slate-900 hover:bg-violet-500"
                         >
                           Aplicar
                         </button>
@@ -1565,7 +1565,7 @@ export default function DashboardPage() {
 
           {/* All / Select user / Setup */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
+            <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -1575,7 +1575,7 @@ export default function DashboardPage() {
                 className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
                   responsibleFilter === ""
                     ? "bg-white text-slate-900"
-                    : "text-white/70 hover:text-white"
+                    : "text-slate-700 hover:text-slate-900"
                 }`}
               >
                 Todos
@@ -1587,7 +1587,7 @@ export default function DashboardPage() {
                   className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs transition ${
                     responsibleFilter !== ""
                       ? "bg-white font-semibold text-slate-900"
-                      : "text-white/70 hover:text-white"
+                      : "text-slate-700 hover:text-slate-900"
                   }`}
                 >
                   {responsibleFilter || "Selecionar usuário"}
@@ -1616,11 +1616,11 @@ export default function DashboardPage() {
                       onClick={() => setUserMenuOpen(false)}
                       className="fixed inset-0 z-10 cursor-default"
                     />
-                    <div className="absolute right-0 z-20 mt-2 max-h-72 w-64 overflow-auto rounded-xl border border-white/10 bg-slate-900 p-1 shadow-xl">
+                    <div className="absolute right-0 z-20 mt-2 max-h-72 w-64 overflow-auto rounded-xl border border-slate-200 bg-slate-900 p-1 shadow-xl">
                       {responsibleUsers.isLoading ? (
-                        <p className="px-3 py-2 text-[11px] text-white/50">Carregando…</p>
+                        <p className="px-3 py-2 text-[11px] text-slate-500">Carregando…</p>
                       ) : (responsibleUsers.data ?? []).length === 0 ? (
-                        <p className="px-3 py-2 text-[11px] text-white/50">
+                        <p className="px-3 py-2 text-[11px] text-slate-500">
                           Nenhum usuário responsável encontrado{unitId == null ? "" : " nesta unidade"}.
                         </p>
                       ) : (
@@ -1632,10 +1632,10 @@ export default function DashboardPage() {
                               setResponsibleFilter(name);
                               setUserMenuOpen(false);
                             }}
-                            className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition hover:bg-white/10 ${
+                            className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition hover:bg-slate-100 ${
                               name === responsibleFilter
-                                ? "bg-white/10 text-white"
-                                : "text-white/80"
+                                ? "bg-slate-100 text-slate-900"
+                                : "text-slate-700"
                             }`}
                           >
                             <span className="truncate">{name}</span>
@@ -1663,8 +1663,8 @@ export default function DashboardPage() {
               onClick={() => setShowAdvanced((v) => !v)}
               className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
                 hasActiveFilters
-                  ? "border-violet-400/60 bg-violet-500/20 text-white"
-                  : "border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+                  ? "border-violet-400/60 bg-violet-500/20 text-slate-900"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
               }`}
             >
               <Cog className="h-3.5 w-3.5" />
@@ -1683,7 +1683,7 @@ export default function DashboardPage() {
         {showAdvanced && (
           <DarkCard className="mt-4" accent="#a78bfa">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Filtros avançados
               </p>
               {hasActiveFilters && (
@@ -1700,11 +1700,11 @@ export default function DashboardPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Origem */}
               <div>
-                <label className="text-[11px] font-medium text-white/60">Origem</label>
+                <label className="text-[11px] font-medium text-slate-500">Origem</label>
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                 >
                   <option value="" className="bg-slate-900">Todas</option>
                   {(sources.data ?? []).map((s) => (
@@ -1715,11 +1715,11 @@ export default function DashboardPage() {
 
               {/* Atendente */}
               <div>
-                <label className="text-[11px] font-medium text-white/60">Atendente</label>
+                <label className="text-[11px] font-medium text-slate-500">Atendente</label>
                 <select
                   value={attendantFilter}
                   onChange={(e) => setAttendantFilter(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                 >
                   <option value="" className="bg-slate-900">Todos</option>
                   {(attendants.data ?? []).map((a) => (
@@ -1732,20 +1732,20 @@ export default function DashboardPage() {
 
               {/* Período customizado */}
               <div>
-                <label className="text-[11px] font-medium text-white/60">Período customizado</label>
+                <label className="text-[11px] font-medium text-slate-500">Período customizado</label>
                 <div className="mt-1 flex items-center gap-1.5">
                   <input
                     type="date"
                     value={customFrom}
                     onChange={(e) => setCustomFrom(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                   />
-                  <span className="text-white/40">–</span>
+                  <span className="text-slate-400">–</span>
                   <input
                     type="date"
                     value={customTo}
                     onChange={(e) => setCustomTo(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                   />
                 </div>
                 {/* Horas opcionais — recortam a janela de horas DENTRO do período ativo
@@ -1756,18 +1756,18 @@ export default function DashboardPage() {
                     value={customFromTime}
                     onChange={(e) => setCustomFromTime(e.target.value)}
                     title="Hora de início (opcional)"
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                   />
-                  <span className="text-white/40">–</span>
+                  <span className="text-slate-400">–</span>
                   <input
                     type="time"
                     value={customToTime}
                     onChange={(e) => setCustomToTime(e.target.value)}
                     title="Hora de fim (opcional)"
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/50"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-900 outline-none focus:border-violet-400/50"
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-white/40">
+                <p className="mt-1 text-[10px] text-slate-400">
                   Hora opcional — recorta o período ativo (ex.: pílula <b>Dia</b> + 09:00–12:00 = só
                   leads das 9h às 12h de hoje). Vazio = corte comercial (19h–19h).
                 </p>
@@ -1778,12 +1778,12 @@ export default function DashboardPage() {
             {allStagesForFilter.length > 0 && (
               <div className="mt-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-white/60">Etapas do funil</label>
+                  <label className="text-[11px] font-medium text-slate-500">Etapas do funil</label>
                   {stageFilter.size > 0 && (
                     <button
                       type="button"
                       onClick={() => setStageFilter(new Set())}
-                      className="text-[10px] text-white/40 hover:text-white"
+                      className="text-[10px] text-slate-400 hover:text-slate-900"
                     >
                       Limpar
                     </button>
@@ -1799,8 +1799,8 @@ export default function DashboardPage() {
                         onClick={() => toggleStage(e.raw)}
                         className={`rounded-full border px-3 py-1 text-[11px] transition ${
                           active
-                            ? "border-violet-400 bg-violet-500/30 text-white"
-                            : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
+                            ? "border-violet-400 bg-violet-500/30 text-slate-900"
+                            : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
                         }`}
                       >
                         {e.label} <span className="ml-1 opacity-60">{nf(e.value)}</span>
@@ -1815,10 +1815,10 @@ export default function DashboardPage() {
             {(customFields.data?.length ?? 0) > 0 && (
               <div className="mt-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-white/60">
+                  <label className="text-[11px] font-medium text-slate-500">
                     Campos customizados da Kommo
                   </label>
-                  <span className="text-[10px] text-white/40">
+                  <span className="text-[10px] text-slate-400">
                     {customFields.data!.length} campo(s) detectado(s)
                   </span>
                 </div>
@@ -1838,7 +1838,7 @@ export default function DashboardPage() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-2 text-[10px] text-white/40">
+                <p className="mt-2 text-[10px] text-slate-400">
                   Sincronizados nos leads via REST sync. Filtros por campo customizado virão na próxima iteração.
                 </p>
               </div>
@@ -1861,7 +1861,7 @@ export default function DashboardPage() {
         {/* ─── LOADING ─────────────────────────────────────────────────── */}
         {isLoading ? (
           <div className="mt-12 flex items-center justify-center">
-            <Loader2 className="h-7 w-7 animate-spin text-white/50" />
+            <Loader2 className="h-7 w-7 animate-spin text-slate-500" />
           </div>
         ) : (
           <>
@@ -1894,7 +1894,7 @@ export default function DashboardPage() {
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
               <DarkCard className="lg:row-span-2" accent="#34d399">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Total de Leads
                 </p>
                 <EditableKpiValue
@@ -1919,23 +1919,23 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("total_leads", "Total de Leads")}
-                <div className="mt-5 h-px w-full bg-white/10" />
+                <div className="mt-5 h-px w-full bg-slate-100" />
                 <ul className="mt-4 space-y-3">
-                  {channels.length === 0 && <li className="text-xs text-white/40">Sem dados</li>}
+                  {channels.length === 0 && <li className="text-xs text-slate-400">Sem dados</li>}
                   {channels.map((c) => {
                     const ratio = c.value / channelMax;
                     return (
                       <li key={c.name}>
-                        <div className="flex items-center justify-between text-[12px] text-white/80">
+                        <div className="flex items-center justify-between text-[12px] text-slate-700">
                           <span className="flex items-center gap-2">
                             <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} />
                             <span className="truncate">{c.name}</span>
                           </span>
                           <span className="font-semibold tabular-nums" style={{ color: c.color }}>{nf(c.value)}</span>
                         </div>
-                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-50">
                           <div className="h-full rounded-full" style={{ width: `${Math.max(4, ratio * 100)}%`, background: c.color }} />
                         </div>
                       </li>
@@ -1947,7 +1947,7 @@ export default function DashboardPage() {
               {/* Col 2 row 1: Cadastro (jurídico: Qualificados) */}
               <DarkCard accent="#a78bfa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.cadastro}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{L.cadastro}</p>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -1980,15 +1980,15 @@ export default function DashboardPage() {
                       {bd!.cadastro.origens.slice(0, 4).map((o) => (
                         <li key={o.origem} className="text-[11px]">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="truncate font-medium text-white/85">{o.origem}</span>
-                            <span className="shrink-0 tabular-nums text-white/70">{nf(o.count)}</span>
+                            <span className="truncate font-medium text-slate-700">{o.origem}</span>
+                            <span className="shrink-0 tabular-nums text-slate-700">{nf(o.count)}</span>
                           </div>
                           {o.top_motivo ? (
                             <p className="truncate text-[10px] text-amber-200/80">
                               Sem agendar: {o.top_motivo} ({o.top_motivo_count})
                             </p>
                           ) : (
-                            <p className="truncate text-[10px] italic text-white/30">
+                            <p className="truncate text-[10px] italic text-slate-400">
                               sem motivo registrado
                             </p>
                           )}
@@ -1996,18 +1996,18 @@ export default function DashboardPage() {
                       ))}
                     </ul>
                   ) : (
-                    <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
+                    <div className="mt-1 text-[10px] italic text-slate-400">sem dados</div>
                   )}
                 </div>
                 )}
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("cadastro", "Cadastro")}
               </DarkCard>
 
               {/* Col 3 row 1: Resgate (leads do tipo=resgate — campo "Tipo" mapeado) */}
               <DarkCard accent="#fbbf24">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.resgate}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{L.resgate}</p>
                 <EditableKpiValue okey={kpiKey(unitId, "resgate", range.from, range.to)} live={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} valueClass="text-amber-400" format={nf} onDrill={isJuridico ? undefined : () => setDrill({ kpiKey: "resgate", label: "Resgate" })} />
                 <MetaKpi unitId={unitId} kpiKey="resgate" okey={kpiKey(unitId, "resgate", range.from, range.to)} valor={isJuridico ? funnelResgate.total : (bd?.resgate.total ?? 0)} ativo={mesCorrente} formato={nf} />
                 {isJuridico ? null : resgateManual ? (
@@ -2020,19 +2020,19 @@ export default function DashboardPage() {
                     <KpiChips items={(bd?.resgate.origens ?? []).map((o) => ({ label: o.value, count: o.count }))} />
                   </>
                 )}
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("resgate", "Resgate")}
               </DarkCard>
 
               {/* Col 4 (tall): Origens de Leads — DonutChart */}
               <DarkCard className="lg:row-span-2" accent="#22d3ee">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {L.origens}
                 </p>
 
                 {channels.length === 0 ? (
-                  <p className="mt-6 text-[12px] text-white/40">Sem dados de origem no período.</p>
+                  <p className="mt-6 text-[12px] text-slate-400">Sem dados de origem no período.</p>
                 ) : (
                   <div className="mt-5 flex flex-col items-center gap-5">
                     <DonutChart data={channels} size={172} thickness={24} />
@@ -2057,8 +2057,8 @@ export default function DashboardPage() {
                             >
                               {c.name}
                             </span>
-                            <span className="shrink-0 tabular-nums text-white/75">{nf(c.value)}</span>
-                            <span className="w-9 shrink-0 text-right tabular-nums text-white/40">{pct}%</span>
+                            <span className="shrink-0 tabular-nums text-slate-700">{nf(c.value)}</span>
+                            <span className="w-9 shrink-0 text-right tabular-nums text-slate-400">{pct}%</span>
                           </li>
                         );
                       })}
@@ -2070,7 +2070,7 @@ export default function DashboardPage() {
               {/* Col 2 row 2: Agendados */}
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">Agendados</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Agendados</p>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2150,8 +2150,8 @@ export default function DashboardPage() {
                     />
                   </>
                 )}
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("agendados", "Agendados")}
               </DarkCard>
 
@@ -2163,10 +2163,10 @@ export default function DashboardPage() {
                   acusa quando o balde está mascarando o número. */}
               {isJuridico ? (
                 <DarkCard accent="#f87171">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">No-show</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">No-show</p>
                   <EditableKpiValue okey={kpiKey(unitId, "no_show", range.from, range.to)} semAutorizacao={semAutorizacaoFranquia("no_show")} live={kpiLive("no_show", funnelLeads.no_show)} valueClass="text-red-400" format={nf} onDrill={() => setDrill({ kpiKey: "no_show", label: "No-show" })} />
-                  <div className="mt-4 h-px w-1/3 bg-white/10" />
-                  <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                  <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                  <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 </DarkCard>
               ) : (
                 <NoShowCard
@@ -2183,7 +2183,7 @@ export default function DashboardPage() {
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DarkCard accent="#34d399">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.tratamentos}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{L.tratamentos}</p>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2228,13 +2228,13 @@ export default function DashboardPage() {
                     </div>
                   </>
                 )}
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("tratamentos", "Tratamentos")}
               </DarkCard>
               <DarkCard accent="#60a5fa">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{L.consultas}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{L.consultas}</p>
                   {!isJuridico && (
                   <button
                     type="button"
@@ -2302,7 +2302,7 @@ export default function DashboardPage() {
                         {moneyBR(bd?.consultas.valor_total ?? 0)}
                       </span>
                     </div>
-                    <p className="mt-2 text-[10px] text-white/40">
+                    <p className="mt-2 text-[10px] text-slate-400">
                       Marcadas no período (produtividade SDR): {nf(bd?.consultas.total ?? 0)}
                     </p>
                   </>
@@ -2312,24 +2312,24 @@ export default function DashboardPage() {
                   <ul className="mt-1.5 space-y-0.5 text-[10.5px]">
                     {bd!.consultas.agendamentos.slice(0, 5).map((a, i) => (
                       <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
-                        <span className="truncate text-white/80">{a.name || "—"}</span>
-                        <span className="shrink-0 tabular-nums text-white/55">{dateHourBR(a.when)}</span>
+                        <span className="truncate text-slate-700">{a.name || "—"}</span>
+                        <span className="shrink-0 tabular-nums text-slate-500">{dateHourBR(a.when)}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="mt-1 text-[10px] italic text-white/30">sem dados</div>
+                  <div className="mt-1 text-[10px] italic text-slate-400">sem dados</div>
                 ))}
-                <div className="mt-4 h-px w-1/3 bg-white/10" />
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                 {srcBtn("consultas", "Consultas")}
               </DarkCard>
               <DarkCard accent="#f472b6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   {L.qualificacao}
                 </p>
                 {qualificacaoData.length === 0 ? (
-                  <p className="mt-6 text-[12px] text-white/40">
+                  <p className="mt-6 text-[12px] text-slate-400">
                     {crossAnalysis.isLoading ? "carregando…" : "Sem dados de qualificação no período."}
                   </p>
                 ) : (
@@ -2341,16 +2341,16 @@ export default function DashboardPage() {
                         return (
                           <li key={d.name} className="flex items-center gap-2">
                             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: d.color }} />
-                            <span className="flex-1 truncate font-medium uppercase tracking-wide text-white/80">{d.name}</span>
-                            <span className="shrink-0 tabular-nums text-white/70">{nf(d.value)}</span>
-                            <span className="w-9 shrink-0 text-right tabular-nums text-white/40">{pct}%</span>
+                            <span className="flex-1 truncate font-medium uppercase tracking-wide text-slate-700">{d.name}</span>
+                            <span className="shrink-0 tabular-nums text-slate-700">{nf(d.value)}</span>
+                            <span className="w-9 shrink-0 text-right tabular-nums text-slate-400">{pct}%</span>
                           </li>
                         );
                       })}
                     </ul>
                   </div>
                 )}
-                <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
               </DarkCard>
             </div>
             </SecaoDashboard>
@@ -2405,7 +2405,7 @@ export default function DashboardPage() {
             {((ov?.custom_kpis?.length ?? 0) > 0 || canEditKpis) && (
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                     Meus KPIs
                   </h2>
                   {canEditKpis && (
@@ -2421,7 +2421,7 @@ export default function DashboardPage() {
 
                 {(ov?.custom_kpis?.length ?? 0) === 0 ? (
                   <DarkCard>
-                    <p className="text-[12px] text-white/50">
+                    <p className="text-[12px] text-slate-500">
                       Nenhum KPI custom ainda. Clique em <span className="text-emerald-300">Novo KPI</span> para criar um card com a métrica, a cor e a fonte (etapa/campo) que você quiser.
                     </p>
                   </DarkCard>
@@ -2453,14 +2453,14 @@ export default function DashboardPage() {
                       ) : (
                         <DarkCard key={k.key} accent={k.color ?? "#64748b"}>
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                               {k.label}
                             </p>
                             {canEditKpis && (
                               <button
                                 type="button"
                                 onClick={() => setKpiModal({ existing: savedKpiByKey.get(k.key) ?? null })}
-                                className="shrink-0 rounded-full p-1 text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                                className="shrink-0 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                                 aria-label={`Editar ${k.label}`}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -2473,8 +2473,8 @@ export default function DashboardPage() {
                             format={nf}
                             onDrill={() => setDrill({ kpiKey: k.key, label: k.label })}
                           />
-                          <div className="mt-4 h-px w-1/3 bg-white/10" />
-                          <p className="mt-3 text-[11px] text-white/40">{rangeLabel}</p>
+                          <div className="mt-4 h-px w-1/3 bg-slate-100" />
+                          <p className="mt-3 text-[11px] text-slate-400">{rangeLabel}</p>
                         </DarkCard>
                       ),
                     )}
@@ -2558,10 +2558,10 @@ export default function DashboardPage() {
             {/* ─── Tendência: barras por dia da semana ────────────────── */}
             <DarkCard className="mt-4" accent="#34d399">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Leads por dia da semana
                 </p>
-                <span className="text-[11px] text-white/40">{rangeLabel}</span>
+                <span className="text-[11px] text-slate-400">{rangeLabel}</span>
               </div>
               <div className="mt-4 h-60">
                 <ResponsiveContainer>

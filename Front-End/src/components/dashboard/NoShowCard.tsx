@@ -98,13 +98,13 @@ export function NoShowCard({
   const itens = lista === "faltas" ? data?.faltas : lista === "desmarcadas" ? data?.desmarcadas : null;
 
   return (
-    <div className={cn("rounded-2xl bg-[#0f1f3a]/80 p-5 ring-1 ring-white/5", className)}>
+    <div className={cn("rounded-2xl bg-white p-5 ring-1 ring-slate-200", className)}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Agenda que não aconteceu
         </p>
         {data && data.resolvidos > 0 && (
-          <p className="text-[11px] tabular-nums text-white/40">
+          <p className="text-[11px] tabular-nums text-slate-400">
             {data.compareceram} de {data.resolvidos} atenderam
           </p>
         )}
@@ -121,7 +121,7 @@ export function NoShowCard({
           {isLoading ? "—" : naoAconteceram}
         </p>
         {data && data.resolvidos > 0 && (
-          <p className="text-[13px] leading-snug text-white/50">
+          <p className="text-[13px] leading-snug text-slate-500">
             <span className="tabular-nums">{pctPerdido}%</span> dos {data.resolvidos} horários
             <br />
             que já passaram
@@ -131,12 +131,12 @@ export function NoShowCard({
 
       {/* Comparativo: só aparece quando existe período anterior de verdade. */}
       {variacao && (
-        <p className="mt-2 text-[11.5px] tabular-nums text-white/40">
+        <p className="mt-2 text-[11.5px] tabular-nums text-slate-400">
           Período anterior: {variacao.agendados} agendados
         </p>
       )}
 
-      <div className="mt-3 h-px w-1/3 bg-white/10" />
+      <div className="mt-3 h-px w-1/3 bg-slate-100" />
 
       {/* O desfecho inteiro: é isso que torna o número interpretável. */}
       {data && (
@@ -173,18 +173,18 @@ export function NoShowCard({
       )}
 
       {itens && itens.length > 0 && (
-        <ul className="mt-3 max-h-56 divide-y divide-white/[0.05] overflow-y-auto border-t border-white/[0.06] pt-1">
+        <ul className="mt-3 max-h-56 divide-y divide-slate-200] overflow-y-auto border-t border-slate-200 pt-1">
           {itens.map((i, n) => (
             <li key={`${i.paciente}-${n}`} className="py-1.5">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[12px] text-white/85">
+                <span className="truncate text-[12px] text-slate-700">
                   {i.paciente?.trim() || "Sem nome"}
                 </span>
-                <span className="shrink-0 text-[10.5px] tabular-nums text-white/40">
+                <span className="shrink-0 text-[10.5px] tabular-nums text-slate-400">
                   {dataHora(i.quando)}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-x-2 text-[10.5px] text-white/40">
+              <div className="flex flex-wrap gap-x-2 text-[10.5px] text-slate-400">
                 {i.categoria && <span>{i.categoria}</span>}
                 {i.profissional && <span>· {i.profissional}</span>}
                 {i.status && <span>· {i.status}</span>}
@@ -194,7 +194,7 @@ export function NoShowCard({
         </ul>
       )}
 
-      <p className="mt-3 text-[10px] text-white/30">
+      <p className="mt-3 text-[10px] text-slate-400">
         Fonte: agenda do CRM da franquia, pelo dia do atendimento.
       </p>
     </div>
@@ -213,10 +213,10 @@ function Linha({
   onClick?: () => void;
 }) {
   const cor =
-    tom === "ok" ? "text-emerald-300" : tom === "ruim" ? "text-rose-300" : tom === "atencao" ? "text-amber-300" : "text-white/80";
+    tom === "ok" ? "text-emerald-300" : tom === "ruim" ? "text-rose-300" : tom === "atencao" ? "text-amber-300" : "text-slate-700";
   const conteudo = (
     <>
-      <dt className="text-[11px] text-white/45">{k}</dt>
+      <dt className="text-[11px] text-slate-500">{k}</dt>
       <dd className={cn("text-[15px] font-medium tabular-nums", cor)}>{v}</dd>
     </>
   );

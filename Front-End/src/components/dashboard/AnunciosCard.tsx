@@ -51,7 +51,7 @@ function Criativo({
 
   const quadro = (
     <div
-      className={`relative aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] ${className}`}
+      className={`relative aspect-square w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${className}`}
     >
       {temImagem ? (
         <img
@@ -135,10 +135,10 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
   const titulo = (l: Linha) => l.nome?.trim() || rotulo(l.anuncio);
 
   return (
-    <div className={`rounded-2xl border border-white/10 bg-[#0d1526] p-5 ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white border border-slate-200 p-5 ${className}`}>
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">Anúncios que mais trazem lead</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Anúncios que mais trazem lead</h3>
           <p className="text-xs text-slate-400">
             De cada anúncio: quantos pacientes chegaram e quantos agendaram
           </p>
@@ -151,14 +151,14 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
       {loading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="aspect-square w-full animate-pulse rounded-lg bg-white/5" />
+            <div key={i} className="aspect-square w-full animate-pulse rounded-lg bg-slate-50" />
           ))}
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {podio.map((l) => (
-              <div key={l.anuncio} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+              <div key={l.anuncio} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <Criativo src={l.thumbnail} href={l.permalink} alt={titulo(l)} />
                 <p className="mt-2 truncate text-xs text-slate-200" title={titulo(l)}>
                   {titulo(l)}
@@ -169,11 +169,11 @@ export function AnunciosCard({ linhas = [], loading = false, className = "" }: P
           </div>
 
           {resto.length > 0 && (
-            <div className="mt-4 border-t border-white/[0.06] pt-1">
+            <div className="mt-4 border-t border-slate-200 pt-1">
               {resto.map((l) => (
                 <div
                   key={l.anuncio}
-                  className="flex items-center gap-3 border-b border-white/[0.04] py-2 last:border-b-0"
+                  className="flex items-center gap-3 border-b border-slate-200 py-2 last:border-b-0"
                 >
                   <div className="w-8 shrink-0">
                     <Criativo src={l.thumbnail} href={l.permalink} alt="" />
