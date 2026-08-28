@@ -29,6 +29,7 @@ import { MotivosPerdaCard } from "@/components/dashboard/MotivosPerdaCard";
 import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
 import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
 import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
+import { FunilRede } from "@/components/dashboard/FunilRede";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -1864,8 +1865,31 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* ─── 0. O FUNIL ──────────────────────────────────────────
+                Abre a página porque é a única pergunta que se faz todo dia.
+                Usa os mesmos kpiLive()/semAutorizacaoFranquia() dos cards, então
+                o número aqui e o número lá embaixo nunca divergem — e o período
+                escolhido nos filtros já chega na API da franquia por este caminho. */}
+            <FunilRede
+              carregando={overview.isLoading}
+              leads={kpiLive("total_leads", ov?.total_leads ?? 0)}
+              agendados={
+                semAutorizacaoFranquia("agendados")
+                  ? null
+                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
+              }
+              consultas={
+                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
+              }
+              tratamentos={
+                semAutorizacaoFranquia("tratamentos")
+                  ? null
+                  : kpiLive("tratamentos", ov?.fechou ?? 0)
+              }
+            />
+
             {/* ─── 1. Resultado do período ───────────────────────────── */}
-            <SecaoDashboard titulo="Resultado do período" subtitulo="Quantos chegaram e o que virou paciente" className="!mt-6">
+            <SecaoDashboard titulo="Resultado do período" subtitulo="Quantos chegaram e o que virou paciente" recolhivel className="!mt-6">
             {/* ─── Hero: grid assimétrica amoCRM (1 card por métrica) ─── */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Col 1 (tall): Total de Leads + canais (INCOMING MESSAGES style) */}
@@ -2332,7 +2356,7 @@ export default function DashboardPage() {
             </SecaoDashboard>
 
             {/* ─── 2. De onde vêm ─────────────────────────────────────── */}
-            <SecaoDashboard titulo="De onde vêm" subtitulo="Mídia e peça que trouxeram o paciente">
+            <SecaoDashboard titulo="De onde vêm" subtitulo="Mídia e peça que trouxeram o paciente" recolhivel>
             {/* De qual anúncio veio o paciente, e se ele agendou. Fica antes dos cards
                 de receita porque é a decisão mais cara do mês: onde colocar verba. */}
             <AnunciosCard className="mt-4" linhas={ov?.anuncios} loading={isLoading} />
@@ -2345,7 +2369,7 @@ export default function DashboardPage() {
             </SecaoDashboard>
 
             {/* ─── 3. Receita e perda ─────────────────────────────────── */}
-            <SecaoDashboard titulo="Receita e perda" subtitulo="O que entrou de dinheiro e onde o funil vaza">
+            <SecaoDashboard titulo="Receita e perda" subtitulo="O que entrou de dinheiro e onde o funil vaza" recolhivel>
             {/* Dinheiro do tratamento + aceitação, e o diagnóstico da perda.
                 São os dois cards que ligam o funil à receita. */}
             {!isJuridico && (
