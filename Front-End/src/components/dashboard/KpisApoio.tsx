@@ -42,6 +42,19 @@ function corDaOpcao(rotulo: string): string {
 /** "AMARELO — não fechou: dinheiro, família" → "AMARELO". O resto vive no "?". */
 const curto = (rotulo: string) => rotulo.split("—")[0].trim();
 
+/** Ícone do card (SVG livre em /public/kpi-icons — Tabler, MIT). Decorativo: o
+ *  rótulo ao lado já nomeia o KPI, então o alt vazio evita leitura dobrada. */
+function Icone({ nome }: { nome: string }) {
+  return (
+    <img
+      src={`/kpi-icons/${nome}.svg`}
+      alt=""
+      aria-hidden="true"
+      className="ml-auto h-[18px] w-[18px] opacity-80"
+    />
+  );
+}
+
 function Selo({ fonte }: { fonte: "kommo" | "franquia" }) {
   return (
     <span
@@ -68,10 +81,14 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
     <section className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
       <div className="grid grid-cols-1 sm:grid-cols-3">
         {/* 1. Qualidade do que entrou */}
-        <div className="flex flex-col gap-2 border-b border-white/[0.07] p-4 sm:border-b-0 sm:border-r">
+        <div
+          className="flex flex-col gap-2 border-b border-t-2 border-white/[0.07] p-4 sm:border-b-0 sm:border-r"
+          style={{ borderTopColor: "#fb923c" }}
+        >
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
             Leads qualificados
             <BotaoAjuda kpiKey="leads_qualificados" />
+            <Icone nome="flame" />
           </span>
           <span
             className={`text-[28px] font-bold leading-none tracking-tight tabular-nums ${
@@ -87,10 +104,14 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
         </div>
 
         {/* 2. O que se perdeu entre marcar e comparecer */}
-        <div className="flex flex-col gap-2 border-b border-white/[0.07] p-4 sm:border-b-0 sm:border-r">
+        <div
+          className="flex flex-col gap-2 border-b border-t-2 border-white/[0.07] p-4 sm:border-b-0 sm:border-r"
+          style={{ borderTopColor: "#f87171" }}
+        >
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
             No-show
             <BotaoAjuda kpiKey="no_show" />
+            <Icone nome="calendar-x" />
           </span>
           <span
             className={`text-[28px] font-bold leading-none tracking-tight tabular-nums ${
@@ -106,10 +127,11 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
         </div>
 
         {/* 3. Por que não fechou */}
-        <div className="flex flex-col gap-2 p-4">
+        <div className="flex flex-col gap-2 border-t-2 border-white/[0.07] p-4" style={{ borderTopColor: "#22d3ee" }}>
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
             Semáforo
             <BotaoAjuda kpiKey="semaforo" />
+            <Icone nome="traffic-lights" />
           </span>
 
           {carregando ? (
@@ -131,7 +153,7 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
               </div>
               <Selo fonte="kommo" />
               <span className="text-[10px] leading-snug text-white/30">
-                {nf.format(totalSemaforo)} preenchidos, dentro de COMPARECEU
+                {nf.format(totalSemaforo)} preenchidos, da consulta em diante
               </span>
             </>
           ) : (

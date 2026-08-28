@@ -1,0 +1,4 @@
+Ícones: Tabler Icons — https://tabler.io/icons
+Licença MIT, Copyright (c) 2020-2026 Paweł Kuna.
+Baixados do repositório oficial e alterados apenas no atributo `stroke`,
+para gravar a cor do card (um <img> não herda currentColor do CSS).

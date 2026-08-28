@@ -8,6 +8,10 @@ const brl = new Intl.NumberFormat("pt-BR", {
 
 interface Etapa {
   nome: string;
+  /** SVG em /public/kpi-icons (Tabler, MIT). Ver CREDITOS.txt na pasta. */
+  icone: string;
+  /** Cor da faixa no topo do card — a mesma gravada dentro do SVG. */
+  cor: string;
   /** Chave do glossário — alimenta o "?" e o tutorial. */
   chave: string;
   valor: number | null;
@@ -52,30 +56,37 @@ interface Props {
  */
 export function FunilRede({ leads, agendados, consultas, tratamentos, receita, carregando }: Props) {
   const etapas: Etapa[] = [
-    { nome: "Leads", chave: "total_leads", valor: leads, fonte: "kommo" },
     {
-      nome: "Agendados",
+      nome: "Leads",
+      chave: "total_leads",
+      icone: "users",
+      cor: "#fbbf24",
+      valor: leads,
+      fonte: "kommo",
+    },
+    {
+      nome: "Agendados", icone: "calendar-check", cor: "#38bdf8",
       chave: "agendados",
       valor: agendados,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
     },
     {
-      nome: "Consultas",
+      nome: "Consultas", icone: "stethoscope", cor: "#34d399",
       chave: "consultas",
       valor: consultas,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
     },
     {
-      nome: "Tratamentos",
+      nome: "Tratamentos", icone: "clipboard-check", cor: "#a78bfa",
       chave: "tratamentos",
       valor: tratamentos,
       fonte: "franquia",
       porque: "Sem autorização da franquia nesta unidade.",
     },
     {
-      nome: "Receita",
+      nome: "Receita", icone: "wallet", cor: "#4ade80",
       chave: "receita",
       valor: receita,
       // Vem da KOMMO, não da franquia: a rota da franquia não expõe valor, mas a
@@ -112,11 +123,20 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, c
         {etapas.map((e) => (
           <div
             key={e.nome}
-            className="flex flex-col gap-2 border-b border-l border-white/[0.07] p-4 first:border-l-0 lg:border-b-0"
+            className="flex flex-col gap-2 border-b border-l border-t-2 border-white/[0.07] p-4 first:border-l-0 lg:border-b-0"
+            style={{ borderTopColor: e.cor }}
           >
             <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
               {e.nome}
               <BotaoAjuda kpiKey={e.chave} />
+              {/* O ícone fica à direita e é decorativo: o rótulo já nomeia o KPI,
+                  então repetir no alt só faria o leitor de tela ler duas vezes. */}
+              <img
+                src={`/kpi-icons/${e.icone}.svg`}
+                alt=""
+                aria-hidden="true"
+                className="ml-auto h-[18px] w-[18px] opacity-80"
+              />
             </span>
 
             <span
