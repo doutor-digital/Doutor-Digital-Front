@@ -32,6 +32,7 @@ import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
 import { FunilRede } from "@/components/dashboard/FunilRede";
 import { RotuloKpi } from "@/components/dashboard/KpiInfo";
 import { VeredictoClinica } from "@/components/dashboard/VeredictoClinica";
+import { KpisApoio } from "@/components/dashboard/KpisApoio";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
@@ -1905,6 +1906,19 @@ export default function DashboardPage() {
                   ? null
                   : kpiLive("tratamentos", ov?.fechou ?? 0)
               }
+            />
+
+            {/* Segunda faixa: leituras laterais, não etapas do funil. Separada de
+                propósito — misturar sugeriria uma sequência que não existe.
+
+                leadsQualificados usa `?? null` e não `?? 0`: unidade sem o KPI
+                configurado mostraria zero, que se lê como "nenhum lead quente" em
+                vez de "não medido". */}
+            <KpisApoio
+              carregando={overview.isLoading}
+              leadsQualificados={ov?.kpi_overrides?.leads_qualificados ?? null}
+              noShow={semAutorizacaoFranquia("no_show") ? null : kpiLive("no_show", funnelLeads.no_show)}
+              semaforo={ov?.custom_kpis?.find((k) => k.key === "semaforo")?.breakdown}
             />
 
             {/* ─── 1. Resultado do período ───────────────────────────── */}
