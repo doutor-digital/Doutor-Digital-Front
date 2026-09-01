@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AsaasCard } from "@/components/integracoes/AsaasCard";
 import { CrmFranquiaCard } from "@/components/integracoes/CrmFranquiaCard";
+import { RastreioCard } from "@/components/integracoes/RastreioCard";
 
 interface ProviderMeta {
   id: AdsProvider;
@@ -257,6 +258,10 @@ export default function CentralIntegracoesPage() {
           })}
         </div>
       )}
+
+      {/* Fica logo abaixo dos provedores: conectar a conta de anúncio só serve de verdade
+          quando o rastreio está identificando os leads que essa conta trouxe. */}
+      <RastreioCard />
 
       <AsaasCard />
 
