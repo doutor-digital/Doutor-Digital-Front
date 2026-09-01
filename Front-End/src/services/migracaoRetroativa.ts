@@ -4,7 +4,11 @@ import { api } from "@/lib/api";
 export interface MovimentoMigracao {
   history_id: number;
   paciente: string | null;
+  /** Rótulo gravado na linha — NÃO serve para agrupar: a mesma etapa aparece ora com
+   *  nome canônico, ora com o id cru. Use `etapa_id` e resolva o nome com useStageNames. */
   etapa: string;
+  /** Id da etapa na Kommo: é por ele que se agrupa e se descobre o nome de verdade. */
+  etapa_id: number;
   /** Quando a SDR arrastou o card — o que a Kommo carimbou. */
   arrastado_em: string;
   /** Quando a franquia lançou o tratamento — a data verdadeira. Só vem em `datar`. */
@@ -20,7 +24,10 @@ export interface PreviaMigracao {
   leads_com_mais_de_um_tratamento: number;
   /** O que dá para corrigir sozinho: tem tratamento na franquia, em outro dia. */
   datar: MovimentoMigracao[];
-  /** Sem tratamento casado — a SDR não corrige, sobe para o gestor. */
+  /** Quantos cards ficaram sem tratamento casado — número inteiro, sem truncar. */
+  sem_vinculo_total: number;
+  /** Sem tratamento casado — a SDR não corrige, sobe para o gestor. Lista TRUNCADA
+   *  no servidor: uma janela larga devolve milhares e ninguém lê duas mil linhas. */
   sem_vinculo: MovimentoMigracao[];
 }
 
