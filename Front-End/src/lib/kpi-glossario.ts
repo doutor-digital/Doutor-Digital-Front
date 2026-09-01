@@ -92,14 +92,14 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   no_show: {
     titulo: "No-show",
     resumo:
-      "Pacientes marcados como NÃO COMPARECEU na agenda da clínica, em qualquer tipo de horário.",
+      "Horário que a clínica reservou e o paciente não usou — a falta registrada como tal, mais o desmarque lançado depois da hora do atendimento.",
     comoLer:
-      "Cada falta é uma hora de agenda paga e não usada. Se o número está suspeito de baixo, desconfie antes de comemorar: pode ser a recepção marcando DESMARCADO no lugar de falta.",
+      "Cada falta é uma hora de agenda paga e não usada. Compare com agendados: acima de 20% o problema é confirmação, não venda.",
     fonte: "Franquia",
     fonteDetalhe:
-      'Situação "NÃO COMPARECEU" na agenda do Doutor Hérnia, somando TODAS as categorias — avaliação, sessão e retorno. É o mesmo número que a tela da franquia mostra ao filtrar por essa situação no período.',
+      'Agenda do Doutor Hérnia, todas as categorias (avaliação, sessão e retorno): situação "NÃO COMPARECEU" + os DESMARCADO cuja baixa foi lançada na hora do atendimento ou depois. O "?" do card mostra a divisão entre os dois.',
     cuidado:
-      "É o único card desta tela que não se limita a avaliação. Os outros contam só paciente novo, porque o funil comercial é sobre isso; falta é outra pergunta — a cadeira ficou vazia igual, seja de quem vinha conhecer a clínica ou de quem já está em tratamento. Em Araguaína, agosto, as 4 faltas do mês eram todas de SESSÃO: contar só avaliação devolvia zero e contradizia a tela da clínica.",
+      "Ninguém desmarca uma consulta que já passou: quando a baixa entra depois do horário, é a recepção fechando o horário porque o paciente não veio. Sem somar isso, o card comparava clínicas pelo hábito de quem digita — em 28/08, 39% dos desmarques de Parauapebas eram tardios contra 5% em Marabá, a única que usa o status de falta de verdade. Desmarque com antecedência continua fora: avisar três dias antes dá tempo de encaixar outro paciente. Este é também o único card que não se limita a avaliação — cadeira vazia é cadeira vazia, seja de paciente novo ou de quem já está em tratamento.",
   },
 
   tratamentos: {
