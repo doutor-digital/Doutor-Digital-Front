@@ -121,7 +121,7 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
           </span>
           <Selo fonte="franquia" />
           <span className="text-[10px] leading-snug text-white/30">
-            horários que já passaram e não viraram atendimento
+            faltas em toda a agenda: avaliação, sessão e retorno
           </span>
         </div>
 

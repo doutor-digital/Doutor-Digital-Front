@@ -92,14 +92,14 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   no_show: {
     titulo: "No-show",
     resumo:
-      "Horários que já passaram e não viraram atendimento: quem faltou, quem desmarcou e quem remarcou.",
+      "Pacientes marcados como NÃO COMPARECEU na agenda da clínica, em qualquer tipo de horário.",
     comoLer:
-      "É agenda reservada e não usada — hora de médico paga sem receita. Divida pelos agendados para ter a taxa de desperdício; acima de 30% o problema é confirmação, não venda.",
+      "Cada falta é uma hora de agenda paga e não usada. Se o número está suspeito de baixo, desconfie antes de comemorar: pode ser a recepção marcando DESMARCADO no lugar de falta.",
     fonte: "Franquia",
     fonteDetalhe:
-      "Agenda do Doutor Hérnia: horários já vencidos menos os atendidos. O que ainda vai acontecer fica de fora — horário de amanhã não é acerto nem erro.",
+      'Situação "NÃO COMPARECEU" na agenda do Doutor Hérnia, somando TODAS as categorias — avaliação, sessão e retorno. É o mesmo número que a tela da franquia mostra ao filtrar por essa situação no período.',
     cuidado:
-      'Junta desmarcado, remarcado e falta de propósito. Antes o card contava só o status "NÃO COMPARECEU" e mostrava ZERO na maioria das unidades — medido em agosto: Boa Vista 55 agendados e 0 faltas, Araguaína 8 desmarcados e 0 faltas. Só Marabá usa o status; as outras marcam DESMARCADO para tudo. Zero ali não significava "ninguém faltou", significava "ninguém registrou".',
+      "É o único card desta tela que não se limita a avaliação. Os outros contam só paciente novo, porque o funil comercial é sobre isso; falta é outra pergunta — a cadeira ficou vazia igual, seja de quem vinha conhecer a clínica ou de quem já está em tratamento. Em Araguaína, agosto, as 4 faltas do mês eram todas de SESSÃO: contar só avaliação devolvia zero e contradizia a tela da clínica.",
   },
 
   tratamentos: {
