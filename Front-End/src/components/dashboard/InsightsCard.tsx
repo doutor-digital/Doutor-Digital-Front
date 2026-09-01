@@ -143,7 +143,6 @@ export function InsightsCard({
     if (totalTrend === "up" && deltaPct !== null && deltaPct >= 20) {
       recs.push({
         text: `Crescimento expressivo de ${deltaPct.toFixed(1)}% — bom momento para escalar campanhas que estão funcionando.`,
-        cta: { label: "Ver origens", to: "/sources" },
         tone: "good",
       });
     }
@@ -151,7 +150,6 @@ export function InsightsCard({
     if (totalTrend === "down" && deltaPct !== null && deltaPct <= -20) {
       recs.push({
         text: `Queda de ${Math.abs(deltaPct).toFixed(1)}% vs período anterior — investigue origens com menor volume.`,
-        cta: { label: "Ver origens", to: "/sources" },
         tone: "warn",
       });
     }

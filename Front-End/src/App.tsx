@@ -21,9 +21,6 @@ const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage")
 const UnitSelectPage   = lazy(() => import("@/pages/UnitSelectPage"));
 const LeadsPage        = lazy(() => import("@/pages/LeadsPage"));
 const LeadDetailPage   = lazy(() => import("@/pages/LeadDetailPage"));
-const FunnelPage       = lazy(() => import("@/pages/FunnelPage"));
-const PipelineBoardPage= lazy(() => import("@/pages/PipelineBoardPage"));
-const SourcesPage      = lazy(() => import("@/pages/SourcesPage"));
 const AlertsPage       = lazy(() => import("@/pages/AlertsPage"));
 const UnitsPage        = lazy(() => import("@/pages/UnitsPage"));
 const ParceirosPage    = lazy(() => import("@/pages/ParceirosPage"));
@@ -39,14 +36,12 @@ const ContactsDuplicatesPage = lazy(() => import("@/pages/ContactsDuplicatesPage
 const ContactDetailPage = lazy(() => import("@/pages/ContactDetailPage"));
 const ContactFormPage  = lazy(() => import("@/pages/ContactFormPage"));
 const RecentLeadsPage  = lazy(() => import("@/pages/RecentLeadsPage"));
-const RecuperacaoPage  = lazy(() => import("@/pages/RecuperacaoPage"));
 const MudancasEtapasPage = lazy(() => import("@/pages/MudancasEtapasPage"));
 const MigracaoRetroativaPage = lazy(() => import("@/pages/MigracaoRetroativaPage"));
 const JourneyPage      = lazy(() => import("@/pages/JourneyPage"));
 const ConferenciaPage  = lazy(() => import("@/pages/ConferenciaPage"));
 const MidiaPage        = lazy(() => import("@/pages/MidiaPage"));
 const MidiaVersoesPage = lazy(() => import("@/pages/MidiaVersoesPage"));
-const ConversaoPage    = lazy(() => import("@/pages/ConversaoPage"));
 
 // ─── Insights (CAPI mockada + analytics agregadas) ────────────────────────
 const InsightsHubPage     = lazy(() => import("@/pages/InsightsHubPage"));
@@ -172,9 +167,6 @@ export default function App() {
           <Route path="/conferencia"       element={<ConferenciaPage />}  />
           <Route path="/midia"             element={<MidiaPage />}        />
           <Route path="/midia/versoes"     element={<MidiaVersoesPage />} />
-          <Route path="/funnel"            element={<FunnelPage />}       />
-          <Route path="/funil-board"       element={<PipelineBoardPage />} />
-          <Route path="/sources"           element={<SourcesPage />}      />
           <Route path="/alerts"            element={<AlertsPage />}       />
           <Route path="/units"             element={<UnitsPage />}        />
           <Route path="/parceiros"         element={<ParceirosPage />}    />
@@ -184,10 +176,8 @@ export default function App() {
           <Route path="/settings"          element={<SettingsPage />}     />
           <Route path="/amanheceu"         element={<AmanheceuPage />}    />
           <Route path="/recent-leads"      element={<RecentLeadsPage />}  />
-          <Route path="/recuperacao"       element={<RecuperacaoPage />}  />
           <Route path="/mudancas-etapas"   element={<MudancasEtapasPage />} />
           <Route path="/migracao-retroativa" element={<MigracaoRetroativaPage />} />
-          <Route path="/conversao"         element={<ConversaoPage />}    />
           <Route path="/contacts"          element={<ContactsPage />}     />
           <Route path="/contacts/duplicates" element={<ContactsDuplicatesPage />} />
           <Route path="/contacts/new"      element={<ContactFormPage />}  />

@@ -22,19 +22,16 @@ import {
   FileSearch,
   FileText,
   FileUp,
-  Filter,
   Flame,
   Gauge,
   History,
   Layers,
   LayoutDashboard,
-  LifeBuoy,
   ListChecks,
   Lock,
   type LucideIcon,
   Map,
   Network,
-  PieChart,
   Plug,
   Plug2,
   Route as RouteIcon,
@@ -53,9 +50,7 @@ import {
   Users,
   Users2,
   Webhook,
-  LayoutGrid,
-  Workflow,
-} from "@/components/icons";
+  } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel, isOwner, isReadOnly } from "@/lib/roles";
@@ -148,17 +143,12 @@ const navGroups: NavGroup[] = [
         label: "Leads",
         icon: ListChecks,
         iconUrl: "/nav-icons/leads.png",
-        basePaths: ["/leads", "/recent-leads", "/recuperacao", "/mudancas-etapas", "/migracao-retroativa", "/conversao", "/funnel", "/funil-board", "/sources"],
+        basePaths: ["/leads", "/recent-leads", "/mudancas-etapas", "/migracao-retroativa"],
         children: [
           { to: "/leads", label: "Todos os leads", icon: ListChecks, end: true },
           { to: "/recent-leads", label: "Recentes", icon: History },
-          { to: "/recuperacao", label: "Recuperação", icon: LifeBuoy },
           { to: "/mudancas-etapas", label: "Mudanças de etapa", icon: RouteIcon },
           { to: "/migracao-retroativa", label: "Migração retroativa", icon: CalendarDays },
-          { to: "/conversao", label: "Conversão", icon: PieChart },
-          { to: "/funnel", label: "Funil", icon: Workflow },
-          { to: "/funil-board", label: "Funil · Quadro", icon: LayoutGrid },
-          { to: "/sources", label: "Origens", icon: Filter },
         ],
       },
       {
@@ -458,7 +448,6 @@ export function Sidebar() {
             { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
             { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
             { to: "/desempenho", label: "Desempenho de Mídia", icon: Target },
-            { to: "/sources", label: "Origens", icon: Filter },
           ],
         },
       ];

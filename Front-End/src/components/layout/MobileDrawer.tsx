@@ -13,7 +13,6 @@ import {
   DollarSign,
   FileBarChart,
   FileSearch,
-  Filter,
   Layers,
   LayoutDashboard,
   LineChart,
@@ -25,7 +24,6 @@ import {
   Target,
   UserPlus,
   Users2,
-  Workflow,
   X,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -88,8 +86,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/leads", label: "Leads", icon: ListChecks, iconUrl: "/nav-icons/leads.png" },
       { to: "/contacts", label: "Contatos", icon: ContactIcon, iconUrl: "/nav-icons/contatos.png" },
-      { to: "/funnel", label: "Funil", icon: Workflow },
-      { to: "/sources", label: "Origens", icon: Filter },
       {
         label: "Unidades",
         icon: Building2,

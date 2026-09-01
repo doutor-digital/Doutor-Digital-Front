@@ -590,12 +590,6 @@ function ConversionHero({
                 : `Preencha as observações deste lead pra extrair o motivo automaticamente.`}
             </p>
           </div>
-          <Link
-            to="/recuperacao"
-            className="inline-flex items-center gap-1.5 rounded-md bg-rose-500/10 px-3 py-2 text-[12px] font-semibold text-rose-200 ring-1 ring-inset ring-rose-500/30 hover:bg-rose-500/15 hover:text-rose-100"
-          >
-            Fila de resgates →
-          </Link>
         </div>
       </div>
     );

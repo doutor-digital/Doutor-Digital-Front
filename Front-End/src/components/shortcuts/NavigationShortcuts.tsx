@@ -14,7 +14,5 @@ export function NavigationShortcuts() {
   useShortcut("g u", () => navigate("/units"));
   useShortcut("g s", () => navigate("/settings"));
   useShortcut("g v", () => navigate("/live"));
-  useShortcut("g f", () => navigate("/funnel"));
-  useShortcut("g o", () => navigate("/sources"));
   return null;
 }

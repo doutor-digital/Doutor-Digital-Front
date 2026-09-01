@@ -1,8 +1,7 @@
 import {
   Activity, BarChart3, Bell, Bot, Building2, Cog, Contact, Copy,
-  DollarSign, FileBarChart, Filter, LayoutDashboard, LineChart, ListChecks,
-  Moon, RefreshCw, Radio, UserPlus, Users2, Workflow,
-  type LucideIcon,
+  DollarSign, FileBarChart, LayoutDashboard, LineChart, ListChecks,
+  Moon, RefreshCw, Radio, UserPlus, Users2, type LucideIcon,
 } from "@/components/icons";
 
 export type CommandItem = {
@@ -23,8 +22,6 @@ export const PAGE_COMMANDS: CommandItem[] = [
   { id: "nav:amanheceu", title: "Amanheceu", icon: Moon, to: "/amanheceu", group: "Navegação", keywords: ["madrugada", "manhã"] },
   { id: "nav:leads", title: "Leads", icon: ListChecks, to: "/leads", group: "Navegação", shortcut: "g l" },
   { id: "nav:contacts", title: "Contatos", icon: Contact, to: "/contacts", group: "Navegação", shortcut: "g c" },
-  { id: "nav:funnel", title: "Funil", icon: Workflow, to: "/funnel", group: "Navegação", shortcut: "g f" },
-  { id: "nav:sources", title: "Origens", icon: Filter, to: "/sources", group: "Navegação", shortcut: "g o" },
   { id: "nav:units", title: "Unidades", icon: Building2, to: "/units", group: "Navegação", shortcut: "g u" },
   { id: "nav:reports", title: "Relatórios", icon: FileBarChart, to: "/reports", group: "Navegação", shortcut: "g r" },
   { id: "nav:alerts", title: "Alertas", icon: Bell, to: "/alerts", group: "Navegação" },
