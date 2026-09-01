@@ -91,13 +91,15 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
 
   no_show: {
     titulo: "No-show",
-    resumo: "Avaliações em que o paciente não apareceu e a recepção registrou como falta.",
+    resumo:
+      "Horários que já passaram e não viraram atendimento: quem faltou, quem desmarcou e quem remarcou.",
     comoLer:
-      "Cada falta é uma hora de médico paga e não usada. Se o número está suspeito de baixo, desconfie antes de comemorar.",
+      "É agenda reservada e não usada — hora de médico paga sem receita. Divida pelos agendados para ter a taxa de desperdício; acima de 30% o problema é confirmação, não venda.",
     fonte: "Franquia",
-    fonteDetalhe: 'Situação "NÃO COMPARECEU" na agenda do Doutor Hérnia.',
+    fonteDetalhe:
+      "Agenda do Doutor Hérnia: horários já vencidos menos os atendidos. O que ainda vai acontecer fica de fora — horário de amanhã não é acerto nem erro.",
     cuidado:
-      "Zero falta quase nunca é bom sinal — costuma significar que a recepção usa DESMARCADO para tudo, inclusive para quem simplesmente não veio. Quando isso acontece, a falta some do relatório sem ter sumido da clínica.",
+      'Junta desmarcado, remarcado e falta de propósito. Antes o card contava só o status "NÃO COMPARECEU" e mostrava ZERO na maioria das unidades — medido em agosto: Boa Vista 55 agendados e 0 faltas, Araguaína 8 desmarcados e 0 faltas. Só Marabá usa o status; as outras marcam DESMARCADO para tudo. Zero ali não significava "ninguém faltou", significava "ninguém registrou".',
   },
 
   tratamentos: {
