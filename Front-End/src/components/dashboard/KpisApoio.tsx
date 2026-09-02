@@ -2,11 +2,28 @@ import { BotaoAjuda } from "./KpiInfo";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
+/** Card numérico vindo de um KPI personalizado da unidade (kpi_configurations
+ *  com IsCustom). O painel antigo tinha um bloco "Meus KPIs" só para eles; no
+ *  redesign eles entram AQUI, na mesma linguagem das leituras laterais, em vez
+ *  de ganharem uma grade própria de novo. */
+export interface KpiExtra {
+  key: string;
+  label: string;
+  value: number | null;
+  /** Cor de acento do card (AccentColor do config); cai no azul padrão sem ela. */
+  cor?: string | null;
+  /** Nome do SVG em /public/kpi-icons. */
+  icone?: string;
+  legenda?: string;
+}
+
 interface Props {
   leadsQualificados: number | null;
   noShow: number | null;
   /** Distribuição do "◉ Semáforo" dentro de COMPARECEU. */
   semaforo?: Array<{ label: string; value: number }>;
+  /** KPIs personalizados numéricos da unidade (ex.: Pessoas que ligaram). */
+  extras?: KpiExtra[];
   carregando?: boolean;
 }
 
@@ -69,7 +86,7 @@ function Selo({ fonte }: { fonte: "kommo" | "franquia" }) {
   );
 }
 
-export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: Props) {
+export function KpisApoio({ leadsQualificados, noShow, semaforo, extras, carregando }: Props) {
   const temSemaforo = (semaforo?.length ?? 0) > 0;
   const totalSemaforo = (semaforo ?? []).reduce((a, s) => a + s.value, 0);
   const topo = [...(semaforo ?? [])].sort((a, b) => b.value - a.value).slice(0, 4);
@@ -169,6 +186,31 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, carregando }: P
             </>
           )}
       </div>
+
+      {/* 4+. KPIs personalizados da unidade — mesmo visual, sem grade própria. */}
+      {(extras ?? []).map((x) => (
+        <div
+          key={x.key}
+          className="flex flex-col gap-2 rounded-xl border border-t-2 border-white/[0.08] bg-white/[0.02] p-4"
+          style={{ borderTopColor: x.cor || "#60a5fa" }}
+        >
+          <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
+            {x.label}
+            <Icone nome={x.icone ?? "clipboard-check"} />
+          </span>
+          <span
+            className={`text-[28px] font-bold leading-none tracking-tight tabular-nums ${
+              carregando || x.value == null ? "text-white/25" : "text-white"
+            }`}
+          >
+            {numero(x.value)}
+          </span>
+          <Selo fonte="kommo" />
+          {x.legenda ? (
+            <span className="text-[10px] leading-snug text-white/30">{x.legenda}</span>
+          ) : null}
+        </div>
+      ))}
     </section>
   );
 }

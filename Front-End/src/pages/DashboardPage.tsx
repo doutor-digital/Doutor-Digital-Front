@@ -1914,6 +1914,33 @@ export default function DashboardPage() {
               leadsQualificados={ov?.kpi_overrides?.leads_qualificados ?? null}
               noShow={semAutorizacaoFranquia("no_show") ? null : kpiLive("no_show", funnelLeads.no_show)}
               semaforo={ov?.custom_kpis?.find((k) => k.key === "semaforo")?.breakdown}
+              extras={(ov?.custom_kpis ?? [])
+                // Só os numéricos: distribuições (semáforo, origens) já têm card
+                // próprio, e leads_qualificados já é o primeiro card da faixa.
+                .filter(
+                  (k) =>
+                    (k.display_type ?? "number") === "number" &&
+                    k.key !== "leads_qualificados",
+                )
+                .sort((a, b) => a.sort_order - b.sort_order)
+                .slice(0, 4)
+                .map((k) => ({
+                  key: k.key,
+                  label: k.label,
+                  value: k.value,
+                  cor: k.color,
+                  icone:
+                    k.key === "custom_pessoas_ligaram" ||
+                    k.key === "custom_ligacoes_recebidas"
+                      ? "phone"
+                      : "clipboard-check",
+                  legenda:
+                    k.key === "custom_pessoas_ligaram"
+                      ? "pacientes com ligação registrada no período"
+                      : k.key === "custom_ligacoes_recebidas"
+                        ? "soma das chamadas registradas no período"
+                        : "KPI personalizado desta unidade",
+                }))}
             />
 
             {/* O veredito responde "a clínica está bem hoje?" antes de qualquer
