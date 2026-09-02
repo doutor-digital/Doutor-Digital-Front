@@ -42,11 +42,21 @@ export default function MudancasEtapasPage() {
   const { tenantId, unitId } = useClinic();
   const clinicId = tenantId ?? undefined;
 
+  // As pilulas cobrem o uso do dia a dia; o calendario existe para a pergunta que elas
+  // nao respondem -- "o que aconteceu naquela semana de agosto". Escolher uma data liga o
+  // modo personalizado, e clicar numa pilula volta para ela.
   const [range, setRange] = useState("30");
-  const days = Number(range);
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
-  const dateFrom = isoDaysAgo(days);
-  const dateTo = todayIso();
+  const personalizado = range === "custom";
+
+  const dateFrom = personalizado ? customFrom : isoDaysAgo(Number(range));
+  const dateTo = personalizado ? customTo : todayIso();
+
+  // Com o periodo pela metade nao ha o que pedir: a API devolveria a janela inteira
+  // e a tela mostraria um numero que o usuario nao pediu.
+  const periodoValido = !personalizado || (!!customFrom && !!customTo && customFrom <= customTo);
 
   const query = useQuery({
     queryKey: ["stage-changes", clinicId, unitId, dateFrom, dateTo],
@@ -58,7 +68,7 @@ export default function MudancasEtapasPage() {
         dateTo,
         limit: 200,
       }),
-    enabled: !!clinicId,
+    enabled: !!clinicId && periodoValido,
     placeholderData: (prev) => prev,
   });
 
@@ -114,7 +124,11 @@ export default function MudancasEtapasPage() {
           <button
             key={r.value}
             type="button"
-            onClick={() => setRange(r.value)}
+            onClick={() => {
+              setRange(r.value);
+              setCustomFrom("");
+              setCustomTo("");
+            }}
             className={cn(
               "rounded-md border px-3 py-1.5 text-[12px] transition",
               range === r.value
@@ -125,8 +139,47 @@ export default function MudancasEtapasPage() {
             {r.label}
           </button>
         ))}
+        <div className="flex items-center gap-1.5">
+          <input
+            type="date"
+            value={customFrom}
+            max={customTo || todayIso()}
+            onChange={(e) => {
+              setCustomFrom(e.target.value);
+              if (e.target.value) setRange("custom");
+            }}
+            aria-label="Data inicial"
+            className={cn(
+              "rounded-md border bg-white/[0.02] px-2 py-1.5 text-[12px] text-slate-200 outline-none transition",
+              personalizado
+                ? "border-emerald-500/40 focus:border-emerald-400/60"
+                : "border-white/[0.08] focus:border-white/20",
+            )}
+          />
+          <span className="text-slate-500">–</span>
+          <input
+            type="date"
+            value={customTo}
+            min={customFrom || undefined}
+            max={todayIso()}
+            onChange={(e) => {
+              setCustomTo(e.target.value);
+              if (e.target.value) setRange("custom");
+            }}
+            aria-label="Data final"
+            className={cn(
+              "rounded-md border bg-white/[0.02] px-2 py-1.5 text-[12px] text-slate-200 outline-none transition",
+              personalizado
+                ? "border-emerald-500/40 focus:border-emerald-400/60"
+                : "border-white/[0.08] focus:border-white/20",
+            )}
+          />
+        </div>
+
         <span className="ml-2 text-[11px] text-slate-500">
-          {formatNumber(data?.total ?? 0)} mudanças no período
+          {personalizado && !periodoValido
+            ? "Escolha as duas datas para ver o período."
+            : `${formatNumber(data?.total ?? 0)} mudanças no período`}
         </span>
       </div>
 
