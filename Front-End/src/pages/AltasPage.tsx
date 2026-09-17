@@ -39,6 +39,7 @@ import {
   esquecerCodigo,
   lembrarCodigo,
   type CandidatoDaFila,
+  UnidadeSemFila,
   type Decisao,
 } from "@/services/altas";
 import type { Unit } from "@/types";
@@ -290,7 +291,17 @@ export default function AltasPage() {
         </div>
       ) : null}
 
-      {fila.isError && !(fila.error instanceof CodigoInvalido) ? (
+      {fila.error instanceof UnidadeSemFila ? (
+        <Card>
+          <CardBody className="py-8">
+            <EmptyState
+              icon={<Award className="h-6 w-6" />}
+              title="Esta unidade ainda não tem fila"
+              description="A fila de alta é montada pelo cruzamento com a agenda da franquia. Assim que essa unidade entrar no cruzamento, os nomes aparecem aqui."
+            />
+          </CardBody>
+        </Card>
+      ) : fila.isError && !(fila.error instanceof CodigoInvalido) ? (
         <Card>
           <CardBody className="py-8 text-rose-400">
             Não consegui falar com o agente. {String((fila.error as Error)?.message ?? "")}

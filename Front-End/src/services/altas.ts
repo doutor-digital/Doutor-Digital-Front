@@ -49,8 +49,22 @@ export class CodigoInvalido extends Error {
   }
 }
 
+/**
+ * A unidade existe no dashboard mas não no agente — ou o slug é outro lá.
+ * Acontece: o dashboard chama Porto Nacional de `doutor-hernia-porto-nacional`
+ * e o agente, de `doutor-hernia-porto`. Isso não é erro pra mostrar em vermelho
+ * pra recepção; é "esta unidade não tem fila aqui".
+ */
+export class UnidadeSemFila extends Error {
+  constructor() {
+    super("Esta unidade não tem fila de alta no agente.");
+    this.name = "UnidadeSemFila";
+  }
+}
+
 async function tratar(r: Response): Promise<unknown> {
   if (r.status === 401 || r.status === 403) throw new CodigoInvalido();
+  if (r.status === 404) throw new UnidadeSemFila();
   if (!r.ok) {
     const corpo = await r.text().catch(() => "");
     throw new Error(`Agente respondeu ${r.status}. ${corpo.slice(0, 160)}`);
