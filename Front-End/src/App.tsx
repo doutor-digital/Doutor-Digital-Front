@@ -15,6 +15,7 @@ const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
 const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
 const ResetPasswordPage    = lazy(() => import("@/pages/ResetPasswordPage"));
 const DashboardPage    = lazy(() => import("@/pages/DashboardPage"));
+const AltasPage        = lazy(() => import("@/pages/AltasPage"));
 const CalendarioFranquiaPage = lazy(() => import("@/pages/CalendarioFranquiaPage"));
 const DesempenhoPage   = lazy(() => import("@/pages/DesempenhoPage"));
 const DashboardLeadListPage = lazy(() => import("@/pages/DashboardLeadListPage"));
@@ -165,6 +166,7 @@ export default function App() {
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/conferencia"       element={<ConferenciaPage />}  />
+          <Route path="/altas"             element={<AltasPage />}        />
           <Route path="/midia"             element={<MidiaPage />}        />
           <Route path="/midia/versoes"     element={<MidiaVersoesPage />} />
           <Route path="/alerts"            element={<AlertsPage />}       />

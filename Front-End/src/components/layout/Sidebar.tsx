@@ -124,6 +124,7 @@ const navGroups: NavGroup[] = [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
       { to: "/conferencia", label: "Conferência", icon: Layers },
+      { to: "/altas", label: "Altas e recuperação", icon: Award },
       {
         label: "Performance",
         icon: Gauge,
