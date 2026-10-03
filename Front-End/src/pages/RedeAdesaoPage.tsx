@@ -1,11 +1,13 @@
 /**
- * Adesão ao tratamento da rede: quantas sessões foram feitas, quantas o paciente faltou ou desmarcou,
- * unidade por unidade. É a tela de quem compara clínicas (chefe, dono), não de quem cuida do paciente.
+ * Adesão ao tratamento da rede: quantas sessões foram feitas, quantas o paciente faltou ou desmarcou e quantos
+ * horários passaram sem baixa, unidade por unidade. É a tela de quem compara clínicas (chefe, dono), não de quem cuida do paciente.
  *
  * LGPD — por que a tela é assim:
  *  - só agregados: nenhum nome, CPF ou id de paciente chega aqui (o back nem monta esses campos);
  *  - unidade com poucos pacientes na janela vem oculta, sem número nenhum: numa clínica pequena,
  *    "1 falta" aponta uma pessoa;
+ *  - a janela é fixa (30, 60 ou 90 dias terminando ontem): datas livres permitiriam subtrair duas
+ *    respostas vizinhas e isolar um dia de uma unidade;
  *  - a evolução clínica de cada paciente NÃO é mostrada aqui. Ela terá tela própria, só para a unidade
  *    dona do paciente, com login individual e registro de quem abriu a ficha.
  *
@@ -19,16 +21,14 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { redeAdesao, type SpineRedeAdesaoUnidade } from "@/services/spine";
+import { redeAdesao, type JanelaAdesao, type SpineRedeAdesaoUnidade } from "@/services/spine";
 import { cn, formatNumber } from "@/lib/utils";
 
-const PERIODOS = [
+const PERIODOS: { dias: JanelaAdesao; label: string }[] = [
   { dias: 30, label: "30 dias" },
   { dias: 60, label: "60 dias" },
   { dias: 90, label: "90 dias" },
-] as const;
-
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+];
 
 /** Verde a partir de 85%, âmbar de 70 a 85, vermelho abaixo. */
 function corDaAdesao(taxa: number | null): string {
@@ -57,7 +57,7 @@ function LinhaDaUnidade({ u }: { u: SpineRedeAdesaoUnidade }) {
     return (
       <tr className="border-t border-white/[0.05] text-slate-500">
         <td className="px-4 py-3 text-slate-300">{u.unidade}</td>
-        <td colSpan={6} className="px-4 py-3 text-xs">Sem dados agora: {u.erro}</td>
+        <td colSpan={7} className="px-4 py-3 text-xs">Sem dados agora: {u.erro}</td>
       </tr>
     );
   }
@@ -65,7 +65,7 @@ function LinhaDaUnidade({ u }: { u: SpineRedeAdesaoUnidade }) {
     return (
       <tr className="border-t border-white/[0.05] text-slate-500">
         <td className="px-4 py-3 text-slate-300">{u.unidade}</td>
-        <td colSpan={6} className="px-4 py-3 text-xs">
+        <td colSpan={7} className="px-4 py-3 text-xs">
           <span className="inline-flex items-center gap-1.5">
             <Lock className="h-3.5 w-3.5" /> Poucos pacientes no período — números ocultos por privacidade (LGPD)
           </span>
@@ -75,31 +75,33 @@ function LinhaDaUnidade({ u }: { u: SpineRedeAdesaoUnidade }) {
   }
   return (
     <tr className="border-t border-white/[0.05]">
-      <td className="px-4 py-3 text-slate-200">{u.unidade}</td>
+      <td className="px-4 py-3 text-slate-200">
+        {u.unidade}
+        {u.incompleto && (
+          <span className="ml-2 text-[11px] text-amber-300" title="A franquia devolveu o limite de linhas: os números podem estar abaixo do real.">
+            dados parciais
+          </span>
+        )}
+      </td>
       <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", corDaAdesao(u.taxaAdesao))}>{pct(u.taxaAdesao)}</td>
       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.sessoesRealizadas)}</td>
       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.faltas)}</td>
       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.desmarcadas)}</td>
+      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.semBaixa)}</td>
       <td className="px-4 py-3 text-right tabular-nums text-slate-300">
         {u.sessoesPorPaciente === null ? "—" : u.sessoesPorPaciente.toFixed(1).replace(".", ",")}
       </td>
-      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.tratamentosEmAndamento)}</td>
+      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatNumber(u.tratamentosIniciados)}</td>
     </tr>
   );
 }
 
 export default function RedeAdesaoPage() {
-  const [dias, setDias] = useState<number>(30);
-  const { de, ate } = useMemo(() => {
-    const fim = new Date();
-    const ini = new Date(fim);
-    ini.setDate(ini.getDate() - dias);
-    return { de: iso(ini), ate: iso(fim) };
-  }, [dias]);
+  const [dias, setDias] = useState<JanelaAdesao>(30);
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
-    queryKey: ["spine", "rede", "adesao", de, ate],
-    queryFn: () => redeAdesao(de, ate),
+    queryKey: ["spine", "rede", "adesao", dias],
+    queryFn: () => redeAdesao(dias),
     staleTime: 5 * 60_000,
   });
 
@@ -113,7 +115,7 @@ export default function RedeAdesaoPage() {
       <PageHeader
         badge="Rede"
         title="Adesão ao tratamento"
-        description="Sessões realizadas, faltas e desmarcações por unidade. Só números agregados: nenhum paciente é identificado."
+        description="Sessões realizadas, faltas, desmarcações e horários sem baixa por unidade, até ontem. Só números agregados: nenhum paciente é identificado."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {PERIODOS.map((p) => (
@@ -135,19 +137,20 @@ export default function RedeAdesaoPage() {
 
       {data && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             <Kpi rotulo="Adesão da rede" valor={pct(data.totais.taxaAdesao)} destaque={corDaAdesao(data.totais.taxaAdesao)} />
             <Kpi rotulo="Sessões realizadas" valor={formatNumber(data.totais.sessoesRealizadas)} />
             <Kpi rotulo="Faltas" valor={formatNumber(data.totais.faltas)} />
             <Kpi rotulo="Desmarcadas" valor={formatNumber(data.totais.desmarcadas)} />
-            <Kpi rotulo="Tratamentos em andamento" valor={formatNumber(data.totais.tratamentosEmAndamento)} />
+            <Kpi rotulo="Sem baixa" valor={formatNumber(data.totais.semBaixa)} />
+            <Kpi rotulo="Tratamentos iniciados" valor={formatNumber(data.totais.tratamentosIniciados)} />
           </div>
 
           <Card>
             <CardBody>
               <p className="mb-3 text-sm font-medium text-slate-200">Sessões por semana (rede)</p>
               {serie.length === 0 ? (
-                <p className="text-sm text-slate-500">Sem sessões no período.</p>
+                <p className="text-sm text-slate-500">Nenhuma semana inteira com sessões no período.</p>
               ) : (
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
@@ -161,13 +164,13 @@ export default function RedeAdesaoPage() {
                   </ResponsiveContainer>
                 </div>
               )}
-              <p className="mt-2 text-xs text-slate-500">Semana começa na segunda-feira. A semana atual ainda está em andamento.</p>
+              <p className="mt-2 text-xs text-slate-500">Só semanas inteiras (segunda a domingo) dentro do período: as pontas incompletas ficam fora.</p>
             </CardBody>
           </Card>
 
           <Card>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="w-full min-w-[820px] text-sm">
                 <thead>
                   <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-slate-500">
                     <th className="px-4 py-3 font-medium">Unidade</th>
@@ -175,8 +178,9 @@ export default function RedeAdesaoPage() {
                     <th className="px-4 py-3 text-right font-medium">Realizadas</th>
                     <th className="px-4 py-3 text-right font-medium">Faltas</th>
                     <th className="px-4 py-3 text-right font-medium">Desmarcadas</th>
+                    <th className="px-4 py-3 text-right font-medium">Sem baixa</th>
                     <th className="px-4 py-3 text-right font-medium">Sessões / paciente</th>
-                    <th className="px-4 py-3 text-right font-medium">Trat. em andamento</th>
+                    <th className="px-4 py-3 text-right font-medium">Trat. iniciados</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,8 +199,9 @@ export default function RedeAdesaoPage() {
           )}
 
           <p className="text-xs leading-relaxed text-slate-500">
-            Adesão = realizadas ÷ (realizadas + faltas + desmarcadas). Horário que ainda não chegou fica fora da conta.
-            Unidades com menos de {data.sigiloMinimo} pacientes no período aparecem ocultas e não entram nos totais, para ninguém ser identificado.
+            Período de {dia(data.de)} a {dia(data.ate)} (termina ontem). Adesão = realizadas ÷ (realizadas + faltas + desmarcadas + sem baixa).
+            Remarcada não conta: ela gera outro horário, que conta por si. "Sem baixa" é horário que já passou e continua agendado na franquia.
+            Unidades com menos de {data.sigiloMinimo} pacientes no período aparecem ocultas e não entram nos totais nem no gráfico, para ninguém ser identificado.
           </p>
         </div>
       )}
