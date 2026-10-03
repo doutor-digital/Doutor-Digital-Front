@@ -285,6 +285,59 @@ export async function redeComparativo(de?: string, ate?: string): Promise<SpineR
   return data;
 }
 
+/**
+ * Adesão ao tratamento da rede — SÓ agregados, sem nenhuma identificação de paciente (LGPD).
+ * Unidade com poucos pacientes vem `oculto: true` e todos os números nulos. A janela é fixa
+ * (30, 60 ou 90 dias terminando ontem): o back não aceita datas livres de propósito.
+ */
+export interface SpineRedeAdesaoUnidade {
+  unitId: number;
+  unidade: string;
+  oculto: boolean;
+  sessoesRealizadas: number | null;
+  faltas: number | null;
+  /** desmarcadas pelo paciente (remarcada não entra: gera outro horário) */
+  desmarcadas: number | null;
+  /** horário que já passou e ficou "agendado/confirmado": a recepção não deu baixa */
+  semBaixa: number | null;
+  /** realizadas ÷ (realizadas + faltas + desmarcadas + sem baixa), em %; null = nada a medir */
+  taxaAdesao: number | null;
+  pacientesDistintos: number | null;
+  sessoesPorPaciente: number | null;
+  /** tratamentos criados na janela */
+  tratamentosIniciados: number | null;
+  /** a franquia devolveu o teto de linhas: números podem estar baixos */
+  incompleto: boolean;
+  erro: string | null;
+}
+
+export type JanelaAdesao = 30 | 60 | 90;
+
+export interface SpineRedeAdesao {
+  de: string;
+  ate: string;
+  dias: JanelaAdesao;
+  sigiloMinimo: number;
+  unidades: SpineRedeAdesaoUnidade[];
+  semToken: { unitId: number; unidade: string }[];
+  totais: {
+    unidades: number;
+    sessoesRealizadas: number;
+    faltas: number;
+    desmarcadas: number;
+    semBaixa: number;
+    taxaAdesao: number | null;
+    tratamentosIniciados: number;
+  };
+  /** só semanas inteiras (segunda a domingo) dentro da janela */
+  serieSemanal: { semanaInicio: string; horarios: number; realizadas: number }[];
+}
+
+export async function redeAdesao(dias: JanelaAdesao): Promise<SpineRedeAdesao> {
+  const { data } = await api.get<SpineRedeAdesao>("/api/spine/rede/adesao", { params: { dias } });
+  return data;
+}
+
 export const spineConfig = {
   async status(unitId: number): Promise<SpineConfigStatus> {
     const { data } = await api.get<SpineConfigStatus>("/api/spine/config", { params: { unitId } });
