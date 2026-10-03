@@ -5,6 +5,7 @@ import {
   Activity,
   AlertCircle,
   Award,
+  BarChart3,
   Bell,
   BookOpen,
   Brain,
@@ -123,6 +124,7 @@ const navGroups: NavGroup[] = [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, iconUrl: "/nav-icons/dashboard.png" },
       { to: "/calendario", label: "Calendário (franquia)", icon: CalendarDays },
       { to: "/altas", label: "Altas e recuperação", icon: Award },
+      { to: "/rede/adesao", label: "Adesão ao tratamento", icon: BarChart3 },
       {
         label: "Performance",
         icon: Gauge,

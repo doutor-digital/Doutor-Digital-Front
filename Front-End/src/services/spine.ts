@@ -285,6 +285,51 @@ export async function redeComparativo(de?: string, ate?: string): Promise<SpineR
   return data;
 }
 
+/**
+ * Adesão ao tratamento da rede — SÓ agregados, sem nenhuma identificação de paciente (LGPD).
+ * Unidade com poucos pacientes vem `oculto: true` e todos os números nulos.
+ */
+export interface SpineRedeAdesaoUnidade {
+  unitId: number;
+  unidade: string;
+  oculto: boolean;
+  sessoesRealizadas: number | null;
+  faltas: number | null;
+  /** desmarcadas + remarcadas */
+  desmarcadas: number | null;
+  /** realizadas ÷ (realizadas + faltas + desmarcadas), em % */
+  taxaAdesao: number | null;
+  pacientesDistintos: number | null;
+  sessoesPorPaciente: number | null;
+  tratamentosNoPeriodo: number | null;
+  tratamentosEmAndamento: number | null;
+  erro: string | null;
+}
+
+export interface SpineRedeAdesao {
+  de: string;
+  ate: string;
+  /** menos pacientes que isso na janela e a unidade fica oculta */
+  sigiloMinimo: number;
+  unidades: SpineRedeAdesaoUnidade[];
+  semToken: { unitId: number; unidade: string }[];
+  totais: {
+    unidades: number;
+    sessoesRealizadas: number;
+    faltas: number;
+    desmarcadas: number;
+    taxaAdesao: number;
+    tratamentosNoPeriodo: number;
+    tratamentosEmAndamento: number;
+  };
+  serieSemanal: { semanaInicio: string; horarios: number; realizadas: number }[];
+}
+
+export async function redeAdesao(de?: string, ate?: string): Promise<SpineRedeAdesao> {
+  const { data } = await api.get<SpineRedeAdesao>("/api/spine/rede/adesao", { params: { de, ate } });
+  return data;
+}
+
 export const spineConfig = {
   async status(unitId: number): Promise<SpineConfigStatus> {
     const { data } = await api.get<SpineConfigStatus>("/api/spine/config", { params: { unitId } });

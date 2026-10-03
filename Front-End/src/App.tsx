@@ -10,6 +10,7 @@ import { isAdminLevel, isOwner } from "@/lib/roles";
 // ─── Pages (lazy) ─────────────────────────────────────────────────────────────
 
 const DashboardLayout  = lazy(() => import("@/components/layout/DashboardLayout"));
+const RedeAdesaoPage    = lazy(() => import("@/pages/RedeAdesaoPage"));
 const LoginPage        = lazy(() => import("@/pages/LoginPage"));
 const ForgotPasswordPage   = lazy(() => import("@/pages/ForgotPasswordPage"));
 const VerifyResetCodePage  = lazy(() => import("@/pages/VerifyResetCodePage"));
@@ -165,6 +166,7 @@ export default function App() {
           <Route path="/leads/:id"         element={<LeadDetailPage />}   />
           <Route path="/leads/:id/journey" element={<JourneyPage />}      />
           <Route path="/altas"             element={<AltasPage />}        />
+          <Route path="/rede/adesao"       element={<RedeAdesaoPage />}   />
           <Route path="/midia"             element={<MidiaPage />}        />
           <Route path="/midia/versoes"     element={<MidiaVersoesPage />} />
           <Route path="/alerts"            element={<AlertsPage />}       />
