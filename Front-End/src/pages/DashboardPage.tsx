@@ -1901,6 +1901,7 @@ export default function DashboardPage() {
               }
               receita={ov?.kpi_overrides?.receita ?? null}
               receitaQtd={ov?.kpi_overrides?.receita_qtd ?? null}
+              notaReceita={ov?.kpi_notes?.receita ?? null}
             />
 
             {/* Segunda faixa: leituras laterais, não etapas do funil. Separada de
