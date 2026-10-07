@@ -18,6 +18,8 @@ interface Etapa {
   fonte: "kommo" | "franquia";
   /** Por que não há número. Só aparece quando `valor` é null. */
   porque?: string;
+  /** Nota curta embaixo do número (ex.: Receita "24 tratamentos · 3 sem valor"). */
+  nota?: string | null;
   /** Formata em reais em vez de contagem. */
   moeda?: boolean;
 }
@@ -31,6 +33,8 @@ interface Props {
   receita: number | null;
   /** Quantos leads entraram nessa soma — o denominador do ticket médio. */
   receitaQtd: number | null;
+  /** Nota do servidor para a Receita: "N tratamentos · X sem valor" (ou a soma da rede). */
+  notaReceita?: string | null;
   carregando?: boolean;
 }
 
@@ -56,7 +60,7 @@ interface Props {
  * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica
  * apagada e escreve o motivo.
  */
-export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, carregando }: Props) {
+export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, notaReceita, carregando }: Props) {
   const etapas: Etapa[] = [
     {
       nome: "Leads",
@@ -96,6 +100,8 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
       // franquia; se zerado, o "¤ Valor do tratamento" do card, uma vez só.
       fonte: "franquia",
       porque: "Nenhum tratamento do período tem valor — nem na franquia, nem no card da Kommo.",
+      // "24 tratamentos · 3 sem valor": o que a unidade precisa zerar lançando o preço na franquia.
+      nota: notaReceita,
       moeda: true,
     },
   ];
@@ -167,6 +173,13 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
 
             {e.valor == null && !carregando && (
               <span className="text-[10px] leading-snug text-white/30">{e.porque}</span>
+            )}
+            {e.valor != null && !carregando && e.nota && (
+              <span
+                className={`text-[10px] leading-snug ${/sem valor/.test(e.nota) ? "text-amber-300/80" : "text-white/40"}`}
+              >
+                {e.nota}
+              </span>
             )}
           </div>
         ))}
