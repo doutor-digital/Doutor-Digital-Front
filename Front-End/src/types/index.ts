@@ -757,6 +757,13 @@ export interface DashboardOverview {
    * de 0 — o 0 seria lido como resultado, não como acesso ausente.
    */
   kpis_sem_autorizacao?: string[];
+  /**
+   * KPIs SEM número neste período, com o motivo que o card escreve embaixo do "—"
+   * (ex.: "O cruzamento ainda não rodou para este período…", "Período maior que 400
+   * dias…", "A franquia não respondeu agora…"). Quem está aqui não está em
+   * kpi_overrides: o card mostra "—", nunca 0 nem o número antigo da Kommo.
+   */
+  kpis_sem_numero?: Record<string, string>;
   /** KPIs criados do zero pelo analista (nome + cor + fonte + valor já calculado). */
   custom_kpis?: Array<{
     key: string;

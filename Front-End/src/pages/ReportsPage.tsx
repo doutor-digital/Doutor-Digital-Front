@@ -214,13 +214,21 @@ const TOOLTIP_STYLE: React.CSSProperties = {
 
 export default function ReportsPage() {
   const { tenantId: activeTenantId, unitId: activeUnitId } = useClinic();
-  const activeClinicFallback = activeUnitId ?? activeTenantId ?? null;
 
   const unitsQuery = useQuery({
     queryKey: ["units", "list"],
     queryFn: () => unitsService.list(),
   });
   const units = unitsQuery.data ?? [];
+
+  // O Diário e o Mensal pedem o id da CLÍNICA (tenant, ex.: 8024), não o da UNIDADE
+  // (ex.: 15). Antes a página herdava o id da unidade do seletor do topo: o servidor
+  // procurava a clínica 15, não achava nada e a tela abria vazia — e, desde que as rotas
+  // exigem login (Dash #4), o usuário comum recebia 403 porque 15 não é o tenant dele.
+  // O store guarda os dois ids (setContext(clinicId, unitId)); a clínica da unidade
+  // escolhida no topo vem da lista, e o tenant do store fica de reserva.
+  const activeUnit = units.find((u) => String(u.id) === String(activeUnitId ?? ""));
+  const activeClinicFallback = activeUnit?.clinicId ?? activeTenantId ?? null;
 
   // ── URL state (compartilhável) ─────────────────────
   const url = new URL(window.location.href);
@@ -237,12 +245,21 @@ export default function ReportsPage() {
   );
   const [tab, setTab] = useState<TabValue>("overview");
   const [unitValue, setUnitValue] = useState<string>(qpUnit ?? "");
-  const resolvedUnitId = unitValue || String(activeClinicFallback ?? "");
-  const hasClinic = !!resolvedUnitId;
+  const escolhido = unitValue || String(activeClinicFallback ?? "");
 
-  const resolvedUnit = units.find(
-    (u) => String(u.clinicId) === resolvedUnitId || String(u.id) === resolvedUnitId,
-  );
+  // Links antigos (?unit=15) traziam o id da unidade. Procura primeiro como clínica e,
+  // se não for, como unidade — e daí em diante a página só fala em id de clínica, que é
+  // o que o servidor espera e o que o seletor desta página grava.
+  const resolvedUnit =
+    units.find((u) => String(u.clinicId) === escolhido) ??
+    units.find((u) => String(u.id) === escolhido);
+  const resolvedUnitId = resolvedUnit
+    ? String(resolvedUnit.clinicId ?? resolvedUnit.id)
+    : escolhido;
+  const hasClinic = !!resolvedUnitId;
+  // Só consulta depois de a lista de unidades chegar: antes disso um link antigo (?unit=15)
+  // ainda não foi convertido para a clínica e o pedido sairia com o id errado (403).
+  const podeConsultar = hasClinic && !unitsQuery.isLoading;
   const unitLabel = resolvedUnit?.name ?? (resolvedUnitId ? `Clínica #${resolvedUnitId}` : "Sem unidade");
 
   const [dailyDate, setDailyDate] = useState(qpDate || todayIsoLocal());
@@ -339,13 +356,13 @@ export default function ReportsPage() {
   const dailyQuery = useQuery({
     queryKey: ["relatorio", "daily", resolvedUnitId, dailyDate],
     queryFn: () => reportsService.daily({ tenantId: resolvedUnitId, date: dailyDate }),
-    enabled: mode === "daily" && !!resolvedUnitId,
+    enabled: mode === "daily" && podeConsultar,
   });
 
   const monthlyQuery = useQuery({
     queryKey: ["relatorio", "monthly", resolvedUnitId, mes, ano],
     queryFn: () => reportsService.monthlySummary({ clinicId: resolvedUnitId, mes, ano }),
-    enabled: mode === "monthly" && !!resolvedUnitId,
+    enabled: mode === "monthly" && podeConsultar,
     retry: false,
   });
 
@@ -354,7 +371,7 @@ export default function ReportsPage() {
   const prevDailyQuery = useQuery({
     queryKey: ["relatorio", "daily", resolvedUnitId, prevDailyDate, "prev"],
     queryFn: () => reportsService.daily({ tenantId: resolvedUnitId, date: prevDailyDate }),
-    enabled: compare && mode === "daily" && !!resolvedUnitId,
+    enabled: compare && mode === "daily" && podeConsultar,
   });
 
   const prevMonthly = useMemo(() => subtractMonth(mes, ano), [mes, ano]);
@@ -366,7 +383,7 @@ export default function ReportsPage() {
         mes: prevMonthly.mes,
         ano: prevMonthly.ano,
       }),
-    enabled: compare && mode === "monthly" && !!resolvedUnitId,
+    enabled: compare && mode === "monthly" && podeConsultar,
     retry: false,
   });
 

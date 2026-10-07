@@ -20,6 +20,8 @@ export interface KpiExtra {
 interface Props {
   leadsQualificados: number | null;
   noShow: number | null;
+  /** Por que o No-show ficou sem número (kpis_sem_numero), quando o servidor diz. */
+  noShowMotivo?: string | null;
   /** Distribuição do "◉ Semáforo" dentro de COMPARECEU. */
   semaforo?: Array<{ label: string; value: number }>;
   /** KPIs personalizados numéricos da unidade (ex.: Pessoas que ligaram). */
@@ -86,7 +88,7 @@ function Selo({ fonte }: { fonte: "kommo" | "franquia" }) {
   );
 }
 
-export function KpisApoio({ leadsQualificados, noShow, semaforo, extras, carregando }: Props) {
+export function KpisApoio({ leadsQualificados, noShow, noShowMotivo, semaforo, extras, carregando }: Props) {
   const temSemaforo = (semaforo?.length ?? 0) > 0;
   const totalSemaforo = (semaforo ?? []).reduce((a, s) => a + s.value, 0);
   const topo = [...(semaforo ?? [])].sort((a, b) => b.value - a.value).slice(0, 4);
@@ -138,7 +140,9 @@ export function KpisApoio({ leadsQualificados, noShow, semaforo, extras, carrega
           </span>
           <Selo fonte="franquia" />
           <span className="text-[10px] leading-snug text-white/30">
-            cadeira vazia: falta registrada + desmarque tardio
+            {noShow == null && !carregando && noShowMotivo
+              ? noShowMotivo
+              : "cadeira vazia: falta registrada + desmarque tardio"}
           </span>
         </div>
 

@@ -1,4 +1,3 @@
-import { useClinic } from "@/hooks/useClinic";
 import { api } from "@/lib/api";
 import { toInt } from "@/lib/http";
 import type { DailyRelatoryDto, RelatorioMensalResumoDto } from "@/types";
@@ -16,12 +15,13 @@ export interface DailyReportParams {
 
 export const reportsService = {
   async monthly(params: MonthlyReportParams): Promise<void> {
-    const unitId = useClinic((s) => s.unitId);
-    console.log("CLINIC ID:", unitId);
-    if (!unitId) throw new Error("clinicId inválido para /api/relatorios/mensal");
+    // O PDF pede o id da CLÍNICA (tenant), o mesmo do resumo mensal. Antes isto chamava
+    // o hook useClinic fora de um componente (o React recusa) e mandava o id da UNIDADE.
+    const clinicId = toInt(params.clinicId);
+    if (!clinicId) throw new Error("clinicId inválido para /api/relatorios/mensal");
 
     const res = await api.get<Blob>("/api/relatorios/mensal", {
-      params: { clinicId: unitId, mes: params.mes, ano: params.ano },
+      params: { clinicId, mes: params.mes, ano: params.ano },
       responseType: "blob",
     });
 

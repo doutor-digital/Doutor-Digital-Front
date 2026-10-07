@@ -70,13 +70,14 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   agendados: {
     titulo: "Agendados",
     resumo:
-      "Avaliações marcadas na agenda da clínica para o período. Conta SÓ avaliação — sessão de tratamento e retorno ficam de fora.",
+      "Horários de avaliação na agenda da clínica com data dentro do período, em qualquer situação: atendido, não compareceu, desmarcado, remarcado, confirmado ou ainda por acontecer. Conta SÓ avaliação — sessão de tratamento e retorno ficam de fora.",
     comoLer:
-      "É a primeira prova de que a conversa virou compromisso. Se o lead sobe e o agendado não, a perda está no atendimento.",
+      "É a primeira prova de que a conversa virou compromisso. Se o lead sobe e o agendado não, a perda está no atendimento. É o mesmo número que a agenda da franquia mostra filtrada por Avaliação no período.",
     fonte: "Franquia",
-    fonteDetalhe: "Agenda do Doutor Hérnia, categoria Avaliação.",
+    fonteDetalhe:
+      "Agenda do Doutor Hérnia, categoria Avaliação, todas as situações. Conta pelo dia do horário da avaliação, não pelo dia em que foi marcada.",
     cuidado:
-      "Sessão de tratamento não entra: paciente que já fechou e vai à clínica toda semana não é agendamento novo. Numa unidade típica as sessões são a maior parte da agenda — contá-las aqui inflaria o número várias vezes. O que foi desmarcado ou remarcado também sai da conta.",
+      "Desmarcado e remarcado ENTRAM na conta: é horário que a clínica reservou. Por isso a taxa de comparecimento (Consultas ÷ Agendados) é dura — cada desmarque pesa contra ela. Uma remarcação aparece duas vezes: o horário antigo, com a situação Remarcado, e o novo. Para ver quantos foram desmarcados, abra o card Avaliações em Operação clínica. Sessão de tratamento não entra: paciente que já fechou e vai à clínica toda semana não é agendamento novo.",
   },
 
   consultas: {
