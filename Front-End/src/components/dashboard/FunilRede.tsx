@@ -46,11 +46,10 @@ interface Props {
  *
  * O SELO DA FONTE É O ASSUNTO
  * ---------------------------
- * Leads e Receita vêm da KOMMO — dependem de alguém ter digitado. Agendados,
- * Consultas e Tratamentos vêm da agenda da clínica: dependem do paciente ter
- * aparecido. Os selos existem porque Receita e Tratamentos NÃO se reconciliam:
- * são sistemas diferentes contando coisas diferentes, e a tela precisa dizer isso
- * em vez de deixar alguém dividir um pelo outro.
+ * Leads vêm da KOMMO — dependem de alguém ter digitado. Agendados, Consultas,
+ * Tratamentos e Receita vêm da franquia (a Receita completa com o card da Kommo
+ * onde a clínica não lançou o preço). O selo diz em que sistema o número nasce:
+ * Kommo depende de alguém ter digitado; franquia depende do paciente ter aparecido.
  *
  * ETAPA SEM FONTE MOSTRA O PORQUÊ, NÃO ZERO
  * -----------------------------------------
@@ -92,12 +91,11 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
       nome: "Receita", icone: "wallet", cor: "#4ade80",
       chave: "receita",
       valor: receita,
-      // Vem da KOMMO, por decisão da diretoria. Soma o campo de valor apenas dos
-      // leads que ENTRARAM em EM TRATAMENTO dentro do período — não de todo lead
-      // criado no dia, que somaria valor de quem não fechou e perderia quem fechou
-      // hoje tendo entrado mês passado.
-      fonte: "kommo",
-      porque: "Ninguém preencheu o valor nos tratamentos fechados no período.",
+      // Franquia primeiro, Kommo se faltar (decisão do João, 07/10/2026; back:
+      // KpiConfigService.SomarReceita). Por paciente: preço do tratamento na
+      // franquia; se zerado, o "¤ Valor do tratamento" do card, uma vez só.
+      fonte: "franquia",
+      porque: "Nenhum tratamento do período tem valor — nem na franquia, nem no card da Kommo.",
       moeda: true,
     },
   ];

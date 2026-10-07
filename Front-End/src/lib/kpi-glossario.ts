@@ -136,14 +136,14 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   receita: {
     titulo: "Receita",
     resumo:
-      "Soma do valor dos tratamentos fechados no período, pelo campo preenchido no card da Kommo.",
+      "Soma do valor dos tratamentos abertos na franquia no período. Vale o preço lançado na franquia; se a clínica não lançou, entra o valor do card da Kommo.",
     comoLer:
-      "Receita ÷ fechamentos com valor é o ticket médio, no último vão do funil. Ticket caindo com volume estável costuma ser desconto para fechar.",
-    fonte: "Kommo",
+      "Receita ÷ tratamentos com valor é o ticket médio, no último vão do funil. Ticket caindo com volume estável costuma ser desconto para fechar. A nota embaixo do número diz quantos tratamentos ficaram sem valor: é esse número que a unidade precisa zerar.",
+    fonte: "Kommo + Franquia",
     fonteDetalhe:
-      'Soma do campo "¤ Valor do tratamento" dos leads que ENTRARAM em EM TRATAMENTO dentro do período — não de todo lead criado no dia.',
+      'Paciente por paciente: se o tratamento tem preço na franquia (Tratamentos › Editar › Valor), vale esse. Se a franquia está zerada, vale o "¤ Valor do tratamento" do card da Kommo, uma vez por paciente. Os dois se encontram pelo WhatsApp do cadastro. O painel cruza tudo uma vez por dia, de madrugada.',
     cuidado:
-      "Não bate com a receita da franquia, e não deveria mesmo: são sistemas diferentes contando coisas diferentes. Em Marabá, agosto: a franquia registrou 18 tratamentos e R$ 58.660; a Kommo tem 30 leads com valor e R$ 114.360. Além disso é valor CONTRATADO, não recebido, e depende de digitação — tratamento fechado sem preencher o campo não aparece aqui.",
+      'Tratamento sem valor nos dois lados fica FORA da soma: o painel não chuta. Se nada no período tem valor, o card mostra "—", e não zero — não é que não vendeu, é que ninguém lançou. É valor CONTRATADO, não recebido.',
   },
 
   semaforo: {
