@@ -8,6 +8,8 @@ interface Props {
   periodo: string;
   agendados: number | null;
   consultas: number | null;
+  /** Por que a agenda ficou sem número neste período (kpis_sem_numero), quando o servidor diz. */
+  motivo?: string | null;
   carregando?: boolean;
 }
 
@@ -44,6 +46,7 @@ export function VeredictoClinica({
   periodo,
   agendados,
   consultas,
+  motivo,
   carregando,
 }: Props) {
   const temDado = !carregando && agendados != null && consultas != null && agendados > 0;
@@ -77,7 +80,7 @@ export function VeredictoClinica({
 
           <p className="mt-2.5 text-[13px] leading-relaxed text-white/50">
             {!temDado
-              ? "Sem dado da agenda da clínica para este período."
+              ? motivo ?? "Sem dado da agenda da clínica para este período."
               : `de ${nf.format(agendados!)} horários reservados · ${Math.round(taxa!)}% compareceram`}
           </p>
 

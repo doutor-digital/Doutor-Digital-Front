@@ -35,6 +35,11 @@ interface Props {
   receitaQtd: number | null;
   /** Nota do servidor para a Receita: "N tratamentos · X sem valor" (ou a soma da rede). */
   notaReceita?: string | null;
+  /**
+   * Por que o servidor não tem número para a etapa (kpis_sem_numero), por chave do
+   * glossário. Quando vem, substitui o motivo padrão embaixo do "—".
+   */
+  motivos?: Partial<Record<"agendados" | "consultas" | "tratamentos" | "receita", string | null>>;
   carregando?: boolean;
 }
 
@@ -60,7 +65,11 @@ interface Props {
  * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica
  * apagada e escreve o motivo.
  */
-export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, notaReceita, carregando }: Props) {
+export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, notaReceita, motivos, carregando }: Props) {
+  // O motivo padrão de cada etapa da franquia é "sem autorização"; quando o servidor
+  // mediu e não teve número (período longo demais, franquia fora, cruzamento que não
+  // rodou), ele manda o motivo certo e é esse que aparece.
+  const semAutorizacao = "Sem autorização da franquia nesta unidade.";
   const etapas: Etapa[] = [
     {
       nome: "Leads",
@@ -75,21 +84,21 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
       chave: "agendados",
       valor: agendados,
       fonte: "franquia",
-      porque: "Sem autorização da franquia nesta unidade.",
+      porque: motivos?.agendados ?? semAutorizacao,
     },
     {
       nome: "Consultas", icone: "stethoscope", cor: "#34d399",
       chave: "consultas",
       valor: consultas,
       fonte: "franquia",
-      porque: "Sem autorização da franquia nesta unidade.",
+      porque: motivos?.consultas ?? semAutorizacao,
     },
     {
       nome: "Tratamentos", icone: "clipboard-check", cor: "#a78bfa",
       chave: "tratamentos",
       valor: tratamentos,
       fonte: "franquia",
-      porque: "Sem autorização da franquia nesta unidade.",
+      porque: motivos?.tratamentos ?? semAutorizacao,
     },
     {
       nome: "Receita", icone: "wallet", cor: "#4ade80",
@@ -99,7 +108,9 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
       // KpiConfigService.SomarReceita). Por paciente: preço do tratamento na
       // franquia; se zerado, o "¤ Valor do tratamento" do card, uma vez só.
       fonte: "franquia",
-      porque: "Nenhum tratamento do período tem valor — nem na franquia, nem no card da Kommo.",
+      porque:
+        motivos?.receita ??
+        "Nenhum tratamento do período tem valor — nem na franquia, nem no card da Kommo.",
       // "24 tratamentos · 3 sem valor": o que a unidade precisa zerar lançando o preço na franquia.
       nota: notaReceita,
       moeda: true,

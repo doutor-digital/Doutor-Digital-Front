@@ -1076,6 +1076,17 @@ export default function DashboardPage() {
   const semAutorizacaoFranquia = (key: string): boolean =>
     !isJuridico && (ov?.kpis_sem_autorizacao ?? []).includes(key);
 
+  // KPI que o servidor mediu e NÃO tem número (período maior que o teto da agenda,
+  // franquia fora do ar, cruzamento da receita que não rodou). Devolve o motivo que o
+  // card escreve embaixo do "—". Sem isto o card caía no número antigo da Kommo
+  // (Agendados) ou mostrava 0 — o painel dizendo "não houve" quando é "não sei".
+  const semNumero = (key: string): string | null =>
+    isJuridico ? null : ov?.kpis_sem_numero?.[key] ?? null;
+
+  // Número de um card da franquia: null quando não há número (cadeado ou "—").
+  const valorFranquia = (key: string, fallback: number): number | null =>
+    semAutorizacaoFranquia(key) || semNumero(key) != null ? null : kpiLive(key, fallback);
+
   // "Origem manda na soma" no card Agendados: quando o usuário edita manualmente
   // alguma origem, o número grande passa a ser a SOMA das origens (override ??
   // automático) — se forem 10 + 10, o card mostra 20. Sem nenhuma edição de origem,
@@ -1879,29 +1890,25 @@ export default function DashboardPage() {
           <>
             {/* ─── 0. O FUNIL ──────────────────────────────────────────
                 Abre a página porque é a única pergunta que se faz todo dia.
-                Usa os mesmos kpiLive()/semAutorizacaoFranquia() dos cards, então
+                Usa os mesmos kpiLive()/valorFranquia() dos cards, então
                 o número aqui e o número lá embaixo nunca divergem — e o período
                 escolhido nos filtros já chega na API da franquia por este caminho. */}
 
             <FunilRede
               carregando={overview.isLoading}
               leads={kpiLive("total_leads", ov?.total_leads ?? 0)}
-              agendados={
-                semAutorizacaoFranquia("agendados")
-                  ? null
-                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
-              }
-              consultas={
-                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
-              }
-              tratamentos={
-                semAutorizacaoFranquia("tratamentos")
-                  ? null
-                  : kpiLive("tratamentos", ov?.fechou ?? 0)
-              }
+              agendados={valorFranquia("agendados", ov?.consultas_agendadas ?? 0)}
+              consultas={valorFranquia("consultas", ov?.consultas ?? 0)}
+              tratamentos={valorFranquia("tratamentos", ov?.fechou ?? 0)}
               receita={ov?.kpi_overrides?.receita ?? null}
               receitaQtd={ov?.kpi_overrides?.receita_qtd ?? null}
               notaReceita={ov?.kpi_notes?.receita ?? null}
+              motivos={{
+                agendados: semNumero("agendados"),
+                consultas: semNumero("consultas"),
+                tratamentos: semNumero("tratamentos"),
+                receita: semNumero("receita"),
+              }}
             />
 
             {/* Segunda faixa: leituras laterais, não etapas do funil. Separada de
@@ -1913,7 +1920,8 @@ export default function DashboardPage() {
             <KpisApoio
               carregando={overview.isLoading}
               leadsQualificados={ov?.kpi_overrides?.leads_qualificados ?? null}
-              noShow={semAutorizacaoFranquia("no_show") ? null : kpiLive("no_show", funnelLeads.no_show)}
+              noShow={valorFranquia("no_show", funnelLeads.no_show)}
+              noShowMotivo={semNumero("no_show")}
               semaforo={ov?.custom_kpis?.find((k) => k.key === "semaforo")?.breakdown}
               extras={(ov?.custom_kpis ?? [])
                 // Só os numéricos: distribuições (semáforo, origens) já têm card
@@ -1949,14 +1957,9 @@ export default function DashboardPage() {
             <VeredictoClinica
               unidade={agencyName}
               periodo={rangeLabel}
-              agendados={
-                semAutorizacaoFranquia("agendados")
-                  ? null
-                  : kpiLive("agendados", ov?.consultas_agendadas ?? 0)
-              }
-              consultas={
-                semAutorizacaoFranquia("consultas") ? null : kpiLive("consultas", ov?.consultas ?? 0)
-              }
+              agendados={valorFranquia("agendados", ov?.consultas_agendadas ?? 0)}
+              consultas={valorFranquia("consultas", ov?.consultas ?? 0)}
+              motivo={semNumero("agendados") ?? semNumero("consultas")}
               carregando={overview.isLoading}
             />
 
