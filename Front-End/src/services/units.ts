@@ -46,7 +46,6 @@ export interface DivisaoDaConta {
   dividida: boolean;
   /** Configuração da divisão quebrada no servidor: a entrada de dados da conta está parada. */
   configuracaoInvalida?: boolean;
-  erro?: string;
   campo?: string;
   /** "unidade" = uma das clínicas; "sem-unidade" = a caixa dos cartões com o campo vazio. */
   papel?: "unidade" | "sem-unidade";
