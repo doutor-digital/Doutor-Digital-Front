@@ -38,6 +38,23 @@ export interface KommoCustomField {
   enums: KommoCustomFieldEnum[];
 }
 
+/**
+ * Conta da Kommo dividida entre unidades (caso real: Petrópolis e Caxias no mesmo Kommo,
+ * separadas pelo campo ⌂ Unidade de atendimento). Ver `GET /units/{id}/divisao-da-conta`.
+ */
+export interface DivisaoDaConta {
+  dividida: boolean;
+  /** Configuração da divisão quebrada no servidor: a entrada de dados da conta está parada. */
+  configuracaoInvalida?: boolean;
+  erro?: string;
+  campo?: string;
+  /** "unidade" = uma das clínicas; "sem-unidade" = a caixa dos cartões com o campo vazio. */
+  papel?: "unidade" | "sem-unidade";
+  cartoesDestaUnidade?: number;
+  unidades?: { unitId: number; clinicId: number; nome: string; opcao: string }[];
+  semUnidade?: { unitId: number; clinicId: number; nome: string; cartoes: number };
+}
+
 export const unitsService = {
   async list(): Promise<Unit[]> {
     const { data } = await api.get<Unit[]>("/units");
@@ -58,6 +75,14 @@ export const unitsService = {
     if (!id) return [];
     const { data } = await api.get<KommoCustomField[]>(`/units/${id}/kommo-custom-fields`);
     return asArray<KommoCustomField>(data);
+  },
+
+  /** A conta Kommo desta unidade é dividida com outra? Conta comum devolve `{ dividida: false }`. */
+  async divisaoDaConta(unitId: number | string): Promise<DivisaoDaConta> {
+    const id = toInt(unitId);
+    if (!id) return { dividida: false };
+    const { data } = await api.get<DivisaoDaConta>(`/units/${id}/divisao-da-conta`);
+    return data ?? { dividida: false };
   },
 
   /** Busca uma unidade pelo seu Id interno (não clinicId). */

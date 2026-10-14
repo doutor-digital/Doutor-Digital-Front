@@ -29,6 +29,7 @@ import { FunilPorOrigemCard } from "@/components/dashboard/FunilPorOrigemCard";
 import { AnunciosCard } from "@/components/dashboard/AnunciosCard";
 import { SecaoDashboard } from "@/components/dashboard/SecaoDashboard";
 import { FunilRede } from "@/components/dashboard/FunilRede";
+import { AvisoDivisaoDaConta } from "@/components/dashboard/AvisoDivisaoDaConta";
 import { RotuloKpi } from "@/components/dashboard/KpiInfo";
 import { VeredictoClinica } from "@/components/dashboard/VeredictoClinica";
 import { KpisApoio } from "@/components/dashboard/KpisApoio";
@@ -1893,6 +1894,10 @@ export default function DashboardPage() {
                 Usa os mesmos kpiLive()/valorFranquia() dos cards, então
                 o número aqui e o número lá embaixo nunca divergem — e o período
                 escolhido nos filtros já chega na API da franquia por este caminho. */}
+
+            {/* Conta do Kommo dividida (Petrópolis + Caxias): diz que os números são só
+                desta unidade e quantos cartões estão sem unidade definida. Some nas outras. */}
+            <AvisoDivisaoDaConta unitId={unitId} />
 
             <FunilRede
               carregando={overview.isLoading}
