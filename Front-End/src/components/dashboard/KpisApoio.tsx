@@ -91,7 +91,9 @@ function Selo({ fonte }: { fonte: "kommo" | "franquia" }) {
 export function KpisApoio({ leadsQualificados, noShow, noShowMotivo, semaforo, extras, carregando }: Props) {
   const temSemaforo = (semaforo?.length ?? 0) > 0;
   const totalSemaforo = (semaforo ?? []).reduce((a, s) => a + s.value, 0);
-  const topo = [...(semaforo ?? [])].sort((a, b) => b.value - a.value).slice(0, 4);
+  // TODAS as cores, da maior para a menor. Antes cortava em 4 e a quinta sumia: na
+  // Açailândia (16/10/2026) o card mostrava 18 de 19 e escondia o VERMELHO.
+  const cores = [...(semaforo ?? [])].sort((a, b) => b.value - a.value);
 
   const numero = (v: number | null) =>
     carregando || v == null ? "—" : nf.format(v);
@@ -104,7 +106,9 @@ export function KpisApoio({ leadsQualificados, noShow, noShowMotivo, semaforo, e
           style={{ borderTopColor: "#fb923c" }}
         >
           <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-tight text-white/60">
-            Leads qualificados
+            {/* "Leads quentes", não "qualificados": o número conta só quem foi marcado
+                Quente — Morno e Frio também são leads qualificados e não entram. */}
+            Leads quentes
             <BotaoAjuda kpiKey="leads_qualificados" />
             <Icone nome="flame" />
           </span>
@@ -159,7 +163,7 @@ export function KpisApoio({ leadsQualificados, noShow, noShowMotivo, semaforo, e
           ) : temSemaforo ? (
             <>
               <div className="mt-0.5 flex flex-col gap-1.5">
-                {topo.map((s) => (
+                {cores.map((s) => (
                   <div key={s.label} className="flex items-center gap-2">
                     <span className={`h-2 w-2 flex-none rounded-full ${corDaOpcao(s.label)}`} />
                     <span className="min-w-0 flex-1 truncate text-[11px] text-white/60">

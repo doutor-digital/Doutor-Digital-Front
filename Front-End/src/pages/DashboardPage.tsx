@@ -36,7 +36,6 @@ import { KpisApoio } from "@/components/dashboard/KpisApoio";
 import { MixTratamentoCard } from "@/components/dashboard/MixTratamentoCard";
 import { HistoricoAvaliacoesCard } from "@/components/dashboard/HistoricoAvaliacoesCard";
 import { spineService } from "@/services/spine";
-import { CrmKanban, type KanbanColumn, type KanbanTone } from "@/components/charts/CrmKanban";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminLevel, isOwner } from "@/lib/roles";
 import { webhooksService } from "@/services/webhooks";
@@ -722,13 +721,20 @@ export default function DashboardPage() {
   }, [savedKpis.data]);
 
   // Map<status_id, status_name> a partir de todos os pipelines.
+  // 142/143 existem em TODO funil com nomes diferentes (143 = PERDIDO no COMERCIAL e
+  // TRATAMENTO CANCELADO no TRATAMENTO). Antes o último funil lido vencia e um 143 cru
+  // aparecia como "tratamento cancelado"; agora o id ambíguo mostra os dois nomes.
   const stageNameMap = useMemo(() => {
-    const map = new Map<string, string>();
+    const nomes = new Map<string, Set<string>>();
     for (const p of pipelines.data ?? []) {
       for (const s of p.statuses ?? []) {
-        map.set(String(s.id), s.name);
+        const id = String(s.id);
+        if (!nomes.has(id)) nomes.set(id, new Set());
+        nomes.get(id)!.add(s.name);
       }
     }
+    const map = new Map<string, string>();
+    for (const [id, set] of nomes) map.set(id, [...set].join(" ou "));
     return map;
   }, [pipelines.data]);
 
@@ -788,22 +794,9 @@ export default function DashboardPage() {
     setUserMenuOpen(false);
   }, [unitId]);
 
-  // Negócios (leads) para o board de funil estilo CRM — agrupados por etapa.
-  const leadsBoard = useQuery({
-    queryKey: ["dash-amo", "leads-board", tenantId, unitId, range.from, range.to, sourceFilter, stageFilter.size],
-    queryFn: () =>
-      webhooksService.listLeads({
-        clinicId: unitId ?? tenantId ?? undefined,
-        startDate: range.from,
-        endDate: range.to,
-        source: sourceFilter || undefined,
-        pageSize: 500,
-      }),
-    enabled: tenantId != null,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
-  });
+  // (Removido em 16/10/2026: a consulta GET /webhooks do "board de funil estilo CRM". Ela
+  // baixava TODOS os leads da unidade, com todos os campos, a cada 30 s — e o quadro que
+  // usava esses dados não aparece mais na tela.)
 
   const hasActiveFilters =
     sourceFilter !== "" ||
@@ -986,62 +979,6 @@ export default function DashboardPage() {
     [etapasComNome],
   );
 
-  // ─── Board de funil estilo CRM (colunas por etapa + cards de negócio) ──
-  const kanbanColumns = useMemo<KanbanColumn[]>(() => {
-    const leads = leadsBoard.data ?? [];
-
-    // Tom da bolinha por recência da última atividade (proxy de "tarefa").
-    const toneOf = (lead: (typeof leads)[number]): KanbanTone => {
-      const ts = (lead.updatedAt as string) || (lead.createdAt as string);
-      if (!ts) return "red";
-      const days = (Date.now() - new Date(ts).getTime()) / 86_400_000;
-      if (days <= 2) return "green";
-      if (days <= 7) return "yellow";
-      return "red";
-    };
-
-    // Valor do negócio (R$): price da Kommo > tratamento fechado > orçamento > consulta.
-    const valueOf = (lead: (typeof leads)[number]): number | null => {
-      const v =
-        (lead.price as number | undefined) ??
-        (lead.treatmentPlanValue as number | undefined) ??
-        (lead.treatmentBudget as number | undefined) ??
-        (lead.consultationValue as number | undefined);
-      return typeof v === "number" && v > 0 ? v : null;
-    };
-
-    // Inicia as colunas na ordem do pipeline da Kommo (mantém etapas vazias, ex.: Fechamento).
-    const groups = new Map<string, KanbanColumn["cards"]>();
-    for (const p of pipelines.data ?? []) {
-      for (const s of p.statuses ?? []) {
-        if (!groups.has(s.name)) groups.set(s.name, []);
-      }
-    }
-
-    for (const lead of leads) {
-      const raw = lead.currentStage ?? "";
-      if (stageFilter.size > 0 && !stageFilter.has(raw)) continue;
-      // Alinha o lead à coluna do pipeline pelo status_id da Kommo (currentStageId);
-      // se não houver, cai pro nome amigável do estágio canônico.
-      const stageId = lead.currentStageId as number | string | null | undefined;
-      const byId = stageId != null ? stageNameMap.get(String(stageId)) : undefined;
-      const label = byId ?? stageLabel(raw);
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label)!.push({
-        id: lead.id,
-        name: lead.name || `Lead #${lead.id}`,
-        subtitle: (lead.source as string) || lead.attendantName || "—",
-        value: valueOf(lead),
-        tone: toneOf(lead),
-      });
-    }
-
-    return Array.from(groups.entries()).map(([title, cards], i) => ({
-      id: `${title}-${i}`,
-      title,
-      cards,
-    }));
-  }, [leadsBoard.data, pipelines.data, stageNameMap, stageFilter]);
 
 
   // ─── Derivados da nova estrutura (funnel + origens + semanas) ──────
@@ -1087,6 +1024,12 @@ export default function DashboardPage() {
   // Número de um card da franquia: null quando não há número (cadeado ou "—").
   const valorFranquia = (key: string, fallback: number): number | null =>
     semAutorizacaoFranquia(key) || semNumero(key) != null ? null : kpiLive(key, fallback);
+
+  // Dos agendados da franquia, os horários que já aconteceram — o denominador do
+  // comparecimento no Veredito e no funil. Nulo quando o servidor não mede (agenda da Kommo).
+  const agendadosComDesfecho = isJuridico
+    ? null
+    : ov?.kpi_overrides?.agendados_com_desfecho ?? null;
 
   // "Origem manda na soma" no card Agendados: quando o usuário edita manualmente
   // alguma origem, o número grande passa a ser a SOMA das origens (override ??
@@ -1903,6 +1846,7 @@ export default function DashboardPage() {
               carregando={overview.isLoading}
               leads={kpiLive("total_leads", ov?.total_leads ?? 0)}
               agendados={valorFranquia("agendados", ov?.consultas_agendadas ?? 0)}
+              agendadosComDesfecho={agendadosComDesfecho}
               consultas={valorFranquia("consultas", ov?.consultas ?? 0)}
               tratamentos={valorFranquia("tratamentos", ov?.fechou ?? 0)}
               receita={ov?.kpi_overrides?.receita ?? null}
@@ -1963,6 +1907,7 @@ export default function DashboardPage() {
               unidade={agencyName}
               periodo={rangeLabel}
               agendados={valorFranquia("agendados", ov?.consultas_agendadas ?? 0)}
+              agendadosComDesfecho={agendadosComDesfecho}
               consultas={valorFranquia("consultas", ov?.consultas ?? 0)}
               motivo={semNumero("agendados") ?? semNumero("consultas")}
               carregando={overview.isLoading}
@@ -1979,7 +1924,7 @@ export default function DashboardPage() {
 
 
             {/* ─── 5. Operação clínica (fechada por padrão) ───────────── */}
-            <SecaoDashboard titulo="Operação clínica" subtitulo="Agenda da clínica: avaliações, sessões e retornos">
+            <SecaoDashboard titulo="Operação clínica" subtitulo="Agenda da clínica: avaliações, sessões, retornos e reavaliações">
             {/* ─── Avaliações reais (agenda do Doutor Hérnia) ───────────
                 Fonte diferente do resto da página: o comparecimento vem do status
                 da agenda da clínica, não do campo preenchido na Kommo. Fica logo
@@ -1995,12 +1940,13 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* Adesão ao tratamento (sessões) e Retornos — mesma estrutura do card
-                de avaliações, outra categoria da agenda. Sessões é metade da
+            {/* Adesão ao tratamento (sessões), Retornos e Reavaliações — mesma estrutura
+                do card de avaliações, outra categoria da agenda. Sessões é metade da
                 operação clínica que estava invisível; retornos inclui o retorno
-                com exames. */}
+                com exames. Reavaliação (categoria 7) tem card próprio: antes ia
+                somada em Retornos com o nome errado de "retorno pós-tratamento". */}
             {!isJuridico && (
-              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <AvaliacoesReaisCard
                   unitId={unitId ?? undefined}
                   de={dateToInput(range.fromDate)}
@@ -2020,6 +1966,16 @@ export default function DashboardPage() {
                   labelRealizadas="realizados"
                   labelTaxa="comparecimento"
                   queryKeyBase="spine-retornos"
+                />
+                <AvaliacoesReaisCard
+                  unitId={unitId ?? undefined}
+                  de={dateToInput(range.fromDate)}
+                  ate={dateToInput(range.toDate)}
+                  titulo="Reavaliações"
+                  fonte={spineService.reavaliacoes}
+                  labelRealizadas="realizadas"
+                  labelTaxa="comparecimento"
+                  queryKeyBase="spine-reavaliacoes"
                 />
               </div>
             )}

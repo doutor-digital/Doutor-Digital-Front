@@ -27,6 +27,12 @@ interface Etapa {
 interface Props {
   leads: number;
   agendados: number | null;
+  /**
+   * Dos agendados, os horários que JÁ aconteceram — o denominador do comparecimento
+   * (kpi_overrides.agendados_com_desfecho). Nulo quando o servidor não mede; aí a taxa
+   * cai nos agendados como antes.
+   */
+  agendadosComDesfecho?: number | null;
   consultas: number | null;
   tratamentos: number | null;
   /** Soma do campo de valor do tratamento, em reais. */
@@ -65,7 +71,7 @@ interface Props {
  * Zero seria lido como "não aconteceu". Onde não existe fonte, a etapa fica
  * apagada e escreve o motivo.
  */
-export function FunilRede({ leads, agendados, consultas, tratamentos, receita, receitaQtd, notaReceita, motivos, carregando }: Props) {
+export function FunilRede({ leads, agendados, agendadosComDesfecho, consultas, tratamentos, receita, receitaQtd, notaReceita, motivos, carregando }: Props) {
   // O motivo padrão de cada etapa da franquia é "sem autorização"; quando o servidor
   // mediu e não teve número (período longo demais, franquia fora, cruzamento que não
   // rodou), ele manda o motivo certo e é esse que aparece.
@@ -121,9 +127,25 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
   const taxa = (de: number | null, para: number | null): number | null =>
     de == null || para == null || de === 0 ? null : (para / de) * 100;
 
-  const taxas: { v: number | null; rot: string; moeda?: boolean }[] = [
+  // Comparecimento divide pelos horários que JÁ aconteceram: horário de amanhã não é
+  // falta. Mesma conta do Veredito e do card de Avaliações (11 ÷ 27, não 11 ÷ 31).
+  const baseComparecimento = agendadosComDesfecho ?? agendados;
+  const porVir =
+    agendadosComDesfecho != null && agendados != null
+      ? Math.max(0, agendados - agendadosComDesfecho)
+      : 0;
+
+  const taxas: { v: number | null; rot: string; moeda?: boolean; dica?: string }[] = [
     { v: taxa(leads, agendados), rot: "agendamento" },
-    { v: taxa(agendados, consultas), rot: "comparecimento" },
+    {
+      v: taxa(baseComparecimento, consultas),
+      rot: "comparecimento",
+      dica:
+        consultas != null && baseComparecimento != null && agendadosComDesfecho != null
+          ? `${nf.format(consultas)} de ${nf.format(baseComparecimento)} horários que já aconteceram` +
+            (porVir > 0 ? ` (${nf.format(porVir)} ainda por vir ficam fora da conta)` : "")
+          : undefined,
+    },
     { v: taxa(consultas, tratamentos), rot: "fechamento" },
     // Ticket médio = média dos MESMOS valores que a Receita somou. Dividir pela
     // contagem de tratamentos da franquia daria um número que não existe: são
@@ -200,7 +222,7 @@ export function FunilRede({ leads, agendados, consultas, tratamentos, receita, r
           nome embaixo. Some no celular — quatro taxas em 360px viram sopa. */}
       <div className="hidden rounded-xl border border-white/[0.08] bg-white/[0.02] lg:grid lg:grid-cols-4">
         {taxas.map((t, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5 px-4 py-3">
+          <div key={i} className="flex flex-col items-center gap-1.5 px-4 py-3" title={t.dica}>
             <div className="flex w-full items-center gap-2.5">
               <span
                 className={`h-px flex-1 ${

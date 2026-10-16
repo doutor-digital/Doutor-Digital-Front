@@ -166,12 +166,17 @@ export function AvaliacoesReaisCard({
               <p className="mt-1 text-[11px] text-white/40">{labelRealizadas}</p>
             </div>
             <div className="text-right">
-              <div
-                className={`text-4xl font-semibold leading-none tabular-nums ${corDaTaxa(d.taxaComparecimento)}`}
-              >
-                {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-                <span className="text-xl opacity-60">%</span>
-              </div>
+              {/* nada com desfecho no período (o normal no card de Reavaliações): "—", não um 0% vermelho que parece "todos faltaram" */}
+              {d.resolvidas === 0 ? (
+                <div className="text-4xl font-semibold leading-none tabular-nums text-white/40">—</div>
+              ) : (
+                <div
+                  className={`text-4xl font-semibold leading-none tabular-nums ${corDaTaxa(d.taxaComparecimento)}`}
+                >
+                  {d.taxaComparecimento.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                  <span className="text-xl opacity-60">%</span>
+                </div>
+              )}
               <p className="mt-1 text-[11px] text-white/40">{labelTaxa}</p>
             </div>
           </div>
