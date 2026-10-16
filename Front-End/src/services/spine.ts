@@ -68,9 +68,17 @@ export const spineService = {
     return data;
   },
 
-  /** Retornos (retorno + com exames + pós-tratamento). */
+  /** Retornos (retorno + retorno com exames). A categoria 7 é reavaliação e tem rota própria. */
   async retornos(unitId: number, de?: string, ate?: string): Promise<SpineAvaliacoes> {
     const { data } = await api.get<SpineAvaliacoes>("/api/spine/retornos", {
+      params: { unitId, de, ate },
+    });
+    return data;
+  },
+
+  /** Reavaliações (categoria 7 da agenda da franquia). Antes vinham somadas em Retornos. */
+  async reavaliacoes(unitId: number, de?: string, ate?: string): Promise<SpineAvaliacoes> {
+    const { data } = await api.get<SpineAvaliacoes>("/api/spine/reavaliacoes", {
       params: { unitId, de, ate },
     });
     return data;

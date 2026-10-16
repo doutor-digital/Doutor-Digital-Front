@@ -41,7 +41,7 @@ const CATEGORIA_BG: Record<number, string> = {
   2: "#5b9bd5", // Sessão     → azul (Protocolo 03 meses, dominante)
   3: "#8fce7f", // Retorno    → verde claro
   6: "#8fce7f", // Retorno com exames
-  7: "#8fce7f", // Retorno pós-tratamento
+  7: "#8fce7f", // Reavaliação (o código chamava de "retorno pós-tratamento")
 };
 const BG_PADRAO = "#95a5a6"; // N/A → cinza
 const BG_CANCELADO = "#e0503a"; // desmarcado / não compareceu → vermelho (como na franquia)

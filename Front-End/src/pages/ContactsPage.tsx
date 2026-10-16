@@ -1174,6 +1174,7 @@ function humanizeEtapa(etapa: string): string {
     PERDIDO: "Perdido",
     ALTA: "Alta",
     TRATAMENTO_CANCELADO: "Tratamento cancelado",
+    EM_ESPERA: "Em espera",
   };
   return (
     map[etapa] ??

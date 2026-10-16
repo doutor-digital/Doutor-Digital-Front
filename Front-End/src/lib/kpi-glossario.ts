@@ -39,9 +39,9 @@ export const GLOSSARIO_KPI: Record<string, VerbeteKpi> = {
   },
 
   leads_qualificados: {
-    titulo: "Leads qualificados",
+    titulo: "Leads quentes",
     resumo:
-      "Leads marcados como Quente no campo de qualificação — os que a SDR julgou com real chance de virar paciente.",
+      "Leads marcados como Quente no campo de qualificação — os que a SDR julgou com real chance de virar paciente. Morno e Frio não entram nesta conta.",
     comoLer:
       "Compare com o total: se você tem muito lead e pouco Quente, a mídia está trazendo volume sem intenção. Melhor 40 quentes do que 400 frios.",
     fonte: "Kommo",

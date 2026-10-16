@@ -42,6 +42,7 @@ const STAGE_LABELS: Record<string, string> = {
   PERDIDO: "Perdido",
   ALTA: "Alta",
   TRATAMENTO_CANCELADO: "Tratamento cancelado",
+  EM_ESPERA: "Em espera",
 
   // Auxiliares
   NOVO: "Novo",

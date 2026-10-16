@@ -13,6 +13,13 @@ export type KpiSourceType =
 export interface KpiSourceConfig {
   /** kommo_stage / stage_field_filter: status_ids da Kommo. */
   stageIds?: number[];
+  /**
+   * Prende uma etapa a um funil: `{ "142": 14304315 }` = o 142 só conta no funil 14304315.
+   * Existe porque 142/143 se repetem em todo funil (ALTA do TRATAMENTO × GANHO do
+   * COMERCIAL). A tela ainda não edita isto; as telas de edição preservam o campo ao salvar
+   * porque espalham a config carregada (`{ ...c, stageIds }`).
+   */
+  funilDaEtapa?: Record<string, number>;
   /** custom_field_*: id do campo customizado da Kommo. */
   fieldId?: number;
   /** custom_field_*: code do campo (alternativa ao fieldId). */
